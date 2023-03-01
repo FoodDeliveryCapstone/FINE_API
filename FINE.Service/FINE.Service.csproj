@@ -35,4 +35,8 @@
     <ProjectReference Include="..\FINE.Data\FINE.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Service\" />
+  </ItemGroup>
+
 </Project>

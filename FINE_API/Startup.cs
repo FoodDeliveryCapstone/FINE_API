@@ -51,9 +51,7 @@ namespace FINE.API
                 options.AddPolicy(MyAllowSpecificOrigins,
                     builder =>
                     {
-                        builder
-                        .WithOrigins(GetDomain())
-                        //.AllowAnyOrigin()
+                        builder.AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                     });
@@ -142,24 +140,11 @@ namespace FINE.API
 
             //===============================================
             //firebase
-            System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", "loginkhanhnd-firebase-adminsdk-q13rl-0583fba703.json");
-            FirebaseApp.Create(new AppOptions()
+            var pathToKey = Path.Combine(Directory.GetCurrentDirectory(), "Keys", "firebase.json");
+            FirebaseApp.Create(new AppOptions
             {
-                Credential = GoogleCredential.GetApplicationDefault(),
+                Credential = GoogleCredential.FromFile(pathToKey)
             });
-
-            //services.ConfigureHangfireServices(Configuration);
-
-            services.AddSingleton<IConnectionMultiplexer>(_ =>
-               ConnectionMultiplexer.Connect(Configuration["Endpoint:RedisEndpoint"]));
-            //services.ConfigMemoryCacheAndRedisCache(Configuration["Endpoint:RedisEndpoint"]);
-        }
-
-        private string[] GetDomain()
-        {
-            var domains = Configuration.GetSection("Domain").Get<Dictionary<string, string>>()
-                .SelectMany(s => s.Value.Split(",")).ToArray();
-            return domains;
         }
 
         public void ConfigureContainer(ContainerBuilder builder)
@@ -191,7 +176,6 @@ namespace FINE.API
             {
                 endpoints.MapControllers();
             });
-            app.UseHangfireDashboard();
         }
     }
 }

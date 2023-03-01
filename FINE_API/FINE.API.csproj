@@ -32,12 +32,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="AppStart\" />
+    <ProjectReference Include="..\FINE.Data\FINE.Data.csproj" />
+    <ProjectReference Include="..\FINE.Service\FINE.Service.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FINE.Data\FINE.Data.csproj" />
-    <ProjectReference Include="..\FINE.Service\FINE.Service.csproj" />
+    <Folder Include="Controllers\AdminControler\" />
   </ItemGroup>
 
 </Project>
