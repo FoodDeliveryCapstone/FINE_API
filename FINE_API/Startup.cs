@@ -26,6 +26,7 @@ using StackExchange.Redis;
 using System.Reflection;
 using System.Text;
 using FINE.API.Helpers;
+using FINE.Service.Service;
 
 namespace FINE.API
 {
@@ -150,6 +151,13 @@ namespace FINE.API
         public void ConfigureContainer(ContainerBuilder builder)
         {
             // Register your own things directly with Autofac, like:
+            builder.RegisterType<AccountService>().As<IAccountService>();
+            builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
+            builder.RegisterType<CustomerService>().As<ICustomerService>();
+            builder.RegisterType<MembershipCardService>().As<IMembershipCardService>();
+            builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
+
+            builder.RegisterType<UnitOfWork>().As<IUnitOfWork>();
             builder.RegisterGeneric(typeof(GenericRepository<>))
             .As(typeof(IGenericRepository<>))
             .InstancePerLifetimeScope();
