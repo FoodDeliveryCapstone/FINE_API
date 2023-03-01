@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\FINE_API.props" />
+</Project>
