@@ -2860,6 +2860,23 @@
         "runtime": {
           "lib/netstandard1.3/System.Xml.XDocument.dll": {}
         }
+      },
+      "FINE.Data/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v7.0",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "7.0.3",
+          "Microsoft.EntityFrameworkCore.Proxies": "7.0.3",
+          "Microsoft.EntityFrameworkCore.Relational": "7.0.3",
+          "Microsoft.EntityFrameworkCore.SqlServer": "7.0.3",
+          "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": "7.0.3"
+        },
+        "compile": {
+          "bin/placeholder/FINE.Data.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/FINE.Data.dll": {}
+        }
       }
     }
   },
@@ -8537,12 +8554,18 @@
         "system.xml.xdocument.4.3.0.nupkg.sha512",
         "system.xml.xdocument.nuspec"
       ]
+    },
+    "FINE.Data/1.0.0": {
+      "type": "project",
+      "path": "../FINE.Data/FINE.Data.csproj",
+      "msbuildProject": "../FINE.Data/FINE.Data.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net7.0": [
       "AutoMapper >= 12.0.1",
       "AutoMapper.Extensions.Microsoft.DependencyInjection >= 12.0.0",
+      "FINE.Data >= 1.0.0",
       "FirebaseAdmin >= 2.3.0",
       "Google.Apis.Auth >= 1.60.0",
       "Google.Apis.Auth.AspNetCore3 >= 1.60.0",
@@ -8588,7 +8611,11 @@
       "frameworks": {
         "net7.0": {
           "targetAlias": "net7.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
+              "projectPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

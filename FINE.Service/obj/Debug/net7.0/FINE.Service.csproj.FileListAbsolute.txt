@@ -14,12 +14,15 @@ D:\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Service.deps.js
 D:\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Service.runtimeconfig.json
 D:\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Service.dll
 D:\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Service.pdb
+D:\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Data.dll
+D:\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Data.pdb
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.csproj.AssemblyReference.cache
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.GeneratedMSBuildEditorConfig.editorconfig
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.AssemblyInfoInputs.cache
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.AssemblyInfo.cs
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.csproj.CoreCompileInputs.cache
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\EFCoreSqlServerNetTopologySuite.cs
+D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.csproj.CopyComplete
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.dll
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\refint\FINE.Service.dll
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.pdb

@@ -31,4 +31,8 @@
     <PackageReference Include="NTQ.Sdk.Core" Version="1.1.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FINE.Data\FINE.Data.csproj" />
+  </ItemGroup>
+
 </Project>

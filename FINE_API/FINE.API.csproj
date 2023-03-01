@@ -35,4 +35,9 @@
     <Folder Include="AppStart\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FINE.Data\FINE.Data.csproj" />
+    <ProjectReference Include="..\FINE.Service\FINE.Service.csproj" />
+  </ItemGroup>
+
 </Project>
