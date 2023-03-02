@@ -44,13 +44,7 @@ namespace FINE.API.AppStart
                         policyBuilder.RequireClaim("Role")
                     );
                 });
-            services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
-                .AddIdentityServerAuthentication(x =>
-                {
-                    x.Authority = "https://prod.fine-api.smjle.vn"; //idp address
-                    x.RequireHttpsMetadata = false;
-                    x.ApiName = "FINE API"; //api name
-                });
+
             services.AddScoped<IAuthorizationHandler, RolesAuthorizationHandler>();
         }                        
 

@@ -25,6 +25,9 @@ D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Google.Apis.Oauth2.v2.dl
 D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Hangfire.AspNetCore.dll
 D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Hangfire.Core.dll
 D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Humanizer.dll
+D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\IdentityModel.dll
+D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\IdentityModel.AspNetCore.OAuth2Introspection.dll
+D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\IdentityServer4.AccessTokenValidation.dll
 D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\System.Net.Http.Formatting.dll
 D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Microsoft.AspNetCore.Authentication.OpenIdConnect.dll

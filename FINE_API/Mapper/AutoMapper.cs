@@ -4,6 +4,7 @@ using FINE.Service.DTO.Request.Area;
 using FINE.Service.DTO.Request.Campus;
 using FINE.Service.DTO.Request.Customer;
 using FINE.Service.DTO.Request.Product;
+using FINE.Service.DTO.Request.Staff;
 using FINE.Service.DTO.Response;
 
 namespace FINE.API.Mapper
@@ -39,6 +40,12 @@ namespace FINE.API.Mapper
             CreateMap<Area, AreaResponse>().ReverseMap();
             CreateMap<CreateAreaRequest, Area>();
             CreateMap<UpdateAreaRequest, Area>();
+            #endregion
+
+            #region Staff
+            CreateMap<Staff, StaffResponse>().ReverseMap();
+            CreateMap<CreateStaffRequest, Staff>();
+            CreateMap<UpdateStaffRequest, Staff>();
             #endregion
         }
     }
