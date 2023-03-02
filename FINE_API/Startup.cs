@@ -151,6 +151,7 @@ namespace FINE.API
         public void ConfigureContainer(ContainerBuilder builder)
         {
             // Register your own things directly with Autofac, like:
+            builder.RegisterType<CampusService>().As<ICampusService>();
             builder.RegisterType<AccountService>().As<IAccountService>();
             builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
             builder.RegisterType<CustomerService>().As<ICustomerService>();
