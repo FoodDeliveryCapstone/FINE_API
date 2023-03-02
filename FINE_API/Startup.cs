@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using FINE.API.AppStart;
 using FINE.API.Helpers;
 using FINE.API.Mapper;
 using FINE.Data.MakeConnection;
@@ -9,6 +10,7 @@ using FINE.Service.Service;
 using FirebaseAdmin;
 using Google.Apis.Auth.AspNetCore3;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -60,15 +62,17 @@ namespace FINE.API
 
                 var securitySchema = new OpenApiSecurityScheme
                 {
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Description = @"JWT Authorization header using the Bearer scheme.
+                      Enter 'Bearer' [space] and then your token in the text input below.
+                      Example: 'Bearer iJIUzI1NiIsInR5cCI6IkpXVCGlzIElzc2'",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
                     Reference = new OpenApiReference
                     {
                         Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
+                        Id = JwtBearerDefaults.AuthenticationScheme
                     }
                 };
                 c.AddSecurityDefinition("Bearer", securitySchema);
@@ -79,28 +83,16 @@ namespace FINE.API
                     }
                 });
             });
+            services.ConfigureAuthServices(Configuration);
             services.ConnectToConnectionString(Configuration);
 
-            #region JWT
-
-            var appSettingsSection = Configuration.GetSection("Token");
-
-            services.Configure<Token>(appSettingsSection);
-            var appSettings = appSettingsSection.Get<Token>();
-
-            var key = Encoding.ASCII.GetBytes(appSettings.SecretKey);
-            services.AddAuthentication(x =>
-            {
-                x.DefaultAuthenticateScheme = GoogleOpenIdConnectDefaults.AuthenticationScheme;
-                x.DefaultChallengeScheme = GoogleOpenIdConnectDefaults.AuthenticationScheme;
-            });
+            #region Firebase
             var pathToKey = Path.Combine(Directory.GetCurrentDirectory(), "Keys", "firebase.json");
             FirebaseApp.Create(new AppOptions
             {
                 Credential = GoogleCredential.FromFile(pathToKey)
             });
-
-            #endregion JWT
+            #endregion 
 
         }
 
@@ -113,6 +105,7 @@ namespace FINE.API
             builder.RegisterType<MembershipCardService>().As<IMembershipCardService>();
             builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
             builder.RegisterType<CustomerService>().As<ICustomerService>();
+            builder.RegisterType<ProductService>().As<IProductService>();
             builder.RegisterType<AccountService>().As<IAccountService>();
             builder.RegisterType<CampusService>().As<ICampusService>();
 
@@ -139,6 +132,7 @@ namespace FINE.API
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseDeveloperExceptionPage();
+            AuthConfig.Configure(app);
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
