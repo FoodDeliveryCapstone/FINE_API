@@ -36,8 +36,4 @@
     <ProjectReference Include="..\FINE.Service\FINE.Service.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\AdminControler\" />
-  </ItemGroup>
-
 </Project>

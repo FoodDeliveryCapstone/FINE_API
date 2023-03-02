@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FINE.Data.Entity;
+using FINE.Service.DTO.Request.Area;
 using FINE.Service.DTO.Request.Campus;
 using FINE.Service.DTO.Request.Customer;
 using FINE.Service.DTO.Request.Product;
@@ -32,6 +33,12 @@ namespace FINE.API.Mapper
             CreateMap<UpdateProductExtraRequest, CreateExtraProductRequest>();
             CreateMap<UpdateProductExtraRequest, Product>()
                 .ForMember(c => c.Id, option => option.Ignore());
+            #endregion
+
+            #region Area
+            CreateMap<Area, AreaResponse>().ReverseMap();
+            CreateMap<CreateAreaRequest, Area>();
+            CreateMap<UpdateAreaRequest, Area>();
             #endregion
         }
     }
