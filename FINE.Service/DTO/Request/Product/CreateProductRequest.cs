@@ -13,6 +13,11 @@ namespace FINE.Service.DTO.Request.Product
         [Int]
         public int StoreId { get; set; }
         public double BasePrice { get; set; }
+        public string? ImageUrl { get; set; }
+        public bool IsActive { get; set; }
+        public int? ProductType { get; set; }
+        public string? Description { get; set; }
+
         public List<CreateExtraProductRequest> extraProducts { get; set; }
     }
 

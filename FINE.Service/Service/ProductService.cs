@@ -42,7 +42,6 @@ namespace FINE.Service.Service
 
             var product = _mapper.Map<CreateProductRequest, Product>(request);
 
-            product.IsActive = true;
             product.CreateAt = DateTime.Now;
 
             await _unitOfWork.Repository<Product>().InsertAsync(product);
