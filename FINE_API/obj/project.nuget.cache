@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "56+i7GKHGSSRXpeAfG+irpdIaTBBgA1ZHua6oTeN1tCy4+8LBLk4FM6CAmDq9s2fkNf4fdt+DWC+tPNerIYR1g==",
+  "dgSpecHash": "627J+fhZnqVXsxebrmTY62NSx9fBv3uEsF28fh9eLFKb3UcuoyRiDHSLBnH2yEqAv1cRRGAtIo94wFBJD9i9ug==",
   "success": true,
   "projectFilePath": "D:\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
   "expectedPackageFiles": [
@@ -22,6 +22,9 @@
     "C:\\Users\\denwi\\.nuget\\packages\\hangfire.aspnetcore\\1.7.33\\hangfire.aspnetcore.1.7.33.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\hangfire.core\\1.7.33\\hangfire.core.1.7.33.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\denwi\\.nuget\\packages\\identitymodel\\4.0.0\\identitymodel.4.0.0.nupkg.sha512",
+    "C:\\Users\\denwi\\.nuget\\packages\\identitymodel.aspnetcore.oauth2introspection\\4.0.1\\identitymodel.aspnetcore.oauth2introspection.4.0.1.nupkg.sha512",
+    "C:\\Users\\denwi\\.nuget\\packages\\identityserver4.accesstokenvalidation\\3.0.1\\identityserver4.accesstokenvalidation.3.0.1.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\microsoft.aspnet.webapi.client\\5.2.9\\microsoft.aspnet.webapi.client.5.2.9.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\7.0.3\\microsoft.aspnetcore.authentication.jwtbearer.7.0.3.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\microsoft.aspnetcore.authentication.openidconnect\\3.0.3\\microsoft.aspnetcore.authentication.openidconnect.3.0.3.nupkg.sha512",
