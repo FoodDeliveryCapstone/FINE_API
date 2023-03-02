@@ -101,15 +101,27 @@ namespace FINE.API
             // Register your own things directly with Autofac, like:
             builder.RegisterType<UnitOfWork>().As<IUnitOfWork>();
 
-            builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
-            builder.RegisterType<MembershipCardService>().As<IMembershipCardService>();
-            builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
-            builder.RegisterType<CustomerService>().As<ICustomerService>();
+            builder.RegisterType<AreaService>().As<IAreaService>();
+            builder.RegisterType<StaffService>().As<IStaffService>();
+            builder.RegisterType<OrderService>().As<IOrderService>();
+            builder.RegisterType<StoreService>().As<IStoreService>();
+            builder.RegisterType<CampusService>().As<ICampusService>();
+            builder.RegisterType<NotifyService>().As<INotifyService>();
             builder.RegisterType<ProductService>().As<IProductService>();
             builder.RegisterType<AccountService>().As<IAccountService>();
-            builder.RegisterType<CampusService>().As<ICampusService>();
-            builder.RegisterType<StaffService>().As<IStaffService>();
-            builder.RegisterType<AreaService>().As<IAreaService>();
+            builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
+            builder.RegisterType<CustomerService>().As<ICustomerService>();
+            builder.RegisterType<BlogPostService>().As<IBlogPostService>();
+            builder.RegisterType<UniversityService>().As<IUniversityService>();
+            builder.RegisterType<StaffReportService>().As<IStaffReportService>();
+            builder.RegisterType<StoreCategoryService>().As<IStoreCategoryService>();
+            builder.RegisterType<MembershipCardService>().As<IMembershipCardService>();
+            builder.RegisterType<UniversityInfoService>().As<IUniversityInfoService>();
+            builder.RegisterType<SystemCategoryService>().As<ISystemCategoryService>();
+            builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
+            builder.RegisterType<ProductCollectionService>().As<IProductCollectionService>();
+            builder.RegisterType<ProductCollectionItemService>().As<IProductCollectionItemService>();
+            builder.RegisterType<ProductCollectionTimeSlotService>().As<IProductCollectionTimeSlotService>();
 
             builder.RegisterGeneric(typeof(GenericRepository<>))
             .As(typeof(IGenericRepository<>))
