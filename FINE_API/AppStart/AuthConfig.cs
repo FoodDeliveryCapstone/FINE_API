@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using IdentityServer4.AccessTokenValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -42,6 +43,13 @@ namespace FINE.API.AppStart
                     config.AddPolicy("FineAuthorization", policyBuilder =>
                         policyBuilder.RequireClaim("Role")
                     );
+                });
+            services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
+                .AddIdentityServerAuthentication(x =>
+                {
+                    x.Authority = "https://prod.fine-api.smjle.vn"; //idp address
+                    x.RequireHttpsMetadata = false;
+                    x.ApiName = "FINE API"; //api name
                 });
             services.AddScoped<IAuthorizationHandler, RolesAuthorizationHandler>();
         }                        
