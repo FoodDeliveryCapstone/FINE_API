@@ -13,6 +13,7 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 using System.Text;
 
 namespace FINE.API
@@ -58,6 +59,11 @@ namespace FINE.API
                     Title = "FINE API",
                     Version = "v1"
                 });
+
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+
                 c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 
                 var securitySchema = new OpenApiSecurityScheme
@@ -109,6 +115,7 @@ namespace FINE.API
             builder.RegisterType<NotifyService>().As<INotifyService>();
             builder.RegisterType<ProductService>().As<IProductService>();
             builder.RegisterType<AccountService>().As<IAccountService>();
+            builder.RegisterType<TimeslotService>().As<ITimeslotService>();
             builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
             builder.RegisterType<CustomerService>().As<ICustomerService>();
             builder.RegisterType<BlogPostService>().As<IBlogPostService>();
