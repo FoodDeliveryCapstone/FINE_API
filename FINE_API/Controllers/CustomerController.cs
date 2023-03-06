@@ -47,5 +47,14 @@ namespace FINE.API.Controllers
             await _customerService.Logout(request.FcmToken);
             return Ok();
         }
+        
+        /// <summary>
+        /// Get list Customer for system admin
+        /// </summary>
+        [HttpGet()]
+        public async Task<ActionResult<BaseResponsePagingViewModel<CustomerResponse>>> GetCustomers([FromRoute] CustomerResponse customerResponse, [FromRoute] PagingRequest pagingRequest)
+        {
+            return await _customerService.GetCustomers(customerResponse,pagingRequest );
+        }
     }
 }
