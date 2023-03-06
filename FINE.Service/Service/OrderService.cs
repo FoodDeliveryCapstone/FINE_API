@@ -61,18 +61,20 @@ namespace FINE.Service.Service
                 genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
                                    orderCount.ToString().PadLeft(3, '0') + "." +
                                    Ultils.GenerateRandomCode();
+                genOrder.CheckInDate= DateTime.Now;
                 genOrder.TotalAmount = 0;
                 genOrder.ShippingFee = 0;
 
                 //Phân store trong order detail
                 List<OrderDetailByStoreRequest> listODByStore = new List<OrderDetailByStoreRequest>();
-
                 foreach (var orderDetailRequest in request.OrderDetails)
                 {                 
                     if (!listODByStore.Any(x => x.StoreId == orderDetailRequest.StoreId))
                     {
                         OrderDetailByStoreRequest od = new OrderDetailByStoreRequest();
                         od.StoreId = orderDetailRequest.StoreId;
+
+                        od.Details = new List<CreateOrderDetailRequest>();
                         od.Details.Add(orderDetailRequest);
                         listODByStore.Add(od);                        
                     }
