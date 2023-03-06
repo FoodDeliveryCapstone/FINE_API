@@ -18,7 +18,6 @@ using FINE.Service.DTO.Request.SystemCategory;
 using FINE.Service.DTO.Request.University;
 using FINE.Service.DTO.Response;
 using FINE.Service.DTO.Request.Noti;
-using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Request.Menu;
 using FINE.API.Controllers;
 
@@ -29,41 +28,53 @@ namespace FINE.API.Mapper
         public AutoMapperProfile()
         {
             #region Customer
+
             CreateMap<Customer, CustomerResponse>().ReverseMap();
             CreateMap<Customer, OrderCustomerResponse>().ReverseMap();
             CreateMap<Customer, OrderCustomerResponse>().ReverseMap();
             CreateMap<CreateCustomerRequest, Customer>();
             CreateMap<UpdateCustomerRequest, Customer>();
+
             #endregion
 
             #region System Category
+
             CreateMap<SystemCategory, SystemCategoryResponse>().ReverseMap();
             CreateMap<CreateSystemCategoryRequest, SystemCategory>();
             CreateMap<UpdateSystemCategoryRequest, SystemCategory>();
+
             #endregion
 
             #region Store Category
+
             CreateMap<StoreCategory, StoreCategoryResponse>().ReverseMap();
             CreateMap<CreateStoreCategoryRequest, StoreCategory>();
             CreateMap<CreateStoreCategoryRequest, StoreCategory>();
+
             #endregion
 
             #region Product
-            CreateMap<Product, ProductResponse>().ReverseMap();
+
+            CreateMap<Product, ProductResponse>().IncludeMembers(x => x.Store).ReverseMap();
+            CreateMap<Store, ProductResponse>();
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
             CreateMap<UpdateProductExtraRequest, CreateExtraProductRequest>();
             CreateMap<UpdateProductExtraRequest, Product>()
                 .ForMember(c => c.Id, option => option.Ignore());
+
             #endregion
 
             #region Product Collection
+
             CreateMap<ProductCollection, ProductCollectionResponse>().ReverseMap();
             CreateMap<CreateProductCollectionRequest, ProductCollection>();
             CreateMap<UpdateProductCollectionRequest, ProductCollection>();
+
             #endregion
 
             #region Order
+
             CreateMap<Order, OrderResponse>().ReverseMap();
             CreateMap<Order, GenOrderResponse>().ReverseMap();
             CreateMap<CreateOrderRequest, Order>();
@@ -71,14 +82,18 @@ namespace FINE.API.Mapper
             #endregion
 
             #region OrderDetail
+
             CreateMap<OrderDetail, OrderDetailResponse>().ReverseMap();
             CreateMap<CreateOrderDetailRequest, OrderDetail>();
+
             #endregion
 
             #region Store
+
             CreateMap<Store, StoreResponse>().ReverseMap();
             CreateMap<CreateStoreRequest, Store>();
             CreateMap<UpdateStoreRequest, Store>();
+
             #endregion
 
             #region Area
@@ -87,46 +102,55 @@ namespace FINE.API.Mapper
             CreateMap<UpdateAreaRequest, Area>();
             #endregion
 
+            #region Room
+            CreateMap<Room, RoomResponse>().ReverseMap();
+            #endregion
+
             #region Campus
+
             //CreateMap<Campus, CampusResponse>().ReverseMap();
             CreateMap<CreateCampusRequest, Campus>();
             CreateMap<UpdateCampusRequest, Campus>();
+
             #endregion
 
             #region Staff
+
             CreateMap<Staff, StaffResponse>().ReverseMap();
             CreateMap<CreateStaffRequest, Staff>();
             CreateMap<UpdateStaffRequest, Staff>();
+
             #endregion
 
             #region BlogPost
+
             CreateMap<BlogPost, BlogPostResponse>().ReverseMap();
             CreateMap<CreateBlogPostRequest, BlogPost>();
             CreateMap<UpdateBlogPostRequest, BlogPost>();
+
             #endregion
 
             #region University
+
             CreateMap<University, UniversityResponse>().ReverseMap();
             CreateMap<CreateUniversityRequest, University>();
             CreateMap<UpdateUniversityRequest, University>();
+
             #endregion
 
             #region Menu
+
             CreateMap<Menu, MenuResponse>().ReverseMap();
             CreateMap<CreateMenuRequest, Menu>();
             CreateMap<UpdateMenuRequest, Menu>();
+
             #endregion
 
             #region TimeSlot
-            //CreateMap<TimeSlot, TimeSlotResponse>().ReverseMap();
-            CreateMap<CreateTimeSlotRequest, TimeSlot>();
-            CreateMap<UpdateTimeSlotRequest, TimeSlot>();
-
             CreateMap<TimeSlot, TimeSlotResponse>()
-
-                    .ForMember(dest => dest.stores, opt => opt.MapFrom(src => src.Campus.Stores))
-                    .ForMember(dest => dest.menus, opt => opt.MapFrom(src => src.Menus)).ReverseMap();          
-           #endregion
+                .ForMember(dest => dest.stores, opt => opt.MapFrom(src => src.Campus.Stores))
+                .ForMember(dest => dest.menus, opt => opt.MapFrom(src => src.Menus)).ReverseMap();
+            #endregion
         }
     }
 }
