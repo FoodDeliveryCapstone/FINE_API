@@ -3,6 +3,7 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Menu;
 using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,14 @@ namespace FINE.API.Controllers.AdminControler
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenus([FromQuery] MenuResponse request, [FromQuery] PagingRequest paging)
         {
-            return await _menuService.GetMenus(request, paging);
+            try
+            {
+                return await _menuService.GetMenus(request, paging);
+            }
+            catch(ErrorResponse ex) 
+            { 
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
@@ -37,7 +45,14 @@ namespace FINE.API.Controllers.AdminControler
         [HttpGet("{menuId}")]
         public async Task<ActionResult<BaseResponseViewModel<MenuResponse>>> GetMenuById([FromRoute] int menuId)
         {
-            return await _menuService.GetMenuById(menuId);
+            try
+            {
+                return await _menuService.GetMenuById(menuId);
+            }
+            catch(ErrorResponse ex) 
+            { 
+                return BadRequest(ex.Error); 
+            }
         }
 
         /// <summary>
@@ -47,7 +62,14 @@ namespace FINE.API.Controllers.AdminControler
         [HttpGet("timeslot/{timeslotId}")]
         public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenusByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
         {
-            return await _menuService.GetMenuByTimeslot(timeslotId, paging);
+            try
+            {
+                return await _menuService.GetMenuByTimeslot(timeslotId, paging);
+            }
+            catch(ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
@@ -57,7 +79,14 @@ namespace FINE.API.Controllers.AdminControler
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         public async Task<ActionResult<BaseResponseViewModel<MenuResponse>>> CreateMenu([FromBody] CreateMenuRequest request)
         {
-            return await _menuService.CreateMenu(request);
+            try
+            {
+                return await _menuService.CreateMenu(request);
+            }
+            catch(ErrorResponse ex) 
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
@@ -67,7 +96,14 @@ namespace FINE.API.Controllers.AdminControler
         [HttpPut("{menuId}")]
         public async Task<ActionResult<BaseResponseViewModel<MenuResponse>>> UpdateMenu([FromRoute] int menuId, [FromBody] UpdateMenuRequest request)
         {
-            return await _menuService.UpdateMenu(menuId, request);
+            try
+            {
+                return await _menuService.UpdateMenu(menuId, request);
+            }
+            catch(ErrorResponse ex)
+            { 
+                return BadRequest(ex.Error);
+            }
         }
     }
 }

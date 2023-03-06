@@ -1,6 +1,7 @@
 ﻿using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Menu;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,14 +17,21 @@ namespace FINE.API.Controllers
         {
             _menuService = menuService;
         }
-  
+
         /// <summary>
         /// Get Menu By Id
-        /// </summary>
+        /// </summary>     
         [HttpGet("{menuId}")]
         public async Task<ActionResult<BaseResponseViewModel<MenuResponse>>> GetMenuById([FromRoute] int menuId)
         {
-            return await _menuService.GetMenuById(menuId);
+            try
+            {
+                return await _menuService.GetMenuById(menuId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
@@ -32,7 +40,14 @@ namespace FINE.API.Controllers
         [HttpGet("timeslot/{timeslotId}")]
         public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenusByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
         {
-            return await _menuService.GetMenuByTimeslot(timeslotId, paging);
+            try
+            {
+                return await _menuService.GetMenuByTimeslot(timeslotId, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
     }
 }
