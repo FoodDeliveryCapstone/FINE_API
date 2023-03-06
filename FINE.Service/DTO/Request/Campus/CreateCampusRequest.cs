@@ -2,8 +2,12 @@
 {
     public class CreateCampusRequest
     {
+        public int UniversityId { get; set; }
 
-        public string? BrandName { get; set; }
-        public string? EmailRoot { get; set; }
+        public string Name { get; set; } = null!;
+
+        public string Address { get; set; } = null!;
+
+        public string Code { get; set; } = null!;
     }
 }
