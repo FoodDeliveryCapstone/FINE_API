@@ -39,81 +39,110 @@ namespace FINE.Service.Service
 
         public async Task<BaseResponseViewModel<BlogPostResponse>> CreateBlogPost(CreateBlogPostRequest request)
         {
-            var blogPost = _mapper.Map<CreateBlogPostRequest, BlogPost>(request);
-            blogPost.Active = true;
-            blogPost.CreateAt = DateTime.Now;
-            await _unitOfWork.Repository<BlogPost>().InsertAsync(blogPost);
-            await _unitOfWork.CommitAsync();
-            return new BaseResponseViewModel<BlogPostResponse>()
+            try
             {
-                Status = new StatusViewModel()
+                var blogPost = _mapper.Map<CreateBlogPostRequest, BlogPost>(request);
+                blogPost.Active = true;
+                blogPost.CreateAt = DateTime.Now;
+                await _unitOfWork.Repository<BlogPost>().InsertAsync(blogPost);
+                await _unitOfWork.CommitAsync();
+                return new BaseResponseViewModel<BlogPostResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<BlogPostResponse>(blogPost)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<BlogPostResponse>(blogPost)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
+
 
         public async Task<BaseResponsePagingViewModel<BlogPostResponse>> GetBlogPost(BlogPostResponse filter, PagingRequest paging)
         {
-            var blogPost = _unitOfWork.Repository<BlogPost>().GetAll()
-                                      .ProjectTo<BlogPostResponse>(_mapper.ConfigurationProvider)
-                                       .DynamicFilter(filter)
-                                       .DynamicSort(filter)
-                                       .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                    Constants.DefaultPaging);
-            return new BaseResponsePagingViewModel<BlogPostResponse>()
+            try
             {
-                Metadata = new PagingsMetadata()
+                var blogPost = _unitOfWork.Repository<BlogPost>().GetAll()
+                                          .ProjectTo<BlogPostResponse>(_mapper.ConfigurationProvider)
+                                           .DynamicFilter(filter)
+                                           .DynamicSort(filter)
+                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+                return new BaseResponsePagingViewModel<BlogPostResponse>()
                 {
-                    Page = paging.Page,
-                    Size = paging.PageSize,
-                    Total = blogPost.Item1
-                },
-                Data = blogPost.Item2.ToList()
-            };
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = blogPost.Item1
+                    },
+                    Data = blogPost.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponseViewModel<BlogPostResponse>> GetBlogPostById(int blogPostId)
         {
-            var blogPost = _unitOfWork.Repository<BlogPost>().GetAll().FirstOrDefault(x => x.Id == blogPostId);
-            if(blogPost == null)
-                throw new ErrorResponse(404, (int)BlogPostErrorEnums.NOT_FOUND_ID,
-                                    BlogPostErrorEnums.NOT_FOUND_ID.GetDisplayName());
-            return new BaseResponseViewModel<BlogPostResponse>()
+            try
             {
-                Status = new StatusViewModel()
+                var blogPost = _unitOfWork.Repository<BlogPost>().GetAll().FirstOrDefault(x => x.Id == blogPostId);
+                if (blogPost == null)
+                    throw new ErrorResponse(404, (int)BlogPostErrorEnums.NOT_FOUND_ID,
+                                        BlogPostErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                return new BaseResponseViewModel<BlogPostResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<BlogPostResponse>(blogPost)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<BlogPostResponse>(blogPost)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponseViewModel<BlogPostResponse>> UpdateBlogPost(int blogPostId, UpdateBlogPostRequest request)
         {
-            var blogPost = _unitOfWork.Repository<BlogPost>().Find(x => x.Id == blogPostId);
-            if(blogPost == null)
-                throw new ErrorResponse(404, (int)BlogPostErrorEnums.NOT_FOUND_ID,
-                                   BlogPostErrorEnums.NOT_FOUND_ID.GetDisplayName());
-            var blogPostMappingResult = _mapper.Map<UpdateBlogPostRequest, BlogPost>(request, blogPost);
-            blogPostMappingResult.UpdateAt = DateTime.Now;
-            await _unitOfWork.Repository<BlogPost>().UpdateDetached(blogPostMappingResult);
-            await _unitOfWork.CommitAsync();
-            return new BaseResponseViewModel<BlogPostResponse>()
+            try
             {
-                Status = new StatusViewModel()
+                var blogPost = _unitOfWork.Repository<BlogPost>().Find(x => x.Id == blogPostId);
+                if (blogPost == null)
+                    throw new ErrorResponse(404, (int)BlogPostErrorEnums.NOT_FOUND_ID,
+                                       BlogPostErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                var blogPostMappingResult = _mapper.Map<UpdateBlogPostRequest, BlogPost>(request, blogPost);
+                blogPostMappingResult.UpdateAt = DateTime.Now;
+                await _unitOfWork.Repository<BlogPost>().UpdateDetached(blogPostMappingResult);
+                await _unitOfWork.CommitAsync();
+                return new BaseResponseViewModel<BlogPostResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<BlogPostResponse>(blogPostMappingResult)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<BlogPostResponse>(blogPostMappingResult)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
     }
 }

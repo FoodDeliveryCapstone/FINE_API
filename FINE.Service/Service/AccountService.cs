@@ -28,21 +28,28 @@ namespace FINE.Service.Service
 
         public void CreateAccountByMemCard(string cardCode, double? defaultBalance, int uniId, int cardId, int accTypeId)
         {
-            var university = _unitOfWork.Repository<University>().GetById(uniId).Result;
-            Account account = new Account()
+            try
             {
-                MembershipCardId = cardId,
-                AccountCode = university.UniCode + "-" + DateTime.Now.ToString("yyyyMMddHHmmssfff"),
-                AccountName = university.UniCode + "-" + accTypeId + "-" + cardCode,
-                StartDate = DateTime.Now,
-                Balance = (decimal)(defaultBalance ?? 0),
-                Type = accTypeId,
-                CampusId = uniId,
-                Active = true
-            };
+                var university = _unitOfWork.Repository<University>().GetById(uniId).Result;
+                Account account = new Account()
+                {
+                    MembershipCardId = cardId,
+                    AccountCode = university.UniCode + "-" + DateTime.Now.ToString("yyyyMMddHHmmssfff"),
+                    AccountName = university.UniCode + "-" + accTypeId + "-" + cardCode,
+                    StartDate = DateTime.Now,
+                    Balance = (decimal)(defaultBalance ?? 0),
+                    Type = accTypeId,
+                    CampusId = uniId,
+                    Active = true
+                };
 
-            _unitOfWork.Repository<Account>().Insert(account);
-            _unitOfWork.Commit();
+                _unitOfWork.Repository<Account>().Insert(account);
+                _unitOfWork.Commit();
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<List<Account>> GetAccountByCustomerId(int id)

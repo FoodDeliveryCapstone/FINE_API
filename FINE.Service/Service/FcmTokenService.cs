@@ -39,85 +39,120 @@ namespace FINE.Service.Service
 
         public async Task<Fcmtoken> AddFcmToken(string fcmToken, int customerId)
         {
-            var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
-                .FirstOrDefault(x => x.Token.Equals(fcmToken));
-
-            if (fcm == null)
+            try
             {
-                _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+                var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
+                    .FirstOrDefault(x => x.Token.Equals(fcmToken));
 
-                var newtoken = new Fcmtoken()
+                if (fcm == null)
                 {
-                    Token = fcmToken,
-                    CustomerId = customerId
-                };
-                await _unitOfWork.Repository<Fcmtoken>().InsertAsync(newtoken);
-                await _unitOfWork.CommitAsync();
-            }
-            else if (!fcm.CustomerId.Equals(customerId))
-            {
-                _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
 
-                fcm.CustomerId = customerId;
-                await _unitOfWork.Repository<Fcmtoken>().Update(fcm, fcm.Id);
-                await _unitOfWork.CommitAsync();
+                    var newtoken = new Fcmtoken()
+                    {
+                        Token = fcmToken,
+                        CustomerId = customerId
+                    };
+                    await _unitOfWork.Repository<Fcmtoken>().InsertAsync(newtoken);
+                    await _unitOfWork.CommitAsync();
+                }
+                else if (!fcm.CustomerId.Equals(customerId))
+                {
+                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+
+                    fcm.CustomerId = customerId;
+                    await _unitOfWork.Repository<Fcmtoken>().Update(fcm, fcm.Id);
+                    await _unitOfWork.CommitAsync();
+                }
+                return fcm;
             }
-            return fcm;
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public Fcmtoken AddStaffFcmToken(string fcmToken, int staffId)
         {
-            var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.Token.Equals(fcmToken));
-
-            if (fcm == null)
+            try
             {
-                _unitOfWork.Repository<Fcmtoken>().Insert(new Fcmtoken() { Token = fcmToken, StaffId = staffId, CreateAt = DateTime.Now });
-                _unitOfWork.Commit();
-            }
-            else if (!fcm.CustomerId.Equals(staffId))
-            {
-                fcm.StaffId = staffId;
-                _unitOfWork.Repository<Fcmtoken>().UpdateDetached(fcm);
-                _unitOfWork.Commit();
-            }
+                var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.Token.Equals(fcmToken));
 
-            return fcm;
+                if (fcm == null)
+                {
+                    _unitOfWork.Repository<Fcmtoken>().Insert(new Fcmtoken() { Token = fcmToken, StaffId = staffId, CreateAt = DateTime.Now });
+                    _unitOfWork.Commit();
+                }
+                else if (!fcm.CustomerId.Equals(staffId))
+                {
+                    fcm.StaffId = staffId;
+                    _unitOfWork.Repository<Fcmtoken>().UpdateDetached(fcm);
+                    _unitOfWork.Commit();
+                }
+
+                return fcm;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public int RemoveFcmTokens(ICollection<string> fcmTokens)
         {
-            var tokens = _unitOfWork.Repository<Fcmtoken>().GetAll();
+            try
+            {
+                var tokens = _unitOfWork.Repository<Fcmtoken>().GetAll();
 
-            if (tokens == null)
-                return 0;
+                if (tokens == null)
+                    return 0;
 
-            var cusTokens = tokens.Where(x => x.CustomerId != null).Select(x => x.Token).ToList();
-            if (cusTokens != null && cusTokens.Count > 0)
-                _fmService.Unsubcribe(cusTokens, Constants.NOTIFICATION_TOPIC);
+                var cusTokens = tokens.Where(x => x.CustomerId != null).Select(x => x.Token).ToList();
+                if (cusTokens != null && cusTokens.Count > 0)
+                    _fmService.Unsubcribe(cusTokens, Constants.NOTIFICATION_TOPIC);
 
-            _unitOfWork.Repository<Fcmtoken>().DeleteRange(tokens);
-            _unitOfWork.Commit();
+                _unitOfWork.Repository<Fcmtoken>().DeleteRange(tokens);
+                _unitOfWork.Commit();
 
-            return tokens.Count();
+                return tokens.Count();
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public void SubscribeAll(int customerId)
         {
-            var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.CustomerId.Equals(customerId));
-            if (tokensMapping != null)
+            try
             {
-                var tokens = tokensMapping.Select(x => x.Token).ToList();
-                _fmService.Subcribe(tokens, Constants.NOTIFICATION_TOPIC);
+                var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.CustomerId.Equals(customerId));
+                if (tokensMapping != null)
+                {
+                    var tokens = tokensMapping.Select(x => x.Token).ToList();
+                    _fmService.Subcribe(tokens, Constants.NOTIFICATION_TOPIC);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
 
         public void UnsubscribeAll(int customerId)
         {
-            var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.CustomerId.Equals(customerId));
-            if (tokensMapping != null)
+            try
             {
-                var tokens = tokensMapping.Select(x => x.Token).ToList();
-                _fmService.Unsubcribe(tokens, Constants.NOTIFICATION_TOPIC);
+                var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.CustomerId.Equals(customerId));
+                if (tokensMapping != null)
+                {
+                    var tokens = tokensMapping.Select(x => x.Token).ToList();
+                    _fmService.Unsubcribe(tokens, Constants.NOTIFICATION_TOPIC);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
 

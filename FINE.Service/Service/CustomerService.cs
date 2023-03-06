@@ -51,268 +51,296 @@ namespace FINE.Service.Service
 
         public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email)
         {
-            var customer = await _unitOfWork.Repository<Customer>().GetAll()
-                 .Where(x => x.Email.Contains(email)).FirstOrDefaultAsync();
-
-            return new BaseResponseViewModel<CustomerResponse>()
+            try
             {
-                Status = new StatusViewModel()
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                     .Where(x => x.Email.Contains(email)).FirstOrDefaultAsync();
+
+                return new BaseResponseViewModel<CustomerResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<CustomerResponse>(customer)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
 
         public async Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging)
         {
-            var customers = _unitOfWork.Repository<Customer>().GetAll()
-                .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
-                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
-            return new BaseResponsePagingViewModel<CustomerResponse>()
+            try
             {
-                Metadata = new PagingsMetadata()
+                var customers = _unitOfWork.Repository<Customer>().GetAll()
+                    .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
+                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<CustomerResponse>()
                 {
-                    Page = paging.Page,
-                    Size = paging.PageSize,
-                    Total = customers.Item1
-                },
-                Data = customers.Item2.ToList()
-            };
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = customers.Item1
+                    },
+                    Data = customers.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request)
         {
-            var customer = _mapper.Map<CreateCustomerRequest, Customer>(request);
-
-            #region recognize school by email root
-            string[] splitEmail = customer.Email.Split('@');
-            var rootEmail = splitEmail[1];
-            var uniInfo = _unitOfWork.Repository<UniversityInfo>().GetAll()
-                                        .FirstOrDefault(x => x.Domain.Contains(rootEmail));
-            if (uniInfo == null)
-                throw new ErrorResponse(404, (int)CampusErrorEnums.NOT_FOUND_ID, CampusErrorEnums.NOT_FOUND_ID.GetDisplayName());
-            #endregion
-
-            var code = Ultils.GenerateRandomCode();
-
-            customer.CustomerCode = uniInfo.University.UniCode + "-" + code;
-            customer.UniversityId = uniInfo.University.Id;
-            customer.UniInfoId = uniInfo.Id;
-            customer.CreateAt = DateTime.Now;
-
-            await _unitOfWork.Repository<Customer>().InsertAsync(customer);
-            await _unitOfWork.CommitAsync();
-
-            return new BaseResponseViewModel<CustomerResponse>()
+            try
             {
-                Status = new StatusViewModel()
+
+                var customer = _mapper.Map<CreateCustomerRequest, Customer>(request);
+
+                #region recognize school by email root
+                string[] splitEmail = customer.Email.Split('@');
+                var rootEmail = splitEmail[1];
+                var uniInfo = _unitOfWork.Repository<UniversityInfo>().GetAll()
+                                            .FirstOrDefault(x => x.Domain.Contains(rootEmail));
+                if (uniInfo == null)
+                    throw new ErrorResponse(404, (int)CampusErrorEnums.NOT_FOUND_ID, CampusErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                #endregion
+
+                var code = Ultils.GenerateRandomCode();
+
+                customer.CustomerCode = uniInfo.University.UniCode + "-" + code;
+                customer.UniversityId = uniInfo.University.Id;
+                customer.UniInfoId = uniInfo.Id;
+                customer.CreateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Customer>().InsertAsync(customer);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<CustomerResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<CustomerResponse>(customer)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(int customerId, UpdateCustomerRequest request)
         {
-            Customer customer = null;
-            customer = _unitOfWork.Repository<Customer>()
-                                    .Find(c => c.Id == customerId);
-
-            if (customer == null)
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName(),
-                        Success = false,
-                        ErrorCode = (int)CustomerErrorEnums.NOT_FOUND_ID
-                    }
-                };
-
-            var checkPhone = Ultils.CheckVNPhone(request.Phone);
-
-            if (checkPhone == false)
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName(),
-                        Success = false,
-                        ErrorCode = (int)CustomerErrorEnums.INVALID_PHONENUMBER
-                    }
-                };
-
-            customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
-
-            await _unitOfWork.Repository<Customer>().UpdateDetached(customer);
-            await _unitOfWork.CommitAsync();
-
-            return new BaseResponseViewModel<CustomerResponse>()
+            try
             {
-                Status = new StatusViewModel()
-                {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<CustomerResponse>(customer)
-            };
+                Customer customer = null;
+                customer = _unitOfWork.Repository<Customer>()
+                                        .Find(c => c.Id == customerId);
 
+                if (customer == null)
+                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
+                                         CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                var checkPhone = Ultils.CheckVNPhone(request.Phone);
+
+                if (checkPhone == false)
+                    throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,
+                                        CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName());
+
+                customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
+
+                await _unitOfWork.Repository<Customer>().UpdateDetached(customer);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<CustomerResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
         }
 
         public async Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data)
         {
-            // check fcm token 
-            if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
+            try
             {
-                if (!await _customerFcmtokenService.ValidToken(data.FcmToken))
+                // check fcm token 
+                if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
+                {
+                    if (!await _customerFcmtokenService.ValidToken(data.FcmToken))
+                        throw new ErrorResponse(400, (int)FcmTokenErrorEnums.INVALID_TOKEN,
+                                             FcmTokenErrorEnums.INVALID_TOKEN.GetDisplayName());
+                }
+
+                //decode token -> user record
+                var auth = FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance;
+                FirebaseToken decodeToken = await auth.VerifyIdTokenAsync(data.IdToken);
+                UserRecord userRecord = await auth.GetUserAsync(decodeToken.Uid);
+
+                //check exist customer 
+                var customer = _unitOfWork.Repository<Customer>().GetAll()
+                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
+
+                //new customer => add fcm map with Id
+                if (customer == null)
+                {
+                    CreateCustomerRequest newCustomer = new CreateCustomerRequest()
+                    {
+                        Name = userRecord.DisplayName,
+                        Email = userRecord.Email,
+                        ImageUrl = userRecord.PhotoUrl
+                    };
+
+                    //create customer
+                    await CreateCustomer(newCustomer);
+
+                    //create account (wallet) for customer
+                    customer = _unitOfWork.Repository<Customer>().GetAll()
+                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
+
+                    CreateNewMemberShipCard(customer.UniversityId, customer.Id);
+
+                    var membership = _membershipCardService.GetMembershipCardActiveByCustomerIdAndBrandId(customer.Id, customer.UniversityId);
+
+                    //generate token
+                    var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
+
+                    decimal balance = 0;
+                    decimal point = 0;
+                    var account = _accountService.GetAccountByCustomerId(customer.Id).Result;
+
+                    //Add fcm token 
+                    if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
+                        _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
+
                     return new BaseResponseViewModel<LoginResponse>()
                     {
                         Status = new StatusViewModel()
                         {
-                            Message = FcmTokenErrorEnums.INVALID_TOKEN.GetDisplayName(),
-                            Success = false,
-                            ErrorCode = (int)FcmTokenErrorEnums.INVALID_TOKEN
+                            Message = "Success",
+                            Success = true,
+                            ErrorCode = 0
+                        },
+                        Data = new LoginResponse()
+                        {
+                            access_token = newToken,
+                            customer = _mapper.Map<CustomerResponse>(customer)
                         }
                     };
+                }
+                else
+                {
+                    CheckMembershipCard(customer, customer.UniversityId);
+
+                    var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
+
+                    if (data.FcmToken != null && !data.FcmToken.Trim().Equals(""))
+                        _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
+
+                    return new BaseResponseViewModel<LoginResponse>()
+                    {
+                        Status = new StatusViewModel()
+                        {
+                            Message = "Success",
+                            Success = true,
+                            ErrorCode = 0
+                        },
+                        Data = new LoginResponse()
+                        {
+                            access_token = newToken,
+                            customer = _mapper.Map<CustomerResponse>(customer)
+                        }
+                    };
+                }
             }
-
-            //decode token -> user record
-            var auth = FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance;
-            FirebaseToken decodeToken = await auth.VerifyIdTokenAsync(data.IdToken);
-            UserRecord userRecord = await auth.GetUserAsync(decodeToken.Uid);
-
-            //check exist customer 
-            var customer = _unitOfWork.Repository<Customer>().GetAll()
-                            .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
-
-            //new customer => add fcm map with Id
-            if (customer == null)
+            catch (ErrorResponse ex)
             {
-                CreateCustomerRequest newCustomer = new CreateCustomerRequest()
-                {
-                    Name = userRecord.DisplayName,
-                    Email = userRecord.Email,
-                    ImageUrl = userRecord.PhotoUrl
-                };
-
-                //create customer
-                await CreateCustomer(newCustomer);
-
-                //create account (wallet) for customer
-                customer = _unitOfWork.Repository<Customer>().GetAll()
-                            .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
-
-                CreateNewMemberShipCard(customer.UniversityId, customer.Id);
-
-                var membership = _membershipCardService.GetMembershipCardActiveByCustomerIdAndBrandId(customer.Id, customer.UniversityId);
-
-                //generate token
-                var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
-
-                decimal balance = 0;
-                decimal point = 0;
-                var account = _accountService.GetAccountByCustomerId(customer.Id).Result;
-
-                //Add fcm token 
-                if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
-                    _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
-
-                return new BaseResponseViewModel<LoginResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = new LoginResponse()
-                    {
-                        access_token = newToken,
-                        customer = _mapper.Map<CustomerResponse>(customer)
-                    }
-                };
-            }
-            else
-            {
-                CheckMembershipCard(customer, customer.UniversityId);
-
-                var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
-
-                if (data.FcmToken != null && !data.FcmToken.Trim().Equals(""))
-                    _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
-
-                return new BaseResponseViewModel<LoginResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = new LoginResponse()
-                    {
-                        access_token = newToken,
-                        customer = _mapper.Map<CustomerResponse>(customer)
-                    }
-                };
+                throw ex;
             }
         }
 
         public void CreateNewMemberShipCard(int uniId, int customerId)
         {
-            string newCardCode = GenerateNewMembershipCardCode(uniId);
-            var card = _membershipCardService.GetMembershipCardByCodeByBrandId(newCardCode, uniId);
-
-            while (card != null) 
+            try
             {
-                newCardCode = GenerateNewMembershipCardCode(uniId);
+                string newCardCode = GenerateNewMembershipCardCode(uniId);
+                var card = _membershipCardService.GetMembershipCardByCodeByBrandId(newCardCode, uniId);
+
+                while (card != null)
+                {
+                    newCardCode = GenerateNewMembershipCardCode(uniId);
+                }
+
+                var newMembershipCard = _membershipCardService.AddMembershipCard(newCardCode, uniId, customerId).Result;
+
+                _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.CreditAccount);
+                _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.PointAccount);
             }
-
-            var newMembershipCard = _membershipCardService.AddMembershipCard(newCardCode, uniId, customerId).Result;
-
-            _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.CreditAccount);
-            _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.PointAccount);
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         private void CheckMembershipCard(Customer customer, int uniId)
         {
-            var membershipCard = customer.MembershipCards.Where(q => (bool)q.Active).FirstOrDefault();
-            //Check MemberShipCard exist
-            if (membershipCard != null)
+            try
             {
-                var accountList = membershipCard.Accounts.ToList();
-                if (accountList.Count() > 0)
+                var membershipCard = customer.MembershipCards.Where(q => (bool)q.Active).FirstOrDefault();
+                //Check MemberShipCard exist
+                if (membershipCard != null)
                 {
-                    //Create CreditAccount
-                    if (accountList.Where(x => x.Type == (int)AccountTypeEnum.CreditAccount) == null)
+                    var accountList = membershipCard.Accounts.ToList();
+                    if (accountList.Count() > 0)
+                    {
+                        //Create CreditAccount
+                        if (accountList.Where(x => x.Type == (int)AccountTypeEnum.CreditAccount) == null)
+                        {
+                            _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.CreditAccount);
+                        }
+                        //Create PointAccount
+                        if (accountList.Where(q => q.Type == (int)AccountTypeEnum.PointAccount) == null)
+                        {
+                            _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.PointAccount);
+                        }
+                    }
+                    else
                     {
                         _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.CreditAccount);
-                    }
-                    //Create PointAccount
-                    if (accountList.Where(q => q.Type == (int)AccountTypeEnum.PointAccount) == null)
-                    {
                         _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.PointAccount);
                     }
                 }
                 else
                 {
-                    _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.CreditAccount);
-                    _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.PointAccount);
+                    //Create new MembershipCard Account
+                    CreateNewMemberShipCard(uniId, customer.Id);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                //Create new MembershipCard Account
-                CreateNewMemberShipCard(uniId, customer.Id);
+                throw ex;
             }
         }
         public static string GenerateNewMembershipCardCode(int uniId)

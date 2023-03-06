@@ -4,7 +4,7 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FINE.API.Controllers
+namespace FINE.API.Controllers.AdminControler
 {
     [Route(Helpers.SettingVersionApi.ApiVersion)]
     [ApiController]

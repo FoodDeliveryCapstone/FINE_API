@@ -5,15 +5,15 @@ using FINE.Service.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FINE.API.Controllers
+namespace FINE.API.Controllers.AdminControler
 {
     [Route(Helpers.SettingVersionApi.ApiVersion)]
     [ApiController]
-    public class UniversityInfoController : ControllerBase
+    public class AdminUniversityInfoController : ControllerBase
     {
         private readonly IUniversityInfoService _universityInfoService;
 
-        public UniversityInfoController(IUniversityInfoService universityInfoService)
+        public AdminUniversityInfoController(IUniversityInfoService universityInfoService)
         {
             _universityInfoService = universityInfoService;
         }
@@ -37,7 +37,7 @@ namespace FINE.API.Controllers
         public async Task<ActionResult<BaseResponseViewModel<UniversityInfoResponse>>> GetUniversityInfoById
             ([FromRoute] int universityInfoId)
         {
-            return await _universityInfoService.GetUniversityInfoById(universityInfoId);    
+            return await _universityInfoService.GetUniversityInfoById(universityInfoId);
         }
 
         /// <summary>

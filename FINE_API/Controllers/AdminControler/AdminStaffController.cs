@@ -21,7 +21,7 @@ namespace FINE.API.Controllers.AdminStaffController
         /// <summary>
         /// Get List Staff    
         /// </summary>
-        [Authorize("SystemAdmin, StoreManager")]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<StaffResponse>>> GetStaffs
             ([FromQuery] StaffResponse request, [FromQuery] PagingRequest paging)
@@ -32,7 +32,7 @@ namespace FINE.API.Controllers.AdminStaffController
         /// <summary>
         /// Get Staff By Id
         /// </summary>
-        [Authorize("SystemAdmin, StoreManager")]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpGet("{staffId}")]
         public async Task<ActionResult<BaseResponseViewModel<StaffResponse>>> GetStaffById
             ([FromRoute] int staffId)
@@ -43,7 +43,7 @@ namespace FINE.API.Controllers.AdminStaffController
         /// <summary>
         /// Create Admin Account                        
         /// </summary>
-        [Authorize("SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin")]
         [HttpPost]
         public async Task<ActionResult<BaseResponseViewModel<StaffResponse>>> CreateAdminManager([FromBody] CreateStaffRequest request)
         {

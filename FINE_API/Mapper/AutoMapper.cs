@@ -46,7 +46,8 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Product
-            CreateMap<Product, ProductResponse>().ReverseMap();
+            CreateMap<Product, ProductResponse>().IncludeMembers(p => p.Store).ReverseMap();
+            CreateMap<Store, ProductResponse>();
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
             CreateMap<UpdateProductExtraRequest, CreateExtraProductRequest>();

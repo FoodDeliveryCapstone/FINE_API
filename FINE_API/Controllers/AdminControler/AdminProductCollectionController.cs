@@ -5,15 +5,15 @@ using FINE.Service.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FINE.API.Controllers
+namespace FINE.API.Controllers.AdminControler
 {
     [Route(Helpers.SettingVersionApi.ApiVersion)]
     [ApiController]
-    public class ProductCollectionController : ControllerBase
+    public class AdminProductCollectionController : ControllerBase
     {
         private readonly IProductCollectionService _productCollectionService;
 
-        public ProductCollectionController(IProductCollectionService productCollectionService)
+        public AdminProductCollectionController(IProductCollectionService productCollectionService)
         {
             _productCollectionService = productCollectionService;
         }
@@ -34,7 +34,7 @@ namespace FINE.API.Controllers
         public async Task<ActionResult<BaseResponseViewModel<ProductCollectionResponse>>> GetProductCollectionById([FromRoute] int productCollectionId)
         {
             return await _productCollectionService.GetProductCollectionById(productCollectionId);
-        }      
+        }
 
         /// <summary>
         /// Get List Product Collection By StoreId

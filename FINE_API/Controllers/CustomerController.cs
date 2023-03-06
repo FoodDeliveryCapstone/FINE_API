@@ -1,5 +1,7 @@
 ﻿using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Customer;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,11 +19,29 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Update thông tin khách hàng
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        [HttpPut("customerId")]
+        public async Task<ActionResult<CustomerResponse>> UpdateCustomer(int customerId, [FromBody] UpdateCustomerRequest data)
+        {
+            try
+            {
+                var result = await _customerService.UpdateCustomer(customerId, data);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Google Login
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        /// [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<CustomerResponse>> LoginGoogle([FromBody] ExternalAuthRequest data)
         {
@@ -30,9 +50,9 @@ namespace FINE.API.Controllers
                 var result = await _customerService.Login(data);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
-                return BadRequest("Invalid External Authentication.");
+                return BadRequest(ex.Error);
             }
         }
         /// <summary>
@@ -40,7 +60,6 @@ namespace FINE.API.Controllers
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        /// [AllowAnonymous]
         [HttpPost("logout")]
         public async Task<ActionResult> Logout([FromBody] LogoutRequest request)
         {

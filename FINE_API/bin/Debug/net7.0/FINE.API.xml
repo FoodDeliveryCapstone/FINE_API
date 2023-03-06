@@ -104,6 +104,26 @@
             Update Product Collection
             </summary>
         </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminTimeSlotController.GetTimeslots(FINE.Service.DTO.Response.TimeslotResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Timeslot    
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminTimeSlotController.GetTimeslotById(System.Int32)">
+            <summary>
+            Get Timeslot by Id  
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminTimeSlotController.CreateTimeslot(FINE.Service.DTO.Request.TimeSlot.CreateTimeslotRequest)">
+            <summary>
+            Create Timeslot
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminTimeSlotController.UpdateTimeslot(System.Int32,FINE.Service.DTO.Request.TimeSlot.UpdateTimeslotRequest)">
+            <summary>
+            Update Timeslot
+            </summary>
+        </member>
         <member name="M:FINE.API.Controllers.AdminControler.AdminUniversityInfoController.GetUniversityInfo(FINE.Service.DTO.Response.UniversityInfoResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
             Get List University Info
@@ -244,13 +264,19 @@
             </summary>
             
         </member>
+        <member name="M:FINE.API.Controllers.CustomerController.UpdateCustomer(System.Int32,FINE.Service.DTO.Request.Customer.UpdateCustomerRequest)">
+            <summary>
+            Update thông tin khách hàng
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
         <member name="M:FINE.API.Controllers.CustomerController.LoginGoogle(FINE.Service.DTO.Request.ExternalAuthRequest)">
             <summary>
             Google Login
             </summary>
             <param name="data"></param>
             <returns></returns>
-            [AllowAnonymous]
         </member>
         <member name="M:FINE.API.Controllers.CustomerController.Logout(FINE.Service.DTO.Request.LogoutRequest)">
             <summary>
@@ -258,7 +284,6 @@
             </summary>
             <param name="data"></param>
             <returns></returns>
-            [AllowAnonymous]
         </member>
         <member name="M:FINE.API.Controllers.NotifyController.GetNotifys(FINE.Service.DTO.Response.NotifyResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>

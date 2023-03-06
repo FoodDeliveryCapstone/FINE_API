@@ -2,18 +2,19 @@
 using FINE.Service.DTO.Request.University;
 using FINE.Service.DTO.Response;
 using FINE.Service.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FINE.API.Controllers
 {
-    [Route(Helpers.SettingVersionApi.ApiVersion)]
+    [Route(Helpers.SettingVersionApi.ApiAdminVersion + "/university")]
     [ApiController]
-    public class UniversityController : ControllerBase
+    public class AdminUniversityController : ControllerBase
     {
         private readonly IUniversityService _universityService;
 
-        public UniversityController(IUniversityService universityService)
+        public AdminUniversityController(IUniversityService universityService)
         {
             _universityService = universityService;
         }
@@ -22,7 +23,7 @@ namespace FINE.API.Controllers
         /// Get List Universities
         /// </summary>
         ///
-
+        [Authorize(Roles = "SystemAdmin")]
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<UniversityResponse>>> GetUniversities
             ([FromQuery] UniversityResponse filter, [FromQuery] PagingRequest request)
@@ -34,7 +35,7 @@ namespace FINE.API.Controllers
         /// Get University By Id
         /// </summary>
         ///
-
+        [Authorize(Roles = "SystemAdmin")]
         [HttpGet("{universityId}")]
         public async Task<ActionResult<BaseResponseViewModel<UniversityResponse>>> GetUniversityById
             ([FromRoute] int universityId)
@@ -45,7 +46,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Create University
         /// </summary>
-        ///
+        [Authorize(Roles = "SystemAdmin")]
         [HttpPost]
         public async Task<ActionResult<BaseResponseViewModel<UniversityResponse>>> CreateUniversity
             ([FromBody] CreateUniversityRequest request)
@@ -57,7 +58,7 @@ namespace FINE.API.Controllers
         /// Update University 
         /// </summary>
         ///
-
+        [Authorize(Roles = "SystemAdmin")]
         [HttpPut("{universityId}")]
         public async Task<ActionResult<BaseResponseViewModel<UniversityResponse>>> UpdateUniversity
             ([FromRoute] int universityId, [FromBody] UpdateUniversityRequest request)
