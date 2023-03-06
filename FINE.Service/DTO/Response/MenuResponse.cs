@@ -13,7 +13,7 @@ namespace FINE.Service.DTO.Response
 
         public int TimeSlotId { get; set; }
 
-        public string MenuName { get; set; } = null!;
+        public string? MenuName { get; set; }
 
         public bool IsActive { get; set; }
 

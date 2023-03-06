@@ -19,6 +19,7 @@ using FINE.Service.DTO.Request.University;
 using FINE.Service.DTO.Response;
 using FINE.Service.DTO.Request.Noti;
 using FINE.Service.DTO.Request.TimeSlot;
+using FINE.Service.DTO.Request.Menu;
 using FINE.API.Controllers;
 
 namespace FINE.API.Mapper
@@ -112,6 +113,8 @@ namespace FINE.API.Mapper
 
             #region Menu
             CreateMap<Menu, MenuResponse>().ReverseMap();
+            CreateMap<CreateMenuRequest, Menu>();
+            CreateMap<UpdateMenuRequest, Menu>();
             #endregion
 
             #region TimeSlot
