@@ -18,6 +18,9 @@ using FINE.Service.DTO.Request.SystemCategory;
 using FINE.Service.DTO.Request.University;
 using FINE.Service.DTO.Response;
 using FINE.Service.DTO.Request.Noti;
+using FINE.Service.DTO.Request.TimeSlot;
+using FINE.Service.DTO.Request.Menu;
+using FINE.API.Controllers;
 
 namespace FINE.API.Mapper
 {
@@ -107,6 +110,23 @@ namespace FINE.API.Mapper
             CreateMap<CreateUniversityRequest, University>();
             CreateMap<UpdateUniversityRequest, University>();
             #endregion
+
+            #region Menu
+            CreateMap<Menu, MenuResponse>().ReverseMap();
+            CreateMap<CreateMenuRequest, Menu>();
+            CreateMap<UpdateMenuRequest, Menu>();
+            #endregion
+
+            #region TimeSlot
+            //CreateMap<TimeSlot, TimeSlotResponse>().ReverseMap();
+            CreateMap<CreateTimeSlotRequest, TimeSlot>();
+            CreateMap<UpdateTimeSlotRequest, TimeSlot>();
+
+            CreateMap<TimeSlot, TimeSlotResponse>()
+
+                    .ForMember(dest => dest.stores, opt => opt.MapFrom(src => src.Campus.Stores))
+                    .ForMember(dest => dest.menus, opt => opt.MapFrom(src => src.Menus)).ReverseMap();          
+           #endregion
         }
     }
 }
