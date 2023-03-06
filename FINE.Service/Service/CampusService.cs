@@ -7,6 +7,7 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Campus;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -24,22 +25,23 @@ namespace FINE.Service.Service
     {
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+
         public CampusService(IMapper mapper, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponsePagingViewModel<CampusResponse>> GetListCampus(CampusResponse filter, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<CampusResponse>> GetListCampus(CampusResponse filter,
+            PagingRequest paging)
         {
             try
             {
                 var campus = _unitOfWork.Repository<Campus>().GetAll()
-                                    .ProjectTo<CampusResponse>(_mapper.ConfigurationProvider)
-                                    .DynamicFilter(filter)
-                                    .DynamicSort(filter)
-                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
+                    .ProjectTo<CampusResponse>(_mapper.ConfigurationProvider)
+                    .DynamicFilter(filter)
+                    .DynamicSort(filter)
+                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
                 return new BaseResponsePagingViewModel<CampusResponse>()
                 {
                     Metadata = new PagingsMetadata()
@@ -60,8 +62,8 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<CampusResponse>> GetCampusById(int CampusId)
         {
             var campus = _unitOfWork.Repository<Campus>().GetAll()
-                          .FirstOrDefault(x => x.Id == CampusId);
-
+                .Include(x => x.TimeSlots)
+                .FirstOrDefault(x => x.Id == CampusId);
             if (campus == null)
                 throw new ErrorResponse(404, (int)CampusErrorEnums.NOT_FOUND_ID,
                     CampusErrorEnums.NOT_FOUND_ID.GetDisplayName());
@@ -101,7 +103,7 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<CampusResponse>> UpdateCampus(int CampusId, UpdateCampusRequest request)
         {
             var campus = _unitOfWork.Repository<Campus>()
-                 .Find(c => c.Id == CampusId);
+                .Find(c => c.Id == CampusId);
 
             if (campus == null)
                 throw new ErrorResponse(404, (int)CampusErrorEnums.NOT_FOUND_ID,
@@ -123,7 +125,6 @@ namespace FINE.Service.Service
                 },
                 Data = _mapper.Map<CampusResponse>(campus)
             };
-
         }
     }
 }

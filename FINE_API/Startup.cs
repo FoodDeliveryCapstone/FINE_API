@@ -47,7 +47,10 @@ namespace FINE.API
                         .AllowAnyMethod();
                     });
             });
-            services.AddControllersWithViews();
+            services.AddControllersWithViews()
+                .AddNewtonsoftJson(options =>
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+            );;
             services.AddControllers(options =>
             {
                 options.Conventions.Add(new RouteTokenTransformerConvention(new SlugifyParameterTransformer()));
@@ -115,7 +118,7 @@ namespace FINE.API
             builder.RegisterType<NotifyService>().As<INotifyService>();
             builder.RegisterType<ProductService>().As<IProductService>();
             builder.RegisterType<AccountService>().As<IAccountService>();
-            builder.RegisterType<TimeslotService>().As<ITimeslotService>();
+            // builder.RegisterType<TimeslotService>().As<ITimeslotService>();
             builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
             builder.RegisterType<CustomerService>().As<ICustomerService>();
             builder.RegisterType<BlogPostService>().As<IBlogPostService>();

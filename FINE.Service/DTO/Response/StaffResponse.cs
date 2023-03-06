@@ -9,6 +9,7 @@ namespace FINE.Service.DTO.Response
     public class StaffResponse
     {
         public int Id { get; set; }
+        public string? Name { get; set; }
         public string? Username { get; set; }
         public byte[]? Password { get; set; }
         public string? RoleType { get; set; }

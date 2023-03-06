@@ -2,7 +2,7 @@
 {
     public class CreateStoreRequest
     {
-        public int DestinationId { get; set; }
+        public int CampusId { get; set; }
         public string StoreName { get; set; } = null!;
         public string? ImageUrl { get; set; }
         public string? ContactPerson { get; set; }
