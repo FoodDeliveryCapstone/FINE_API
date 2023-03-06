@@ -7,6 +7,7 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -27,10 +28,12 @@ namespace FINE.Service.Service
     {
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
-        public ProductService(IMapper mapper, IUnitOfWork unitOfWork)
+        private readonly FineStgDbContext _context;
+        public ProductService(IMapper mapper, IUnitOfWork unitOfWork, FineStgDbContext context)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _context = context;
         }
 
         public async Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request)
@@ -162,12 +165,15 @@ namespace FINE.Service.Service
 
         public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProducts(ProductResponse filter, PagingRequest paging)
         {
+
             var product = _unitOfWork.Repository<Product>().GetAll()
-                .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
-                .DynamicFilter(filter)
-            .DynamicSort(filter)
-            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-            Constants.DefaultPaging);
+                            .Include(c => c.Store)
+                            .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
+                            .DynamicFilter(filter)
+                            .DynamicSort(filter)
+                            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                                Constants.DefaultPaging);
+
 
             return new BaseResponsePagingViewModel<ProductResponse>()
             {

@@ -34,8 +34,11 @@ namespace FINE.Service.Helpers
 
         public enum CampusErrorEnums
         {
+            //400
+            [Display(Name = "This campus code already exsist!")]
+            CAMPUS_CODE_EXSIST = 4001,
             //404
-            [Display(Name = "Not found this brand id!")]
+            [Display(Name = "Not found this campus id!")]
             NOT_FOUND_ID = 4041
         }
 
