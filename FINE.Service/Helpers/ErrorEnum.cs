@@ -209,5 +209,12 @@ namespace FINE.Service.Helpers
             [Display(Name = "This university code already exsist!")]
             CODE_EXSIST = 4001,
         }
+
+        public enum MenuErrorEnums
+        {
+            //404
+            [Display(Name = "Not found this menu id!")]
+            NOT_FOUND_ID = 4041
+        }
     }
 }
