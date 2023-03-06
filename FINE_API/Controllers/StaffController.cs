@@ -35,5 +35,14 @@ namespace FINE.API.Controllers
                 return BadRequest("Invalid External Authentication.");
             }
         }
+        
+        /// <summary>
+        /// Get all staff for system admin
+        /// </summary>
+        [HttpGet()]
+        public async Task<ActionResult<BaseResponsePagingViewModel<StaffResponse>>> GetStaffs([FromRoute] StaffResponse staffResponse, [FromRoute] PagingRequest pagingRequest)
+        {
+            return await _staffService.GetStaffs(staffResponse,pagingRequest );
+        }
     }
 }

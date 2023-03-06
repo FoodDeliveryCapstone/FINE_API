@@ -4,58 +4,88 @@ using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.Commons;
 using FINE.Service.DTO.Request;
-using FINE.Service.DTO.Request.Product;
+using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
-using Microsoft.EntityFrameworkCore;
 using NTQ.Sdk.Core.Utilities;
-using System.Linq.Dynamic.Core;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Text;
+using System.Threading.Tasks;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
 {
     public interface ITimeSlotService
     {
-        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByStoreAndTimeslot(int storeId, int timeslotId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByTimeslot(int timeslotId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetTimeSlots(TimeSlotResponse filter, PagingRequest paging);
+        Task<BaseResponseViewModel<TimeSlotResponse>> GetTimeSlotById(int timeslotId);
+        Task<BaseResponseViewModel<TimeSlotResponse>> CreateTimeslot(CreateTimeslotRequest request);
+        Task<BaseResponseViewModel<TimeSlotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request);
     }
 
     public class TimeSlotService : ITimeSlotService
     {
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+
         public TimeSlotService(IMapper mapper, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByStoreAndTimeslot(int storeId, int timeslotId, PagingRequest paging)
+        public async Task<BaseResponseViewModel<TimeSlotResponse>> CreateTimeslot(CreateTimeslotRequest request)
         {
-            #region check store and timeslot exist
-            var checkStore = _unitOfWork.Repository<Store>().GetAll()
-                          .FirstOrDefault(x => x.Id == storeId);
-            if (checkStore == null)
-                throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
-                    StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
+            var timeslot = _mapper.Map<CreateTimeslotRequest, TimeSlot>(request);
+            timeslot.CreateAt = DateTime.Now;
 
-            var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
-                          .FirstOrDefault(x => x.Id == timeslotId);
-            if (checkTimeslot == null)
-                throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                    TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
-            #endregion
+            await _unitOfWork.Repository<TimeSlot>().InsertAsync(timeslot);
+            await _unitOfWork.CommitAsync();
 
+            return new BaseResponseViewModel<TimeSlotResponse>()
+            {
+                Status = new StatusViewModel()
+                {
+                    Message = "Success",
+                    Success = true,
+                    ErrorCode = 0
+                },
+                Data = _mapper.Map<TimeSlotResponse>(timeslot)
+            };
+        }
+
+        public async Task<BaseResponseViewModel<TimeSlotResponse>> GetTimeSlotById(int timeslotId)
+        {
             var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
+                                          .FirstOrDefault(x => x.Id == timeslotId);
+            if (timeslot == null)
+            {
+                //throw new ErrorResponse(404, (int)TimeslotErrorEnums.NOT_FOUND_TIME,
+                //                    TimeslotErrorEnums.NOT_FOUND_TIME.GetDisplayName());
+            }
+            return new BaseResponseViewModel<TimeSlotResponse>()
+            {
+                Status = new StatusViewModel()
+                {
+                    Message = "Success",
+                    Success = true,
+                    ErrorCode = 0
+                },
+                Data = _mapper.Map<TimeSlotResponse>(timeslot)
+            };
+        }
 
-               .Include(x => x.Campus)
-               .ThenInclude(x => x.Stores)
-               .ThenInclude(x => x.Products)
-               .Where(x => x.Id == timeslotId && (x.Campus.Stores.Any(y => y.Id == storeId)))
-
-               .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
-               .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-       
+        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetTimeSlots(TimeSlotResponse filter, PagingRequest paging)
+        {
+            var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
+                                      .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
+                                      .DynamicFilter(filter)
+                                      .DynamicSort(filter)
+                                      .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                    Constants.DefaultPaging);
             return new BaseResponsePagingViewModel<TimeSlotResponse>()
             {
                 Metadata = new PagingsMetadata()
@@ -68,35 +98,26 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByTimeslot(int timeslotId, PagingRequest paging)
+        public async Task<BaseResponseViewModel<TimeSlotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request)
         {
-            #region check timeslot exist
-            var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
-                          .FirstOrDefault(x => x.Id == timeslotId);
-            if (checkTimeslot == null)
-                throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                    TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
-            #endregion
+            TimeSlot timeslot = _unitOfWork.Repository<TimeSlot>()
+                                            .Find(x => x.Id == timeslotId);
+            //if(timeslot == null)
+            //    throw new ErrorResponse(404, (int)TimeslotErrorEnums.NOT_FOUND_TIME,
+            //                        TimeslotErrorEnums.NOT_FOUND_TIME.GetDisplayName());
+            var timeslotMappingResult = _mapper.Map<UpdateTimeslotRequest, TimeSlot>(request, timeslot);
+            await _unitOfWork.Repository<TimeSlot>().UpdateDetached(timeslotMappingResult);
+            await _unitOfWork.CommitAsync();
 
-            var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
-
-             .Include(x => x.Menus)
-             .ThenInclude(x => x.ProductInMenus)
-             .ThenInclude(x => x.Product)
-             .Where(x => x.Id == timeslotId)
-
-             .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
-             .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
-            return new BaseResponsePagingViewModel<TimeSlotResponse>()
+            return new BaseResponseViewModel<TimeSlotResponse>()
             {
-                Metadata = new PagingsMetadata()
+                Status = new StatusViewModel()
                 {
-                    Page = paging.Page,
-                    Size = paging.PageSize,
-                    Total = timeslot.Item1
+                    Message = "Success",
+                    Success = true,
+                    ErrorCode = 0
                 },
-                Data = timeslot.Item2.ToList()
+                Data = _mapper.Map<TimeSlotResponse>(timeslotMappingResult)
             };
         }
     }

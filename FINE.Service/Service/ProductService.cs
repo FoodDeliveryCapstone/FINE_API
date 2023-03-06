@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Linq.Dynamic.Core;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
@@ -26,11 +27,13 @@ namespace FINE.Service.Service
 
     public class ProductService : IProductService
     {
+        private readonly FineStgDbContext _context;
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly FineStgDbContext _context;
+
         public ProductService(IMapper mapper, IUnitOfWork unitOfWork, FineStgDbContext context)
         {
+            _context = context;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _context = context;
@@ -41,7 +44,7 @@ namespace FINE.Service.Service
             var checkProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == request.ProductCode);
             if (checkProduct != null)
                 throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
-                                    ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
+                    ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
 
             var product = _mapper.Map<CreateProductRequest, Product>(request);
 
@@ -72,6 +75,7 @@ namespace FINE.Service.Service
                     await _unitOfWork.CommitAsync();
                 }
             }
+
             return new BaseResponseViewModel<ProductResponse>()
             {
                 Status = new StatusViewModel()
@@ -83,7 +87,8 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId,
+            PagingRequest paging)
         {
             var products = _unitOfWork.Repository<Product>().GetAll()
                 .Where(x => x.CategoryId == cateId)
@@ -105,11 +110,11 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<ProductResponse>> GetProductByCode(string code)
         {
             var product = _unitOfWork.Repository<Product>().GetAll()
-              .FirstOrDefault(x => x.ProductCode == code);
+                .FirstOrDefault(x => x.ProductCode == code);
 
             if (product == null)
                 throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_CODE,
-                                                ProductErrorEnums.NOT_FOUND_CODE.GetDisplayName());
+                    ProductErrorEnums.NOT_FOUND_CODE.GetDisplayName());
 
             return new BaseResponseViewModel<ProductResponse>()
             {
@@ -126,7 +131,7 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<ProductResponse>> GetProductById(int productId)
         {
             var product = _unitOfWork.Repository<Product>().GetAll()
-                          .FirstOrDefault(x => x.Id == productId);
+                .FirstOrDefault(x => x.Id == productId);
 
             if (product == null)
                 throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
@@ -144,7 +149,8 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId,
+            PagingRequest paging)
         {
             var products = _unitOfWork.Repository<Product>().GetAll()
                 .Where(x => x.StoreId == storeId)
@@ -163,16 +169,17 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProducts(ProductResponse filter, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProducts(ProductResponse filter,
+            PagingRequest paging)
         {
 
             var product = _unitOfWork.Repository<Product>().GetAll()
-                            .Include(c => c.Store)
-                            .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
-                            .DynamicFilter(filter)
-                            .DynamicSort(filter)
-                            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                                Constants.DefaultPaging);
+                .Include(x => x.Store)
+                .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
+                .DynamicFilter(filter)
+                .DynamicSort(filter)
+                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                    Constants.DefaultPaging);
 
 
             return new BaseResponsePagingViewModel<ProductResponse>()
@@ -187,7 +194,8 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int ProductId, UpdateProductRequest request)
+        public async Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int ProductId,
+            UpdateProductRequest request)
         {
             //update general product
             var product = _unitOfWork.Repository<Product>().GetAll()
@@ -197,7 +205,8 @@ namespace FINE.Service.Service
                 throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
                     ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
-            var checkProductCode = _unitOfWork.Repository<Product>().GetWhere(x => x.Id != ProductId && x.ProductCode.Contains(request.ProductCode));
+            var checkProductCode = _unitOfWork.Repository<Product>()
+                .GetWhere(x => x.Id != ProductId && x.ProductCode.Contains(request.ProductCode));
             if (checkProductCode != null)
                 throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
                     ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
@@ -212,8 +221,8 @@ namespace FINE.Service.Service
             if (request.extraProduct != null)
             {
                 var extraProduct = _unitOfWork.Repository<Product>().GetAll()
-                .Where(x => x.GeneralProductId == ProductId)
-                .ToList();
+                    .Where(x => x.GeneralProductId == ProductId)
+                    .ToList();
                 //ban đầu sản phẩm không có product extra -> create
                 if (extraProduct == null)
                 {
@@ -223,6 +232,7 @@ namespace FINE.Service.Service
                         CreateExtraProduct(ProductId, newProductExtra);
                     }
                 }
+
                 // ban đầu sản phẩm có product extra 
                 foreach (var item in request.extraProduct)
                 {
@@ -232,6 +242,7 @@ namespace FINE.Service.Service
                         var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
                         CreateExtraProduct(ProductId, newProductExtra);
                     }
+
                     //đã từng được create thì kiếm id đó trong list có sẵn -> update
                     var extraProductUpdate = extraProduct.Find(x => x.Id == item.Id);
                     var updateProductExtra = _mapper.Map<UpdateProductRequest, Product>(request, extraProductUpdate);
@@ -248,6 +259,7 @@ namespace FINE.Service.Service
                     await _unitOfWork.CommitAsync();
                 }
             }
+
             return new BaseResponseViewModel<ProductResponse>()
             {
                 Status = new StatusViewModel()

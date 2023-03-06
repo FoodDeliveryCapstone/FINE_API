@@ -11,9 +11,9 @@ namespace FINE.API.Controllers.AdminControler
     [ApiController]
     public class AdminTimeSlotController : Controller
     {
-        private readonly ITimeslotService _timeslotService;
+        private readonly ITimeSlotService _timeslotService;
 
-        public AdminTimeSlotController(ITimeslotService timeslotService)
+        public AdminTimeSlotController(ITimeSlotService timeslotService)
         {
             _timeslotService = timeslotService;
         }
@@ -23,8 +23,8 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
         [HttpGet]
-        public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslots
-            ([FromQuery] TimeslotResponse filter, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<TimeSlotResponse>>> GetTimeslots
+            ([FromQuery] TimeSlotResponse filter, [FromQuery] PagingRequest paging)
         {
             return await _timeslotService.GetTimeSlots(filter, paging);
         }
@@ -34,7 +34,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
         [HttpGet("{timeslotId}")]
-        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> GetTimeslotById
+        public async Task<ActionResult<BaseResponseViewModel<TimeSlotResponse>>> GetTimeslotById
             ([FromRoute] int timeslotId)
         {
             return await _timeslotService.GetTimeSlotById(timeslotId);
@@ -45,7 +45,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> CreateTimeslot
+        public async Task<ActionResult<BaseResponseViewModel<TimeSlotResponse>>> CreateTimeslot
             ([FromBody] CreateTimeslotRequest request)
         {
             return await _timeslotService.CreateTimeslot(request);
@@ -56,8 +56,9 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
         [HttpPut("{timeslotId}")]
-        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> UpdateTimeslot
+        public async Task<ActionResult<BaseResponseViewModel<TimeSlotResponse>>> UpdateTimeslot
             ([FromRoute] int timeslotId, [FromBody] UpdateTimeslotRequest request)
+       
         {
             return await _timeslotService.UpdateTimeslot(timeslotId, request);
         }

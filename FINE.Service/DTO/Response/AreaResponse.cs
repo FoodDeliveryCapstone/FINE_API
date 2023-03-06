@@ -1,4 +1,6 @@
-﻿namespace FINE.Service.DTO.Response
+﻿using FINE.Data.Entity;
+
+namespace FINE.Service.DTO.Response
 {
     public class AreaResponse
     {
@@ -7,5 +9,6 @@
         public string? AreaCode { get; set; }
         public DateTime CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
+        public ICollection<RoomResponse>? Rooms { get; set; } 
     }
 }

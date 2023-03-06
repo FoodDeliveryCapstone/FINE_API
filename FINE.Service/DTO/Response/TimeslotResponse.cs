@@ -6,14 +6,23 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
-    public class TimeslotResponse
+    public class TimeSlotResponse
     {
         public int Id { get; set; }
-        public int DestinationId { get; set; }
+
+        public int CampusId { get; set; }
+
         public TimeSpan ArriveTime { get; set; }
+
         public TimeSpan CheckoutTime { get; set; }
+
         public bool IsActive { get; set; }
+
         public DateTime CreateAt { get; set; }
+
         public DateTime? UpdateAt { get; set; }
+        public ICollection<StoreResponse>? stores { get; set; }
+        public ICollection<MenuResponse>? menus { get; set; }
+
     }
 }
