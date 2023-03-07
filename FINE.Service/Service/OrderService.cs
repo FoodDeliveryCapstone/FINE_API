@@ -57,25 +57,25 @@ namespace FINE.Service.Service
                 }
                 #endregion 
 
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
+                var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
+                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+
                 #region Phân store trong order detail
                 List<PreOrderDetailByStoreRequest> listODByStore = new List<PreOrderDetailByStoreRequest>();
                 foreach (var orderDetailRequest in request.OrderDetails)
                 {
-                    #region check menu and timeslot
+                    #region check menu
                     var check = _unitOfWork.Repository<ProductInMenu>().GetAll()
                         .Include(x => x.Menu)
-                        .ThenInclude(x => x.TimeSlot)
                         .Where(x => x.Id == orderDetailRequest.ProductInMenuId)
                         .FirstOrDefault();
 
                     if (check.Menu == null)
                         throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
                            MenuErrorEnums.NOT_FOUND.GetDisplayName());
-
-                    var range = check.Menu.TimeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
-                    if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-                        throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                            TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                     #endregion
 
                     if (!listODByStore.Any(x => x.StoreId == orderDetailRequest.StoreId))
@@ -111,15 +111,13 @@ namespace FINE.Service.Service
 
                     order.TotalAmount = 0;
                     foreach (var item in storeOrderDetail.Details)
+                    {
                         order.TotalAmount += item.TotalAmount;
+                    }
 
                     order.FinalAmount = order.TotalAmount;
                     order.OrderStatus = (int)OrderStatusEnum.PreOrder;
                     order.IsConfirm = false;
-
-                    var od = _mapper.Map<List<CreatePreOrderDetailRequest>, List<OrderDetail>>(storeOrderDetail.Details);
-                    foreach (var orderDetail in od)
-                        order.OrderDetails.Add(orderDetail);
 
                     genOrder.InverseGeneralOrder.Add(order);
                     genOrder.TotalAmount += order.TotalAmount;

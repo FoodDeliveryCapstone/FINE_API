@@ -13,8 +13,6 @@ namespace FINE.Service.DTO.Request.Order
 
         public string? DeliveryPhone { get; set; }
 
-        public double TotalAmount { get; set; }
-
         public int OrderType { get; set; }
 
         public int TimeSlotId { get; set; }
@@ -42,8 +40,6 @@ namespace FINE.Service.DTO.Request.Order
         public int Quantity { get; set; }
 
         public double TotalAmount { get; set; }
-
-        public double FinalAmount { get; set; }
 
         public string? Note { get; set; }
     }
