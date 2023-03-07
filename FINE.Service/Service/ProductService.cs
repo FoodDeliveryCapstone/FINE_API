@@ -172,9 +172,7 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProducts(ProductResponse filter,
             PagingRequest paging)
         {
-
             var product = _unitOfWork.Repository<Product>().GetAll()
-                .Include(x => x.Store)
                 .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
                 .DynamicFilter(filter)
                 .DynamicSort(filter)

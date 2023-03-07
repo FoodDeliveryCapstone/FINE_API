@@ -10,6 +10,7 @@ namespace FINE.Service.DTO.Response
         [String] public string? ProductCode { get; set; }
         [String] public string? ProductName { get; set; }
         public int CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public int StoreId { get; set; }
         public string? StoreName { get; set; }
         public double BasePrice { get; set; }

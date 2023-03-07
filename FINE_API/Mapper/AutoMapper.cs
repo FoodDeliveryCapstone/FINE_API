@@ -55,8 +55,9 @@ namespace FINE.API.Mapper
 
             #region Product
 
-            CreateMap<Product, ProductResponse>().IncludeMembers(x => x.Store).ReverseMap();
+            CreateMap<Product, ProductResponse>().IncludeMembers(x => x.Store, x => x.Category).ReverseMap();
             CreateMap<Store, ProductResponse>();
+            CreateMap<SystemCategory, ProductResponse>();
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
             CreateMap<UpdateProductExtraRequest, CreateExtraProductRequest>();
@@ -97,13 +98,17 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Area
+
             CreateMap<Area, AreaResponse>().ReverseMap();
             CreateMap<CreateAreaRequest, Area>();
             CreateMap<UpdateAreaRequest, Area>();
+
             #endregion
 
             #region Room
+
             CreateMap<Room, RoomResponse>().ReverseMap();
+
             #endregion
 
             #region Campus
@@ -147,9 +152,11 @@ namespace FINE.API.Mapper
             #endregion
 
             #region TimeSlot
+
             CreateMap<TimeSlot, TimeSlotResponse>()
                 .ForMember(dest => dest.stores, opt => opt.MapFrom(src => src.Campus.Stores))
                 .ForMember(dest => dest.menus, opt => opt.MapFrom(src => src.Menus)).ReverseMap();
+
             #endregion
         }
     }
