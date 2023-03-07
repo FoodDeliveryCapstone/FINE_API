@@ -113,5 +113,12 @@ namespace FINE.Service.Helpers
             IsNotDialog = 0,
             IsDialog = 1
         }
+
+        public enum ProductInMenuStatusEnum
+        {
+            New = 0,
+            Avaliable = 1,
+            OutOfStock = 2
+        }
     }
 }
