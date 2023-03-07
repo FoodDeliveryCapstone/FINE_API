@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading.Tasks;
 using static FINE.Service.Helpers.Enum;
@@ -19,7 +20,9 @@ namespace FINE.Service.Service
 {
     public interface IOrderService
     {
-        Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreateOrderRequest request);
+        Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreatePreOrderRequest request);
+        //Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(CreateOrderRequest request);
+
     }
     public class OrderService : IOrderService
     {
@@ -32,12 +35,11 @@ namespace FINE.Service.Service
             _mapper = mapper;
         }
 
-        #region Single Order
-        public async Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreateOrderRequest request)
+        public async Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreatePreOrderRequest request)
         {
             try
             {
-                //customer
+                #region Customer
                 var customer = await _unitOfWork.Repository<Customer>().GetById(request.CustomerId);
 
                 //check phone number
@@ -53,30 +55,37 @@ namespace FINE.Service.Service
                     request.DeliveryPhone = request.DeliveryPhone.TrimStart(new char[] { '0' });
                     request.DeliveryPhone = "+84" + request.DeliveryPhone;
                 }
+                #endregion 
 
-                //Create basic info for genOrder
-                Order genOrder = new Order();
-                var orderCount = _unitOfWork.Repository<Order>().GetAll()
-                                    .Where(x => ((DateTime)x.CheckInDate).Date.Equals(DateTime.Now.Date)).Count() + 1;
-                genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
-                                   orderCount.ToString().PadLeft(3, '0') + "." +
-                                   Ultils.GenerateRandomCode();
-                genOrder.CheckInDate= DateTime.Now;
-                genOrder.TotalAmount = 0;
-                genOrder.ShippingFee = 0;
-
-                //Phân store trong order detail
-                List<OrderDetailByStoreRequest> listODByStore = new List<OrderDetailByStoreRequest>();
+                #region Phân store trong order detail
+                List<PreOrderDetailByStoreRequest> listODByStore = new List<PreOrderDetailByStoreRequest>();
                 foreach (var orderDetailRequest in request.OrderDetails)
-                {                 
+                {
+                    #region check menu and timeslot
+                    var check = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                        .Include(x => x.Menu)
+                        .ThenInclude(x => x.TimeSlot)
+                        .Where(x => x.Id == orderDetailRequest.ProductInMenuId)
+                        .FirstOrDefault();
+
+                    if (check.Menu == null)
+                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
+                           MenuErrorEnums.NOT_FOUND.GetDisplayName());
+
+                    var range = check.Menu.TimeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
+                    if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                        throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                            TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                    #endregion
+
                     if (!listODByStore.Any(x => x.StoreId == orderDetailRequest.StoreId))
                     {
-                        OrderDetailByStoreRequest od = new OrderDetailByStoreRequest();
+                        PreOrderDetailByStoreRequest od = new PreOrderDetailByStoreRequest();
                         od.StoreId = orderDetailRequest.StoreId;
 
-                        od.Details = new List<CreateOrderDetailRequest>();
+                        od.Details = new List<CreatePreOrderDetailRequest>();
                         od.Details.Add(orderDetailRequest);
-                        listODByStore.Add(od);                        
+                        listODByStore.Add(od);
                     }
                     else
                     {
@@ -85,8 +94,14 @@ namespace FINE.Service.Service
                             .Add(orderDetailRequest);
                     }
                 }
+                #endregion
 
-                //Tách đơn  
+                //Create basic info for genOrder
+                Order genOrder = new Order();
+                genOrder.TotalAmount = 0;
+                genOrder.ShippingFee = 0;
+
+                #region Tách đơn  
                 foreach (var storeOrderDetail in listODByStore)
                 {
                     var order = _mapper.Map<Order>(request);
@@ -95,20 +110,20 @@ namespace FINE.Service.Service
                     order.CheckInDate = DateTime.Now;
 
                     order.TotalAmount = 0;
-                    foreach(var item in storeOrderDetail.Details)
+                    foreach (var item in storeOrderDetail.Details)
                         order.TotalAmount += item.TotalAmount;
 
                     order.FinalAmount = order.TotalAmount;
                     order.OrderStatus = (int)OrderStatusEnum.PreOrder;
                     order.IsConfirm = false;
 
-                    var od = _mapper.Map<List<CreateOrderDetailRequest>,List<OrderDetail>>(storeOrderDetail.Details);
-                    foreach(var orderDetail in od)
+                    var od = _mapper.Map<List<CreatePreOrderDetailRequest>, List<OrderDetail>>(storeOrderDetail.Details);
+                    foreach (var orderDetail in od)
                         order.OrderDetails.Add(orderDetail);
 
                     genOrder.InverseGeneralOrder.Add(order);
                     genOrder.TotalAmount += order.TotalAmount;
-                    if(genOrder.ShippingFee == 0)
+                    if (genOrder.ShippingFee == 0)
                     {
                         genOrder.ShippingFee = 5000;
                     }
@@ -117,8 +132,16 @@ namespace FINE.Service.Service
                         genOrder.ShippingFee += 2000;
                     }
                 }
+                #endregion
 
-                genOrder =  _mapper.Map<CreateOrderRequest, Order>(request, genOrder);
+                genOrder = _mapper.Map<CreatePreOrderRequest, Order>(request, genOrder);
+
+                var orderCount = _unitOfWork.Repository<Order>().GetAll()
+                                            .Where(x => ((DateTime)x.CheckInDate).Date.Equals(DateTime.Now.Date)).Count() + 1;
+                genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
+                                        orderCount.ToString().PadLeft(3, '0') + "." +
+                                        Ultils.GenerateRandomCode();
+                genOrder.CheckInDate = DateTime.Now;
                 genOrder.FinalAmount = (double)(genOrder.TotalAmount + genOrder.ShippingFee);
                 genOrder.OrderStatus = (int)OrderStatusEnum.PreOrder;
                 genOrder.IsConfirm = false;
@@ -138,11 +161,10 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<GenOrderResponse>(genOrder)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
         }
-        #endregion
     }
 }

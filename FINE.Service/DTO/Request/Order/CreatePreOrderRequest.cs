@@ -7,27 +7,13 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Request.Order
 {
-    public class CreateOrderRequest
+    public class CreatePreOrderRequest
     {
-        //public int Id { get; set; }
-
-        //public string OrderCode { get; set; } = null!;
-
         public int CustomerId { get; set; }
 
         public string? DeliveryPhone { get; set; }
 
-        //public DateTime CheckInDate { get; set; }
-
         public double TotalAmount { get; set; }
-
-        //public double? Discount { get; set; }
-
-        //public double FinalAmount { get; set; }
-
-        //public double ShippingFee { get; set; }
-
-        //public int OrderStatus { get; set; }
 
         public int OrderType { get; set; }
 
@@ -35,23 +21,13 @@ namespace FINE.Service.DTO.Request.Order
 
         public int RoomId { get; set; }
 
-        //public int StoreId { get; set; }
-
         public bool IsConfirm { get; set; }
 
-        //public bool IsPartyMode { get; set; }
-
-        //public int? ShipperId { get; set; }
-
         public string? Note { get; set; }
-        public ICollection<CreateOrderDetailRequest> OrderDetails { get; set; }
+        public ICollection<CreatePreOrderDetailRequest> OrderDetails { get; set; }
     }
-    public class CreateOrderDetailRequest
+    public class CreatePreOrderDetailRequest
     {
-        //public int Id { get; set; }
-
-        //public int OrderId { get; set; }
-
         public int ProductInMenuId { get; set; }
 
         public string ProductCode { get; set; } 
@@ -67,16 +43,14 @@ namespace FINE.Service.DTO.Request.Order
 
         public double TotalAmount { get; set; }
 
-        //public double? Discount { get; set; }
-
         public double FinalAmount { get; set; }
 
         public string? Note { get; set; }
     }
-    public class OrderDetailByStoreRequest
+    public class PreOrderDetailByStoreRequest
     {
         public int StoreId { get; set; }
 
-        public List<CreateOrderDetailRequest> Details { get; set; }
+        public List<CreatePreOrderDetailRequest> Details { get; set; }
     }
 }
