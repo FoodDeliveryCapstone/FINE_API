@@ -153,10 +153,26 @@ namespace FINE.API.Mapper
 
             #region TimeSlot
 
-            CreateMap<TimeSlot, TimeSlotResponse>()
-                .ForMember(dest => dest.stores, opt => opt.MapFrom(src => src.Campus.Stores))
-                .ForMember(dest => dest.menus, opt => opt.MapFrom(src => src.Menus)).ReverseMap();
+            //CreateMap<TimeSlot, TimeSlotResponse>()
+            //    .ForMember(dest => dest.stores, opt => opt.MapFrom(src => src.Campus.Stores))
+            //    .ForMember(dest => dest.menus, opt => opt.MapFrom(src => src.Menus))
 
+            #region Get Product By Timeslot
+            CreateMap<TimeSlot, TimeSlotResponse>()
+                .ForMember(dest => dest.prodctCollectionTimeSlots, opt => opt.MapFrom(src => src.ProductCollectionTimeSlots)).ReverseMap();
+
+            CreateMap<ProductCollectionTimeSlot, ProductCollectionTimeSlotResponse>()
+                .ForMember(dest => dest.productCollection, opt => opt.MapFrom(src => src.ProductCollection)).ReverseMap();
+
+            CreateMap<ProductCollection, ProductCollectionResponse>()
+                .ForMember(dest => dest.productionItemCollections, opt => opt.MapFrom(src => src.ProductionCollectionItems)).ReverseMap();
+            
+            CreateMap<ProductionCollectionItem, ProductionCollectionItemResponse>()
+                .ForMember(dest => dest.product, opt => opt.MapFrom(src => src.Product)).ReverseMap();
+            
+            CreateMap<Product, ProductResponse>()
+                .ForMember(dest => dest.products, opt => opt.MapFrom(src => src.InverseGeneralProduct)).ReverseMap();
+            #endregion
             #endregion
         }
     }

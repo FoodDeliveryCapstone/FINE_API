@@ -7,6 +7,7 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using NTQ.Sdk.Core.Utilities;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ namespace FINE.Service.Service
     public interface ITimeSlotService
     {
         Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetTimeSlots(TimeSlotResponse filter, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging);
         Task<BaseResponseViewModel<TimeSlotResponse>> GetTimeSlotById(int timeslotId);
         Task<BaseResponseViewModel<TimeSlotResponse>> CreateTimeslot(CreateTimeslotRequest request);
         Task<BaseResponseViewModel<TimeSlotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request);
@@ -118,6 +120,37 @@ namespace FINE.Service.Service
                     ErrorCode = 0
                 },
                 Data = _mapper.Map<TimeSlotResponse>(timeslotMappingResult)
+            };
+        }
+
+        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging)
+        {
+            var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
+                                          .Include(x => x.ProductCollectionTimeSlots)
+                                          .ThenInclude(x => x.ProductCollection)
+                                          .ThenInclude(x => x.ProductionCollectionItems)
+                                          .ThenInclude(x => x.Product)
+                                          .Where(x => x.Id == timeslotId)
+                                          .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
+                                          .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+            #region Check Timeslot
+            //if (timeslot == null)
+            //{
+            //    throw new ErrorResponse(404, (int)TimeslotErrorEnums.NOT_FOUND_TIME,
+            //                        TimeslotErrorEnums.NOT_FOUND_TIME.GetDisplayName());
+            //}
+            #endregion
+
+            return new BaseResponsePagingViewModel<TimeSlotResponse>()
+            {
+                Metadata = new PagingsMetadata()
+                {
+                    Page = paging.Page,
+                    Size = paging.PageSize,
+                    Total = timeslot.Item1
+                },
+                Data = timeslot.Item2.ToList()
             };
         }
     }
