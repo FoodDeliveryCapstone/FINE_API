@@ -22,6 +22,6 @@ namespace FINE.Service.DTO.Response
         public DateTime CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; } 
 
-        public virtual ICollection<ProductionCollectionItemResponse>? productionItemCollections { get; set; }
+        public virtual ICollection<ProductionCollectionItemResponse>? ProductionCollectionItems { get; set; }
     }
 }

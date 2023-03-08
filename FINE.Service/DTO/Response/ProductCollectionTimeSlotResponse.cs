@@ -18,7 +18,7 @@
 
         public DateTime UpdatedAt { get; set; }
 
-        public ProductCollectionResponse? productCollection { get; set; }
+        public ProductCollectionResponse? ProductCollection { get; set; }
 
     }
 }

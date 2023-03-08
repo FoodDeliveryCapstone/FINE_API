@@ -25,7 +25,7 @@ namespace FINE.Service.DTO.Response
         //public ICollection<StoreResponse>? stores { get; set; }
         //public ICollection<MenuResponse>? menus { get; set; }
 
-        public ICollection<ProductCollectionTimeSlotResponse>? prodctCollectionTimeSlots { get; set; }
+        public ICollection<ProductCollectionTimeSlotResponse>? ProductCollectionTimeSlots { get; set; }
 
     }
 }

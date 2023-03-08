@@ -1,9 +1,13 @@
-﻿using FINE.Data.Entity;
-using FINE.Service.Commons;
+﻿using FINE.Service.Commons;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
-    public class ProductResponse
+    public class GeneralProductResponse
     {
         [Int] public int Id { get; set; }
         [Int] public int? GeneralProductId { get; set; }
@@ -19,5 +23,7 @@ namespace FINE.Service.DTO.Response
         public bool IsActive { get; set; }
         public DateTime CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
+
+        public ICollection<ProductResponse>? InverseGeneralProduct { get; set; }
     }
 }
