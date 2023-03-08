@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
-    public class TimeSlotResponse
+    public class TimeslotResponse
     {
         public int Id { get; set; }
 
