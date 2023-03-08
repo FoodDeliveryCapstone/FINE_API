@@ -21,13 +21,13 @@ namespace FINE.Service.Service
 {
     public interface ITimeslotService
     {
-        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetTimeSlots(TimeSlotResponse filter, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging);
-        Task<BaseResponseViewModel<TimeSlotResponse>> GetTimeSlotById(int timeslotId);
-        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductThroughMenuByTimeslot(int timeslotId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeSlots(TimeslotResponse filter, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging);
+        Task<BaseResponseViewModel<TimeslotResponse>> GetTimeSlotById(int timeslotId);
+        Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductThroughMenuByTimeslot(int timeslotId, PagingRequest paging);
 
-        Task<BaseResponseViewModel<TimeSlotResponse>> CreateTimeslot(CreateTimeslotRequest request);
-        Task<BaseResponseViewModel<TimeSlotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request);
+        Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request);
+        Task<BaseResponseViewModel<TimeslotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request);
     }
 
     public class TimeslotService : ITimeslotService
@@ -41,7 +41,7 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponseViewModel<TimeSlotResponse>> CreateTimeslot(CreateTimeslotRequest request)
+        public async Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request)
         {
             var timeslot = _mapper.Map<CreateTimeslotRequest, TimeSlot>(request);
             timeslot.CreateAt = DateTime.Now;
@@ -49,7 +49,7 @@ namespace FINE.Service.Service
             await _unitOfWork.Repository<TimeSlot>().InsertAsync(timeslot);
             await _unitOfWork.CommitAsync();
 
-            return new BaseResponseViewModel<TimeSlotResponse>()
+            return new BaseResponseViewModel<TimeslotResponse>()
             {
                 Status = new StatusViewModel()
                 {
@@ -57,11 +57,11 @@ namespace FINE.Service.Service
                     Success = true,
                     ErrorCode = 0
                 },
-                Data = _mapper.Map<TimeSlotResponse>(timeslot)
+                Data = _mapper.Map<TimeslotResponse>(timeslot)
             };
         }
 
-        public async Task<BaseResponseViewModel<TimeSlotResponse>> GetTimeSlotById(int timeslotId)
+        public async Task<BaseResponseViewModel<TimeslotResponse>> GetTimeSlotById(int timeslotId)
         {
             var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                           .FirstOrDefault(x => x.Id == timeslotId);
@@ -70,7 +70,7 @@ namespace FINE.Service.Service
                 //throw new ErrorResponse(404, (int)TimeslotErrorEnums.NOT_FOUND_TIME,
                 //                    TimeslotErrorEnums.NOT_FOUND_TIME.GetDisplayName());
             }
-            return new BaseResponseViewModel<TimeSlotResponse>()
+            return new BaseResponseViewModel<TimeslotResponse>()
             {
                 Status = new StatusViewModel()
                 {
@@ -78,19 +78,19 @@ namespace FINE.Service.Service
                     Success = true,
                     ErrorCode = 0
                 },
-                Data = _mapper.Map<TimeSlotResponse>(timeslot)
+                Data = _mapper.Map<TimeslotResponse>(timeslot)
             };
         }
 
-        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetTimeSlots(TimeSlotResponse filter, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeSlots(TimeslotResponse filter, PagingRequest paging)
         {
             var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
-                                      .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
+                                      .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
                                       .DynamicFilter(filter)
                                       .DynamicSort(filter)
                                       .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
                                     Constants.DefaultPaging);
-            return new BaseResponsePagingViewModel<TimeSlotResponse>()
+            return new BaseResponsePagingViewModel<TimeslotResponse>()
             {
                 Metadata = new PagingsMetadata()
                 {
@@ -102,7 +102,7 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponseViewModel<TimeSlotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request)
+        public async Task<BaseResponseViewModel<TimeslotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request)
         {
             TimeSlot timeslot = _unitOfWork.Repository<TimeSlot>()
                                             .Find(x => x.Id == timeslotId);
@@ -113,7 +113,7 @@ namespace FINE.Service.Service
             await _unitOfWork.Repository<TimeSlot>().UpdateDetached(timeslotMappingResult);
             await _unitOfWork.CommitAsync();
 
-            return new BaseResponseViewModel<TimeSlotResponse>()
+            return new BaseResponseViewModel<TimeslotResponse>()
             {
                 Status = new StatusViewModel()
                 {
@@ -121,11 +121,11 @@ namespace FINE.Service.Service
                     Success = true,
                     ErrorCode = 0
                 },
-                Data = _mapper.Map<TimeSlotResponse>(timeslotMappingResult)
+                Data = _mapper.Map<TimeslotResponse>(timeslotMappingResult)
             };
         }
 
-        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging)
         {
             var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                           .Include(x => x.ProductCollectionTimeSlots)
@@ -133,7 +133,7 @@ namespace FINE.Service.Service
                                           .ThenInclude(x => x.ProductionCollectionItems)
                                           .ThenInclude(x => x.Product)
                                           .Where(x => x.Id == timeslotId)
-                                          .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
+                                          .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             #region Check Timeslot
@@ -144,7 +144,7 @@ namespace FINE.Service.Service
             //}
             #endregion
 
-            return new BaseResponsePagingViewModel<TimeSlotResponse>()
+            return new BaseResponsePagingViewModel<TimeslotResponse>()
             {
                 Metadata = new PagingsMetadata()
                 {
@@ -156,7 +156,7 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductThroughMenuByTimeslot(int timeslotId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductThroughMenuByTimeslot(int timeslotId, PagingRequest paging)
         {
             #region check timeslot exist
             var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
@@ -173,10 +173,10 @@ namespace FINE.Service.Service
              .ThenInclude(x => x.Product)
              .Where(x => x.Id == timeslotId)
 
-             .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
+             .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
              .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-            return new BaseResponsePagingViewModel<TimeSlotResponse>()
+            return new BaseResponsePagingViewModel<TimeslotResponse>()
             {
                 Metadata = new PagingsMetadata()
                 {

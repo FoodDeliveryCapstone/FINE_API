@@ -24,6 +24,6 @@
         public string? EmailRoot { get; set; }
         // public DateTime CreateAt { get; set; }
         // public DateTime? UpdateAt { get; set; }
-        public ICollection<TimeSlotResponse>?Timeslots { get; set; } 
+        public ICollection<TimeslotResponse>?Timeslots { get; set; } 
     }
 }

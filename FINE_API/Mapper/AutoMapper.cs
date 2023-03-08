@@ -154,11 +154,11 @@ namespace FINE.API.Mapper
 
             #region TimeSlot
 
-            CreateMap<TimeSlot, TimeSlotResponse>().ReverseMap();
+            CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
 
 
             #region Get Product By Timeslot
-            CreateMap<TimeSlot, TimeSlotResponse>()
+            CreateMap<TimeSlot, TimeslotResponse>()
                 .ForMember(dest => dest.prodctCollectionTimeSlots, opt => opt.MapFrom(src => src.ProductCollectionTimeSlots)).ReverseMap();
 
             CreateMap<ProductCollectionTimeSlot, ProductCollectionTimeSlotResponse>()

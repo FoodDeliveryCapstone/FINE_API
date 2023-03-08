@@ -23,7 +23,7 @@ namespace FINE.API.Controllers
         /// 
 
         [HttpGet("{timeslotId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<TimeSlotResponse>>> GetTimeslots
+        public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslots
             ([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
         {
             return await _timeslotService.GetProductByTimeSlot(timeslotId, paging);
@@ -33,7 +33,7 @@ namespace FINE.API.Controllers
         /// Get List Product through List Menu by TimeslotId
         /// </summary>
         [HttpGet("{timeslotId}/menu/product")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<TimeSlotResponse>>> GetProductsThroughMenuByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetProductsThroughMenuByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
         {
             return await _timeslotService.GetProductThroughMenuByTimeslot(timeslotId, paging);
         }
