@@ -10,9 +10,9 @@ namespace FINE.API.Controllers
     [ApiController]
     public class TimeSlotController : ControllerBase
     {
-        private readonly ITimeSlotService _timeslotService;
+        private readonly ITimeslotService _timeslotService;
 
-        public TimeSlotController(ITimeSlotService timeslotService)
+        public TimeSlotController(ITimeslotService timeslotService)
         {
             _timeslotService = timeslotService;
         }
@@ -27,6 +27,15 @@ namespace FINE.API.Controllers
             ([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
         {
             return await _timeslotService.GetProductByTimeSlot(timeslotId, paging);
+        }
+
+        /// <summary>
+        /// Get List Product through List Menu by TimeslotId
+        /// </summary>
+        [HttpGet("{timeslotId}/menu/product")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<TimeSlotResponse>>> GetProductsThroughMenuByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
+        {
+            return await _timeslotService.GetProductThroughMenuByTimeslot(timeslotId, paging);
         }
 
     }

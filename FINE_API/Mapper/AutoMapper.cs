@@ -145,17 +145,17 @@ namespace FINE.API.Mapper
 
             #region Menu
 
-            CreateMap<Menu, MenuResponse>().ReverseMap();
+            CreateMap<Menu, MenuResponse>()
+                .ForMember(dest => dest.Product, opt => opt.MapFrom(src => src.ProductInMenus)).ReverseMap();
             CreateMap<CreateMenuRequest, Menu>();
             CreateMap<UpdateMenuRequest, Menu>();
-
+            CreateMap<ProductInMenu, ProductResponse>().ReverseMap();
             #endregion
 
             #region TimeSlot
 
-            //CreateMap<TimeSlot, TimeSlotResponse>()
-            //    .ForMember(dest => dest.stores, opt => opt.MapFrom(src => src.Campus.Stores))
-            //    .ForMember(dest => dest.menus, opt => opt.MapFrom(src => src.Menus))
+            CreateMap<TimeSlot, TimeSlotResponse>().ReverseMap();
+
 
             #region Get Product By Timeslot
             CreateMap<TimeSlot, TimeSlotResponse>()

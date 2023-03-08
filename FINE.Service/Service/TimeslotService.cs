@@ -19,21 +19,23 @@ using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
 {
-    public interface ITimeSlotService
+    public interface ITimeslotService
     {
         Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetTimeSlots(TimeSlotResponse filter, PagingRequest paging);
         Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging);
         Task<BaseResponseViewModel<TimeSlotResponse>> GetTimeSlotById(int timeslotId);
+        Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductThroughMenuByTimeslot(int timeslotId, PagingRequest paging);
+
         Task<BaseResponseViewModel<TimeSlotResponse>> CreateTimeslot(CreateTimeslotRequest request);
         Task<BaseResponseViewModel<TimeSlotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request);
     }
 
-    public class TimeSlotService : ITimeSlotService
+    public class TimeslotService : ITimeslotService
     {
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
 
-        public TimeSlotService(IMapper mapper, IUnitOfWork unitOfWork)
+        public TimeslotService(IMapper mapper, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
@@ -141,6 +143,38 @@ namespace FINE.Service.Service
             //                        TimeslotErrorEnums.NOT_FOUND_TIME.GetDisplayName());
             //}
             #endregion
+
+            return new BaseResponsePagingViewModel<TimeSlotResponse>()
+            {
+                Metadata = new PagingsMetadata()
+                {
+                    Page = paging.Page,
+                    Size = paging.PageSize,
+                    Total = timeslot.Item1
+                },
+                Data = timeslot.Item2.ToList()
+            };
+        }
+
+        public async Task<BaseResponsePagingViewModel<TimeSlotResponse>> GetProductThroughMenuByTimeslot(int timeslotId, PagingRequest paging)
+        {
+            #region check timeslot exist
+            var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
+                          .FirstOrDefault(x => x.Id == timeslotId);
+            if (checkTimeslot == null)
+                throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
+                    TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+            #endregion
+
+            var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
+
+             .Include(x => x.Menus)
+             .ThenInclude(x => x.ProductInMenus)
+             .ThenInclude(x => x.Product)
+             .Where(x => x.Id == timeslotId)
+
+             .ProjectTo<TimeSlotResponse>(_mapper.ConfigurationProvider)
+             .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             return new BaseResponsePagingViewModel<TimeSlotResponse>()
             {

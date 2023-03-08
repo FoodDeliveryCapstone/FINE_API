@@ -11,9 +11,9 @@ namespace FINE.API.Controllers.AdminControler
     [ApiController]
     public class AdminTimeSlotController : Controller
     {
-        private readonly ITimeSlotService _timeslotService;
+        private readonly ITimeslotService _timeslotService;
 
-        public AdminTimeSlotController(ITimeSlotService timeslotService)
+        public AdminTimeSlotController(ITimeslotService timeslotService)
         {
             _timeslotService = timeslotService;
         }

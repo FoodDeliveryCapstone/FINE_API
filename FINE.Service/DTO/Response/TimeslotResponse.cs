@@ -22,8 +22,7 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
 
-        //public ICollection<StoreResponse>? stores { get; set; }
-        //public ICollection<MenuResponse>? menus { get; set; }
+        public ICollection<MenuResponse>? Menus { get; set; }
 
         public ICollection<ProductCollectionTimeSlotResponse>? prodctCollectionTimeSlots { get; set; }
 
