@@ -23,6 +23,8 @@ public partial class Campus
 
     public virtual ICollection<Area> Areas { get; } = new List<Area>();
 
+    public virtual ICollection<Floor> Floors { get; } = new List<Floor>();
+
     public virtual ICollection<Staff> Staff { get; } = new List<Staff>();
 
     public virtual ICollection<Store> Stores { get; } = new List<Store>();
