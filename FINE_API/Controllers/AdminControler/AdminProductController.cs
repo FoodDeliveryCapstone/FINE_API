@@ -57,6 +57,17 @@ public class AdminProductController : Controller
         return await _productService.GetProductByCategory(categoryId, paging);
     }
 
+
+    /// <summary>
+    /// Get List Product By MenuId
+    /// </summary>
+    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpGet("menu/{menuId}")]
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProductsByMenuId([FromRoute] int menuId, [FromQuery] PagingRequest paging)
+    {
+        return await _productService.GetProductByMenu(menuId, paging);
+    }
+
     /// <summary>
     /// Create Product
     /// </summary>

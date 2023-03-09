@@ -13,6 +13,7 @@ namespace FINE.Service.DTO.Response
         public string? CategoryName { get; set; }
         public int StoreId { get; set; }
         public string? StoreName { get; set; }
+        public string? ImageUrl { get; set; }
         public double BasePrice { get; set; }
         public double? SizePrice { get; set; }
         public string? Size { get; set; }

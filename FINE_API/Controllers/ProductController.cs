@@ -56,5 +56,15 @@ public class ProductController : Controller
         return await _productService.GetProductByCategory(categoryId, paging);
     }
 
-    
+    /// <summary>
+    /// Get List Product By MenuId
+    /// </summary>
+
+    [HttpGet("menu/{menuId}")]
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProductsByMenuId([FromRoute] int menuId, [FromQuery] PagingRequest paging)
+    {
+        return await _productService.GetProductByMenu(menuId, paging);
+    }
+
+
 }

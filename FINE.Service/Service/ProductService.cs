@@ -9,6 +9,7 @@ using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Algorithm;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -21,6 +22,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<ProductResponse>> GetProductByCode(string code);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
     }
@@ -305,6 +307,44 @@ namespace FINE.Service.Service
             };
             await _unitOfWork.Repository<Product>().InsertAsync(productExtra);
             await _unitOfWork.CommitAsync();
+        }
+
+        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging)
+        {
+            try
+            {
+                #region check floor and area exist
+                var checkMenu = _unitOfWork.Repository<Menu>().GetAll()
+                              .FirstOrDefault(x => x.Id == menuId);
+                if (checkMenu == null)
+                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_ID,
+                        MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                #endregion
+
+                var product = _unitOfWork.Repository<Product>().GetAll()
+
+                  .Include(x => x.ProductInMenus)
+                  .ThenInclude(x => x.Menu)
+                 .Where(x => x.ProductInMenus.Any(x => x.Menu.Id == menuId))
+
+                 .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
+                 .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<ProductResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = product.Item1
+                    },
+                    Data = product.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
     }
 }
