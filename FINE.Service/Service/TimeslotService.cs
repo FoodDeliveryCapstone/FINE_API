@@ -25,7 +25,6 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging);
         Task<BaseResponseViewModel<TimeslotResponse>> GetTimeSlotById(int timeslotId);
         Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeslotsByCampus(int campusId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductThroughMenuByTimeslot(int timeslotId, PagingRequest paging);
 
         Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request);
         Task<BaseResponseViewModel<TimeslotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request);

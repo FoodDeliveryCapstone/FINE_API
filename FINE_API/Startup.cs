@@ -136,6 +136,7 @@ namespace FINE.API
             builder.RegisterType<MenuService>().As<IMenuService>();
             builder.RegisterType<AddProductToMenuService>().As<IAddProductToMenuService>();
             builder.RegisterType<RoomService>().As<IRoomService>();
+            builder.RegisterType<FloorService>().As<IFloorService>();
 
             builder.RegisterGeneric(typeof(GenericRepository<>))
             .As(typeof(IGenericRepository<>))
