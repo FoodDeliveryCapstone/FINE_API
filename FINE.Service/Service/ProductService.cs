@@ -30,13 +30,16 @@ namespace FINE.Service.Service
         private readonly FineStgDbContext _context;
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private IAddProductToMenuService _addProductToMenuService;
 
-        public ProductService(IMapper mapper, IUnitOfWork unitOfWork, FineStgDbContext context)
+        
+       
+        public ProductService(FineStgDbContext context,IMapper mapper, IUnitOfWork unitOfWork, IAddProductToMenuService addProductToMenuService)
         {
             _context = context;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
-            _context = context;
+            _addProductToMenuService = addProductToMenuService;
         }
 
         public async Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request)
@@ -74,6 +77,21 @@ namespace FINE.Service.Service
                     await _unitOfWork.Repository<Product>().InsertAsync(productExtra);
                     await _unitOfWork.CommitAsync();
                 }
+
+            }
+
+            
+            //Add Product to Menu 
+            if (request.addProductToMenu != null)
+            {
+
+                var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                var addProductToMenu = request.addProductToMenu.FirstOrDefault();
+                if (addProductToMenu.ProductId == null)
+                {
+                    addProductToMenu.ProductId = genProduct.Id;
+                }
+                await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
             }
 
             return new BaseResponseViewModel<ProductResponse>()

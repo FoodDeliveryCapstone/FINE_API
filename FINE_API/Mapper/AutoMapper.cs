@@ -18,7 +18,9 @@ using FINE.Service.DTO.Request.SystemCategory;
 using FINE.Service.DTO.Request.University;
 using FINE.Service.DTO.Response;
 using FINE.Service.DTO.Request.Noti;
+using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Request.Menu;
+using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.API.Controllers;
 
 namespace FINE.API.Mapper
@@ -149,13 +151,14 @@ namespace FINE.API.Mapper
                 .ForMember(dest => dest.Product, opt => opt.MapFrom(src => src.ProductInMenus)).ReverseMap();
             CreateMap<CreateMenuRequest, Menu>();
             CreateMap<UpdateMenuRequest, Menu>();
-            CreateMap<ProductInMenu, ProductResponse>().ReverseMap();
+           
             #endregion
 
             #region TimeSlot
 
             CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
-
+            CreateMap<CreateTimeslotRequest, TimeSlot>();
+            CreateMap<UpdateTimeslotRequest, TimeSlot>();
 
             #region Get Product By Timeslot
             CreateMap<TimeSlot, TimeslotResponse>()
@@ -173,6 +176,13 @@ namespace FINE.API.Mapper
             CreateMap<Product, ProductResponse>()
                 .ForMember(dest => dest.products, opt => opt.MapFrom(src => src.InverseGeneralProduct)).ReverseMap();
             #endregion
+
+            #endregion
+
+            #region Product In Menu
+            CreateMap<ProductInMenu, AddProductToMenuResponse>().ReverseMap();
+            CreateMap<AddProductToMenuRequest, ProductInMenu>();
+            CreateMap<ProductInMenu, ProductResponse>().ReverseMap();
             #endregion
         }
     }
