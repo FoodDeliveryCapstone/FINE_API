@@ -22,9 +22,8 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
 
-        public ICollection<MenuResponse>? Menus { get; set; }
+       
 
-        public ICollection<ProductCollectionTimeSlotResponse>? prodctCollectionTimeSlots { get; set; }
 
     }
 }

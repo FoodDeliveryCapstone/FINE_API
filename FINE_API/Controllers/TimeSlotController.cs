@@ -1,41 +1,43 @@
-﻿using FINE.Service.DTO.Request;
+﻿using FINE.Service.DTO.Request.TimeSlot;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Response;
-using FINE.Service.Service;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using FINE.Service.Service;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FINE.API.Controllers
 {
     [Route(Helpers.SettingVersionApi.ApiVersion)]
     [ApiController]
-    public class TimeSlotController : ControllerBase
+    public class TimeslotController : Controller
     {
         private readonly ITimeslotService _timeslotService;
 
-        public TimeSlotController(ITimeslotService timeslotService)
+        public TimeslotController(ITimeslotService timeslotService)
         {
             _timeslotService = timeslotService;
         }
 
         /// <summary>
-        /// Get Product By Timeslot Id       
+        /// Get List Timeslot    
         /// </summary>
-        /// 
-
-        [HttpGet("{timeslotId}")]
+        
+        [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslots
-            ([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
+            ([FromQuery] TimeslotResponse filter, [FromQuery] PagingRequest paging)
         {
-            return await _timeslotService.GetProductByTimeSlot(timeslotId, paging);
+            return await _timeslotService.GetTimeSlots(filter, paging);
         }
 
         /// <summary>
-        /// Get List Product through List Menu by TimeslotId
+        /// Get Timeslot by Id  
         /// </summary>
-        [HttpGet("{timeslotId}/menu/product")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetProductsThroughMenuByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
+       
+        [HttpGet("{timeslotId}")]
+        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> GetTimeslotById
+            ([FromRoute] int timeslotId)
         {
-            return await _timeslotService.GetProductThroughMenuByTimeslot(timeslotId, paging);
+            return await _timeslotService.GetTimeSlotById(timeslotId);
         }
 
     }

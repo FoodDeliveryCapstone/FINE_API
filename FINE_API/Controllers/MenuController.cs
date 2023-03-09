@@ -1,5 +1,7 @@
-﻿using FINE.Service.DTO.Request;
+﻿using System.Net.NetworkInformation;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Menu;
+using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
@@ -13,14 +15,33 @@ namespace FINE.API.Controllers
     public class MenuController : ControllerBase
     {
         private readonly IMenuService _menuService;
+
         public MenuController(IMenuService menuService)
         {
             _menuService = menuService;
         }
 
         /// <summary>
+        /// Get List Menu
+        /// </summary>
+
+        [HttpGet]
+        public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenus([FromQuery] MenuResponse request, [FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _menuService.GetMenus(request, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Get Menu By Id
-        /// </summary>     
+        /// </summary>
+   
         [HttpGet("{menuId}")]
         public async Task<ActionResult<BaseResponseViewModel<MenuResponse>>> GetMenuById([FromRoute] int menuId)
         {
@@ -37,6 +58,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get List Menu by TimeslotId
         /// </summary>
+        
         [HttpGet("timeslot/{timeslotId}")]
         public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenusByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
         {
@@ -49,5 +71,6 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
+
     }
 }
