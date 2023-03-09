@@ -5,9 +5,11 @@ namespace FINE.Service.DTO.Request.Customer
     public class UpdateCustomerRequest
     {
         [String]
-        public string Name { get; set; }
+        public string? Name { get; set; }
         [String]
-        public string Phone { get; set; }
-        public string ImageUrl { get; set; }
+        public string? Phone { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string? ImageUrl { get; set; }
+
     }
 }

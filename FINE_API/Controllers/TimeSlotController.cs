@@ -4,6 +4,7 @@ using FINE.Service.DTO.Response;
 using Microsoft.AspNetCore.Mvc;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
+using FINE.Service.Exceptions;
 
 namespace FINE.API.Controllers
 {
@@ -21,12 +22,19 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get List Timeslot    
         /// </summary>
-        
+
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslots
             ([FromQuery] TimeslotResponse filter, [FromQuery] PagingRequest paging)
         {
-            return await _timeslotService.GetTimeSlots(filter, paging);
+            try
+            {
+                return await _timeslotService.GetTimeSlots(filter, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
@@ -37,7 +45,32 @@ namespace FINE.API.Controllers
         public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> GetTimeslotById
             ([FromRoute] int timeslotId)
         {
-            return await _timeslotService.GetTimeSlotById(timeslotId);
+            try
+            {
+                return await _timeslotService.GetTimeSlotById(timeslotId);
+            }
+            catch(ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Get Timeslot by CampusId  
+        /// </summary>
+
+        [HttpGet("campus/{campusId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslotsByCampus
+            ([FromRoute] int campusId, [FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _timeslotService.GetTimeslotsByCampus(campusId, paging);
+            }
+            catch(ErrorResponse ex)
+            { 
+                return BadRequest(ex.Error); 
+            }
         }
 
     }
