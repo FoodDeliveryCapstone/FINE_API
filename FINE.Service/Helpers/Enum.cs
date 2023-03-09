@@ -37,16 +37,16 @@ namespace FINE.Service.Helpers
         }
         public enum AccountTypeEnum
         {
-            CreditAccount = 0,
-            PointAccount = 1
+            CreditAccount = 1,
+            PointAccount = 2
         }
         public enum MembershipCardTypeEnum
         {
-            Free = 0,
-            Green = 1,
-            Siver = 2,
-            Gold = 3,
-            Platinum = 4,
+            Free = 1,
+            Green = 2,
+            Siver = 3,
+            Gold = 4,
+            Platinum = 5,
         }
 
         public enum OrderTypeEnum
@@ -57,9 +57,9 @@ namespace FINE.Service.Helpers
 
         public enum ProductStatusEnum
         {
-            New = 0,
-            Avaliable = 1,
-            OutOfStock = 2
+            New = 1,
+            Avaliable = 2,
+            OutOfStock = 3
         }
 
         public enum OrderStatusEnum
@@ -94,10 +94,10 @@ namespace FINE.Service.Helpers
 
         public enum NotifyStatusEnum
         {
-            IsNotRead = 0,
-            IsNotActive = 0,
-            IsAvtive = 1,
-            IsRead = 1
+            IsNotRead = 1,
+            IsNotActive = 1,
+            IsAvtive = 2,
+            IsRead = 2
         }
 
         public enum UniversityStatusEnum
@@ -108,17 +108,17 @@ namespace FINE.Service.Helpers
 
         public enum BlogPostStatusEnum
         { 
-            IsNotActive = 0,
-            IsActive = 1,
-            IsNotDialog = 0,
-            IsDialog = 1
+            IsNotActive = 1,
+            IsActive = 2,
+            IsNotDialog = 1,
+            IsDialog = 2
         }
 
         public enum ProductInMenuStatusEnum
         {
-            New = 0,
-            Avaliable = 1,
-            OutOfStock = 2
+            New = 1,
+            Avaliable = 2,
+            OutOfStock = 3
         }
     }
 }

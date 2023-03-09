@@ -84,7 +84,7 @@ namespace FINE.Service.Service
 
             
             //Add Product to Menu 
-            if (request.addProductToMenu != null)
+            if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
             {
 
                 var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
