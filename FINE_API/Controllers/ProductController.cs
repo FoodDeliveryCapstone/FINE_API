@@ -37,16 +37,6 @@ public class ProductController : Controller
     }
 
     /// <summary>
-    /// Get Product By ProductInMenuId
-    /// </summary>
-
-    [HttpGet("productInMenu/{productInMenuId}")]
-    public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> GetProductByProductInMenu([FromRoute] int productInMenuId)
-    {
-        return await _productService.GetProductByProductInMenu(productInMenuId);
-    }
-
-    /// <summary>
     /// Get List Product By StoreId
     /// </summary>
 

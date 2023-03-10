@@ -25,7 +25,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging);
-        Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productInMenuId);
+        Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
     }
@@ -378,7 +378,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productInMenuId)
+        public async Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId)
         {
             try
             {
@@ -388,12 +388,8 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND_ID,
                         ProductInMenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
-                var product = _unitOfWork.Repository<Product>().GetAll()
-                    .Include(x => x.ProductInMenus)
-               .FirstOrDefault(x => x.ProductInMenus.Any(x => x.Id == productInMenuId));
 
-
-                return new BaseResponseViewModel<ProductResponse>()
+                return new BaseResponseViewModel<ProductInMenuResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -401,7 +397,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<ProductResponse>(product)
+                    Data = _mapper.Map<ProductInMenuResponse>(productInMenu)
                 };
             }
             catch(ErrorResponse ex)

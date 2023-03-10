@@ -187,8 +187,10 @@ namespace FINE.API.Mapper
             CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
             //CreateMap<ProductInMenu, ProductResponse>()/*.ReverseMap()*/;
             CreateMap<ProductInMenu, Product>().ReverseMap();
+            CreateMap<Store, ProductInMenuResponse>().ReverseMap();
+            CreateMap<SystemCategory, ProductInMenuResponse>().ReverseMap();
             CreateMap<ProductInMenu, ProductInMenuResponse>()
-                .IncludeMembers(x => x.Product)
+                .IncludeMembers(x => x.Product, x => x.Product.Store, x => x.Product.Category)
                 .ReverseMap();
             #endregion
 
