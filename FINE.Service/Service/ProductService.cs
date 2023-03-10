@@ -224,7 +224,7 @@ namespace FINE.Service.Service
                     ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
             var checkProductCode = _unitOfWork.Repository<Product>()
-                .GetWhere(x => x.Id != ProductId && x.ProductCode.Contains(request.ProductCode));
+                   .Find(x => x.Id != ProductId && x.ProductCode == request.ProductCode);
             if (checkProductCode != null)
                 throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
                     ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
@@ -236,7 +236,7 @@ namespace FINE.Service.Service
             await _unitOfWork.Repository<Product>().UpdateDetached(updateProduct);
             await _unitOfWork.CommitAsync();
             //update product extra (nếu có)
-            if (request.extraProduct != null)
+            if (request.extraProducts != null)
             {
                 var extraProduct = _unitOfWork.Repository<Product>().GetAll()
                     .Where(x => x.GeneralProductId == ProductId)
@@ -244,7 +244,7 @@ namespace FINE.Service.Service
                 //ban đầu sản phẩm không có product extra -> create
                 if (extraProduct == null)
                 {
-                    foreach (var item in request.extraProduct)
+                    foreach (var item in request.extraProducts)
                     {
                         var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
                         CreateExtraProduct(ProductId, newProductExtra);
@@ -252,7 +252,7 @@ namespace FINE.Service.Service
                 }
 
                 // ban đầu sản phẩm có product extra 
-                foreach (var item in request.extraProduct)
+                foreach (var item in request.extraProducts)
                 {
                     // ktra request đã từng được create hay chưa (chưa có id là chưa từng đc create)
                     if (item.Id == null)
@@ -313,7 +313,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                #region check floor and area exist
+                #region menu exsist
                 var checkMenu = _unitOfWork.Repository<Menu>().GetAll()
                               .FirstOrDefault(x => x.Id == menuId);
                 if (checkMenu == null)
