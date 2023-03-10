@@ -23,6 +23,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging);
+        Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productId);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
     }
@@ -353,6 +354,35 @@ namespace FINE.Service.Service
                 };
             }
             catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productId)
+        {
+            try
+            {
+                var product = _unitOfWork.Repository<Product>().GetAll()
+                    .Include(x => x.ProductInMenus)
+               .FirstOrDefault(x => x.Id == productId);
+
+                if (product == null)
+                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
+                        ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                return new BaseResponseViewModel<ProductResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<ProductResponse>(product)
+                };
+            }
+            catch(ErrorResponse ex)
             {
                 throw;
             }

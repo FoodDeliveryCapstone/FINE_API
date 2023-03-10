@@ -61,7 +61,6 @@ namespace FINE.API.Mapper
             CreateMap<Store, ProductResponse>();
             CreateMap<Product, ProductInMenuResponse>()
                 .ForMember(x => x.Id ,otp => otp.Ignore())
-                .ForMember(x => x.BasePrice, otp => otp.Ignore())
                 .ReverseMap();
             CreateMap<SystemCategory, ProductResponse>();
             CreateMap<CreateProductRequest, Product>();
@@ -189,7 +188,6 @@ namespace FINE.API.Mapper
             CreateMap<ProductInMenu, Product>().ReverseMap();
             CreateMap<ProductInMenu, ProductInMenuResponse>()
                 .IncludeMembers(x => x.Product)
-                .ForMember(x => x.BasePrice, otp => otp.MapFrom(src => src.Price))
                 .ReverseMap();
 
             #endregion

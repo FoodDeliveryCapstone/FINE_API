@@ -27,7 +27,7 @@ namespace FINE.Service.DTO.Response
     public class ProductInMenuResponse
     {
         public int Id { get; set; }
-
+        public int ProductId { get; set; }
         [Int] public int? GeneralProductId { get; set; }
         [String] public string? ProductCode { get; set; }
         [String] public string? ProductName { get; set; }
@@ -37,7 +37,7 @@ namespace FINE.Service.DTO.Response
         public string? StoreName { get; set; }
         public string? ImageUrl { get; set; }
 
-        public double? BasePrice { get; set; }
+        public double? Price { get; set; }
 
         public bool IsAvailable { get; set; }
 
