@@ -210,6 +210,7 @@ namespace FINE.Service.Service
                     {
                         Name = userRecord.DisplayName,
                         Email = userRecord.Email,
+                        Phone = userRecord.PhoneNumber,
                         ImageUrl = userRecord.PhotoUrl
                     };
 
