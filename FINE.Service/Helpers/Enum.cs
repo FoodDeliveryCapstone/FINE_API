@@ -57,9 +57,8 @@ namespace FINE.Service.Helpers
 
         public enum ProductStatusEnum
         {
-            New = 1,
-            Avaliable = 2,
-            OutOfStock = 3
+            Avaliable = 1,
+            OutOfStock = 2
         }
 
         public enum OrderStatusEnum
@@ -67,7 +66,7 @@ namespace FINE.Service.Helpers
             //Order
             PreOrder = 1,
             PrePartyOrder = 2,
-            
+
             PaymentPending = 3,
             Processing = 4,
             ShipperAssigned = 7,
@@ -79,9 +78,9 @@ namespace FINE.Service.Helpers
 
         public enum ShippingStatusEnum
         {
-            NewOrder = 5,   
+            NewOrder = 5,
             OrderPreparing = 6,
-            ReadyPickUp = 8,            
+            ReadyPickUp = 8,
         }
 
         public enum StoreStatusEnum
@@ -101,7 +100,7 @@ namespace FINE.Service.Helpers
         }
 
         public enum UniversityStatusEnum
-        { 
+        {
             IsStudent = 1,
             IsTeacher = 2
         }

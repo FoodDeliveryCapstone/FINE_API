@@ -81,7 +81,9 @@ namespace FINE.API.Mapper
 
             CreateMap<Order, OrderResponse>().ReverseMap();
             CreateMap<Order, GenOrderResponse>().ReverseMap();
+            CreateMap<TimeSlot, OrderTimeSlotResponse>().ReverseMap();
             CreateMap<CreatePreOrderRequest, Order>();
+            CreateMap<CreatePreOrderRequest, OrderResponse>().ReverseMap();
 
             #endregion
 
@@ -89,6 +91,7 @@ namespace FINE.API.Mapper
 
             CreateMap<OrderDetail, OrderDetailResponse>().ReverseMap();
             CreateMap<CreatePreOrderDetailRequest, OrderDetail>();
+            CreateMap<CreatePreOrderDetailRequest, OrderDetailResponse>();
 
             #endregion
 
@@ -111,7 +114,8 @@ namespace FINE.API.Mapper
             #region Room
 
             CreateMap<Room, RoomResponse>().ReverseMap();
-
+            CreateMap<Room, OrderRoomResponse>()
+                .ForMember(orderRoom => orderRoom.AreaName, map => map.MapFrom(room => room.Area.Name)).ReverseMap();
             #endregion
 
             #region Campus

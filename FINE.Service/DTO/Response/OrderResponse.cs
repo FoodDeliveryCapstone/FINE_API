@@ -11,13 +11,11 @@ namespace FINE.Service.DTO.Response
     {
         public int Id { get; set; }
 
-        public int? GeneralOrderId { get; set; }
-
-        public string OrderCode { get; set; } = null!;
+        public string OrderCode { get; set; }
 
         public OrderCustomerResponse Customer { get; set; }
 
-        public string DeliveryPhone { get; set; } = null!;
+        public string DeliveryPhone { get; set; }
 
         public DateTime CheckInDate { get; set; }
 
@@ -33,12 +31,10 @@ namespace FINE.Service.DTO.Response
 
         public int OrderType { get; set; }
 
-        public int TimeSlotId { get; set; }
+        public OrderTimeSlotResponse TimeSlot { get; set; }
 
-        public int RoomId { get; set; }
-
-        //public int StoreId { get; set; }
-
+        public virtual OrderRoomResponse Room { get; set; }
+        
         public bool IsConfirm { get; set; }
 
         public bool IsPartyMode { get; set; }
@@ -57,11 +53,17 @@ namespace FINE.Service.DTO.Response
 
         public string OrderCode { get; set; } = null!;
 
-        public int StoreId { get; set; }
+        public double TotalAmount { get; set; }
+
+        public double? Discount { get; set; }
+        
+        public double FinalAmount { get; set; }
 
         public int OrderStatus { get; set; }
 
-        public bool IsConfirm { get; set; }
+        public int StoreId { get; set; }
+
+        public string? StoreName { get; set; }
 
         public List<OrderDetailResponse> OrderDetails { get; set; }
 
@@ -74,9 +76,9 @@ namespace FINE.Service.DTO.Response
 
         public int ProductInMenuId { get; set; }
 
-        public string ProductCode { get; set; } = null!;
+        public string ProductCode { get; set; }
 
-        public string ProductName { get; set; } = null!;
+        public string ProductName { get; set; }
 
         public int? ComboId { get; set; }
 
@@ -102,7 +104,25 @@ namespace FINE.Service.DTO.Response
         public string CustomerCode { get; set; } = null!;
 
         public string? Email { get; set; }
+    }
 
-        public string? Phone { get; set; }
+    public class OrderTimeSlotResponse
+    {
+        public int Id { get; set; }
+
+        public TimeSpan ArriveTime { get; set; }
+
+        public TimeSpan CheckoutTime { get; set; }
+    }
+
+    public class OrderRoomResponse
+    {
+        public int Id { get; set; }
+
+        public int RoomNumber { get; set; }
+
+        public int FloorNumber { get; set; }
+
+        public string? AreaName { get; set; }
     }
 }
