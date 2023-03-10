@@ -40,40 +40,51 @@ namespace FINE.Service.Service
             try
             {
                 #region Phân store trong order detail
-                List<PreOrderDetailByStoreRequest> listODByStore = new List<PreOrderDetailByStoreRequest>();
-
+                List<ListDetailByStore> listPreOD = new List<ListDetailByStore>();
                 foreach (var orderDetail in request.OrderDetails)
                 {
-                    #region check menu
-                    var check = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
                         .Include(x => x.Menu)
+                        .Include(x => x.Product)
                         .Where(x => x.Id == orderDetail.ProductInMenuId)
                         .FirstOrDefault();
 
-                    if (check.Menu == null)
+                    if (productInMenu.Menu == null)
                         throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
                            MenuErrorEnums.NOT_FOUND.GetDisplayName());
-                    #endregion
 
-                    if (!listODByStore.Any(x => x.StoreId == orderDetail.StoreId))
+                     var detail = new PreOrderDetailRequest();
+                    detail.ProductInMenuId = orderDetail.ProductInMenuId;
+                    detail.ProductCode = productInMenu.Product.ProductCode;
+                    detail.ProductName = productInMenu.Product.ProductName;
+                    detail.UnitPrice = productInMenu.Price;
+                    detail.Quantity = orderDetail.Quantity;
+                    detail.TotalAmount = (double)(detail.UnitPrice * detail.Quantity);
+                    detail.FinalAmount = detail.TotalAmount;
+                    detail.ComboId = orderDetail.ComboId;
+
+                    //phan store
+                    if (!listPreOD.Any(x => x.StoreId == productInMenu.StoreId))
                     {
-                        PreOrderDetailByStoreRequest od = new PreOrderDetailByStoreRequest();
-                        od.StoreId = orderDetail.StoreId;
-                        od.StoreName = check.Product.Store.StoreName;
-                        od.Details = new List<CreatePreOrderDetailRequest>();
-                        od.Details.Add(orderDetail);
-                        listODByStore.Add(od);
+                        ListDetailByStore preOD = new ListDetailByStore();
+                        preOD.Details = new List<PreOrderDetailRequest>();
+                        preOD.StoreId = (int)productInMenu.StoreId;
+                        preOD.StoreName = productInMenu.Product.Store.StoreName;
+                        preOD.TotalAmount = detail.TotalAmount;
+                        preOD.Details.Add(detail);
+                        listPreOD.Add(preOD);
                     }
                     else
                     {
-                        listODByStore.Where(x => x.StoreId == orderDetail.StoreId)
-                            .FirstOrDefault().Details
-                            .Add(orderDetail);
+                        var preOD = listPreOD.Where(x => x.StoreId == productInMenu.StoreId)
+                            .FirstOrDefault();
+                        preOD.TotalAmount += detail.TotalAmount;
+                        preOD.Details.Add(detail);
                     }
                 }
                 #endregion
 
-                GenOrderResponse genOrder = new GenOrderResponse();
+                var genOrder = _mapper.Map<GenOrderResponse>(request);
 
                 var customer = await _unitOfWork.Repository<Customer>().GetById(request.CustomerId);
 
@@ -103,23 +114,19 @@ namespace FINE.Service.Service
 
                 genOrder.CheckInDate = DateTime.Now;
 
-              #region Tách order
-                foreach (var store in listODByStore)
-                {
-                    var order = _mapper.Map<OrderResponse>(request);
-                    order.OrderCode = genOrder.OrderCode + "-" + store.StoreId;
-                    order.TotalAmount = 0;
+                #region FinalAmount / TotalAmount
+                genOrder.InverseGeneralOrder = new List<OrderResponse>();
 
-                    genOrder.InverseGeneralOrder = new List<OrderResponse>();
-                    foreach (var item in store.Details)
-                    {
-                        order.TotalAmount += item.TotalAmount;                       
-                    }
+                foreach (var store in listPreOD)
+                {
+                    var order = _mapper.Map<OrderResponse>(store);
+                    order.TotalAmount = store.TotalAmount;
+                    order.OrderCode = genOrder.OrderCode + "-" + store.StoreId;
                     order.FinalAmount = order.TotalAmount;
                     order.OrderStatus = (int)OrderStatusEnum.PreOrder;
-                    order.StoreName = store.StoreName;
-
+                    order.OrderDetails = _mapper.Map<List<OrderDetailResponse>>(store.Details);
                     genOrder.InverseGeneralOrder.Add(order);
+
                     genOrder.TotalAmount += order.TotalAmount;
                     if (genOrder.ShippingFee == 0)
                     {
@@ -132,7 +139,6 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-
                 var room = _unitOfWork.Repository<Room>().GetAll().FirstOrDefault(x => x.Id == request.RoomId);
                 genOrder.Room = _mapper.Map<OrderRoomResponse>(room);
 
@@ -140,8 +146,7 @@ namespace FINE.Service.Service
                 genOrder.OrderStatus = (int)OrderStatusEnum.PreOrder;
                 genOrder.IsConfirm = false;
                 genOrder.IsPartyMode = false;
-
-               
+             
                 genOrder.CheckInDate = DateTime.Now;
 
                 #region Timeslot
@@ -155,8 +160,7 @@ namespace FINE.Service.Service
 
                 genOrder.TimeSlot = _mapper.Map<OrderTimeSlotResponse>(timeSlot);
                 #endregion
-  
-
+ 
                 return new BaseResponseViewModel<GenOrderResponse>()
                 {
                     Status = new StatusViewModel()

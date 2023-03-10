@@ -80,6 +80,8 @@ namespace FINE.API.Mapper
             #region Order
 
             CreateMap<Order, OrderResponse>().ReverseMap();
+            CreateMap<CreatePreOrderRequest, GenOrderResponse>().ReverseMap();
+            CreateMap<ListDetailByStore, OrderResponse>().ReverseMap();
             CreateMap<Order, GenOrderResponse>().ReverseMap();
             CreateMap<TimeSlot, OrderTimeSlotResponse>().ReverseMap();
             CreateMap<CreatePreOrderRequest, Order>();
@@ -92,6 +94,8 @@ namespace FINE.API.Mapper
             CreateMap<OrderDetail, OrderDetailResponse>().ReverseMap();
             CreateMap<CreatePreOrderDetailRequest, OrderDetail>();
             CreateMap<CreatePreOrderDetailRequest, OrderDetailResponse>();
+            CreateMap<PreOrderDetailRequest, OrderDetailResponse>();
+
 
             #endregion
 

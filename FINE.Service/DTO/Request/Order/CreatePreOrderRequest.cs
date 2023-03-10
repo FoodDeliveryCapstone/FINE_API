@@ -26,28 +26,38 @@ namespace FINE.Service.DTO.Request.Order
     {
         public int ProductInMenuId { get; set; }
 
-        public string ProductCode { get; set; }  
-        public string ProductName { get; set; }
-        public int StoreId { get; set; }
-
         public int? ComboId { get; set; }
 
-        public double UnitPrice { get; set; }
+        public int Quantity { get; set; }
+                                              
+        public string? Note { get; set; }
+    }
+    public class ListDetailByStore
+    {
+        public int StoreId { get; set; }
+
+        public string StoreName { get; set; }
+
+        public double TotalAmount { get; set; }
+
+        public List<PreOrderDetailRequest> Details { get; set; }
+    }
+    public class PreOrderDetailRequest
+    {
+        public int ProductInMenuId { get; set; }
+
+        public string? ProductCode { get; set; }
+
+        public string ProductName { get; set; } = null!;
+    
+        public double? UnitPrice { get; set; }
 
         public int Quantity { get; set; }
 
         public double TotalAmount { get; set; }
 
         public double FinalAmount { get; set; }
-                                              
-        public string? Note { get; set; }
-    }
-    public class PreOrderDetailByStoreRequest
-    {
-        public int StoreId { get; set; }
 
-        public string StoreName { get; set; }
-
-        public List<CreatePreOrderDetailRequest> Details { get; set; }
+        public int? ComboId { get; set; }
     }
 }
