@@ -1,6 +1,7 @@
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -75,7 +76,14 @@ public class AdminProductController : Controller
     [Authorize(Roles = "SystemAdmin, StoreManager")]
     public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> CreateProduct([FromBody] CreateProductRequest request)
     {
-        return await _productService.CreateProduct(request);
+        try
+        {
+            return await _productService.CreateProduct(request);
+        }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
     }
     
     /// <summary>
@@ -85,6 +93,13 @@ public class AdminProductController : Controller
     [HttpPut("{productId}")]
     public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> UpdateProduct([FromRoute] int productId, [FromBody] UpdateProductRequest request)
     {
-        return await _productService.UpdateProduct(productId, request);
+        try
+        {
+            return await _productService.UpdateProduct(productId, request);
+        }
+        catch(ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
     }
 }

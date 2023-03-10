@@ -34,9 +34,9 @@ namespace FINE.Service.Service
         private readonly IUnitOfWork _unitOfWork;
         private IAddProductToMenuService _addProductToMenuService;
 
-        
-       
-        public ProductService(FineStgDbContext context,IMapper mapper, IUnitOfWork unitOfWork, IAddProductToMenuService addProductToMenuService)
+
+
+        public ProductService(FineStgDbContext context, IMapper mapper, IUnitOfWork unitOfWork, IAddProductToMenuService addProductToMenuService)
         {
             _context = context;
             _mapper = mapper;
@@ -46,65 +46,69 @@ namespace FINE.Service.Service
 
         public async Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request)
         {
-            var checkProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == request.ProductCode);
-            if (checkProduct != null)
-                throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
-                    ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
-
-            var product = _mapper.Map<CreateProductRequest, Product>(request);
-
-            product.CreateAt = DateTime.Now;
-
-            await _unitOfWork.Repository<Product>().InsertAsync(product);
-            await _unitOfWork.CommitAsync();
-
-            if (request.extraProducts != null)
+            try
             {
-                var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
-                foreach (var extraProduct in request.extraProducts)
+                var checkProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == request.ProductCode);
+                if (checkProduct != null)
+                    throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
+                        ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
+
+                var product = _mapper.Map<CreateProductRequest, Product>(request);
+
+                product.CreateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Product>().InsertAsync(product);
+                await _unitOfWork.CommitAsync();
+
+                if (request.extraProducts != null)
                 {
-                    var productExtra = new Product()
+                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                    foreach (var extraProduct in request.extraProducts)
                     {
-                        GeneralProductId = genProduct.Id,
-                        ProductCode = genProduct.ProductCode + '_' + extraProduct.Size,
-                        ProductName = genProduct.ProductCode + " (" + extraProduct.Size + ')',
-                        CategoryId = genProduct.CategoryId,
-                        StoreId = genProduct.StoreId,
-                        SizePrice = extraProduct.SizePrice,
-                        Size = extraProduct.Size,
-                        CreateAt = DateTime.Now,
-                        IsActive = true,
-                    };
+                        var productExtra = new Product()
+                        {
+                            GeneralProductId = genProduct.Id,
+                            ProductCode = genProduct.ProductCode + '_' + extraProduct.Size,
+                            ProductName = genProduct.ProductCode + " (" + extraProduct.Size + ')',
+                            CategoryId = genProduct.CategoryId,
+                            StoreId = genProduct.StoreId,
+                            SizePrice = extraProduct.SizePrice,
+                            Size = extraProduct.Size,
+                            CreateAt = DateTime.Now,
+                            IsActive = true,
+                        };
 
-                    await _unitOfWork.Repository<Product>().InsertAsync(productExtra);
-                    await _unitOfWork.CommitAsync();
+                        await _unitOfWork.Repository<Product>().InsertAsync(productExtra);
+                        await _unitOfWork.CommitAsync();
+                    }
                 }
-
-            }
-
-            
-            //Add Product to Menu 
-            if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
-            {
-
-                var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
-                var addProductToMenu = request.addProductToMenu.FirstOrDefault();
-                if (addProductToMenu.ProductId == null)
+                //Add Product to Menu 
+                if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
                 {
-                    addProductToMenu.ProductId = genProduct.Id;
-                }
-                await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
-            }
 
-            return new BaseResponseViewModel<ProductResponse>()
-            {
-                Status = new StatusViewModel()
-                {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
+                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                    var addProductToMenu = request.addProductToMenu.FirstOrDefault();
+                    if (addProductToMenu.ProductId == null)
+                    {
+                        addProductToMenu.ProductId = genProduct.Id;
+                    }
+                    await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
                 }
-            };
+
+                return new BaseResponseViewModel<ProductResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId,
@@ -215,78 +219,85 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int ProductId,
             UpdateProductRequest request)
         {
-            //update general product
-            var product = _unitOfWork.Repository<Product>().GetAll()
-                .FirstOrDefault(x => x.Id == ProductId);
-
-            if (product == null)
-                throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
-                    ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-            var checkProductCode = _unitOfWork.Repository<Product>()
-                   .Find(x => x.Id != ProductId && x.ProductCode == request.ProductCode);
-            if (checkProductCode != null)
-                throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
-                    ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
-
-            var updateProduct = _mapper.Map<UpdateProductRequest, Product>(request, product);
-
-            updateProduct.UpdateAt = DateTime.Now;
-
-            await _unitOfWork.Repository<Product>().UpdateDetached(updateProduct);
-            await _unitOfWork.CommitAsync();
-            //update product extra (nếu có)
-            if (request.extraProducts != null)
+            try
             {
-                var extraProduct = _unitOfWork.Repository<Product>().GetAll()
-                    .Where(x => x.GeneralProductId == ProductId)
-                    .ToList();
-                //ban đầu sản phẩm không có product extra -> create
-                if (extraProduct == null)
+                //update general product
+                var product = _unitOfWork.Repository<Product>().GetAll()
+                    .FirstOrDefault(x => x.Id == ProductId);
+
+                if (product == null)
+                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
+                        ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                var checkProductCode = _unitOfWork.Repository<Product>()
+                       .Find(x => x.Id != ProductId && x.ProductCode == request.ProductCode);
+                if (checkProductCode != null)
+                    throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
+                        ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
+
+                var updateProduct = _mapper.Map<UpdateProductRequest, Product>(request, product);
+
+                updateProduct.UpdateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Product>().UpdateDetached(updateProduct);
+                await _unitOfWork.CommitAsync();
+                //update product extra (nếu có)
+                if (request.extraProducts != null)
                 {
+                    var extraProduct = _unitOfWork.Repository<Product>().GetAll()
+                        .Where(x => x.GeneralProductId == ProductId)
+                        .ToList();
+                    //ban đầu sản phẩm không có product extra -> create
+                    if (extraProduct == null)
+                    {
+                        foreach (var item in request.extraProducts)
+                        {
+                            var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
+                            CreateExtraProduct(ProductId, newProductExtra);
+                        }
+                    }
+
+                    // ban đầu sản phẩm có product extra 
                     foreach (var item in request.extraProducts)
                     {
-                        var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
-                        CreateExtraProduct(ProductId, newProductExtra);
+                        // ktra request đã từng được create hay chưa (chưa có id là chưa từng đc create)
+                        if (item.Id == null)
+                        {
+                            var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
+                            CreateExtraProduct(ProductId, newProductExtra);
+                        }
+
+                        //đã từng được create thì kiếm id đó trong list có sẵn -> update
+                        var extraProductUpdate = extraProduct.Find(x => x.Id == item.Id);
+                        var updateProductExtra = _mapper.Map<UpdateProductRequest, Product>(request, extraProductUpdate);
+
+                        updateProductExtra.ProductCode = request.ProductCode + '_' + item.Size;
+                        updateProductExtra.ProductName = request.ProductCode + " (" + item.Size + ')';
+                        updateProductExtra.CategoryId = request.CategoryId;
+                        updateProductExtra.SizePrice = item.SizePrice;
+                        updateProductExtra.Size = item.Size;
+                        updateProductExtra.UpdateAt = DateTime.Now;
+                        updateProductExtra.IsActive = request.IsActive;
+
+                        await _unitOfWork.Repository<Product>().UpdateDetached(extraProductUpdate);
+                        await _unitOfWork.CommitAsync();
                     }
                 }
 
-                // ban đầu sản phẩm có product extra 
-                foreach (var item in request.extraProducts)
+                return new BaseResponseViewModel<ProductResponse>()
                 {
-                    // ktra request đã từng được create hay chưa (chưa có id là chưa từng đc create)
-                    if (item.Id == null)
+                    Status = new StatusViewModel()
                     {
-                        var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
-                        CreateExtraProduct(ProductId, newProductExtra);
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
                     }
-
-                    //đã từng được create thì kiếm id đó trong list có sẵn -> update
-                    var extraProductUpdate = extraProduct.Find(x => x.Id == item.Id);
-                    var updateProductExtra = _mapper.Map<UpdateProductRequest, Product>(request, extraProductUpdate);
-
-                    updateProductExtra.ProductCode = request.ProductCode + '_' + item.Size;
-                    updateProductExtra.ProductName = request.ProductCode + " (" + item.Size + ')';
-                    updateProductExtra.CategoryId = request.CategoryId;
-                    updateProductExtra.SizePrice = item.SizePrice;
-                    updateProductExtra.Size = item.Size;
-                    updateProductExtra.UpdateAt = DateTime.Now;
-                    updateProductExtra.IsActive = request.IsActive;
-
-                    await _unitOfWork.Repository<Product>().UpdateDetached(extraProductUpdate);
-                    await _unitOfWork.CommitAsync();
-                }
+                };
             }
-
-            return new BaseResponseViewModel<ProductResponse>()
+            catch (ErrorResponse ex)
             {
-                Status = new StatusViewModel()
-                {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                }
-            };
+                throw;
+            }
         }
 
         public async void CreateExtraProduct(int genProductId, CreateExtraProductRequest extraProduct)
