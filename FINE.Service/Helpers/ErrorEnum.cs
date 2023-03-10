@@ -223,5 +223,12 @@ namespace FINE.Service.Helpers
             [Display(Name = "Not found this floor Id!")]
             NOT_FOUND_ID = 4041,
         }
+
+        public enum ProductInMenuErrorEnums
+        {
+            //404
+            [Display(Name = "Not found this product in menu Id!")]
+            NOT_FOUND_ID = 4041,
+        }
     }
 }

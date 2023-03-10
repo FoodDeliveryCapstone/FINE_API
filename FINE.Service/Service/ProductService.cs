@@ -1,4 +1,5 @@
 ﻿using System.Linq.Dynamic.Core;
+using System.Runtime.CompilerServices;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using FINE.Data.Entity;
@@ -6,6 +7,7 @@ using FINE.Data.UnitOfWork;
 using FINE.Service.Commons;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product;
+using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +25,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging);
-        Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productId);
+        Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productInMenuId);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
     }
@@ -156,6 +158,8 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<ProductResponse>> GetProductById(int productId)
         {
             var product = _unitOfWork.Repository<Product>().GetAll()
+                .Include(x => x.ProductInMenus)
+                
                 .FirstOrDefault(x => x.Id == productId);
 
             if (product == null)
@@ -217,21 +221,21 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int ProductId,
+        public async Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId,
             UpdateProductRequest request)
         {
             try
             {
                 //update general product
                 var product = _unitOfWork.Repository<Product>().GetAll()
-                    .FirstOrDefault(x => x.Id == ProductId);
+                    .FirstOrDefault(x => x.Id == productId);
 
                 if (product == null)
                     throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
                         ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
                 var checkProductCode = _unitOfWork.Repository<Product>()
-                       .Find(x => x.Id != ProductId && x.ProductCode == request.ProductCode);
+                       .Find(x => x.Id != productId && x.ProductCode == request.ProductCode);
                 if (checkProductCode != null)
                     throw new ErrorResponse(404, (int)ProductErrorEnums.PRODUCT_CODE_EXSIST,
                         ProductErrorEnums.PRODUCT_CODE_EXSIST.GetDisplayName());
@@ -246,7 +250,7 @@ namespace FINE.Service.Service
                 if (request.extraProducts != null)
                 {
                     var extraProduct = _unitOfWork.Repository<Product>().GetAll()
-                        .Where(x => x.GeneralProductId == ProductId)
+                        .Where(x => x.GeneralProductId == productId)
                         .ToList();
                     //ban đầu sản phẩm không có product extra -> create
                     if (extraProduct == null)
@@ -254,7 +258,7 @@ namespace FINE.Service.Service
                         foreach (var item in request.extraProducts)
                         {
                             var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
-                            CreateExtraProduct(ProductId, newProductExtra);
+                            CreateExtraProduct(productId, newProductExtra);
                         }
                     }
 
@@ -265,7 +269,7 @@ namespace FINE.Service.Service
                         if (item.Id == null)
                         {
                             var newProductExtra = _mapper.Map<UpdateProductExtraRequest, CreateExtraProductRequest>(item);
-                            CreateExtraProduct(ProductId, newProductExtra);
+                            CreateExtraProduct(productId, newProductExtra);
                         }
 
                         //đã từng được create thì kiếm id đó trong list có sẵn -> update
@@ -284,6 +288,21 @@ namespace FINE.Service.Service
                         await _unitOfWork.CommitAsync();
                     }
                 }
+
+                //Update Product in Menu
+                if (request.updateProductToMenu != null && request.updateProductToMenu.Count() > 0)
+                {
+                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                    var updateProductInMenu = request.updateProductToMenu.FirstOrDefault();
+                    if (updateProductInMenu.ProductId == null)
+                    {
+                        updateProductInMenu.ProductId = genProduct.Id;
+                    }
+                    await _addProductToMenuService.UpdateProductInMenu(updateProductInMenu);
+
+                }
+
+
 
                 return new BaseResponseViewModel<ProductResponse>()
                 {
@@ -359,17 +378,20 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productId)
+        public async Task<BaseResponseViewModel<ProductResponse>> GetProductByProductInMenu(int productInMenuId)
         {
             try
             {
+                var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                   .FirstOrDefault(x => x.Id == productInMenuId);
+                if (productInMenu == null)
+                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND_ID,
+                        ProductInMenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
                 var product = _unitOfWork.Repository<Product>().GetAll()
                     .Include(x => x.ProductInMenus)
-               .FirstOrDefault(x => x.Id == productId);
+               .FirstOrDefault(x => x.ProductInMenus.Any(x => x.Id == productInMenuId));
 
-                if (product == null)
-                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
-                        ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
                 return new BaseResponseViewModel<ProductResponse>()
                 {

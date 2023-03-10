@@ -10,8 +10,9 @@ namespace FINE.Service.DTO.Request.Product
         public int CategoryId { get; set; }
         public double BasePrice { get; set; }
         public bool IsActive { get; set; }
+        public int? ProductType { get; set; }
         public List<UpdateProductExtraRequest>? extraProducts { get; set; }
-        public List<AddProductToMenuRequest>? addProductToMenu { get; set; }
+        public List<UpdateProductInMenuRequest>? updateProductToMenu { get; set; }
     }
     public class UpdateProductExtraRequest
     {

@@ -8,6 +8,7 @@ using FINE.Service.Commons;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Request.ProductInMenu;
+using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ namespace FINE.Service.Service;
 public interface IAddProductToMenuService
 {
     Task<BaseResponseViewModel<AddProductToMenuResponse>> AddProductIntoMenu(AddProductToMenuRequest request);
+    Task<BaseResponseViewModel<AddProductToMenuResponse>> UpdateProductInMenu(UpdateProductInMenuRequest request);
 }
 
 public class AddProductToMenuService : IAddProductToMenuService
@@ -72,8 +74,47 @@ public class AddProductToMenuService : IAddProductToMenuService
         };
     }
 
+    public async Task<BaseResponseViewModel<AddProductToMenuResponse>> UpdateProductInMenu(UpdateProductInMenuRequest request)
+    {
+        try
+        {
+            var product = _unitOfWork.Repository<Product>().GetAll()
+                 .FirstOrDefault(x => x.Id == request.ProductId);
+            if (product == null)
+                throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
+                    ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
+            var menu = _unitOfWork.Repository<Menu>().GetAll()
+                .FirstOrDefault(x => x.Id == request.MenuId);
+            if (menu == null)
+                throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_ID,
+                    MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
+            var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                 .FirstOrDefault(x => x.ProductId == request.ProductId);
 
+            var updateProductInMenu = _mapper.Map<UpdateProductInMenuRequest, ProductInMenu>(request, productInMenu);
 
+            updateProductInMenu.ProductId = product.Id;
+            updateProductInMenu.StoreId = product.StoreId;
+            updateProductInMenu.UpdatedAt= DateTime.Now;
 
+            await _unitOfWork.Repository<ProductInMenu>().UpdateDetached(updateProductInMenu);
+            await _unitOfWork.CommitAsync();
+
+            return new BaseResponseViewModel<AddProductToMenuResponse>()
+            {
+                Status = new StatusViewModel()
+                {
+                    Message = "Success",
+                    Success = true,
+                    ErrorCode = 0
+                },
+                Data = _mapper.Map<AddProductToMenuResponse>(updateProductInMenu)
+            };
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
 }
