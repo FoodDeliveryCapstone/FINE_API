@@ -9,6 +9,7 @@ using FINE.Service.DTO.Request.Menu;
 using FINE.Service.DTO.Request.Store;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -20,6 +21,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<MenuResponse>> GetMenus(MenuResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<MenuResponse>> GetMenuById(int menuId);
         Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslot(int timeslotId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuWithProductByTimeslot(int timeslotId, PagingRequest paging);
         Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request);
         Task<BaseResponseViewModel<MenuResponse>> UpdateMenu(int menuId, UpdateMenuRequest request);
     }
@@ -181,6 +183,41 @@ namespace FINE.Service.Service
                 };
             }
             catch(Exception ex) 
+            {
+                throw;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuWithProductByTimeslot(int timeslotId, PagingRequest paging)
+        {
+            try
+            {
+                var menu = _unitOfWork.Repository<Menu>().GetAll()
+                    .Include(x => x.ProductInMenus)
+                    .ThenInclude(x => x.Product)
+                    .Where(x => x.TimeSlotId == timeslotId)
+                    .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
+                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
+                              .FirstOrDefault(x => x.Id == timeslotId);
+
+                if (timeslot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
+                        TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                return new BaseResponsePagingViewModel<MenuResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = menu.Item1
+                    },
+                    Data = menu.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
             {
                 throw;
             }

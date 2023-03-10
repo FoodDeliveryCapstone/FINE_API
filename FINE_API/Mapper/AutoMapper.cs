@@ -59,6 +59,8 @@ namespace FINE.API.Mapper
 
             CreateMap<Product, ProductResponse>().IncludeMembers(x => x.Store, x => x.Category).ReverseMap();
             CreateMap<Store, ProductResponse>();
+            CreateMap<Product, ProductInMenuResponse>()
+                .ForMember(x => x.Id ,otp => otp.Ignore()).ReverseMap();
             CreateMap<SystemCategory, ProductResponse>();
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
@@ -147,11 +149,11 @@ namespace FINE.API.Mapper
 
             #region Menu
 
-            CreateMap<Menu, MenuResponse>()
-                /*.ForMember(dest => dest.Product, opt => opt.MapFrom(src => src.ProductInMenus))*/.ReverseMap();
+            CreateMap<Menu, MenuResponse>().ForMember(menuResponse => menuResponse.Products, map => map.MapFrom(menu => menu.ProductInMenus)).ReverseMap();
             CreateMap<CreateMenuRequest, Menu>();
-            CreateMap<UpdateMenuRequest, Menu>();
-           
+            CreateMap<UpdateMenuRequest, Menu>();           
+            CreateMap<Menu, ProductResponse>();
+            CreateMap<Menu, ProductInMenu>().ReverseMap();
             #endregion
 
             #region TimeSlot
@@ -176,13 +178,15 @@ namespace FINE.API.Mapper
             //CreateMap<Product, ProductResponse>()
             //    .ForMember(dest => dest.products, opt => opt.MapFrom(src => src.InverseGeneralProduct)).ReverseMap();
             //#endregion
-
             #endregion
 
             #region Product In Menu
             CreateMap<ProductInMenu, AddProductToMenuResponse>().ReverseMap();
             CreateMap<AddProductToMenuRequest, ProductInMenu>();
-            CreateMap<ProductInMenu, ProductResponse>().ReverseMap();
+            //CreateMap<ProductInMenu, ProductResponse>()/*.ReverseMap()*/;
+            CreateMap<ProductInMenu, Product>().ReverseMap();
+            CreateMap<ProductInMenu, ProductInMenuResponse>().IncludeMembers(x => x.Product).ReverseMap();
+
             #endregion
 
             #region

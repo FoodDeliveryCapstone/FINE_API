@@ -21,6 +21,6 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
 
-       
+       public ICollection<ProductInMenuResponse>? Products { get; set;}
     }
 }
