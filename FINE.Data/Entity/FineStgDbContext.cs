@@ -31,6 +31,8 @@ public partial class FineStgDbContext : DbContext
 
     public virtual DbSet<Feedback> Feedbacks { get; set; }
 
+    public virtual DbSet<Floor> Floors { get; set; }
+
     public virtual DbSet<MembershipCard> MembershipCards { get; set; }
 
     public virtual DbSet<Menu> Menus { get; set; }
@@ -117,7 +119,7 @@ public partial class FineStgDbContext : DbContext
             entity.HasOne(d => d.Campus).WithMany(p => p.Areas)
                 .HasForeignKey(d => d.CampusId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Area_Destination");
+                .HasConstraintName("FK_Area_Campus");
         });
 
         modelBuilder.Entity<BlogPost>(entity =>
@@ -215,6 +217,19 @@ public partial class FineStgDbContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<Floor>(entity =>
+        {
+            entity.ToTable("Floor");
+
+            entity.Property(e => e.CreateAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Campus).WithMany(p => p.Floors)
+                .HasForeignKey(d => d.CampusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Floor_Campus1");
         });
 
         modelBuilder.Entity<MembershipCard>(entity =>
@@ -519,6 +534,11 @@ public partial class FineStgDbContext : DbContext
                 .HasForeignKey(d => d.AreaId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Room_Area");
+
+            entity.HasOne(d => d.Floor).WithMany(p => p.Rooms)
+                .HasForeignKey(d => d.FloorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Room_Floor");
         });
 
         modelBuilder.Entity<Staff>(entity =>

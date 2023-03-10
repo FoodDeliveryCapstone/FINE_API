@@ -9,6 +9,7 @@ using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Algorithm;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -21,6 +22,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<ProductResponse>> GetProductByCode(string code);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
     }
@@ -30,13 +32,16 @@ namespace FINE.Service.Service
         private readonly FineStgDbContext _context;
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private IAddProductToMenuService _addProductToMenuService;
 
-        public ProductService(IMapper mapper, IUnitOfWork unitOfWork, FineStgDbContext context)
+        
+       
+        public ProductService(FineStgDbContext context,IMapper mapper, IUnitOfWork unitOfWork, IAddProductToMenuService addProductToMenuService)
         {
             _context = context;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
-            _context = context;
+            _addProductToMenuService = addProductToMenuService;
         }
 
         public async Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request)
@@ -74,6 +79,21 @@ namespace FINE.Service.Service
                     await _unitOfWork.Repository<Product>().InsertAsync(productExtra);
                     await _unitOfWork.CommitAsync();
                 }
+
+            }
+
+            
+            //Add Product to Menu 
+            if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
+            {
+
+                var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                var addProductToMenu = request.addProductToMenu.FirstOrDefault();
+                if (addProductToMenu.ProductId == null)
+                {
+                    addProductToMenu.ProductId = genProduct.Id;
+                }
+                await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
             }
 
             return new BaseResponseViewModel<ProductResponse>()
@@ -172,9 +192,7 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProducts(ProductResponse filter,
             PagingRequest paging)
         {
-
             var product = _unitOfWork.Repository<Product>().GetAll()
-                .Include(x => x.Store)
                 .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
                 .DynamicFilter(filter)
                 .DynamicSort(filter)
@@ -289,6 +307,44 @@ namespace FINE.Service.Service
             };
             await _unitOfWork.Repository<Product>().InsertAsync(productExtra);
             await _unitOfWork.CommitAsync();
+        }
+
+        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging)
+        {
+            try
+            {
+                #region check floor and area exist
+                var checkMenu = _unitOfWork.Repository<Menu>().GetAll()
+                              .FirstOrDefault(x => x.Id == menuId);
+                if (checkMenu == null)
+                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_ID,
+                        MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                #endregion
+
+                var product = _unitOfWork.Repository<Product>().GetAll()
+
+                  .Include(x => x.ProductInMenus)
+                  .ThenInclude(x => x.Menu)
+                 .Where(x => x.ProductInMenus.Any(x => x.Menu.Id == menuId))
+
+                 .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
+                 .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<ProductResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = product.Item1
+                    },
+                    Data = product.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
     }
 }

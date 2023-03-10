@@ -132,8 +132,11 @@ namespace FINE.API
             builder.RegisterType<ProductCollectionService>().As<IProductCollectionService>();
             builder.RegisterType<ProductCollectionItemService>().As<IProductCollectionItemService>();
             builder.RegisterType<ProductCollectionTimeSlotService>().As<IProductCollectionTimeSlotService>();
-            builder.RegisterType<TimeSlotService>().As<ITimeSlotService>();
+            builder.RegisterType<TimeslotService>().As<ITimeslotService>();
             builder.RegisterType<MenuService>().As<IMenuService>();
+            builder.RegisterType<AddProductToMenuService>().As<IAddProductToMenuService>();
+            builder.RegisterType<RoomService>().As<IRoomService>();
+            builder.RegisterType<FloorService>().As<IFloorService>();
 
             builder.RegisterGeneric(typeof(GenericRepository<>))
             .As(typeof(IGenericRepository<>))

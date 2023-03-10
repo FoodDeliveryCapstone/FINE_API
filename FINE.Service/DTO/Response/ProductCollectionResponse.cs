@@ -1,4 +1,5 @@
-﻿using FINE.Service.Commons;
+﻿using FINE.Data.Entity;
+using FINE.Service.Commons;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace FINE.Service.DTO.Response
         public bool Active { get; set; }
         public DateTime CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; } 
-        public virtual ICollection<ProductResponse> products { get; } = new List<ProductResponse>();
+
+       
     }
 }

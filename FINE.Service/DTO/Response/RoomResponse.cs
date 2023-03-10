@@ -6,7 +6,7 @@ public class RoomResponse
 
     public int RoomNumber { get; set; }
 
-    public int FloorNumber { get; set; }
+    public int FloorId { get; set; }
 
     public int AreaId { get; set; }
 

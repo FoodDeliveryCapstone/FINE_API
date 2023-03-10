@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
-    public class MenuResponse
+    public class ProductionCollectionItemResponse
     {
         public int Id { get; set; }
 
-        public int TimeSlotId { get; set; }
+        public int ProductCollectionId { get; set; }
 
-        public string? MenuName { get; set; }
+        public int ProductId { get; set; }
 
-        public bool IsActive { get; set; }
+        public bool Active { get; set; }
 
         public DateTime CreateAt { get; set; }
 

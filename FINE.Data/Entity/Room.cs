@@ -9,7 +9,7 @@ public partial class Room
 
     public int RoomNumber { get; set; }
 
-    public int FloorNumber { get; set; }
+    public int FloorId { get; set; }
 
     public int AreaId { get; set; }
 
@@ -18,6 +18,8 @@ public partial class Room
     public DateTime? UpdatedAt { get; set; }
 
     public virtual Area Area { get; set; } = null!;
+
+    public virtual Floor Floor { get; set; } = null!;
 
     public virtual ICollection<Order> Orders { get; } = new List<Order>();
 }

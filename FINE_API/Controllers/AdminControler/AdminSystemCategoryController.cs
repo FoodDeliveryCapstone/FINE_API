@@ -4,14 +4,14 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FINE.API.Controllers.AdminControler
+namespace FINE.API.Controllers
 {
     [Route(Helpers.SettingVersionApi.ApiVersion)]
     [ApiController]
-    public class SystemCategoryController : ControllerBase
+    public class AdminSystemCategoryController : ControllerBase
     {
         private readonly ISystemCategoryService _systemCategoryService;
-        public SystemCategoryController(ISystemCategoryService systemCategoryService)
+        public AdminSystemCategoryController(ISystemCategoryService systemCategoryService)
         {
             _systemCategoryService = systemCategoryService;
         }

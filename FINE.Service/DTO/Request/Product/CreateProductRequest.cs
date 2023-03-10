@@ -1,4 +1,5 @@
 ﻿using FINE.Service.Commons;
+using FINE.Service.DTO.Request.ProductInMenu;
 
 namespace FINE.Service.DTO.Request.Product
 {
@@ -18,7 +19,8 @@ namespace FINE.Service.DTO.Request.Product
         public int? ProductType { get; set; }
         public string? Description { get; set; }
 
-        public List<CreateExtraProductRequest> extraProducts { get; set; }
+        public List<CreateExtraProductRequest>? extraProducts { get; set; }
+        public List<AddProductToMenuRequest>? addProductToMenu { get; set; }
     }
 
     public class CreateExtraProductRequest
