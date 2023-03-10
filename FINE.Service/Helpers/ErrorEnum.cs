@@ -96,6 +96,9 @@ namespace FINE.Service.Helpers
         }
         public enum TimeSlotErrorEnums
         {
+            //400
+            [Display(Name = "Out of Time Slot!")]
+            OUT_OF_TIMESLOT = 4001,
             //404
             [Display(Name = "Not found this time slot Id!")]
             NOT_FOUND_ID = 4041,
@@ -214,7 +217,9 @@ namespace FINE.Service.Helpers
         {
             //404
             [Display(Name = "Not found this menu id!")]
-            NOT_FOUND_ID = 4041
+            NOT_FOUND_ID = 4041,
+            [Display(Name = "Not found this menu !")]
+            NOT_FOUND = 4042
         }
 
         public enum FloorErrorEnums

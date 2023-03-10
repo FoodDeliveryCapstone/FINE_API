@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading.Tasks;
 using static FINE.Service.Helpers.Enum;
@@ -19,7 +20,9 @@ namespace FINE.Service.Service
 {
     public interface IOrderService
     {
-        Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreateOrderRequest request);
+        Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreatePreOrderRequest request);
+        Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(CreateGenOrderRequest request);
+
     }
     public class OrderService : IOrderService
     {
@@ -32,19 +35,70 @@ namespace FINE.Service.Service
             _mapper = mapper;
         }
 
-        #region Single Order
-        public async Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreateOrderRequest request)
+        public async Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreatePreOrderRequest request)
         {
             try
             {
-                //customer
+                #region Phân store trong order detail
+                List<ListDetailByStore> listPreOD = new List<ListDetailByStore>();
+                foreach (var orderDetail in request.OrderDetails)
+                {
+                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                        .Include(x => x.Menu)
+                        .Include(x => x.Product)
+                        .Where(x => x.Id == orderDetail.ProductInMenuId)
+                        .FirstOrDefault();
+
+                    if (productInMenu.Menu == null)
+                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
+                           MenuErrorEnums.NOT_FOUND.GetDisplayName());
+
+                     var detail = new PreOrderDetailRequest();
+                    detail.ProductInMenuId = orderDetail.ProductInMenuId;
+                    detail.ProductCode = productInMenu.Product.ProductCode;
+                    detail.ProductName = productInMenu.Product.ProductName;
+                    detail.UnitPrice = productInMenu.Price;
+                    detail.Quantity = orderDetail.Quantity;
+                    detail.TotalAmount = (double)(detail.UnitPrice * detail.Quantity);
+                    detail.FinalAmount = detail.TotalAmount;
+                    detail.ComboId = orderDetail.ComboId;
+
+                    //phan store
+                    if (!listPreOD.Any(x => x.StoreId == productInMenu.StoreId))
+                    {
+                        ListDetailByStore preOD = new ListDetailByStore();
+                        preOD.Details = new List<PreOrderDetailRequest>();
+                        preOD.StoreId = (int)productInMenu.StoreId;
+                        preOD.StoreName = productInMenu.Product.Store.StoreName;
+                        preOD.TotalAmount = detail.TotalAmount;
+                        preOD.Details.Add(detail);
+                        listPreOD.Add(preOD);
+                    }
+                    else
+                    {
+                        var preOD = listPreOD.Where(x => x.StoreId == productInMenu.StoreId)
+                            .FirstOrDefault();
+                        preOD.TotalAmount += detail.TotalAmount;
+                        preOD.Details.Add(detail);
+                    }
+                }
+                #endregion
+
+                var genOrder = _mapper.Map<GenOrderResponse>(request);
+
                 var customer = await _unitOfWork.Repository<Customer>().GetById(request.CustomerId);
+
+                var orderCount = _unitOfWork.Repository<Order>().GetAll()
+                    .Where(x => ((DateTime)x.CheckInDate).Date.Equals(DateTime.Now.Date)).Count() + 1;
+                genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
+                                        orderCount.ToString().PadLeft(3, '0') + "." + Ultils.GenerateRandomCode();
+
+                #region Gen customer + delivery phone
 
                 //check phone number
                 if (!customer.Phone.Contains(request.DeliveryPhone))
                 {
-                    var checkPhone = Ultils.CheckVNPhone(request.DeliveryPhone);
-                    if (!checkPhone)
+                    if (!Ultils.CheckVNPhone(request.DeliveryPhone))
                         throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
                                                 OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
                 }
@@ -54,61 +108,27 @@ namespace FINE.Service.Service
                     request.DeliveryPhone = "+84" + request.DeliveryPhone;
                 }
 
-                //Create basic info for genOrder
-                Order genOrder = new Order();
-                var orderCount = _unitOfWork.Repository<Order>().GetAll()
-                                    .Where(x => ((DateTime)x.CheckInDate).Date.Equals(DateTime.Now.Date)).Count() + 1;
-                genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
-                                   orderCount.ToString().PadLeft(3, '0') + "." +
-                                   Ultils.GenerateRandomCode();
-                genOrder.CheckInDate= DateTime.Now;
-                genOrder.TotalAmount = 0;
-                genOrder.ShippingFee = 0;
+                genOrder.Customer = _mapper.Map<OrderCustomerResponse>(customer);
+                genOrder.DeliveryPhone = request.DeliveryPhone;
+                #endregion
 
-                //Phân store trong order detail
-                List<OrderDetailByStoreRequest> listODByStore = new List<OrderDetailByStoreRequest>();
-                foreach (var orderDetailRequest in request.OrderDetails)
-                {                 
-                    if (!listODByStore.Any(x => x.StoreId == orderDetailRequest.StoreId))
-                    {
-                        OrderDetailByStoreRequest od = new OrderDetailByStoreRequest();
-                        od.StoreId = orderDetailRequest.StoreId;
+                genOrder.CheckInDate = DateTime.Now;
 
-                        od.Details = new List<CreateOrderDetailRequest>();
-                        od.Details.Add(orderDetailRequest);
-                        listODByStore.Add(od);                        
-                    }
-                    else
-                    {
-                        listODByStore.Where(x => x.StoreId == orderDetailRequest.StoreId)
-                            .FirstOrDefault().Details
-                            .Add(orderDetailRequest);
-                    }
-                }
+                #region FinalAmount / TotalAmount
+                genOrder.InverseGeneralOrder = new List<OrderResponse>();
 
-                //Tách đơn  
-                foreach (var storeOrderDetail in listODByStore)
+                foreach (var store in listPreOD)
                 {
-                    var order = _mapper.Map<Order>(request);
-
-                    order.OrderCode = genOrder.OrderCode + "-" + storeOrderDetail.StoreId;
-                    order.CheckInDate = DateTime.Now;
-
-                    order.TotalAmount = 0;
-                    foreach(var item in storeOrderDetail.Details)
-                        order.TotalAmount += item.TotalAmount;
-
+                    var order = _mapper.Map<OrderResponse>(store);
+                    order.TotalAmount = store.TotalAmount;
+                    order.OrderCode = genOrder.OrderCode + "-" + store.StoreId;
                     order.FinalAmount = order.TotalAmount;
                     order.OrderStatus = (int)OrderStatusEnum.PreOrder;
-                    order.IsConfirm = false;
-
-                    var od = _mapper.Map<List<CreateOrderDetailRequest>,List<OrderDetail>>(storeOrderDetail.Details);
-                    foreach(var orderDetail in od)
-                        order.OrderDetails.Add(orderDetail);
-
+                    order.OrderDetails = _mapper.Map<List<OrderDetailResponse>>(store.Details);
                     genOrder.InverseGeneralOrder.Add(order);
+
                     genOrder.TotalAmount += order.TotalAmount;
-                    if(genOrder.ShippingFee == 0)
+                    if (genOrder.ShippingFee == 0)
                     {
                         genOrder.ShippingFee = 5000;
                     }
@@ -117,16 +137,30 @@ namespace FINE.Service.Service
                         genOrder.ShippingFee += 2000;
                     }
                 }
+                #endregion
 
-                genOrder =  _mapper.Map<CreateOrderRequest, Order>(request, genOrder);
+                var room = _unitOfWork.Repository<Room>().GetAll().FirstOrDefault(x => x.Id == request.RoomId);
+                genOrder.Room = _mapper.Map<OrderRoomResponse>(room);
+
                 genOrder.FinalAmount = (double)(genOrder.TotalAmount + genOrder.ShippingFee);
                 genOrder.OrderStatus = (int)OrderStatusEnum.PreOrder;
                 genOrder.IsConfirm = false;
                 genOrder.IsPartyMode = false;
+             
+                genOrder.CheckInDate = DateTime.Now;
 
-                await _unitOfWork.Repository<Order>().InsertAsync(genOrder);
-                await _unitOfWork.CommitAsync();
+                #region Timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
+                var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
+
+                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+
+                genOrder.TimeSlot = _mapper.Map<OrderTimeSlotResponse>(timeSlot);
+                #endregion
+ 
                 return new BaseResponseViewModel<GenOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -138,11 +172,39 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<GenOrderResponse>(genOrder)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
         }
-        #endregion
+
+        public async Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(CreateGenOrderRequest request)
+        {
+            GenOrderResponse genOrder = new GenOrderResponse();
+
+            #region Customer
+            var customer = await _unitOfWork.Repository<Customer>().GetById(request.CustomerId);
+
+            //check phone number
+            if (!customer.Phone.Contains(request.DeliveryPhone))
+            {
+                var checkPhone = Ultils.CheckVNPhone(request.DeliveryPhone);
+                if (!checkPhone)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
+                                            OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
+            }
+            if (!request.DeliveryPhone.StartsWith("+84"))
+            {
+                request.DeliveryPhone = request.DeliveryPhone.TrimStart(new char[] { '0' });
+                request.DeliveryPhone = "+84" + request.DeliveryPhone;
+            }
+            #endregion
+
+            //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+            //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+            //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+
+            return null;
+        }
     }
 }

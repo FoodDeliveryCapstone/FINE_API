@@ -1,5 +1,6 @@
 ﻿using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,9 +21,16 @@ namespace FINE.API.Controllers
         /// Create PreOrder
         /// </summary>
         [HttpPost("preOrder")]
-        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> CreatePreOrder([FromBody] CreateOrderRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> CreatePreOrder([FromBody] CreatePreOrderRequest request)
         {
-                return await _orderService.CreatePreOrder(request);        
+            try
+            {
+                return await _orderService.CreatePreOrder(request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
     }
 }
