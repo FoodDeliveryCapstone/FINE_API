@@ -23,6 +23,8 @@ namespace FINE.Service.Service
     public interface ICustomerService
     {
         Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
+        Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId);
+
         Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
@@ -364,6 +366,35 @@ namespace FINE.Service.Service
             if (fcmToken != null && !fcmToken.Trim().Equals("") && !await _customerFcmtokenService.ValidToken(fcmToken))
             {
                 _customerFcmtokenService.RemoveFcmTokens(new List<string> { fcmToken });
+            }
+        }
+
+        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId)
+        {
+            try
+            {
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                    .Where(x => x.Id == customerId)
+                    .FirstOrDefaultAsync();
+
+                if (customer == null)
+                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
+                        CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                return new BaseResponseViewModel<CustomerResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
             }
         }
     }
