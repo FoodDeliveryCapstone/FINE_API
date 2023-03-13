@@ -69,8 +69,6 @@ namespace FINE.Service.DTO.Request.Order
 
         public string ProductName { get; set; }
 
-        public int StoreId { get; set; }
-
         public int? ComboId { get; set; }
 
         public double UnitPrice { get; set; }

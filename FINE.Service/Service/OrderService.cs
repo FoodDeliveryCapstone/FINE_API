@@ -1,28 +1,32 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
+using FINE.Service.Commons;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
-using static FINE.Service.Helpers.Enum;
+using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.Service
 {
     public interface IOrderService
     {
+        Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging);
         Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreatePreOrderRequest request);
         Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(CreateGenOrderRequest request);
-
     }
     public class OrderService : IOrderService
     {
@@ -33,6 +37,33 @@ namespace FINE.Service.Service
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+        }
+
+        public async Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging)
+        {
+            try
+            {
+                var order = _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.CustomerId == customerId)
+                                        .ProjectTo<GenOrderResponse>(_mapper.ConfigurationProvider)
+                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<GenOrderResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = order.Item1
+                    },
+                    Data = order.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public async Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreatePreOrderRequest request)
@@ -208,7 +239,7 @@ namespace FINE.Service.Service
                 genOrder.CheckInDate = DateTime.Now;
                 genOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
-                foreach(var order in genOrder.InverseGeneralOrder)
+                foreach (var order in genOrder.InverseGeneralOrder)
                 {
                     order.DeliveryPhone = request.DeliveryPhone;
                     order.CheckInDate = DateTime.Now;
@@ -234,6 +265,7 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
     }
 }
 
