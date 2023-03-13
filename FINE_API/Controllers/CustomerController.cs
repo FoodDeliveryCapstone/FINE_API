@@ -43,11 +43,11 @@ namespace FINE.API.Controllers
         /// <param name="data"></param>
         /// <returns></returns>
         [HttpGet("token")]
-        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM([FromQuery] string fcmToken)
+        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM([FromQuery] string accessToken)
         {
             try
             {
-                var result = await _customerService.GetCustomerByFCM(fcmToken);
+                var result = await _customerService.GetCustomerByFCM(accessToken);
                 return Ok(result);
             }
             catch (ErrorResponse ex)

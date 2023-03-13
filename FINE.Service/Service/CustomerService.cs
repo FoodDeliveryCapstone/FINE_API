@@ -26,7 +26,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId);
-        Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByFCM(string fcmToken);
+        Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByFCM(string accessToken);
         Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
@@ -106,13 +106,13 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByFCM(string fcmToken)
+        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByFCM(string accessToken)
         {
             try
             {
                 var token = await _unitOfWork.Repository<Fcmtoken>().GetAll()
                             .Include(x => x.Customer)
-                            .FirstOrDefaultAsync(x => x.Token.Contains(fcmToken));
+                            .FirstOrDefaultAsync(x => x.Token.Contains(accessToken));
 
                 return new BaseResponseViewModel<CustomerResponse>()
                 {
