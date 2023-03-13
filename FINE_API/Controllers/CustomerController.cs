@@ -13,6 +13,7 @@ namespace FINE.API.Controllers
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _customerService;
+        private readonly IOrderService _orderService;
 
         public CustomerController(ICustomerService customerService)
         {
@@ -55,6 +56,23 @@ namespace FINE.API.Controllers
             {
                 return BadRequest(ex.Error);
             }
+        }
+
+        /// <summary>
+        /// Lấy tất cả order của user 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("orders")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrderByUserId([FromQuery] PagingRequest paging)
+        {
+            var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+            if (customerId == -1)
+            {
+                return Unauthorized();
+            }
+            var result = _orderService.GetOrderByCustomerId(customerId, paging);
+            return Ok();
         }
 
         /// <summary>

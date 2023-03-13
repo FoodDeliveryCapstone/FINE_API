@@ -111,7 +111,6 @@ namespace FINE.Service.Service
             try
             {
                 var token = await _unitOfWork.Repository<Fcmtoken>().GetAll()
-                            .Include(x => x.Customer)
                             .FirstOrDefaultAsync(x => x.Token.Contains(accessToken));
 
                 return new BaseResponseViewModel<CustomerResponse>()
