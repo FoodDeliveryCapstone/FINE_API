@@ -110,13 +110,6 @@ namespace FINE.Service.Service
         {
             try
             {
-                // check fcm token 
-                if (fcmToken != null && fcmToken.Trim().Length > 0)
-                {
-                    if (!await _customerFcmtokenService.ValidToken(fcmToken))
-                        throw new ErrorResponse(400, (int)FcmTokenErrorEnums.INVALID_TOKEN,
-                                             FcmTokenErrorEnums.INVALID_TOKEN.GetDisplayName());
-                }
                 var token = await _unitOfWork.Repository<Fcmtoken>().GetAll()
                             .Include(x => x.Customer)
                             .FirstOrDefaultAsync(x => x.Token.Contains(fcmToken));
