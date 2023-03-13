@@ -53,7 +53,7 @@ namespace FINE.Service.Service
                         throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
                            MenuErrorEnums.NOT_FOUND.GetDisplayName());
 
-                     var detail = new PreOrderDetailRequest();
+                    var detail = new PreOrderDetailRequest();
                     detail.ProductInMenuId = orderDetail.ProductInMenuId;
                     detail.ProductCode = productInMenu.Product.ProductCode;
                     detail.ProductName = productInMenu.Product.ProductName;
@@ -96,7 +96,7 @@ namespace FINE.Service.Service
                 #region Gen customer + delivery phone
 
                 //check phone number
-                if (!customer.Phone.Contains(request.DeliveryPhone))
+                if (customer.Phone.Contains(request.DeliveryPhone) == null)
                 {
                     if (!Ultils.CheckVNPhone(request.DeliveryPhone))
                         throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
@@ -146,7 +146,7 @@ namespace FINE.Service.Service
                 genOrder.OrderStatus = (int)OrderStatusEnum.PreOrder;
                 genOrder.IsConfirm = false;
                 genOrder.IsPartyMode = false;
-             
+
                 genOrder.CheckInDate = DateTime.Now;
 
                 #region Timeslot
@@ -160,7 +160,7 @@ namespace FINE.Service.Service
 
                 genOrder.TimeSlot = _mapper.Map<OrderTimeSlotResponse>(timeSlot);
                 #endregion
- 
+
                 return new BaseResponseViewModel<GenOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -180,31 +180,60 @@ namespace FINE.Service.Service
 
         public async Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(CreateGenOrderRequest request)
         {
-            GenOrderResponse genOrder = new GenOrderResponse();
-
-            #region Customer
-            var customer = await _unitOfWork.Repository<Customer>().GetById(request.CustomerId);
-
-            //check phone number
-            if (!customer.Phone.Contains(request.DeliveryPhone))
+            try
             {
-                var checkPhone = Ultils.CheckVNPhone(request.DeliveryPhone);
-                if (!checkPhone)
-                    throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
-                                            OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
+                #region Customer
+                var customer = await _unitOfWork.Repository<Customer>().GetById(request.CustomerId);
+
+                //check phone number
+                if (!customer.Phone.Contains(request.DeliveryPhone))
+                {
+                    var checkPhone = Ultils.CheckVNPhone(request.DeliveryPhone);
+                    if (!checkPhone)
+                        throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
+                                                OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
+                }
+                if (!request.DeliveryPhone.StartsWith("+84"))
+                {
+                    request.DeliveryPhone = request.DeliveryPhone.TrimStart(new char[] { '0' });
+                    request.DeliveryPhone = "+84" + request.DeliveryPhone;
+                }
+                #endregion
+
+                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+
+                var genOrder = _mapper.Map<Order>(request);
+                genOrder.CheckInDate = DateTime.Now;
+                genOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
+
+                foreach(var order in genOrder.InverseGeneralOrder)
+                {
+                    order.DeliveryPhone = request.DeliveryPhone;
+                    order.CheckInDate = DateTime.Now;
+                    order.RoomId = request.RoomId;
+                }
+
+                await _unitOfWork.Repository<Order>().InsertAsync(genOrder);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<GenOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<GenOrderResponse>(genOrder)
+                };
             }
-            if (!request.DeliveryPhone.StartsWith("+84"))
+            catch (ErrorResponse ex)
             {
-                request.DeliveryPhone = request.DeliveryPhone.TrimStart(new char[] { '0' });
-                request.DeliveryPhone = "+84" + request.DeliveryPhone;
+                throw ex;
             }
-            #endregion
-
-            //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-            //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-            //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-
-            return null;
         }
     }
 }
+

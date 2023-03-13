@@ -32,5 +32,21 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Create Order
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> CreateOrder([FromBody] CreateGenOrderRequest request)
+        {
+            try
+            {
+                return await _orderService.CreateOrder(request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }
