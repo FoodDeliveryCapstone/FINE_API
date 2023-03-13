@@ -126,7 +126,7 @@ namespace FINE.API.Mapper
 
             #region Campus
 
-            //CreateMap<Campus, CampusResponse>().ReverseMap();
+            CreateMap<Campus, CampusResponse>().ReverseMap();
             CreateMap<CreateCampusRequest, Campus>();
             CreateMap<UpdateCampusRequest, Campus>();
 
