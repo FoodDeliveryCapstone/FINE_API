@@ -86,18 +86,18 @@ namespace FINE.Service.Service
                         await _unitOfWork.CommitAsync();
                     }
                 }
-                //Add Product to Menu 
-                if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
-                {
+                ////Add Product to Menu 
+                //if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
+                //{
 
-                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
-                    var addProductToMenu = request.addProductToMenu.FirstOrDefault();
-                    if (addProductToMenu.ProductId == null)
-                    {
-                        addProductToMenu.ProductId = genProduct.Id;
-                    }
-                    await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
-                }
+                //    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                //    var addProductToMenu = request.addProductToMenu.FirstOrDefault();
+                //    if (addProductToMenu.ProductId == null)
+                //    {
+                //        addProductToMenu.ProductId = genProduct.Id;
+                //    }
+                //    await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
+                //}
 
                 return new BaseResponseViewModel<ProductResponse>()
                 {
@@ -160,7 +160,7 @@ namespace FINE.Service.Service
         {
             var product = _unitOfWork.Repository<Product>().GetAll()
                 .Include(x => x.ProductInMenus)
-                
+
                 .FirstOrDefault(x => x.Id == productId);
 
             if (product == null)
@@ -290,32 +290,32 @@ namespace FINE.Service.Service
                     }
                 }
 
-                //Update Product in Menu
-                if (request.updateProductToMenu != null && request.updateProductToMenu.Count() > 0)
-                {
-                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
-                    var updateProductInMenu = request.updateProductToMenu.FirstOrDefault();
-                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                       .Where(x => x.ProductId == productId)
-                       .ToList();
-                    //Chưa có trong menu
-                    if (productInMenu == null || productInMenu.Count() == 0)
-                    {
-                        foreach (var item in request.updateProductToMenu)
-                        {
-                            updateProductInMenu.ProductId = productId;
-                            var addProductToMenu = _mapper.Map<UpdateProductInMenuRequest, AddProductToMenuRequest>(item);
-                            await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
-                        }
-                    }
+                ////Update Product in Menu
+                //if (request.updateProductToMenu != null && request.updateProductToMenu.Count() > 0)
+                //{
+                //    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                //    var updateProductInMenu = request.updateProductToMenu.FirstOrDefault();
+                //    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                //       .Where(x => x.ProductId == productId)
+                //       .ToList();
+                //    //Chưa có trong menu
+                //    if (productInMenu == null || productInMenu.Count() == 0)
+                //    {
+                //        foreach (var item in request.updateProductToMenu)
+                //        {
+                //            updateProductInMenu.ProductId = productId;
+                //            var addProductToMenu = _mapper.Map<UpdateProductInMenuRequest, AddProductToMenuRequest>(item);
+                //            await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
+                //        }
+                //    }
 
-                     //Có trong menu
-                    if (updateProductInMenu.ProductId == null)
-                    {
-                        updateProductInMenu.ProductId = genProduct.Id;
-                    }
-                    await _addProductToMenuService.UpdateProductInMenu(updateProductInMenu);                               
-                }
+                //    //Có trong menu
+                //    if (updateProductInMenu.ProductId == null)
+                //    {
+                //        updateProductInMenu.ProductId = genProduct.Id;
+                //    }
+                //    await _addProductToMenuService.UpdateProductInMenu(updateProductInMenu);
+                //}
 
 
                 return new BaseResponseViewModel<ProductResponse>()
@@ -412,10 +412,11 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<ProductInMenuResponse>(productInMenu)
                 };
             }
-            catch(ErrorResponse ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
         }
+
     }
 }

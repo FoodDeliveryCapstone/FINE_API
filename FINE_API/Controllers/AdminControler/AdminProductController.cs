@@ -1,5 +1,6 @@
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product;
+using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
@@ -12,9 +13,11 @@ namespace FINE.API.Controllers.AdminController;
 public class AdminProductController : Controller
 {
     private readonly IProductService _productService;
-    public AdminProductController(IProductService productService)
+    private readonly IAddProductToMenuService _addProductToMenuService;
+    public AdminProductController(IProductService productService, IAddProductToMenuService addProductToMenuService)
     {
         _productService = productService;
+        _addProductToMenuService = addProductToMenuService;
     }
 
     /// <summary>
@@ -98,6 +101,40 @@ public class AdminProductController : Controller
             return await _productService.UpdateProduct(productId, request);
         }
         catch(ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
+    /// <summary>
+    /// Add Product to Menu
+    /// </summary>
+    [HttpPost("productInMenu")]
+    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> AddProductToMenu([FromBody] AddProductToMenuRequest request)
+    {
+        try
+        {
+            return await _addProductToMenuService.AddProductIntoMenu(request);
+        }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
+    /// <summary>
+    /// Update Product in Menu
+    /// </summary>    
+    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpPut("productInMenu/{productInMenuId}")]
+    public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> UpdateProductInMenu([FromRoute] int productInMenuId, [FromBody] UpdateProductInMenuRequest request)
+    {
+        try
+        {
+            return await _addProductToMenuService.UpdateProductInMenu(productInMenuId, request);
+        }
+        catch (ErrorResponse ex)
         {
             return BadRequest(ex.Error);
         }
