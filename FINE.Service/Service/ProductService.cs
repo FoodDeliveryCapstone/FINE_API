@@ -12,6 +12,7 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Algorithm;
+using NetTopologySuite.Index.HPRtree;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -294,14 +295,27 @@ namespace FINE.Service.Service
                 {
                     var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
                     var updateProductInMenu = request.updateProductToMenu.FirstOrDefault();
+                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                       .Where(x => x.ProductId == productId)
+                       .ToList();
+                    //Chưa có trong menu
+                    if (productInMenu == null || productInMenu.Count() == 0)
+                    {
+                        foreach (var item in request.updateProductToMenu)
+                        {
+                            updateProductInMenu.ProductId = productId;
+                            var addProductToMenu = _mapper.Map<UpdateProductInMenuRequest, AddProductToMenuRequest>(item);
+                            await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
+                        }
+                    }
+
+                     //Có trong menu
                     if (updateProductInMenu.ProductId == null)
                     {
                         updateProductInMenu.ProductId = genProduct.Id;
                     }
-                    await _addProductToMenuService.UpdateProductInMenu(updateProductInMenu);
-
+                    await _addProductToMenuService.UpdateProductInMenu(updateProductInMenu);                               
                 }
-
 
 
                 return new BaseResponseViewModel<ProductResponse>()
