@@ -3,6 +3,7 @@ using FINE.Service.DTO.Request.Customer;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
+using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FINE.API.Controllers
@@ -43,7 +44,7 @@ namespace FINE.API.Controllers
         /// <param name="data"></param>
         /// <returns></returns>
         [HttpGet("token")]
-        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM([FromQuery] string accessToken)
+        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM([FromHeader]string accessToken)
         {
             try
             {
