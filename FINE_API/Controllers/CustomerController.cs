@@ -38,6 +38,25 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// lấy thông tin khách hàng bằng token
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        [HttpGet("token")]
+        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM([FromQuery] string fcmToken)
+        {
+            try
+            {
+                var result = await _customerService.GetCustomerByFCM(fcmToken);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Update thông tin khách hàng
         /// </summary>
         /// <param name="data"></param>
