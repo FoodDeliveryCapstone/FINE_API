@@ -21,7 +21,7 @@ public interface IAddProductToMenuService
 {
     Task<BaseResponseViewModel<ProductInMenuResponse>> AddProductIntoMenu(AddProductToMenuRequest request);
     Task<BaseResponseViewModel<ProductInMenuResponse>> UpdateProductInMenu(int productInMenuId, UpdateProductInMenuRequest request);
-    Task<BaseResponseViewModel<List<AddProductToMenuResponse>>> UpdateMultipleStatus(List<int> ids, List<UpdateProductInMenuRequest> request);
+   
 }
 
 public class AddProductToMenuService : IAddProductToMenuService
@@ -141,19 +141,5 @@ public class AddProductToMenuService : IAddProductToMenuService
             throw;
         }
     }
-            {
-                Status = new StatusViewModel()
-                {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<AddProductToMenuResponse>(updateProductInMenu)
-            };
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
-    }
+  
 }
