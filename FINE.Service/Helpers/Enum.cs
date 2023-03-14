@@ -16,11 +16,13 @@ namespace FINE.Service.Helpers
         //9h15-9h45
         //12h 12h30
         //2h45- 3h15
+
         public enum FcmTokenType
         {
             Customer = 1,
             Staff = 2
         }
+
         public enum SystemRoleEnum
         {
             [Display(Name = "Những con cáo")]
@@ -35,11 +37,13 @@ namespace FINE.Service.Helpers
         {
             FPT = 1,
         }
+
         public enum AccountTypeEnum
         {
             CreditAccount = 1,
             PointAccount = 2
         }
+
         public enum MembershipCardTypeEnum
         {
             Free = 1,
@@ -74,6 +78,12 @@ namespace FINE.Service.Helpers
             Finished = 10,
 
             UserCancel = 11,
+        }
+
+        public enum PaymentTypeEnum
+        {
+            Cash = 1,
+            MoMo = 2,
         }
 
         public enum ShippingStatusEnum

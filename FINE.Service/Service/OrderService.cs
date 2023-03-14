@@ -240,12 +240,19 @@ namespace FINE.Service.Service
                 var genOrder = _mapper.Map<Order>(request);
                 genOrder.CheckInDate = DateTime.Now;
                 genOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
-
-                foreach (var order in genOrder.InverseGeneralOrder)
+                genOrder.IsConfirm= false;
+                genOrder.IsPartyMode= false;
+                foreach (var order in request.InverseGeneralOrders)
                 {
-                    order.DeliveryPhone = request.DeliveryPhone;
-                    order.CheckInDate = DateTime.Now;
-                    order.RoomId = request.RoomId;
+                    var inverseOrder = _mapper.Map<Order>(order);
+                    inverseOrder.OrderCode= order.OrderCode;
+                    inverseOrder.CheckInDate = DateTime.UtcNow;
+                    inverseOrder.TotalAmount = order.TotalAmount;
+                    inverseOrder.FinalAmount= order.FinalAmount;
+                    inverseOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
+                    inverseOrder.StoreId= order.StoreId;
+                    inverseOrder.Note= order.Note;
+                    genOrder.InverseGeneralOrder.Add(inverseOrder);
                 }
 
                 await _unitOfWork.Repository<Order>().InsertAsync(genOrder);
