@@ -27,6 +27,8 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging);
         Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(CreatePreOrderRequest request);
         Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(CreateGenOrderRequest request);
+        Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetAllOrderDetail(OrderDetailResponse filter, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrderDetailByCustomer(int customerId, PagingRequest paging);
     }
     public class OrderService : IOrderService
     {
@@ -263,6 +265,73 @@ namespace FINE.Service.Service
             catch (ErrorResponse ex)
             {
                 throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetAllOrderDetail(OrderDetailResponse filter, PagingRequest paging)
+        {
+            try
+            {
+                var timeslot = _unitOfWork.Repository<OrderDetail>().GetAll()
+
+                                         .Include(x => x.Order)
+                                          .ProjectTo<OrderDetailResponse>(_mapper.ConfigurationProvider)
+                                          .DynamicFilter(filter)
+                                          .DynamicSort(filter)
+                                          .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<OrderDetailResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = timeslot.Item1
+                    },
+                    Data = timeslot.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrderDetailByCustomer(int customerId, PagingRequest paging)
+        {
+            try
+            {
+                #region check Customer
+                var checkCustomer = _unitOfWork.Repository<Customer>().GetAll()
+                              .FirstOrDefault(x => x.Id == customerId);
+                if (checkCustomer == null)
+                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
+                        CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                #endregion
+
+                var orderDetail = _unitOfWork.Repository<OrderDetail>().GetAll()
+                  .Include(x => x.Order)
+                 .Where(x => x.Order.CustomerId == customerId)
+
+                 .ProjectTo<OrderDetailResponse>(_mapper.ConfigurationProvider)
+                 .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<OrderDetailResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = orderDetail.Item1
+                    },
+                    Data = orderDetail.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
 

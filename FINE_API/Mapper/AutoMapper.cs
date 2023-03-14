@@ -94,12 +94,15 @@ namespace FINE.API.Mapper
 
             #region OrderDetail
 
-            CreateMap<OrderDetail, OrderDetailResponse>().ReverseMap();
+            CreateMap<OrderDetail, OrderDetailResponse>()
+               .IncludeMembers(x => x.Order, x => x.Order.Customer)
+               .ReverseMap();
             CreateMap<CreatePreOrderDetailRequest, OrderDetail>();
             CreateMap<CreatePreOrderDetailRequest, OrderDetailResponse>();
             CreateMap<PreOrderDetailRequest, OrderDetailResponse>();
             CreateMap<CreateOrderDetailRequest, OrderDetail>();
-
+            CreateMap<Order, OrderDetailResponse>();
+            CreateMap<Customer, OrderDetailResponse>();
             #endregion
 
             #region Store

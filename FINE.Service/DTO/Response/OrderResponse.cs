@@ -73,12 +73,16 @@ namespace FINE.Service.DTO.Response
         public int Id { get; set; }
 
         public int OrderId { get; set; }
+        public int? CustomerId { get; set; }
+        public string? Name { get; set; } = null!;
+
+        public string? DeliveryPhone { get; set; } = null!;
 
         public int ProductInMenuId { get; set; }
 
-        public string ProductCode { get; set; }
+        public string? ProductCode { get; set; }
 
-        public string ProductName { get; set; }
+        public string? ProductName { get; set; }
 
         public int? ComboId { get; set; }
 
