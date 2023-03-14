@@ -61,12 +61,12 @@ namespace FINE.Service.Service
                 }
                 else if (!fcm.Token.Equals(fcmToken))
                 {
-                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
-
+                    //_fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+                    fcm.Token = fcmToken;
                     fcm.CustomerId = customerId;
                     fcm.UpdateAt= DateTime.UtcNow;
 
-                    _unitOfWork.Repository<Fcmtoken>().Update(fcm, fcm.Id);
+                    _unitOfWork.Repository<Fcmtoken>().UpdateDetached(fcm);
                     _unitOfWork.Commit();
                 }
             }
