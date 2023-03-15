@@ -1,6 +1,7 @@
 ﻿using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Store;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,6 +36,23 @@ namespace FINE.API.Controllers
             ([FromRoute] int storeId)
         {
             return await _storeService.GetStoreById(storeId);
+        }
+
+        /// <summary>
+        /// Get List Store By TimeslotId
+        /// </summary>
+
+        [HttpGet("/timeslot/{timeslotId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<StoreResponse>>> GetStoreByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _storeService.GetStoreByTimeslot(timeslotId, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>

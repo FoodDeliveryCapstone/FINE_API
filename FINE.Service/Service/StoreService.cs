@@ -7,6 +7,7 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Store;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -16,6 +17,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<StoreResponse>> GetStores(StoreResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<StoreResponse>> GetStoreById(int storeId);
+        Task<BaseResponsePagingViewModel<StoreResponse>> GetStoreByTimeslot(int timeslotId, PagingRequest paging);
         Task<BaseResponseViewModel<StoreResponse>> CreateStore(CreateStoreRequest request);
         Task<BaseResponseViewModel<StoreResponse>> UpdateStore(int storeId, UpdateStoreRequest request);
     }
@@ -116,6 +118,44 @@ namespace FINE.Service.Service
                 },
                 Data = _mapper.Map<StoreResponse>(storeMapping)
             };
+        }
+
+        public async Task<BaseResponsePagingViewModel<StoreResponse>> GetStoreByTimeslot(int timeslotId, PagingRequest paging)
+        {
+            try
+            {
+                #region timeslot exsist
+                var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
+                              .FirstOrDefault(x => x.Id == timeslotId);
+                if (checkTimeslot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
+                        TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                #endregion
+
+                var store = _unitOfWork.Repository<Store>().GetAll()
+
+                  .Include(x => x.Campus)
+                  .ThenInclude(x => x.TimeSlots)
+                 .Where(x => x.Campus.TimeSlots.Any(x => x.Id == timeslotId))
+
+                 .ProjectTo<StoreResponse>(_mapper.ConfigurationProvider)
+                 .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<StoreResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = store.Item1
+                    },
+                    Data = store.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
         }
     }
 }
