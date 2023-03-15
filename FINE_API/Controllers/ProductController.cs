@@ -1,6 +1,7 @@
 ﻿using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -64,6 +65,23 @@ public class ProductController : Controller
     public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProductsByMenuId([FromRoute] int menuId, [FromQuery] PagingRequest paging)
     {
         return await _productService.GetProductByMenu(menuId, paging);
+    }
+
+    /// <summary>
+    /// Get List Product in Menu By StoreId
+    /// </summary>
+
+    [HttpGet("productInMenu/store/{storeId}")]
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuResponse>>> GetProductInMenuByStore([FromRoute] int storeId, [FromQuery] PagingRequest paging)
+    {
+        try
+        {
+            return await _productService.GetProductInMenuByStore(storeId, paging);
+        }
+        catch(ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
     }
 
 
