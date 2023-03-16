@@ -35,89 +35,117 @@ namespace FINE.Service.Service
 
         public async Task<BaseResponseViewModel<StoreResponse>> CreateStore(CreateStoreRequest request)
         {
-            var store = _mapper.Map<CreateStoreRequest, Store>(request);
-            store.IsActive = true;
-            store.CreatedAt = DateTime.Now;
-            await _unitOfWork.Repository<Store>().InsertAsync(store);
-            await _unitOfWork.CommitAsync();
-            return new BaseResponseViewModel<StoreResponse>()
+            try
             {
-                Status = new StatusViewModel()
+                var store = _mapper.Map<CreateStoreRequest, Store>(request);
+
+                store.IsActive = true;
+                store.CreatedAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Store>().InsertAsync(store);
+                await _unitOfWork.CommitAsync();
+                return new BaseResponseViewModel<StoreResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<StoreResponse>(store)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<StoreResponse>(store)
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponseViewModel<StoreResponse>> GetStoreById(int storeId)
         {
-            var CheckStore = _unitOfWork.Repository<Store>().GetAll()
-                                        .FirstOrDefault(x => x.Id == storeId);
-            if (CheckStore == null)
-                throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_CODE,
-                                    StoreErrorEnums.NOT_FOUND_CODE.GetDisplayName());
-            return new BaseResponseViewModel<StoreResponse>()
+            try
             {
-                Status = new StatusViewModel()
+                var store = _unitOfWork.Repository<Store>().GetAll()
+                                            .FirstOrDefault(x => x.Id == storeId);
+                if (store == null)
+                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
+                                        StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                return new BaseResponseViewModel<StoreResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<StoreResponse>(CheckStore)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<StoreResponse>(store)
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponsePagingViewModel<StoreResponse>> GetStores(StoreResponse filter, PagingRequest paging)
         {
-            var store = _unitOfWork.Repository<Store>().GetAll()
-                                    .ProjectTo<StoreResponse>(_mapper.ConfigurationProvider)
-                                    .DynamicFilter(filter)
-                                    .DynamicSort(filter)
-                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                    Constants.DefaultPaging);
-            return new BaseResponsePagingViewModel<StoreResponse>()
+            try
             {
-                Metadata = new PagingsMetadata()
+                var store = _unitOfWork.Repository<Store>().GetAll()
+                                        .ProjectTo<StoreResponse>(_mapper.ConfigurationProvider)
+                                        .DynamicFilter(filter)
+                                        .DynamicSort(filter)
+                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+                return new BaseResponsePagingViewModel<StoreResponse>()
                 {
-                    Page = paging.Page,
-                    Size = paging.PageSize,
-                    Total = store.Item1
-                },
-                Data = store.Item2.ToList()
-            };
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = store.Item1
+                    },
+                    Data = store.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponseViewModel<StoreResponse>> UpdateStore(int storeId, UpdateStoreRequest request)
         {
-            Store store = _unitOfWork.Repository<Store>().Find(x => x.Id == storeId);
-
-            if (store == null)
-                throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_CODE,
-                                    StoreErrorEnums.NOT_FOUND_CODE.GetDisplayName());
-
-            var storeMapping = _mapper.Map<UpdateStoreRequest, Store>(request, store);
-            if (storeMapping.CampusId == null) storeMapping.CampusId = store.CampusId;
-            else if (storeMapping.StoreName == null) storeMapping.StoreName = store.StoreName;
-            else if (storeMapping.ImageUrl == null) storeMapping.ImageUrl = store.ImageUrl;
-            else if (storeMapping.ContactPerson == null) storeMapping.ContactPerson = store.ContactPerson;
-            else if (storeMapping.IsActive == null) storeMapping.IsActive = store.IsActive;
-            storeMapping.UpdatedAt = DateTime.Now;
-            await _unitOfWork.Repository<Store>().UpdateDetached(storeMapping);
-            await _unitOfWork.CommitAsync();
-            return new BaseResponseViewModel<StoreResponse>()
+            try
             {
-                Status = new StatusViewModel()
+                var store = _unitOfWork.Repository<Store>().GetAll()
+                .FirstOrDefault(x => x.Id == storeId);
+
+                if (store == null)
+                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
+                        StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                var updateStore = _mapper.Map<UpdateStoreRequest, Store>(request, store);
+
+                updateStore.UpdatedAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Store>().UpdateDetached(updateStore);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<StoreResponse>()
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<StoreResponse>(storeMapping)
-            };
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
         }
 
         public async Task<BaseResponsePagingViewModel<StoreResponse>> GetStoreByTimeslot(int timeslotId, PagingRequest paging)
