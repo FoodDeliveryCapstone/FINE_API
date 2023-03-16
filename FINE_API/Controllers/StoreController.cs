@@ -37,23 +37,7 @@ namespace FINE.API.Controllers
         {
             return await _storeService.GetStoreById(storeId);
         }
-
-        /// <summary>
-        /// Get List Store By TimeslotId
-        /// </summary>
-
-        [HttpGet("/timeslot/{timeslotId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<StoreResponse>>> GetStoreByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
-        {
-            try
-            {
-                return await _storeService.GetStoreByTimeslot(timeslotId, paging);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
+      
 
         /// <summary>
         /// Create Store
@@ -73,6 +57,22 @@ namespace FINE.API.Controllers
             ([FromRoute] int storeId, [FromBody] UpdateStoreRequest request)
         {
             return await _storeService.UpdateStore(storeId, request);
+        }
+
+        /// <summary>
+        /// Get List Store By TimeslotId
+        /// </summary>
+        [HttpGet("timeslot/{timeslotId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<StoreResponse>>> GetStoreByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _storeService.GetStoreByTimeslot(timeslotId, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
     }
 }
