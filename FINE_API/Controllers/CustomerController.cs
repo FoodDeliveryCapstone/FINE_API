@@ -63,7 +63,7 @@ namespace FINE.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("orders")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrderByUserId([FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrderByCustomerId([FromQuery] PagingRequest paging)
         {
             var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
