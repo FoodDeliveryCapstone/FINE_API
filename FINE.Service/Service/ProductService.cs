@@ -25,8 +25,6 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging);
-        Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId);
-        Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductInMenuByStore(int storeId, PagingRequest paging);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
     }
@@ -379,64 +377,6 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId)
-        {
-            try
-            {
-                var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                   .FirstOrDefault(x => x.Id == productInMenuId);
-                if (productInMenu == null)
-                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND_ID,
-                        ProductInMenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
-
-                return new BaseResponseViewModel<ProductInMenuResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<ProductInMenuResponse>(productInMenu)
-                };
-            }
-            catch(ErrorResponse ex)
-            {
-                throw;
-            }
-        }
-
-        public async Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductInMenuByStore(int storeId, PagingRequest paging)
-        {
-            try
-            {
-                var store = _unitOfWork.Repository<Store>().GetAll()
-                  .FirstOrDefault(x => x.Id == storeId);
-                if (store == null)
-                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
-                        StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-                var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                   .Where(x => x.StoreId == storeId /*&& x.MenuId == menuId*/)
-                   .ProjectTo<ProductInMenuResponse>(_mapper.ConfigurationProvider)
-                   .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
-                return new BaseResponsePagingViewModel<ProductInMenuResponse>()
-                {
-                    Metadata = new PagingsMetadata()
-                    {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = products.Item1
-                    },
-                    Data = products.Item2.ToList()
-                };
-            }
-            catch(ErrorResponse ex)
-            {
-                throw;
-            }
-        }
     }
 }

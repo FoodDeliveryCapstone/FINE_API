@@ -12,9 +12,11 @@ namespace FINE.API.Controllers.AdminController;
 public class AdminProductController : Controller
 {
     private readonly IProductService _productService;
-    public AdminProductController(IProductService productService)
+    private readonly IProductInMenuService _productInMenuService;
+    public AdminProductController(IProductService productService, IProductInMenuService productInMenuService)
     {
         _productService = productService;
+        _productInMenuService = productInMenuService;
     }
 
     /// <summary>
@@ -67,23 +69,6 @@ public class AdminProductController : Controller
     public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProductsByMenuId([FromRoute] int menuId, [FromQuery] PagingRequest paging)
     {
         return await _productService.GetProductByMenu(menuId, paging);
-    }
-
-    /// <summary>
-    /// Get List Product in Menu By StoreId
-    /// </summary>
-    [Authorize(Roles = "SystemAdmin, StoreManager")]
-    [HttpGet("productInMenu/store/{storeId}")]
-    public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuResponse>>> GetProductInMenuByStore([FromRoute] int storeId, [FromQuery] PagingRequest paging)
-    {
-        try
-        {
-            return await _productService.GetProductInMenuByStore(storeId, paging);
-        }
-        catch (ErrorResponse ex)
-        {
-            return BadRequest(ex.Error);
-        }
     }
 
     /// <summary>
