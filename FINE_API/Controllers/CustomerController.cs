@@ -15,8 +15,9 @@ namespace FINE.API.Controllers
         private readonly ICustomerService _customerService;
         private readonly IOrderService _orderService;
 
-        public CustomerController(ICustomerService customerService)
+        public CustomerController(ICustomerService customerService, IOrderService orderService)
         {
+            _orderService= orderService;    
             _customerService = customerService;
         }
 
@@ -71,8 +72,8 @@ namespace FINE.API.Controllers
             {
                 return Unauthorized();
             }
-            var result = _orderService.GetOrderByCustomerId(customerId, paging);
-            return Ok();
+            var result = await _orderService.GetOrderByCustomerId(customerId, paging);
+            return Ok(result);
         }
 
         /// <summary>
