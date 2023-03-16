@@ -17,6 +17,8 @@ namespace FINE.API.Controllers
             _orderService = orderService;
         }
 
+
+
         /// <summary>
         /// Create PreOrder
         /// </summary>
@@ -25,7 +27,16 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return await _orderService.CreatePreOrder(request);
+
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == -1)
+                {
+                    return Unauthorized();
+                }
+
+                return await _orderService.CreatePreOrder(customerId, request);
             }
             catch (ErrorResponse ex)
             {
@@ -41,7 +52,15 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return await _orderService.CreateOrder(request);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == -1)
+                {
+                    return Unauthorized();
+                }
+
+                return await _orderService.CreateOrder(customerId, request);
             }
             catch (ErrorResponse ex)
             {

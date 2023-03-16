@@ -25,21 +25,4 @@ public class AdminOrderController : ControllerBase
     {
         return await _orderService.GetAllOrderDetail(request, paging);
     }
-
-    /// <summary>
-    /// Get List Order Detail by Customer Id
-    /// </summary>
-    [Authorize(Roles = "SystemAdmin, StoreManager")]
-    [HttpGet("customer/{customerId}")]
-    public async Task<ActionResult<BaseResponsePagingViewModel<OrderDetailResponse>>> GetOrderByCustomer([FromRoute] int customerId, [FromQuery] PagingRequest paging)
-    {
-        try
-        {
-            return await _orderService.GetOrderDetailByCustomer(customerId, paging);
-        }
-        catch (ErrorResponse ex)
-        {
-            return BadRequest(ex.Error);
-        }
-    }
 }
