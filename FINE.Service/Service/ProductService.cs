@@ -34,11 +34,11 @@ namespace FINE.Service.Service
         private readonly FineStgDbContext _context;
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
-        private IAddProductToMenuService _addProductToMenuService;
+        private IProductToMenuService _addProductToMenuService;
 
 
 
-        public ProductService(FineStgDbContext context, IMapper mapper, IUnitOfWork unitOfWork, IAddProductToMenuService addProductToMenuService)
+        public ProductService(FineStgDbContext context, IMapper mapper, IUnitOfWork unitOfWork, IProductToMenuService addProductToMenuService)
         {
             _context = context;
             _mapper = mapper;

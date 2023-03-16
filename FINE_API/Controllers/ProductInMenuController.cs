@@ -19,11 +19,9 @@ public class ProductInMenuController : ControllerBase
         _productInMenuService= productInMenuService;
     }
 
-
     /// <summary>
     /// Get Product By ProductInMenuId
     /// </summary>
-
     [HttpGet("{productInMenuId}")]
     public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> GetProductByProductInMenu([FromRoute] int productInMenuId)
     {

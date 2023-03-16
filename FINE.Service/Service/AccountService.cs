@@ -13,7 +13,7 @@ namespace FINE.Service.Service
     public interface IAccountService
     {
         void CreateAccountByMemCard(string cardCode, double? defaultBalance, int uniId, int cardId, int accTypeId);
-        Task<List<Account>> GetAccountByCustomerId(int id);
+        Task<List<Account>> GetAccountByCustomerId(int customerId);
     }
 
     public class AccountService : IAccountService
@@ -52,9 +52,9 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<List<Account>> GetAccountByCustomerId(int id)
+        public async Task<List<Account>> GetAccountByCustomerId(int customerId)
         {
-            return await _unitOfWork.Repository<Account>().GetAll().Where(x => x.MembershipCard.CustomerId == id).ToListAsync();
+            return await _unitOfWork.Repository<Account>().GetAll().Where(x => x.MembershipCard.CustomerId == customerId).ToListAsync();
         }
     }
 }

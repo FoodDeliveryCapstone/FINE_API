@@ -63,7 +63,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<AreaResponse>(area)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
@@ -90,7 +90,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<AreaResponse>(area)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
@@ -101,11 +101,12 @@ namespace FINE.Service.Service
             try
             {
                 var area = _unitOfWork.Repository<Area>().GetAll()
-                    .Include(x => x.Rooms)
-                                           .ProjectTo<AreaResponse>(_mapper.ConfigurationProvider)
-                                           .DynamicFilter(filter)
-                                           .DynamicSort(filter)
-                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+                                    .Include(x => x.Rooms)
+                                    .ProjectTo<AreaResponse>(_mapper.ConfigurationProvider)
+                                    .DynamicFilter(filter)
+                                    .DynamicSort(filter)
+                                    .PagingQueryable(paging.Page, paging.PageSize, 
+                                    Constants.LimitPaging, Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<AreaResponse>()
                 {
@@ -152,7 +153,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<AreaResponse>(updateArea)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
@@ -164,13 +165,16 @@ namespace FINE.Service.Service
             {
                 var checkCampus = _unitOfWork.Repository<Campus>().GetAll()
                                              .FirstOrDefault(x => x.Id == campusId);
+
                 if (checkCampus == null)
                     throw new ErrorResponse(404, (int)CampusErrorEnums.NOT_FOUND_ID,
                                                     CampusErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
                 var area = _unitOfWork.Repository<Area>().GetAll()
                                         .Where(x => x.CampusId == campusId)
                                         .ProjectTo<AreaResponse>(_mapper.ConfigurationProvider)
-                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+                                        .PagingQueryable(paging.Page, paging.PageSize, 
+                                        Constants.LimitPaging, Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<AreaResponse>()
                 {
@@ -183,7 +187,7 @@ namespace FINE.Service.Service
                     Data = area.Item2.ToList()
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
