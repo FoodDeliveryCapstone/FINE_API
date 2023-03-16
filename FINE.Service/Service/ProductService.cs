@@ -86,18 +86,18 @@ namespace FINE.Service.Service
                         await _unitOfWork.CommitAsync();
                     }
                 }
-                ////Add Product to Menu 
-                //if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
-                //{
+                //Add Product to Menu 
+                if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
+                {
 
-                //    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
-                //    var addProductToMenu = request.addProductToMenu.FirstOrDefault();
-                //    if (addProductToMenu.ProductId == null)
-                //    {
-                //        addProductToMenu.ProductId = genProduct.Id;
-                //    }
-                //    await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
-                //}
+                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
+                    var addProductToMenu = request.addProductToMenu.FirstOrDefault();
+                    if (addProductToMenu.ProductId == null)
+                    {
+                        addProductToMenu.ProductId = genProduct.Id;
+                    }
+                    await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
+                }
 
                 return new BaseResponseViewModel<ProductResponse>()
                 {

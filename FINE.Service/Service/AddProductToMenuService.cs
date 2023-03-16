@@ -104,10 +104,10 @@ public class AddProductToMenuService : IAddProductToMenuService
                     MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
             var checkProductInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-               .FirstOrDefault(x => x.ProductId == request.ProductId && x.MenuId == request.MenuId);
-            if (checkProductInMenu != null)
-                throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.PRODUCT_ALREADY_IN_MENU,
-                    ProductInMenuErrorEnums.PRODUCT_ALREADY_IN_MENU.GetDisplayName());
+               .FirstOrDefault(x => x.Id == productInMenuId);
+            if (checkProductInMenu == null)
+                throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND_ID,
+                    ProductInMenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
             #endregion
 
             var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
@@ -119,6 +119,7 @@ public class AddProductToMenuService : IAddProductToMenuService
             var updateProductInMenu = _mapper.Map<UpdateProductInMenuRequest, ProductInMenu>(request, productInMenu);
 
             updateProductInMenu.ProductId = product.Id;
+            updateProductInMenu.MenuId = menu.Id;
             updateProductInMenu.StoreId = product.StoreId;
             updateProductInMenu.UpdatedAt= DateTime.Now;
 
