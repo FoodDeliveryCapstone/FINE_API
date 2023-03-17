@@ -45,11 +45,12 @@ namespace FINE.API.Controllers
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        [HttpGet("token")]
-        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM([FromHeader]string accessToken)
+        [HttpGet("Authorization")]
+        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM()
         {
             try
             {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var result = await _customerService.GetCustomerByFCM(accessToken);
                 return Ok(result);
             }
