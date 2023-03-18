@@ -236,13 +236,16 @@ namespace FINE.Service.Service
                 //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                 //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
+                var currentDateTime = Ultils.GetCurrentDatetime();
+
+
                 var genOrder = _mapper.Map<Order>(request);
                 genOrder.CheckInDate = DateTime.Now;
                 genOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
                 genOrder.IsConfirm= false;
                 genOrder.IsPartyMode= false;
 
-                foreach (var order in request.InverseGeneralOrders)
+                foreach (var order in request.InverseGeneralOrder)
                 {
                     var inverseOrder = _mapper.Map<Order>(order);
                     inverseOrder.OrderCode= order.OrderCode;

@@ -11,8 +11,6 @@ namespace FINE.Service.DTO.Request.Order
     {
         public string OrderCode { get; set; }
 
-        public int CustomerId { get; set; }
-
         public string DeliveryPhone { get; set; }
 
         public double TotalAmount { get; set; }
@@ -33,7 +31,7 @@ namespace FINE.Service.DTO.Request.Order
 
         public bool IsPartyMode { get; set; }
 
-        public List<CreateOrderRequest> InverseGeneralOrders { get; set; }
+        public List<CreateOrderRequest> InverseGeneralOrder { get; set; }
     }
 
     public class CreateOrderRequest
