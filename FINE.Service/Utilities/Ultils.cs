@@ -44,7 +44,13 @@ namespace FINE.Service.Utilities
             return new string(Enumerable.Repeat(chars, length)
                                         .Select(s => s[pass.Next(s.Length)]).ToArray());
         }
+
         public static string ToSnakeCase(this string o) => Regex.Replace(o, @"(\w)([A-Z])", "$1-$2").ToLower();
+
+        public static DateTime GetCurrentDatetime()
+        {
+            return DateTime.UtcNow.AddHours(7);
+        }
 
         public static bool CheckVNPhone(string phoneNumber)
         {
