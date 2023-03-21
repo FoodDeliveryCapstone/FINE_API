@@ -20,7 +20,7 @@ namespace FINE.Service.DTO.Request.Product
         public string? Description { get; set; }
 
         public List<CreateExtraProductRequest>? extraProducts { get; set; }
-        //public List<AddProductToMenuRequest>? addProductToMenu { get; set; }
+        public List<AddProductToMenuRequest>? addProductToMenu { get; set; }
     }
 
     public class CreateExtraProductRequest
