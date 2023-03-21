@@ -41,6 +41,8 @@ public partial class Order
 
     public int? ShipperId { get; set; }
 
+    public int? ItemQuantity { get; set; }
+
     public string? Note { get; set; }
 
     public virtual Customer? Customer { get; set; }
