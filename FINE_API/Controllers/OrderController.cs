@@ -18,6 +18,21 @@ namespace FINE.API.Controllers
         }
 
 
+        /// <summary>
+        /// Get order by Id
+        /// </summary>
+        [HttpGet("orderId")]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> GetOrderById(int orderId)
+        {
+            try
+            {
+                return await _orderService.GetOrderById(orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
 
         /// <summary>
         /// Create PreOrder
@@ -58,7 +73,6 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-
                 return await _orderService.CreateOrder(customerId, request);
             }
             catch (ErrorResponse ex)

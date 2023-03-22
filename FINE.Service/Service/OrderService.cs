@@ -19,11 +19,13 @@ using System.Threading.Tasks;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 using static FINE.Service.Helpers.Enum;
+using Castle.Core.Resource;
 
 namespace FINE.Service.Service
 {
     public interface IOrderService
     {
+        Task<BaseResponseViewModel<GenOrderResponse>> GetOrderById(int orderId);
         Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging);
         Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(int customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId, CreateGenOrderRequest request);
@@ -43,9 +45,6 @@ namespace FINE.Service.Service
         {
             try
             {
-                var test = _unitOfWork.Repository<Order>().GetAll()
-                                        .Where(x => x.CustomerId == customerId)
-                                        .ToList();
                 var order = _unitOfWork.Repository<Order>().GetAll()
                                         .Where(x => x.CustomerId == customerId)
                                         .ProjectTo<GenOrderResponse>(_mapper.ConfigurationProvider)
@@ -276,6 +275,29 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<GenOrderResponse>> GetOrderById(int orderId)
+        {
+            try
+            {
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                    .FirstOrDefaultAsync(x => x.Id == orderId);
+                return new BaseResponseViewModel<GenOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<GenOrderResponse>(order)
+                };
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }
