@@ -268,7 +268,8 @@ namespace FINE.Service.Service
                         Message = "Success",
                         Success = true,
                         ErrorCode = 0
-                    }
+                    },
+                    Data = _mapper.Map<GenOrderResponse>(genOrder) 
                 };
             }
             catch (ErrorResponse ex)
