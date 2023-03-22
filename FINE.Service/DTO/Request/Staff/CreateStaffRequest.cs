@@ -27,7 +27,8 @@ namespace FINE.Service.DTO.Request.Staff
 
         public string? RoleType { get; set; }
 
-        public int? CampusId { get; set; }
+        public int? StoreId { get; set; }
+
         public int? CustomerId { get; set; }
     }
 }
