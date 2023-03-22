@@ -25,15 +25,13 @@ namespace FINE.Service.Service
 
     public class ProductInMenuService : IProductInMenuService
     {
-        private readonly FineStgDbContext _context;
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
 
 
 
-        public ProductInMenuService(FineStgDbContext context, IMapper mapper, IUnitOfWork unitOfWork)
+        public ProductInMenuService(IMapper mapper, IUnitOfWork unitOfWork)
         {
-            _context = context;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
         }

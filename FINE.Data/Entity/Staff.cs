@@ -15,7 +15,7 @@ public partial class Staff
 
     public int RoleType { get; set; }
 
-    public int? CampusId { get; set; }
+    public int? StoreId { get; set; }
 
     public int? CustomerId { get; set; }
 
@@ -25,8 +25,6 @@ public partial class Staff
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual Campus? Campus { get; set; }
-
     public virtual Customer? Customer { get; set; }
 
     public virtual ICollection<Fcmtoken> Fcmtokens { get; } = new List<Fcmtoken>();
@@ -34,4 +32,6 @@ public partial class Staff
     public virtual ICollection<Order> Orders { get; } = new List<Order>();
 
     public virtual ICollection<StaffReport> StaffReports { get; } = new List<StaffReport>();
+
+    public virtual Store? Store { get; set; }
 }

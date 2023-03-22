@@ -38,6 +38,8 @@ namespace FINE.Service.DTO.Request.Order
 
         public double TotalAmount { get; set; }
 
+        public int TotalProduct { get; set; }
+
         public List<PreOrderDetailRequest> Details { get; set; }
     }
     public class PreOrderDetailRequest

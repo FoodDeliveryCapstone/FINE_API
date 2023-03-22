@@ -27,9 +27,7 @@ namespace FINE.Service.DTO.Request.Order
 
         public int RoomId { get; set; }
 
-        public bool IsConfirm { get; set; }
-
-        public bool IsPartyMode { get; set; }
+        public int? ItemQuantity { get; set; }
 
         public List<CreateOrderRequest> InverseGeneralOrder { get; set; }
     }
@@ -46,7 +44,7 @@ namespace FINE.Service.DTO.Request.Order
 
         public int? StoreId { get; set; }
 
-        public string? Note { get; set; }
+        public int? ItemQuantity { get; set; }
 
         public List<CreateOrderDetailRequest> OrderDetails { get; set; }
     }
@@ -66,6 +64,8 @@ namespace FINE.Service.DTO.Request.Order
         public int Quantity { get; set; }
 
         public double TotalAmount { get; set; }
+
+        public double? Discount { get; set; }
 
         public double FinalAmount { get; set; }
 

@@ -19,15 +19,16 @@ using System.Threading.Tasks;
 using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 using static FINE.Service.Helpers.Enum;
+using Castle.Core.Resource;
 
 namespace FINE.Service.Service
 {
     public interface IOrderService
     {
+        Task<BaseResponseViewModel<GenOrderResponse>> GetOrderById(int orderId);
         Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging);
         Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(int customerId, CreatePreOrderRequest request);
-        Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId,CreateGenOrderRequest request);
-        Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetAllOrderDetail(OrderDetailResponse filter, PagingRequest paging);
+        Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId, CreateGenOrderRequest request);
     }
     public class OrderService : IOrderService
     {
@@ -71,6 +72,16 @@ namespace FINE.Service.Service
         {
             try
             {
+                #region Timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
+
+                var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
+
+                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
+
                 #region Phân store trong order detail
                 List<ListDetailByStore> listPreOD = new List<ListDetailByStore>();
                 foreach (var orderDetail in request.OrderDetails)
@@ -103,6 +114,7 @@ namespace FINE.Service.Service
                         preOD.StoreId = (int)productInMenu.StoreId;
                         preOD.StoreName = productInMenu.Product.Store.StoreName;
                         preOD.TotalAmount = detail.TotalAmount;
+                        preOD.TotalProduct = detail.Quantity;
                         preOD.Details.Add(detail);
                         listPreOD.Add(preOD);
                     }
@@ -111,6 +123,7 @@ namespace FINE.Service.Service
                         var preOD = listPreOD.Where(x => x.StoreId == productInMenu.StoreId)
                             .FirstOrDefault();
                         preOD.TotalAmount += detail.TotalAmount;
+                        preOD.TotalProduct += detail.Quantity;
                         preOD.Details.Add(detail);
                     }
                 }
@@ -120,8 +133,7 @@ namespace FINE.Service.Service
 
                 var customer = await _unitOfWork.Repository<Customer>().GetById(customerId);
 
-                var orderCount = _unitOfWork.Repository<Order>().GetAll()
-                    .Where(x => ((DateTime)x.CheckInDate).Date.Equals(DateTime.Now.Date)).Count() + 1;
+                var orderCount = _unitOfWork.Repository<Order>().GetAll().Count() + 1;
                 genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
                                         orderCount.ToString().PadLeft(3, '0') + "." + Ultils.GenerateRandomCode();
 
@@ -156,9 +168,11 @@ namespace FINE.Service.Service
                     order.OrderCode = genOrder.OrderCode + "-" + store.StoreId;
                     order.FinalAmount = order.TotalAmount;
                     order.OrderStatus = (int)OrderStatusEnum.PreOrder;
+                    order.ItemQuantity = store.TotalProduct;
                     order.OrderDetails = _mapper.Map<List<OrderDetailResponse>>(store.Details);
                     genOrder.InverseGeneralOrder.Add(order);
 
+                    genOrder.ItemQuantity += store.TotalProduct;
                     genOrder.TotalAmount += order.TotalAmount;
                     if (genOrder.ShippingFee == 0)
                     {
@@ -180,18 +194,7 @@ namespace FINE.Service.Service
                 genOrder.IsPartyMode = false;
 
                 genOrder.CheckInDate = DateTime.Now;
-
-                #region Timeslot
-                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
-
-                var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
-
-                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-
                 genOrder.TimeSlot = _mapper.Map<OrderTimeSlotResponse>(timeSlot);
-                #endregion
 
                 return new BaseResponseViewModel<GenOrderResponse>()
                 {
@@ -214,14 +217,23 @@ namespace FINE.Service.Service
         {
             try
             {
+                #region Timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
+
+                var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
+
+                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
+
                 #region Customer
                 var customer = await _unitOfWork.Repository<Customer>().GetById(customerId);
 
                 //check phone number
-                if (!customer.Phone.Contains(request.DeliveryPhone))
+                if (customer.Phone.Contains(request.DeliveryPhone) == null)
                 {
-                    var checkPhone = Ultils.CheckVNPhone(request.DeliveryPhone);
-                    if (!checkPhone)
+                    if (!Ultils.CheckVNPhone(request.DeliveryPhone))
                         throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
                                                 OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
                 }
@@ -232,29 +244,19 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-
-                var currentDateTime = Ultils.GetCurrentDatetime();
-
 
                 var genOrder = _mapper.Map<Order>(request);
                 genOrder.CheckInDate = DateTime.Now;
-                genOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
-                genOrder.IsConfirm= false;
-                genOrder.IsPartyMode= false;
+                genOrder.CustomerId = customerId;
+                genOrder.OrderStatus = (int)OrderStatusEnum.Processing;
+                genOrder.IsConfirm = false;
+                genOrder.IsPartyMode = false;
 
                 foreach (var order in request.InverseGeneralOrder)
                 {
-                    var inverseOrder = _mapper.Map<Order>(order);
-                    inverseOrder.OrderCode= order.OrderCode;
-                    inverseOrder.CheckInDate = DateTime.Now;
-                    inverseOrder.TotalAmount = order.TotalAmount;
-                    inverseOrder.FinalAmount= order.FinalAmount;
-                    inverseOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
-                    inverseOrder.StoreId= order.StoreId;
-                    inverseOrder.Note= order.Note;
+                    var inverseOrder = new Order();
+                    inverseOrder = _mapper.Map<Order>(genOrder);
+                    inverseOrder = _mapper.Map<CreateOrderRequest,Order>(order, inverseOrder);
                     genOrder.InverseGeneralOrder.Add(inverseOrder);
                 }
 
@@ -269,7 +271,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<GenOrderResponse>(genOrder)
+                    Data = _mapper.Map<GenOrderResponse>(genOrder) 
                 };
             }
             catch (ErrorResponse ex)
@@ -278,35 +280,28 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetAllOrderDetail(OrderDetailResponse filter, PagingRequest paging)
+        public async Task<BaseResponseViewModel<GenOrderResponse>> GetOrderById(int orderId)
         {
             try
             {
-                var timeslot = _unitOfWork.Repository<OrderDetail>().GetAll()
-                                          .Include(x => x.Order)
-                                          .ProjectTo<OrderDetailResponse>(_mapper.ConfigurationProvider)
-                                          .DynamicFilter(filter)
-                                          .DynamicSort(filter)
-                                          .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                        Constants.DefaultPaging);
-
-                return new BaseResponsePagingViewModel<OrderDetailResponse>()
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                    .FirstOrDefaultAsync(x => x.Id == orderId);
+                return new BaseResponseViewModel<GenOrderResponse>()
                 {
-                    Metadata = new PagingsMetadata()
+                    Status = new StatusViewModel()
                     {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = timeslot.Item1
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
                     },
-                    Data = timeslot.Item2.ToList()
+                    Data = _mapper.Map<GenOrderResponse>(order)
                 };
             }
-            catch (ErrorResponse ex)
+            catch (Exception ex)
             {
-                throw;
+                throw ex;
             }
         }
-
     }
 }
 

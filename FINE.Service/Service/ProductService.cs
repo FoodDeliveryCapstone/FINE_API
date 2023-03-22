@@ -31,16 +31,14 @@ namespace FINE.Service.Service
 
     public class ProductService : IProductService
     {
-        private readonly FineStgDbContext _context;
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private IProductToMenuService _addProductToMenuService;
 
 
 
-        public ProductService(FineStgDbContext context, IMapper mapper, IUnitOfWork unitOfWork, IProductToMenuService addProductToMenuService)
+        public ProductService(IMapper mapper, IUnitOfWork unitOfWork, IProductToMenuService addProductToMenuService)
         {
-            _context = context;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _addProductToMenuService = addProductToMenuService;
@@ -59,31 +57,26 @@ namespace FINE.Service.Service
 
                 product.CreateAt = DateTime.Now;
 
-                await _unitOfWork.Repository<Product>().InsertAsync(product);
-                await _unitOfWork.CommitAsync();
-
                 if (request.extraProducts != null)
                 {
-                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
                     foreach (var extraProduct in request.extraProducts)
                     {
                         var productExtra = new Product()
                         {
-                            GeneralProductId = genProduct.Id,
-                            ProductCode = genProduct.ProductCode + '_' + extraProduct.Size,
-                            ProductName = genProduct.ProductCode + " (" + extraProduct.Size + ')',
-                            CategoryId = genProduct.CategoryId,
-                            StoreId = genProduct.StoreId,
+                            ProductCode = product.ProductCode + '_' + extraProduct.Size,
+                            ProductName = product.ProductCode + " (" + extraProduct.Size + ')',
+                            CategoryId = product.CategoryId,
+                            StoreId = product.StoreId,
                             SizePrice = extraProduct.SizePrice,
                             Size = extraProduct.Size,
                             CreateAt = DateTime.Now,
                             IsActive = true,
                         };
-
-                        await _unitOfWork.Repository<Product>().InsertAsync(productExtra);
-                        await _unitOfWork.CommitAsync();
+                        product.InverseGeneralProduct.Add(productExtra);
                     }
                 }
+                await _unitOfWork.Repository<Product>().InsertAsync(product);
+                await _unitOfWork.CommitAsync();
                 //Add Product to Menu 
                 if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
                 {

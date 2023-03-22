@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FINE.Data.Entity;
 
-public partial class FineStgDbContext : DbContext
+public partial class FineDevDbContext : DbContext
 {
-    public FineStgDbContext()
+    public FineDevDbContext()
     {
     }
 
-    public FineStgDbContext(DbContextOptions<FineStgDbContext> options)
+    public FineDevDbContext(DbContextOptions<FineDevDbContext> options)
         : base(options)
     {
     }
@@ -87,7 +87,7 @@ public partial class FineStgDbContext : DbContext
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=18.140.30.255;Database=FINE_stg_db;User ID=finedb;Password=5HazQl5%82M7aj@b2AC5Q;MultipleActiveResultSets=true;Integrated Security=true;Trusted_Connection=False;Encrypt=True;TrustServerCertificate=True", x => x.UseNetTopologySuite());
+//        => optionsBuilder.UseSqlServer("Server=18.140.30.255;Database=FINE_dev_db;User ID=finedb;Password=5HazQl5%82M7aj@b2AC5Q;MultipleActiveResultSets=true;Integrated Security=true;Trusted_Connection=False;Encrypt=True;TrustServerCertificate=True", x => x.UseNetTopologySuite());
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -300,6 +300,10 @@ public partial class FineStgDbContext : DbContext
             entity.HasOne(d => d.Shipper).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.ShipperId)
                 .HasConstraintName("FK_Order_Staff");
+
+            entity.HasOne(d => d.Store).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.StoreId)
+                .HasConstraintName("FK_Order_Store");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>
@@ -551,13 +555,13 @@ public partial class FineStgDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.Campus).WithMany(p => p.Staff)
-                .HasForeignKey(d => d.CampusId)
-                .HasConstraintName("FK_Staff_Campus");
-
             entity.HasOne(d => d.Customer).WithMany(p => p.Staff)
                 .HasForeignKey(d => d.CustomerId)
                 .HasConstraintName("FK_Staff_Customer");
+
+            entity.HasOne(d => d.Store).WithMany(p => p.Staff)
+                .HasForeignKey(d => d.StoreId)
+                .HasConstraintName("FK_Staff_Store");
         });
 
         modelBuilder.Entity<StaffReport>(entity =>

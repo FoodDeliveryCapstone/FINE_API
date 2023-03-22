@@ -128,7 +128,6 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<dynamic>> Login(LoginRequest request)
         {
             var staff = _unitOfWork.Repository<Staff>().GetAll()
-                                    .Include(x => x.Campus)
                                     .Where(x => x.Username.Equals(request.UserName) && x.IsAvailable == true)
                                     .FirstOrDefault();
 
@@ -145,7 +144,7 @@ namespace FINE.Service.Service
 
             if (staff.RoleType == (int)SystemRoleEnum.StoreManager)
             {
-                if (staff.CampusId == null)
+                if (staff.StoreId == null)
                 {
                     return new BaseResponseViewModel<dynamic>()
                     {

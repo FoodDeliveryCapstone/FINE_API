@@ -34,6 +34,7 @@ namespace FINE.API.Mapper
             CreateMap<Customer, CustomerResponse>().ReverseMap();
             CreateMap<Customer, OrderCustomerResponse>().ReverseMap();
             CreateMap<Customer, OrderCustomerResponse>().ReverseMap();
+            CreateMap<Customer, OrderDetailResponse>();
             CreateMap<CreateCustomerRequest, Customer>();
             CreateMap<UpdateCustomerRequest, Customer>();
 
@@ -80,15 +81,23 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Order
-
-            CreateMap<Order, OrderResponse>().ReverseMap();
             CreateMap<Order, GenOrderResponse>().ReverseMap();
-            CreateMap<CreatePreOrderRequest, GenOrderResponse>().ReverseMap();
-            CreateMap<CreatePreOrderRequest, OrderResponse>().ReverseMap();
+            CreateMap<Order, OrderResponse>()
+                .ForMember(x => x.StoreName, opt => opt.MapFrom(y => y.Store.StoreName))
+                .ReverseMap();
+            CreateMap<Order, OrderDetailResponse>();
+            CreateMap<Order, Order>()
+                .ForMember(x => x.GeneralOrderId, otp => otp.MapFrom(x => x.Id))
+                .ForMember(x => x.Id, y => y.Ignore())
+                .ForMember(x => x.InverseGeneralOrder, y => y.Ignore());
+
+            CreateMap<CreatePreOrderRequest, GenOrderResponse>();
+            CreateMap<CreatePreOrderRequest, OrderResponse>();
             CreateMap<ListDetailByStore, OrderResponse>().ReverseMap();
             CreateMap<CreatePreOrderRequest, Order>();
             CreateMap<CreateGenOrderRequest, Order>()
-            .ForMember(x => x.InverseGeneralOrder, otp => otp.Ignore());
+                .ForMember(x => x.InverseGeneralOrder, y => y.Ignore());
+
             CreateMap<CreateOrderRequest, Order>();
 
             #endregion
@@ -99,11 +108,10 @@ namespace FINE.API.Mapper
                .IncludeMembers(x => x.Order, x => x.Order.Customer)
                .ReverseMap();
             CreateMap<CreatePreOrderDetailRequest, OrderDetail>();
+            CreateMap<CreateOrderDetailRequest, OrderDetail>();
             CreateMap<CreatePreOrderDetailRequest, OrderDetailResponse>();
             CreateMap<PreOrderDetailRequest, OrderDetailResponse>();
             CreateMap<CreateOrderDetailRequest, OrderDetail>();
-            CreateMap<Order, OrderDetailResponse>();
-            CreateMap<Customer, OrderDetailResponse>();
             #endregion
 
             #region Store
