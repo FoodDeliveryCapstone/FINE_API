@@ -242,12 +242,6 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-                if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-
-                var currentDateTime = Ultils.GetCurrentDatetime();
-
 
                 var genOrder = _mapper.Map<Order>(request);
                 genOrder.CheckInDate = DateTime.Now;
