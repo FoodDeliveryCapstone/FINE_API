@@ -43,6 +43,9 @@ namespace FINE.Service.Service
         {
             try
             {
+                var test = _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.CustomerId == customerId)
+                                        .ToList();
                 var order = _unitOfWork.Repository<Order>().GetAll()
                                         .Where(x => x.CustomerId == customerId)
                                         .ProjectTo<GenOrderResponse>(_mapper.ConfigurationProvider)

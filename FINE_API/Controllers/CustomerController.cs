@@ -73,6 +73,7 @@ namespace FINE.API.Controllers
             {
                 return Unauthorized();
             }
+
             var result = await _orderService.GetOrderByCustomerId(customerId, paging);
             return Ok(result);
         }

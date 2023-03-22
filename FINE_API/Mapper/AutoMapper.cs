@@ -81,8 +81,11 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Order
-            CreateMap<Order, GenOrderResponse>().ReverseMap();
-            CreateMap<Order, OrderResponse>().ReverseMap();
+            CreateMap<Order, GenOrderResponse>()
+                .ReverseMap();
+            CreateMap<Order, OrderResponse>()
+                .ForMember(x => x.StoreName, opt => opt.MapFrom(y => y.Store.StoreName))
+                .ReverseMap();
             CreateMap<Order, OrderDetailResponse>();
             CreateMap<Order, Order>()
                 .ForMember(x => x.GeneralOrderId, otp => otp.MapFrom(x => x.Id))
