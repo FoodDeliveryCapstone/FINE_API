@@ -29,5 +29,7 @@ public partial class Store
 
     public virtual ICollection<Product> Products { get; } = new List<Product>();
 
+    public virtual ICollection<Staff> Staff { get; } = new List<Staff>();
+
     public virtual ICollection<StoreCategory> StoreCategories { get; } = new List<StoreCategory>();
 }

@@ -8,10 +8,10 @@ namespace FINE.Data.Repository
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private static FineStgDbContext Context;
+        private static FineDevDbContext Context;
         private static DbSet<T> Table { get; set; }
 
-        public GenericRepository(FineStgDbContext context)
+        public GenericRepository(FineDevDbContext context)
         {
             Context = context;
             Table = Context.Set<T>();
