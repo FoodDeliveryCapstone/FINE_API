@@ -41,11 +41,9 @@ namespace FINE.Service.DTO.Response
 
         public int? ShipperId { get; set; }
 
-        public int? ItemQuantity { get; set; }
+        public int ItemQuantity { get; set; }
 
         public string? Note { get; set; }
-        
-        public int? NumberOfProduct { get; set; }
 
         public List<OrderResponse> InverseGeneralOrder { get; set; }
     }
@@ -69,6 +67,8 @@ namespace FINE.Service.DTO.Response
         public int StoreId { get; set; }
 
         public string? StoreName { get; set; }
+
+        public int? ItemQuantity { get; set; }
 
         public List<OrderDetailResponse> OrderDetails { get; set; }
 

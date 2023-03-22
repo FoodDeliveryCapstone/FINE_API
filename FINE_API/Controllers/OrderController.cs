@@ -28,13 +28,14 @@ namespace FINE.API.Controllers
             try
             {
 
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                if (customerId == -1)
-                {
-                    return Unauthorized();
-                }
+                //if (customerId == -1)
+                //{
+                //    return Unauthorized();
+                //}
+                var customerId = 1;
 
                 return await _orderService.CreatePreOrder(customerId, request);
             }
@@ -52,13 +53,14 @@ namespace FINE.API.Controllers
         {
             try
             {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                if (customerId == -1)
-                {
-                    return Unauthorized();
-                }
+                //if (customerId == -1)
+                //{
+                //    return Unauthorized();
+                //}
+                var customerId = 1;
 
                 return await _orderService.CreateOrder(customerId, request);
             }
