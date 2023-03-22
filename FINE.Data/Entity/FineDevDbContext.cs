@@ -300,6 +300,10 @@ public partial class FineDevDbContext : DbContext
             entity.HasOne(d => d.Shipper).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.ShipperId)
                 .HasConstraintName("FK_Order_Staff");
+
+            entity.HasOne(d => d.Store).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.StoreId)
+                .HasConstraintName("FK_Order_Store");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>

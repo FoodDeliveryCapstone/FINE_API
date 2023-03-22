@@ -25,6 +25,8 @@ public partial class Store
 
     public virtual Campus Campus { get; set; } = null!;
 
+    public virtual ICollection<Order> Orders { get; } = new List<Order>();
+
     public virtual ICollection<Product> Products { get; } = new List<Product>();
 
     public virtual ICollection<StoreCategory> StoreCategories { get; } = new List<StoreCategory>();
