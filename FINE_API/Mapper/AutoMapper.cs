@@ -207,6 +207,9 @@ namespace FINE.API.Mapper
                 .IncludeMembers(x => x.Product, x => x.Product.Store, x => x.Product.Category)
                 .ReverseMap();
             #endregion
+            #region Revenue
+            CreateMap<Order, RevenueResponse>().ReverseMap();
+            #endregion
 
             #region
             CreateMap<Floor, FloorResponse>().ReverseMap();
