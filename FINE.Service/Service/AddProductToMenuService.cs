@@ -90,26 +90,6 @@ public class AddProductToMenuService : IAddProductToMenuService
     {
         try
         {
-            #region check product and menu exist
-            var product = _unitOfWork.Repository<Product>().GetAll()
-                 .FirstOrDefault(x => x.Id == request.ProductId);
-            if (product == null)
-                throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
-                    ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-            var menu = _unitOfWork.Repository<Menu>().GetAll()
-                .FirstOrDefault(x => x.Id == request.MenuId);
-            if (menu == null)
-                throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_ID,
-                    MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-            var checkProductInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-               .FirstOrDefault(x => x.Id == productInMenuId);
-            if (checkProductInMenu == null)
-                throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND_ID,
-                    ProductInMenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
-            #endregion
-
             var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
                  .FirstOrDefault(x => x.Id == productInMenuId);
             if (productInMenu == null)
@@ -118,9 +98,9 @@ public class AddProductToMenuService : IAddProductToMenuService
 
             var updateProductInMenu = _mapper.Map<UpdateProductInMenuRequest, ProductInMenu>(request, productInMenu);
 
-            updateProductInMenu.ProductId = product.Id;
-            updateProductInMenu.MenuId = menu.Id;
-            updateProductInMenu.StoreId = product.StoreId;
+            updateProductInMenu.ProductId = productInMenu.ProductId;
+            updateProductInMenu.MenuId = productInMenu.MenuId;
+            updateProductInMenu.StoreId = productInMenu.StoreId;
             updateProductInMenu.UpdatedAt= DateTime.Now;
 
             await _unitOfWork.Repository<ProductInMenu>().UpdateDetached(updateProductInMenu);
