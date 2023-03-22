@@ -220,9 +220,9 @@ namespace FINE.Service.Service
 
                 var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
 
-                if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
                 #region Customer
