@@ -229,10 +229,9 @@ namespace FINE.Service.Service
                 var customer = await _unitOfWork.Repository<Customer>().GetById(customerId);
 
                 //check phone number
-                if (!customer.Phone.Contains(request.DeliveryPhone))
+                if (customer.Phone.Contains(request.DeliveryPhone) == null)
                 {
-                    var checkPhone = Ultils.CheckVNPhone(request.DeliveryPhone);
-                    if (!checkPhone)
+                    if (!Ultils.CheckVNPhone(request.DeliveryPhone))
                         throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
                                                 OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
                 }
