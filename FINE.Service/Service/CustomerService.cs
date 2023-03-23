@@ -314,7 +314,9 @@ namespace FINE.Service.Service
                     var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
 
                     if (data.FcmToken != null && !data.FcmToken.Trim().Equals(""))
-                        _customerFcmtokenService.AddFcmToken(newToken, customer.Id);
+                        newToken = data.FcmToken;
+
+                    _customerFcmtokenService.AddFcmToken(newToken, customer.Id);
 
                     return new BaseResponseViewModel<LoginResponse>()
                     {
