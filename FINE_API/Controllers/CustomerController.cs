@@ -83,10 +83,16 @@ namespace FINE.API.Controllers
         /// <param name="data"></param>
         /// <returns></returns>
         [HttpPut("customerId")]
-        public async Task<ActionResult<CustomerResponse>> UpdateCustomer(int customerId, [FromBody] UpdateCustomerRequest data)
+        public async Task<ActionResult<CustomerResponse>> UpdateCustomer([FromBody] UpdateCustomerRequest data)
         {
             try
             {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == -1)
+                {
+                    return Unauthorized();
+                }
                 var result = await _customerService.UpdateCustomer(customerId, data);
                 return Ok(result);
             }
