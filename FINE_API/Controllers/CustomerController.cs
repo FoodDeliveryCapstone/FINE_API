@@ -46,12 +46,17 @@ namespace FINE.API.Controllers
         /// <param name="data"></param>
         /// <returns></returns>
         [HttpGet("Authorization")]
-        public async Task<ActionResult<CustomerResponse>> GetCustomerByFCM()
+        public async Task<ActionResult<CustomerResponse>> GetCustomerByToken()
         {
             try
             {
                 var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var result = await _customerService.GetCustomerByFCM(accessToken);
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == -1)
+                {
+                    return Unauthorized();
+                }
+                var result = await _customerService.GetCustomerById(customerId);
                 return Ok(result);
             }
             catch (ErrorResponse ex)

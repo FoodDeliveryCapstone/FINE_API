@@ -26,7 +26,6 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId);
-        Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByFCM(string accessToken);
         Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
@@ -103,30 +102,6 @@ namespace FINE.Service.Service
             catch (ErrorResponse ex)
             {
                 throw;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByFCM(string accessToken)
-        {
-            try
-            {
-                var token = await _unitOfWork.Repository<Fcmtoken>().GetAll()
-                            .FirstOrDefaultAsync(x => x.Token.Contains(accessToken));
-
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<CustomerResponse>(token.Customer)
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
             }
         }
 
