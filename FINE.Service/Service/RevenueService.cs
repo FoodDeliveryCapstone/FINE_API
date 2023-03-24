@@ -70,7 +70,7 @@ namespace FINE.Service.Service
                 to = ((DateTime)to).GetEndOfDate();
 
                 var getSystemRevenue = _unitOfWork.Repository<Order>().GetAll()
-                            .Where(x => x.OrderStatus == (int)OrderStatusEnum.Processing
+                            .Where(x => x.OrderStatus == (int)OrderStatusEnum.Finished
                                     && x.CheckInDate >= from
                                     && x.CheckInDate < to);
 
@@ -131,7 +131,7 @@ namespace FINE.Service.Service
 
                 var getStoreRevenue = _unitOfWork.Repository<Order>().GetAll()
                             .Where(x => x.StoreId == storeId
-                                    && x.OrderStatus == (int)OrderStatusEnum.Processing
+                                    && x.OrderStatus == (int)OrderStatusEnum.Finished
                                     && x.CheckInDate >= from
                                     && x.CheckInDate < to);
 

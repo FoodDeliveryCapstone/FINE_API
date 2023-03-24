@@ -236,6 +236,10 @@ namespace FINE.Service.Helpers
             //404
             [Display(Name = "Not found this product in menu Id!")]
             NOT_FOUND_ID = 4041,
+
+            //400
+            [Display(Name = "This product already in this menu!")]
+            PRODUCT_ALREADY_IN_MENU = 4001
         }
     }
 }

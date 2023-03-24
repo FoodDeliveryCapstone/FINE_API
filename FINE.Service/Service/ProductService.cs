@@ -280,22 +280,7 @@ namespace FINE.Service.Service
                         await _unitOfWork.CommitAsync();
                     }
                 }
-
-                //Update Product in Menu
-                if (request.updateProductToMenu != null && request.updateProductToMenu.Count() > 0)
-                {
-                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
-                    var updateProductInMenu = request.updateProductToMenu.FirstOrDefault();
-                    if (updateProductInMenu.ProductId == null)
-                    {
-                        updateProductInMenu.ProductId = genProduct.Id;
-                    }
-                    await _addProductToMenuService.UpdateProductInMenu(updateProductInMenu);
-
-                }
-
-
-
+             
                 return new BaseResponseViewModel<ProductResponse>()
                 {
                     Status = new StatusViewModel()
