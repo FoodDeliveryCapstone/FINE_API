@@ -1,4 +1,5 @@
-﻿using FINE.Service.DTO.Request.Order;
+﻿using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
@@ -17,6 +18,21 @@ namespace FINE.API.Controllers
             _orderService = orderService;
         }
 
+        /// <summary>
+        /// Get orders
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrders(PagingRequest paging)
+        {
+            try
+            {
+                return await _orderService.GetOrders(paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
 
         /// <summary>
         /// Get order by Id
