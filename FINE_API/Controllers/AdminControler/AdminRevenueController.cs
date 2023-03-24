@@ -21,21 +21,35 @@ namespace FINE.API.Controllers.AdminControler
         /// <summary>
         /// Get System Revenue
         /// </summary>
-        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [Authorize(Roles = "SystemAdmin")]
         [HttpGet("system")]
         public async Task<ActionResult<BaseResponseViewModel<RevenueResponse>>> GetTotalRevenue([FromQuery] DateFilter filter)
         {
-            return await _revenueService.GetSystemRevenueByMonth(filter);
+            try
+            {
+                return await _revenueService.GetSystemRevenueByMonth(filter);
+            }
+            catch (ErrorResponse ex)
+            { 
+                return BadRequest(ex.Error); 
+            }
         }
 
         /// <summary>
         /// Get Store Revenue
         /// </summary>
-        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [Authorize(Roles = "StoreManager")]
         [HttpGet("store/{storeId}")]
         public async Task<ActionResult<BaseResponseViewModel<StoreRevenueResponse>>> GetStoreRevenue(int storeId, [FromQuery] DateFilter filter)
         {
-            return await _revenueService.GetStoreRevenueByMonth(storeId, filter);
+            try
+            {
+                return await _revenueService.GetStoreRevenueByMonth(storeId, filter);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
     }
 }
