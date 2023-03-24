@@ -47,4 +47,17 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdatedAt { get; set; }
     }
+
+    public class ProductInMenuBestSellerResponse
+    {
+        public int Id { get; set; }
+        public int? MenuId { get; set; }
+        public int Status { get; set; }
+        public double? Price { get; set; }
+        public int Quantity { get; set; }
+        public bool IsAvailable { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public ProductResponse? Product { get; set; }
+    }
 }

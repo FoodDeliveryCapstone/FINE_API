@@ -21,6 +21,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId);
         Task<List<ProductInMenuResponse>> GetProductInMenuByStore(int storeId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>> GetProductInMenuBestSeller(PagingRequest paging);
     }
 
     public class ProductInMenuService : IProductInMenuService
@@ -91,6 +92,70 @@ namespace FINE.Service.Service
                 }
 
                 return result;
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>> GetProductInMenuBestSeller(PagingRequest paging)
+        {
+            try
+            {
+                #region Get Order Detail from 1 month
+                DateTime oneMonthFromNow = DateTime.Now.AddMonths(-1);
+                var orderDetail = _unitOfWork.Repository<OrderDetail>().GetAll()
+                                        .Include(x => x.Order)
+                                        .Where(x => x.Order.CheckInDate <= DateTime.Now && x.Order.CheckInDate >= oneMonthFromNow)
+                                        .Take(100)
+                                        .ToList();
+                if (orderDetail == null)
+                    throw new ErrorResponse(404, (int)ProductBestSellerErrorEnums.NOT_FOUND_ORDER,
+                        ProductBestSellerErrorEnums.NOT_FOUND_ORDER.GetDisplayName());
+                #endregion
+
+                #region Find Order Detail that have similar Product greater than 3
+                var orderDetailWithSimilarProduct =
+                   orderDetail.GroupBy(x => x.ProductInMenuId)
+                   .Where(x => x.Count() > 3)
+                   .Take(5)
+                   .Select(g => new { ProductInMenuId = g.Key, TotalQuantity = g.Sum(x => x.Quantity) })
+                   .ToList();
+
+                if (orderDetailWithSimilarProduct == null)
+                    throw new ErrorResponse(404, (int)ProductBestSellerErrorEnums.SIMILAR_PRODUCT_NOT_FOUND,
+                        ProductBestSellerErrorEnums.SIMILAR_PRODUCT_NOT_FOUND.GetDisplayName());
+                #endregion
+
+                #region Calculate Quantity
+                var productBestSellerList = new List<ProductInMenuBestSellerResponse>();
+                //var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().ToList();
+                foreach (var product in orderDetailWithSimilarProduct)
+                {
+                    //find Product in ProductInMenu
+                    var productInMenu = _unitOfWork.Repository<ProductInMenu>()
+                                            .GetAll()
+                                            .FirstOrDefault(x => x.Id == product.ProductInMenuId);
+
+                    if (productInMenu != null)
+                    {
+                        var productBestSeller = _mapper.Map<ProductInMenuBestSellerResponse>(productInMenu);
+                        productBestSeller.Quantity = product.TotalQuantity;
+                        productBestSellerList.Add(productBestSeller);
+                    }
+                }
+                return new BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = productBestSellerList.Count()
+                    },
+                    Data = productBestSellerList.ToList()
+                };
+                #endregion
             }
             catch (ErrorResponse ex)
             {

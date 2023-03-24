@@ -52,4 +52,21 @@ public class ProductInMenuController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get Product In Menu Best Seller
+    /// </summary>
+    ///
+    [HttpGet("ProductBestSeller")]
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>>> GetProductBestSeller([FromQuery] PagingRequest paging)
+    {
+        try
+        {
+            return await _productInMenuService.GetProductInMenuBestSeller(paging);
+        }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
 }

@@ -235,5 +235,15 @@ namespace FINE.Service.Helpers
             [Display(Name = "Not found this product in menu Id!")]
             NOT_FOUND_ID = 4041,
         }
+
+        public enum ProductBestSellerErrorEnums
+        {
+            //404
+            [Display(Name = "Not found any Orders!")]
+            NOT_FOUND_ORDER = 4041,
+
+            [Display(Name = "Not found any Orders have similar products!")]
+            SIMILAR_PRODUCT_NOT_FOUND = 4042,
+        }
     }
 }
