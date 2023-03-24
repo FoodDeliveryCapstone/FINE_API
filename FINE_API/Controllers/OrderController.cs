@@ -22,7 +22,7 @@ namespace FINE.API.Controllers
         /// Get orders
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrders(PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrders([FromQuery] PagingRequest paging)
         {
             try
             {
