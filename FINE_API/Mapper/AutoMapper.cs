@@ -89,6 +89,7 @@ namespace FINE.API.Mapper
             CreateMap<Order, Order>()
                 .ForMember(x => x.GeneralOrderId, otp => otp.MapFrom(x => x.Id))
                 .ForMember(x => x.Id, y => y.Ignore())
+                .ForMember(x => x.ShippingFee, y => y.Ignore())
                 .ForMember(x => x.InverseGeneralOrder, y => y.Ignore());
 
             CreateMap<CreatePreOrderRequest, GenOrderResponse>();
