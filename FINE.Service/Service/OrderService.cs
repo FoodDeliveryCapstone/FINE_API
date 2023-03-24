@@ -29,6 +29,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging);
         Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(int customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId, CreateGenOrderRequest request);
+        Task<BaseResponseViewModel<GenOrderResponse>> UpdateCancelOrder(int orderId);
     }
     public class OrderService : IOrderService
     {
@@ -257,7 +258,7 @@ namespace FINE.Service.Service
                 {
                     var inverseOrder = new Order();
                     inverseOrder = _mapper.Map<Order>(genOrder);
-                    inverseOrder = _mapper.Map<CreateOrderRequest,Order>(order, inverseOrder);
+                    inverseOrder = _mapper.Map<CreateOrderRequest, Order>(order, inverseOrder);
                     genOrder.InverseGeneralOrder.Add(inverseOrder);
                 }
 
@@ -272,7 +273,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<GenOrderResponse>(genOrder) 
+                    Data = _mapper.Map<GenOrderResponse>(genOrder)
                 };
             }
             catch (ErrorResponse ex)
@@ -299,6 +300,63 @@ namespace FINE.Service.Service
                 };
             }
             catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<GenOrderResponse>> UpdateCancelOrder(int orderId)
+        {
+            try
+            {
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                    .FirstOrDefaultAsync(x => x.Id == orderId);
+
+                if (order == null)
+                    throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND_ID,
+                          OrderErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                if (order.GeneralOrderId != null)
+                {
+                    var genOrder = await _unitOfWork.Repository<Order>().GetAll()
+                    .FirstOrDefaultAsync(x => x.Id == order.GeneralOrderId);
+
+                    if (genOrder.InverseGeneralOrder.Count() > 1)
+                    {
+                        genOrder.TotalAmount -= order.TotalAmount;
+                        genOrder.Discount -= order.Discount;
+                        genOrder.FinalAmount -= order.FinalAmount;
+                        genOrder.ShippingFee -= 2000;
+                    }
+                    else
+                    {
+                        genOrder.OrderStatus = (int)OrderStatusEnum.UserCancel;
+                    }
+                    await _unitOfWork.Repository<Order>().UpdateDetached(genOrder);
+                    await _unitOfWork.CommitAsync();
+                } else
+                {
+                    foreach (var inverseOrder in order.InverseGeneralOrder)
+                    {
+                        inverseOrder.OrderStatus = (int)OrderStatusEnum.UserCancel;
+                    }
+                }
+                order.OrderStatus = (int)OrderStatusEnum.UserCancel;
+
+                await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<GenOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }

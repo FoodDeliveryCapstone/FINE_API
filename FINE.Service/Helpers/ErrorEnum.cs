@@ -18,8 +18,10 @@ namespace FINE.Service.Helpers
         {
             //400 
             [Display(Name = "Invalid phone number")]
-            INVALID_PHONE_NUMBER = 4001
+            INVALID_PHONE_NUMBER = 4001,
             //404 
+            [Display(Name = "Not found this order id!")]
+            NOT_FOUND_ID = 4041
         }
 
         public enum CustomerErrorEnums

@@ -80,5 +80,21 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Update Order
+        /// </summary>
+        [HttpPut("usercancel")]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> UpdateCancelOrder(int orderId)
+        {
+            try
+            {
+                return await _orderService.UpdateCancelOrder(orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }
