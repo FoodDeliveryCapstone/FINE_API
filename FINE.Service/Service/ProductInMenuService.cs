@@ -21,7 +21,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId);
         Task<List<ProductInMenuResponse>> GetProductInMenuByStore(int storeId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>> GetProductInMenuBestSeller(PagingRequest paging);
+        Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductInMenuBestSeller(PagingRequest paging);
     }
 
     public class ProductInMenuService : IProductInMenuService
@@ -99,7 +99,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>> GetProductInMenuBestSeller(PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductInMenuBestSeller(PagingRequest paging)
         {
             try
             {
@@ -129,7 +129,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region Calculate Quantity
-                var productBestSellerList = new List<ProductInMenuBestSellerResponse>();
+                var productBestSellerList = new List<ProductInMenuResponse>();
                 //var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().ToList();
                 foreach (var product in orderDetailWithSimilarProduct)
                 {
@@ -140,12 +140,11 @@ namespace FINE.Service.Service
 
                     if (productInMenu != null)
                     {
-                        var productBestSeller = _mapper.Map<ProductInMenuBestSellerResponse>(productInMenu);
-                        productBestSeller.Quantity = product.TotalQuantity;
+                        var productBestSeller = _mapper.Map<ProductInMenuResponse>(productInMenu);
                         productBestSellerList.Add(productBestSeller);
                     }
                 }
-                return new BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>()
+                return new BaseResponsePagingViewModel<ProductInMenuResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {

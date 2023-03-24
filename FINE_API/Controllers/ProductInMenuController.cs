@@ -57,7 +57,7 @@ public class ProductInMenuController : ControllerBase
     /// </summary>
     ///
     [HttpGet("ProductBestSeller")]
-    public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuBestSellerResponse>>> GetProductBestSeller([FromQuery] PagingRequest paging)
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuResponse>>> GetProductBestSeller([FromQuery] PagingRequest paging)
     {
         try
         {
