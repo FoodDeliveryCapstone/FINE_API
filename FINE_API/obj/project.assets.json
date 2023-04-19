@@ -2,18 +2,18 @@
   "version": 3,
   "targets": {
     "net7.0": {
-      "Autofac/6.5.0": {
+      "Autofac/7.0.1": {
         "type": "package",
         "dependencies": {
           "System.Diagnostics.DiagnosticSource": "4.7.1"
         },
         "compile": {
-          "lib/net6.0/Autofac.dll": {
+          "lib/net7.0/Autofac.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/Autofac.dll": {
+          "lib/net7.0/Autofac.dll": {
             "related": ".xml"
           }
         }
@@ -51,10 +51,10 @@
           }
         }
       },
-      "AutoMapper.Extensions.Microsoft.DependencyInjection/12.0.0": {
+      "AutoMapper.Extensions.Microsoft.DependencyInjection/12.0.1": {
         "type": "package",
         "dependencies": {
-          "AutoMapper": "12.0.0",
+          "AutoMapper": "[12.0.1]",
           "Microsoft.Extensions.Options": "6.0.0"
         },
         "compile": {
@@ -108,11 +108,12 @@
           }
         }
       },
-      "BarCode/2023.3.2": {
+      "BarCode/2023.4.1": {
         "type": "package",
         "dependencies": {
-          "IronSoftware.System.Drawing": "2023.3.1",
-          "Microsoft.Extensions.Logging.Abstractions": "2.1.0"
+          "IronSoftware.System.Drawing": "2023.3.3",
+          "Microsoft.Extensions.Logging.Abstractions": "5.0.0",
+          "SixLabors.ImageSharp": "2.1.3"
         },
         "compile": {
           "lib/netstandard2.0/IronBarCode.dll": {
@@ -127,6 +128,31 @@
           },
           "lib/netstandard2.0/SixLabors.Fonts.dll": {},
           "lib/netstandard2.0/SixLabors.ImageSharp.Drawing.dll": {}
+        },
+        "build": {
+          "buildTransitive/netstandard2.0/BarCode.targets": {}
+        },
+        "runtimeTargets": {
+          "runtimes/linux-x64/native/IronPdfInterop.so": {
+            "assetType": "native",
+            "rid": "linux-x64"
+          },
+          "runtimes/osx-arm64/native/IronPdfInterop.dylib": {
+            "assetType": "native",
+            "rid": "osx-arm64"
+          },
+          "runtimes/osx-x64/native/IronPdfInterop.dylib": {
+            "assetType": "native",
+            "rid": "osx-x64"
+          },
+          "runtimes/win-x64/native/IronPdfInterop.dll": {
+            "assetType": "native",
+            "rid": "win-x64"
+          },
+          "runtimes/win-x86/native/IronPdfInterop.dll": {
+            "assetType": "native",
+            "rid": "win-x86"
+          }
         }
       },
       "BitMiracle.LibTiff.NET/2.4.649": {
@@ -296,10 +322,10 @@
           }
         }
       },
-      "Hangfire.AspNetCore/1.7.33": {
+      "Hangfire.AspNetCore/1.7.34": {
         "type": "package",
         "dependencies": {
-          "Hangfire.Core": "[1.7.33]"
+          "Hangfire.Core": "[1.7.34]"
         },
         "compile": {
           "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {
@@ -315,7 +341,7 @@
           "Microsoft.AspNetCore.App"
         ]
       },
-      "Hangfire.Core/1.7.33": {
+      "Hangfire.Core/1.7.34": {
         "type": "package",
         "dependencies": {
           "Newtonsoft.Json": "11.0.1"
@@ -444,7 +470,7 @@
           "Microsoft.AspNetCore.App"
         ]
       },
-      "IronSoftware.System.Drawing/2023.3.1": {
+      "IronSoftware.System.Drawing/2023.3.3": {
         "type": "package",
         "dependencies": {
           "BitMiracle.LibTiff.NET": "2.4.649",
@@ -453,16 +479,12 @@
         "compile": {
           "lib/netstandard2.0/IronSoftware.Drawing.Common.dll": {
             "related": ".deps.json;.pdb;.xml"
-          },
-          "lib/netstandard2.0/SixLabors.Fonts.dll": {},
-          "lib/netstandard2.0/SixLabors.ImageSharp.Drawing.dll": {}
+          }
         },
         "runtime": {
           "lib/netstandard2.0/IronSoftware.Drawing.Common.dll": {
             "related": ".deps.json;.pdb;.xml"
-          },
-          "lib/netstandard2.0/SixLabors.Fonts.dll": {},
-          "lib/netstandard2.0/SixLabors.ImageSharp.Drawing.dll": {}
+          }
         }
       },
       "Microsoft.AspNet.WebApi.Client/5.2.9": {
@@ -482,7 +504,7 @@
           }
         }
       },
-      "Microsoft.AspNetCore.Authentication.JwtBearer/7.0.3": {
+      "Microsoft.AspNetCore.Authentication.JwtBearer/7.0.5": {
         "type": "package",
         "dependencies": {
           "Microsoft.IdentityModel.Protocols.OpenIdConnect": "6.15.1"
@@ -700,7 +722,7 @@
           }
         }
       },
-      "Microsoft.AspNetCore.OpenApi/7.0.3": {
+      "Microsoft.AspNetCore.OpenApi/7.0.5": {
         "type": "package",
         "dependencies": {
           "Microsoft.OpenApi": "1.4.3"
@@ -802,11 +824,11 @@
           }
         }
       },
-      "Microsoft.EntityFrameworkCore/7.0.3": {
+      "Microsoft.EntityFrameworkCore/7.0.5": {
         "type": "package",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Abstractions": "7.0.3",
-          "Microsoft.EntityFrameworkCore.Analyzers": "7.0.3",
+          "Microsoft.EntityFrameworkCore.Abstractions": "7.0.5",
+          "Microsoft.EntityFrameworkCore.Analyzers": "7.0.5",
           "Microsoft.Extensions.Caching.Memory": "7.0.0",
           "Microsoft.Extensions.DependencyInjection": "7.0.0",
           "Microsoft.Extensions.Logging": "7.0.0"
@@ -825,7 +847,7 @@
           "buildTransitive/net6.0/Microsoft.EntityFrameworkCore.props": {}
         }
       },
-      "Microsoft.EntityFrameworkCore.Abstractions/7.0.3": {
+      "Microsoft.EntityFrameworkCore.Abstractions/7.0.5": {
         "type": "package",
         "compile": {
           "lib/net6.0/Microsoft.EntityFrameworkCore.Abstractions.dll": {
@@ -838,7 +860,7 @@
           }
         }
       },
-      "Microsoft.EntityFrameworkCore.Analyzers/7.0.3": {
+      "Microsoft.EntityFrameworkCore.Analyzers/7.0.5": {
         "type": "package",
         "compile": {
           "lib/netstandard2.0/_._": {}
@@ -847,11 +869,11 @@
           "lib/netstandard2.0/_._": {}
         }
       },
-      "Microsoft.EntityFrameworkCore.Design/7.0.3": {
+      "Microsoft.EntityFrameworkCore.Design/7.0.5": {
         "type": "package",
         "dependencies": {
           "Humanizer.Core": "2.14.1",
-          "Microsoft.EntityFrameworkCore.Relational": "7.0.3",
+          "Microsoft.EntityFrameworkCore.Relational": "7.0.5",
           "Microsoft.Extensions.DependencyModel": "7.0.0",
           "Mono.TextTemplating": "2.2.1"
         },
@@ -869,11 +891,11 @@
           "build/net6.0/Microsoft.EntityFrameworkCore.Design.props": {}
         }
       },
-      "Microsoft.EntityFrameworkCore.Proxies/7.0.3": {
+      "Microsoft.EntityFrameworkCore.Proxies/7.0.5": {
         "type": "package",
         "dependencies": {
           "Castle.Core": "5.1.0",
-          "Microsoft.EntityFrameworkCore": "7.0.3"
+          "Microsoft.EntityFrameworkCore": "7.0.5"
         },
         "compile": {
           "lib/net6.0/Microsoft.EntityFrameworkCore.Proxies.dll": {
@@ -886,10 +908,10 @@
           }
         }
       },
-      "Microsoft.EntityFrameworkCore.Relational/7.0.3": {
+      "Microsoft.EntityFrameworkCore.Relational/7.0.5": {
         "type": "package",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore": "7.0.3",
+          "Microsoft.EntityFrameworkCore": "7.0.5",
           "Microsoft.Extensions.Configuration.Abstractions": "7.0.0"
         },
         "compile": {
@@ -903,11 +925,11 @@
           }
         }
       },
-      "Microsoft.EntityFrameworkCore.SqlServer/7.0.3": {
+      "Microsoft.EntityFrameworkCore.SqlServer/7.0.5": {
         "type": "package",
         "dependencies": {
           "Microsoft.Data.SqlClient": "5.0.1",
-          "Microsoft.EntityFrameworkCore.Relational": "7.0.3"
+          "Microsoft.EntityFrameworkCore.Relational": "7.0.5"
         },
         "compile": {
           "lib/net6.0/Microsoft.EntityFrameworkCore.SqlServer.dll": {
@@ -920,10 +942,10 @@
           }
         }
       },
-      "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite/7.0.3": {
+      "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite/7.0.5": {
         "type": "package",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.SqlServer": "7.0.3",
+          "Microsoft.EntityFrameworkCore.SqlServer": "7.0.5",
           "NetTopologySuite": "2.5.0",
           "NetTopologySuite.IO.SqlServerBytes": "2.1.0"
         },
@@ -1577,11 +1599,11 @@
           "lib/netcoreapp3.1/Reso.Core.dll": {}
         }
       },
-      "ServiceStack.Common/6.7.0": {
+      "ServiceStack.Common/6.8.0": {
         "type": "package",
         "dependencies": {
-          "ServiceStack.Interfaces": "6.7.0",
-          "ServiceStack.Text": "6.7.0",
+          "ServiceStack.Interfaces": "6.8.0",
+          "ServiceStack.Text": "6.8.0",
           "System.Memory": "4.5.5"
         },
         "compile": {
@@ -1595,7 +1617,7 @@
           }
         }
       },
-      "ServiceStack.Interfaces/6.7.0": {
+      "ServiceStack.Interfaces/6.8.0": {
         "type": "package",
         "compile": {
           "lib/net6.0/ServiceStack.Interfaces.dll": {}
@@ -1604,12 +1626,12 @@
           "lib/net6.0/ServiceStack.Interfaces.dll": {}
         }
       },
-      "ServiceStack.Redis/6.7.0": {
+      "ServiceStack.Redis/6.8.0": {
         "type": "package",
         "dependencies": {
-          "ServiceStack.Common": "6.7.0",
-          "ServiceStack.Interfaces": "6.7.0",
-          "ServiceStack.Text": "6.7.0"
+          "ServiceStack.Common": "6.8.0",
+          "ServiceStack.Interfaces": "6.8.0",
+          "ServiceStack.Text": "6.8.0"
         },
         "compile": {
           "lib/net6.0/ServiceStack.Redis.dll": {
@@ -1622,7 +1644,7 @@
           }
         }
       },
-      "ServiceStack.Text/6.7.0": {
+      "ServiceStack.Text/6.8.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
@@ -1657,7 +1679,7 @@
           }
         }
       },
-      "StackExchange.Redis/2.6.96": {
+      "StackExchange.Redis/2.6.104": {
         "type": "package",
         "dependencies": {
           "Pipelines.Sockets.Unofficial": "2.2.2"
@@ -1673,13 +1695,13 @@
           }
         }
       },
-      "Swashbuckle.AspNetCore/6.4.0": {
+      "Swashbuckle.AspNetCore/6.5.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.ApiDescription.Server": "6.0.5",
-          "Swashbuckle.AspNetCore.Swagger": "6.4.0",
-          "Swashbuckle.AspNetCore.SwaggerGen": "6.4.0",
-          "Swashbuckle.AspNetCore.SwaggerUI": "6.4.0"
+          "Swashbuckle.AspNetCore.Swagger": "6.5.0",
+          "Swashbuckle.AspNetCore.SwaggerGen": "6.5.0",
+          "Swashbuckle.AspNetCore.SwaggerUI": "6.5.0"
         },
         "build": {
           "build/Swashbuckle.AspNetCore.props": {}
@@ -1753,15 +1775,15 @@
           }
         }
       },
-      "Swashbuckle.AspNetCore.SwaggerUI/6.4.0": {
+      "Swashbuckle.AspNetCore.SwaggerUI/6.5.0": {
         "type": "package",
         "compile": {
-          "lib/net6.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {
+          "lib/net7.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {
             "related": ".pdb;.xml"
           }
         },
         "runtime": {
-          "lib/net6.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {
+          "lib/net7.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {
             "related": ".pdb;.xml"
           }
         },
@@ -2330,11 +2352,11 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v7.0",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore": "7.0.3",
-          "Microsoft.EntityFrameworkCore.Proxies": "7.0.3",
-          "Microsoft.EntityFrameworkCore.Relational": "7.0.3",
-          "Microsoft.EntityFrameworkCore.SqlServer": "7.0.3",
-          "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": "7.0.3"
+          "Microsoft.EntityFrameworkCore": "7.0.5",
+          "Microsoft.EntityFrameworkCore.Proxies": "7.0.5",
+          "Microsoft.EntityFrameworkCore.Relational": "7.0.5",
+          "Microsoft.EntityFrameworkCore.SqlServer": "7.0.5",
+          "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": "7.0.5"
         },
         "compile": {
           "bin/placeholder/FINE.Data.dll": {}
@@ -2348,29 +2370,29 @@
         "framework": ".NETCoreApp,Version=v7.0",
         "dependencies": {
           "AutoMapper": "12.0.1",
-          "AutoMapper.Extensions.Microsoft.DependencyInjection": "12.0.0",
-          "BarCode": "2023.3.2",
+          "AutoMapper.Extensions.Microsoft.DependencyInjection": "12.0.1",
+          "BarCode": "2023.4.1",
           "FINE.Data": "1.0.0",
           "FirebaseAdmin": "2.3.0",
           "Google.Apis.Auth": "1.60.0",
           "Google.Apis.Auth.AspNetCore3": "1.60.0",
           "Google.Apis.Oauth2.v2": "1.60.0.1869",
-          "Hangfire.AspNetCore": "1.7.33",
-          "Hangfire.Core": "1.7.33",
+          "Hangfire.AspNetCore": "1.7.34",
+          "Hangfire.Core": "1.7.34",
           "Microsoft.AspNet.WebApi.Client": "5.2.9",
-          "Microsoft.AspNetCore.Authentication.JwtBearer": "7.0.3",
+          "Microsoft.AspNetCore.Authentication.JwtBearer": "7.0.5",
           "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
-          "Microsoft.EntityFrameworkCore": "7.0.3",
-          "Microsoft.EntityFrameworkCore.Proxies": "7.0.3",
-          "Microsoft.EntityFrameworkCore.Relational": "7.0.3",
-          "Microsoft.EntityFrameworkCore.SqlServer": "7.0.3",
-          "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": "7.0.3",
+          "Microsoft.EntityFrameworkCore": "7.0.5",
+          "Microsoft.EntityFrameworkCore.Proxies": "7.0.5",
+          "Microsoft.EntityFrameworkCore.Relational": "7.0.5",
+          "Microsoft.EntityFrameworkCore.SqlServer": "7.0.5",
+          "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": "7.0.5",
           "Microsoft.Extensions.DependencyInjection": "7.0.0",
           "NTQ.Sdk.Core": "1.1.6",
           "Reso.Core": "1.0.19",
-          "ServiceStack.Interfaces": "6.7.0",
-          "ServiceStack.Redis": "6.7.0",
-          "StackExchange.Redis": "2.6.96"
+          "ServiceStack.Interfaces": "6.8.0",
+          "ServiceStack.Redis": "6.8.0",
+          "StackExchange.Redis": "2.6.104"
         },
         "compile": {
           "bin/placeholder/FINE.Service.dll": {}
@@ -2382,21 +2404,21 @@
     }
   },
   "libraries": {
-    "Autofac/6.5.0": {
-      "sha512": "sm6HWWBDEoTPGXeyOchMygJ/7L89VxmVH72BFxakG88J34AVjA8RMi5jbv3PdpUtXI/d9ZLKOaxCmOSIo2K4aA==",
+    "Autofac/7.0.1": {
+      "sha512": "J9Iz0Q+YU3uf82i8Lee0NpQOlRYfwHxwVV26jdG3zH3LFE5Y9Rx97Mju7Nswwzh/C7kVJALkTL860Y7e+mcLaw==",
       "type": "package",
-      "path": "autofac/6.5.0",
+      "path": "autofac/7.0.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "README.md",
-        "autofac.6.5.0.nupkg.sha512",
+        "autofac.7.0.1.nupkg.sha512",
         "autofac.nuspec",
         "icon.png",
-        "lib/net5.0/Autofac.dll",
-        "lib/net5.0/Autofac.xml",
         "lib/net6.0/Autofac.dll",
         "lib/net6.0/Autofac.xml",
+        "lib/net7.0/Autofac.dll",
+        "lib/net7.0/Autofac.xml",
         "lib/netstandard2.0/Autofac.dll",
         "lib/netstandard2.0/Autofac.xml",
         "lib/netstandard2.1/Autofac.dll",
@@ -2438,15 +2460,15 @@
         "lib/netstandard2.1/AutoMapper.xml"
       ]
     },
-    "AutoMapper.Extensions.Microsoft.DependencyInjection/12.0.0": {
-      "sha512": "XCJ4E3oKrbRl1qY9Mr+7uyC0xZj1+bqQjmQRWTiTKiVuuXTny+7YFWHi20tPjwkMukLbicN6yGlDy5PZ4wyi1w==",
+    "AutoMapper.Extensions.Microsoft.DependencyInjection/12.0.1": {
+      "sha512": "+g/K+Vpe3gGMKGzjslMOdqNlkikScDjWfVvmWTayrDHaG/n2pPmFBMa+jKX1r/h6BDGFdkyRjAuhFE3ykW+r1g==",
       "type": "package",
-      "path": "automapper.extensions.microsoft.dependencyinjection/12.0.0",
+      "path": "automapper.extensions.microsoft.dependencyinjection/12.0.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "README.md",
-        "automapper.extensions.microsoft.dependencyinjection.12.0.0.nupkg.sha512",
+        "automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",
         "automapper.extensions.microsoft.dependencyinjection.nuspec",
         "icon.png",
         "lib/netstandard2.1/AutoMapper.Extensions.Microsoft.DependencyInjection.dll"
@@ -2490,16 +2512,20 @@
         "lib/netstandard2.0/Azure.Identity.xml"
       ]
     },
-    "BarCode/2023.3.2": {
-      "sha512": "CW64GAQzgu2sftuFrEhCQQQy2ELIo4s500hHUCWcgbSpAxaahsOBSEWtvsENbmGPHEgEJZysJAHEe2WHSWUQdg==",
+    "BarCode/2023.4.1": {
+      "sha512": "t9yWnUA61Nu0xNf0T7w6L5iCxbmiwv9b/lfmAhcqqexldDwprFkUz+JC2pnTdX8Gwgr+GaSimUZcv5qkHDDy7w==",
       "type": "package",
-      "path": "barcode/2023.3.2",
+      "path": "barcode/2023.4.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "EULA.txt",
-        "barcode.2023.3.2.nupkg.sha512",
+        "barcode.2023.4.1.nupkg.sha512",
         "barcode.nuspec",
+        "build/net/BarCode.targets",
+        "build/netstandard2.0/BarCode.targets",
+        "buildTransitive/net/BarCode.targets",
+        "buildTransitive/netstandard2.0/BarCode.targets",
         "docs/README.md",
         "images/iron-logo-128.png",
         "lib/netstandard2.0/IronBarCode.dll",
@@ -2507,7 +2533,12 @@
         "lib/netstandard2.0/SixLabors.Fonts.dll",
         "lib/netstandard2.0/SixLabors.ImageSharp.Drawing.dll",
         "readme-setup.txt",
-        "readme.txt"
+        "readme.txt",
+        "runtimes/linux-x64/native/IronPdfInterop.so",
+        "runtimes/osx-arm64/native/IronPdfInterop.dylib",
+        "runtimes/osx-x64/native/IronPdfInterop.dylib",
+        "runtimes/win-x64/native/IronPdfInterop.dll",
+        "runtimes/win-x86/native/IronPdfInterop.dll"
       ]
     },
     "BitMiracle.LibTiff.NET/2.4.649": {
@@ -2714,10 +2745,10 @@
         "lib/netstandard2.0/Google.Apis.Oauth2.v2.xml"
       ]
     },
-    "Hangfire.AspNetCore/1.7.33": {
-      "sha512": "2JC46KBEFBPvgDm3TitTSWSbWeM2kyOo6zgwmy2QvZ73E3aoB+UuWEozSs0TFV6EMNNHZrmgpi3ew3fg8kuheQ==",
+    "Hangfire.AspNetCore/1.7.34": {
+      "sha512": "gBS/U48UEUuHM2KsdZnLqtYzi6avCyeP+RzXkbvJWOswfusvC13RpuOVofbrlfw+K+IwoZR+9qvJuUUC00e0lw==",
       "type": "package",
-      "path": "hangfire.aspnetcore/1.7.33",
+      "path": "hangfire.aspnetcore/1.7.34",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -2727,7 +2758,7 @@
         "LICENSE_ROYALTYFREE",
         "LICENSE_STANDARD",
         "NOTICES",
-        "hangfire.aspnetcore.1.7.33.nupkg.sha512",
+        "hangfire.aspnetcore.1.7.34.nupkg.sha512",
         "hangfire.aspnetcore.nuspec",
         "lib/net451/Hangfire.AspNetCore.dll",
         "lib/net451/Hangfire.AspNetCore.xml",
@@ -2741,10 +2772,10 @@
         "lib/netstandard2.0/Hangfire.AspNetCore.xml"
       ]
     },
-    "Hangfire.Core/1.7.33": {
-      "sha512": "t12MTpyZXjxQhim4D1A8xksBVgzQfDJzGr0LpmDRYcvhZJWZIGFiaMW0TBOOy//aIoNkaN72OR/pTVVwySQdzA==",
+    "Hangfire.Core/1.7.34": {
+      "sha512": "ZlnUJJ2WyVP0pMY+Iq3lXNERPApxoR2qR3N+IL+Gs05o96wBJmnCnR+BzAwP+EHbsvYi0Jc+XzPe9jLedwY+oA==",
       "type": "package",
-      "path": "hangfire.core/1.7.33",
+      "path": "hangfire.core/1.7.34",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -2754,7 +2785,7 @@
         "LICENSE_ROYALTYFREE",
         "LICENSE_STANDARD",
         "NOTICES",
-        "hangfire.core.1.7.33.nupkg.sha512",
+        "hangfire.core.1.7.34.nupkg.sha512",
         "hangfire.core.nuspec",
         "lib/net45/Hangfire.Core.dll",
         "lib/net45/Hangfire.Core.xml",
@@ -2887,10 +2918,10 @@
         "lib/netcoreapp3.0/IdentityServer4.AccessTokenValidation.xml"
       ]
     },
-    "IronSoftware.System.Drawing/2023.3.1": {
-      "sha512": "hiOlhahJULAERlL1EaWQQn1rQBgTc6qAub8OyRGp46Kzzb9gXnZPg/h3g/5WTXifgWb+fmsfmPtLNaATJbTnvA==",
+    "IronSoftware.System.Drawing/2023.3.3": {
+      "sha512": "GRA/kBUMJErkn7bs7i3y2LZOT3YMAcWFnKZh0Nm+2xvey3jIA0A7q2Ti4RP0AAnZ3eUuhpyRl2bymQgyzc9z2w==",
       "type": "package",
-      "path": "ironsoftware.system.drawing/2023.3.1",
+      "path": "ironsoftware.system.drawing/2023.3.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -2898,14 +2929,12 @@
         "README.txt",
         "docs/README.md",
         "images/ironsoftware-logo.png",
-        "ironsoftware.system.drawing.2023.3.1.nupkg.sha512",
+        "ironsoftware.system.drawing.2023.3.3.nupkg.sha512",
         "ironsoftware.system.drawing.nuspec",
         "lib/netstandard2.0/IronSoftware.Drawing.Common.deps.json",
         "lib/netstandard2.0/IronSoftware.Drawing.Common.dll",
         "lib/netstandard2.0/IronSoftware.Drawing.Common.pdb",
-        "lib/netstandard2.0/IronSoftware.Drawing.Common.xml",
-        "lib/netstandard2.0/SixLabors.Fonts.dll",
-        "lib/netstandard2.0/SixLabors.ImageSharp.Drawing.dll"
+        "lib/netstandard2.0/IronSoftware.Drawing.Common.xml"
       ]
     },
     "Microsoft.AspNet.WebApi.Client/5.2.9": {
@@ -2927,10 +2956,10 @@
         "microsoft.aspnet.webapi.client.nuspec"
       ]
     },
-    "Microsoft.AspNetCore.Authentication.JwtBearer/7.0.3": {
-      "sha512": "LoWGXSI5P67sjTVEcUf0u37Ms9t/jEUyW462M6CAOfs48Gug2InaBXkt+dUYxkwtD4+WH4blafqF9Es2SrBBEw==",
+    "Microsoft.AspNetCore.Authentication.JwtBearer/7.0.5": {
+      "sha512": "dS6LPC7ZwJUcxcnB7KBh5L7iO9dbzEuVrNv2YrtiUCclcvBCfCJ/UKlvgHedjd4VcB6bzHcj3sEmFZlfH6qH0Q==",
       "type": "package",
-      "path": "microsoft.aspnetcore.authentication.jwtbearer/7.0.3",
+      "path": "microsoft.aspnetcore.authentication.jwtbearer/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -2938,7 +2967,7 @@
         "THIRD-PARTY-NOTICES.TXT",
         "lib/net7.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll",
         "lib/net7.0/Microsoft.AspNetCore.Authentication.JwtBearer.xml",
-        "microsoft.aspnetcore.authentication.jwtbearer.7.0.3.nupkg.sha512",
+        "microsoft.aspnetcore.authentication.jwtbearer.7.0.5.nupkg.sha512",
         "microsoft.aspnetcore.authentication.jwtbearer.nuspec"
       ]
     },
@@ -3137,10 +3166,10 @@
         "microsoft.aspnetcore.mvc.versioning.apiexplorer.nuspec"
       ]
     },
-    "Microsoft.AspNetCore.OpenApi/7.0.3": {
-      "sha512": "nihfseI7Jpaogc5bPAbta17sFzhyXwwC74xAhOyc6cgqriJQ2eB4TcJsAi4NePT2q+pFfEAtSCgPXw4IdJOF0w==",
+    "Microsoft.AspNetCore.OpenApi/7.0.5": {
+      "sha512": "yxFvk9BsgL/eDJVsPp0zbUpL73u9uXLYTnWoMBvnJdm8+970YuhM2XWcDOyetjkp8l8z00MHgfYHCRXOnLx/+Q==",
       "type": "package",
-      "path": "microsoft.aspnetcore.openapi/7.0.3",
+      "path": "microsoft.aspnetcore.openapi/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3148,7 +3177,7 @@
         "THIRD-PARTY-NOTICES.TXT",
         "lib/net7.0/Microsoft.AspNetCore.OpenApi.dll",
         "lib/net7.0/Microsoft.AspNetCore.OpenApi.xml",
-        "microsoft.aspnetcore.openapi.7.0.3.nupkg.sha512",
+        "microsoft.aspnetcore.openapi.7.0.5.nupkg.sha512",
         "microsoft.aspnetcore.openapi.nuspec"
       ]
     },
@@ -3323,10 +3352,10 @@
         "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
       ]
     },
-    "Microsoft.EntityFrameworkCore/7.0.3": {
-      "sha512": "6XUI2YGoaLMoP9KGaqWmmd4B2n5bpQbXrVRpH20Et3YjQ0Rn3Ia6HM/ANcSq9rBfjfUySgo9SwUZgQ4m4PF3LQ==",
+    "Microsoft.EntityFrameworkCore/7.0.5": {
+      "sha512": "RXbRLHHWP2Z3pq8qcL5nQ6LPeoOyp8hasM5bd0Te8PiQi3RjWQR4tcbdY5XMqQ+oTO9wA8/RLhZRn/hnxlTDnQ==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore/7.0.3",
+      "path": "microsoft.entityframeworkcore/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3334,42 +3363,42 @@
         "buildTransitive/net6.0/Microsoft.EntityFrameworkCore.props",
         "lib/net6.0/Microsoft.EntityFrameworkCore.dll",
         "lib/net6.0/Microsoft.EntityFrameworkCore.xml",
-        "microsoft.entityframeworkcore.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.nuspec"
       ]
     },
-    "Microsoft.EntityFrameworkCore.Abstractions/7.0.3": {
-      "sha512": "0NaFBZykUlQHknddRuKY4v+MFZX/AW+v2V85dgj7abIlt+kL3GWa7QNH5S1084VLf1u+dq1SnhZsOvykc3Y0sA==",
+    "Microsoft.EntityFrameworkCore.Abstractions/7.0.5": {
+      "sha512": "iwQso+hFRsEWjhH2WsEQj1D2QE5BlEXiXEt6A3SlYTPRPdZsyTNDeDDEdtxL+H/UJPQgQYY+9SMMRcEiXBmCAA==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore.abstractions/7.0.3",
+      "path": "microsoft.entityframeworkcore.abstractions/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Abstractions.dll",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Abstractions.xml",
-        "microsoft.entityframeworkcore.abstractions.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.abstractions.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.abstractions.nuspec"
       ]
     },
-    "Microsoft.EntityFrameworkCore.Analyzers/7.0.3": {
-      "sha512": "CLyRWFLwaOUZNPEia/aBMzFxZqm/ITKt3B+yUFtrg4Ys5VF3n2gvneuItC9IhpeOcjfdSgu/yUKf8y/IsNHs5A==",
+    "Microsoft.EntityFrameworkCore.Analyzers/7.0.5": {
+      "sha512": "yMLM/aK1MikVqpjxd7PJ1Pjgztd3VAd26ZHxyjxG3RPeM9cHjvS5tCg9kAAayR6eHmBg0ffZsHdT28WfA5tTlA==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore.analyzers/7.0.3",
+      "path": "microsoft.entityframeworkcore.analyzers/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "analyzers/dotnet/cs/Microsoft.EntityFrameworkCore.Analyzers.dll",
         "lib/netstandard2.0/_._",
-        "microsoft.entityframeworkcore.analyzers.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.analyzers.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.analyzers.nuspec"
       ]
     },
-    "Microsoft.EntityFrameworkCore.Design/7.0.3": {
-      "sha512": "Nv0Y2Zh8d919qKq8Q1bvbWQbFeb4JQ7jCuakajSVtip5JIwt4hTIWetVIapJ2vOQDDZuAHCzkjimMOlHH5LVsQ==",
+    "Microsoft.EntityFrameworkCore.Design/7.0.5": {
+      "sha512": "fzoU+Jk/chkqVOzDjuF+fwdc/6Tyqbp9L7rDORqB6IwHRG7nr+QnFOPdRi3B5kAZldvsvhUt+6Cl5qzeLT7B0Q==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore.design/7.0.3",
+      "path": "microsoft.entityframeworkcore.design/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3377,56 +3406,56 @@
         "build/net6.0/Microsoft.EntityFrameworkCore.Design.props",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Design.dll",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Design.xml",
-        "microsoft.entityframeworkcore.design.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.design.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.design.nuspec"
       ]
     },
-    "Microsoft.EntityFrameworkCore.Proxies/7.0.3": {
-      "sha512": "mmyeZypfeFxo7Jl5fF9X0eEjTjegq1nr8R/hzFJFBdZ9D2sOESQcdcLMhhr6bnBdSqxz5jGq6FjGo9PdKlOYvA==",
+    "Microsoft.EntityFrameworkCore.Proxies/7.0.5": {
+      "sha512": "f4acqM9HNozuaSxASSFZu3uz6ZLjyGNZJgq95mfgZJdGvL+Ibp8DB5xoylkxFSEA6aHWrGCXlFdkQPkHNsQ6mA==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore.proxies/7.0.3",
+      "path": "microsoft.entityframeworkcore.proxies/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Proxies.dll",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Proxies.xml",
-        "microsoft.entityframeworkcore.proxies.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.proxies.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.proxies.nuspec"
       ]
     },
-    "Microsoft.EntityFrameworkCore.Relational/7.0.3": {
-      "sha512": "RxNNjtTrxsMtdBtgoXGRSy8uCXaBHaVzIonTeo7+Ys+N0yEWwhf2E74cxneyunMi13Ezlld10ecCHlDubEU/Pw==",
+    "Microsoft.EntityFrameworkCore.Relational/7.0.5": {
+      "sha512": "u/33DC4S6g2hpMPgBc5Kdnlz//nqHR5c/ovgjtiP/wQ7sOd0EOdygVzUJAAOxCwbtAHDsJXS9Vc3jLFYq0yu8Q==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore.relational/7.0.3",
+      "path": "microsoft.entityframeworkcore.relational/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Relational.dll",
         "lib/net6.0/Microsoft.EntityFrameworkCore.Relational.xml",
-        "microsoft.entityframeworkcore.relational.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.relational.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.relational.nuspec"
       ]
     },
-    "Microsoft.EntityFrameworkCore.SqlServer/7.0.3": {
-      "sha512": "WXd8Mg12+LrfuVOfz0YUYsiaIKI0fLTdhN/WdQGxzGM3l86GLdpACUb30Y7oUpMG4YNegerEd0AVLlMpfwOjug==",
+    "Microsoft.EntityFrameworkCore.SqlServer/7.0.5": {
+      "sha512": "cUJqCiamT0EvpKNgZEV5fqNv2MyVfKNgOPQfFINqHiIKHOYrS0nTCUJP97+UuG0JIIrP792/PwnuNjbekImtBg==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore.sqlserver/7.0.3",
+      "path": "microsoft.entityframeworkcore.sqlserver/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "lib/net6.0/Microsoft.EntityFrameworkCore.SqlServer.dll",
         "lib/net6.0/Microsoft.EntityFrameworkCore.SqlServer.xml",
-        "microsoft.entityframeworkcore.sqlserver.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.sqlserver.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.sqlserver.nuspec"
       ]
     },
-    "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite/7.0.3": {
-      "sha512": "JM9EQmOTss9Fnd91J3TyUTOWMfdIiqJWF5I4LPYcC/Smwd0eBGDp9zjQ7zB8YmJb3bcHjYhdnQY2+J91Prct4w==",
+    "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite/7.0.5": {
+      "sha512": "qJFpnXP0coeVoo2dj4q7ZfYxe8ks1ySDFPa9ruYkTTIntgiSfVYp7n7OL0NUZTUkRaMiPOzUCqzBMMw46SgcsQ==",
       "type": "package",
-      "path": "microsoft.entityframeworkcore.sqlserver.nettopologysuite/7.0.3",
+      "path": "microsoft.entityframeworkcore.sqlserver.nettopologysuite/7.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3434,7 +3463,7 @@
         "build/net6.0/Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite.targets",
         "lib/net6.0/Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite.dll",
         "lib/net6.0/Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite.xml",
-        "microsoft.entityframeworkcore.sqlserver.nettopologysuite.7.0.3.nupkg.sha512",
+        "microsoft.entityframeworkcore.sqlserver.nettopologysuite.7.0.5.nupkg.sha512",
         "microsoft.entityframeworkcore.sqlserver.nettopologysuite.nuspec"
       ]
     },
@@ -4518,10 +4547,10 @@
         "reso.core.nuspec"
       ]
     },
-    "ServiceStack.Common/6.7.0": {
-      "sha512": "8XtzQ92B4VAbSzy6VRufzRYkiLUt+eJrSPRWtKs3NelgAw737Bro8u2qpWFGC00F4pqVfA9dJ/L7vgVh7IACLQ==",
+    "ServiceStack.Common/6.8.0": {
+      "sha512": "VZfWZ085pWTR8FvwY/3GeQrMo3B/kXOsgmO580Mg34qXjOaNHa4PW5O2CRd5o7SwSibsOt7nsxvyFuQBhMHyhw==",
       "type": "package",
-      "path": "servicestack.common/6.7.0",
+      "path": "servicestack.common/6.8.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4531,28 +4560,28 @@
         "lib/net6.0/ServiceStack.Common.xml",
         "lib/netstandard2.0/ServiceStack.Common.dll",
         "lib/netstandard2.0/ServiceStack.Common.xml",
-        "servicestack.common.6.7.0.nupkg.sha512",
+        "servicestack.common.6.8.0.nupkg.sha512",
         "servicestack.common.nuspec"
       ]
     },
-    "ServiceStack.Interfaces/6.7.0": {
-      "sha512": "0sYiqGX0oSjELmNWJ3yQeUjHK2dgDElQlsLXcbsW+wa1ukD4Jc+r0xvq9b5PVvhd+S0NB5prsC3rV1CxcGKV4g==",
+    "ServiceStack.Interfaces/6.8.0": {
+      "sha512": "nuGklCCNPlCtJU0UQ0q5jeg3J+djI28aWWBTwH8GvTNC3E74cH+fS2aUiukiOOwW0X/Z3oIPdWHPZi4yiv77Kg==",
       "type": "package",
-      "path": "servicestack.interfaces/6.7.0",
+      "path": "servicestack.interfaces/6.8.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "lib/net472/ServiceStack.Interfaces.dll",
         "lib/net6.0/ServiceStack.Interfaces.dll",
         "lib/netstandard2.0/ServiceStack.Interfaces.dll",
-        "servicestack.interfaces.6.7.0.nupkg.sha512",
+        "servicestack.interfaces.6.8.0.nupkg.sha512",
         "servicestack.interfaces.nuspec"
       ]
     },
-    "ServiceStack.Redis/6.7.0": {
-      "sha512": "gaM67m4XQq0E345e1Qjn7w3df4Nypxf1tkeuvTBhBptTEkkr/tVFaEheMt9K3LCZYHcKRXFfROv/Fh5TA+ZM3Q==",
+    "ServiceStack.Redis/6.8.0": {
+      "sha512": "Ogm3pJNrenm4EVyKgyaHRqiwy89kr3tVVnv8Kly9aldPXeF+nl3coebBU3uhqRnrJQ2gwS5noR6TQtBgR2qKMA==",
       "type": "package",
-      "path": "servicestack.redis/6.7.0",
+      "path": "servicestack.redis/6.8.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4564,14 +4593,14 @@
         "lib/netstandard2.0/ServiceStack.Redis.xml",
         "lib/netstandard2.1/ServiceStack.Redis.dll",
         "lib/netstandard2.1/ServiceStack.Redis.xml",
-        "servicestack.redis.6.7.0.nupkg.sha512",
+        "servicestack.redis.6.8.0.nupkg.sha512",
         "servicestack.redis.nuspec"
       ]
     },
-    "ServiceStack.Text/6.7.0": {
-      "sha512": "COJi2uPAuzOqYjVNv9yLS87rO0qhQkOUQfrIo1UPB94e/dTj/bYGR1v1FXOPHcoG1dvgq3bTvkzKcD2YtEXZoA==",
+    "ServiceStack.Text/6.8.0": {
+      "sha512": "SrygdfFzgeUDfr61Rcgrb3wKvIu5q+SEbsWsu5rF0WXxWjhzkguD5dHBvko8TGKrczBPbe6cNEE5v3/iYDudRA==",
       "type": "package",
-      "path": "servicestack.text/6.7.0",
+      "path": "servicestack.text/6.8.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4581,7 +4610,7 @@
         "lib/net6.0/ServiceStack.Text.xml",
         "lib/netstandard2.0/ServiceStack.Text.dll",
         "lib/netstandard2.0/ServiceStack.Text.xml",
-        "servicestack.text.6.7.0.nupkg.sha512",
+        "servicestack.text.6.8.0.nupkg.sha512",
         "servicestack.text.nuspec"
       ]
     },
@@ -4607,10 +4636,10 @@
         "sixlabors.imagesharp.nuspec"
       ]
     },
-    "StackExchange.Redis/2.6.96": {
-      "sha512": "JDj94bTwBZ6zA1vknEYJppRXRejTnl5u2z6cRBQ0DJ+Uy94qvn0XsQZ2M+1/VkqtxQ+LUU1h4JZWwcvVojGiQg==",
+    "StackExchange.Redis/2.6.104": {
+      "sha512": "ccfmWZifNOk2c+co6urH9BeyUzmbqalyksVy6Ma28xNTLT3Nrng+5OX+EB5KrTsWHykoZTGzTM3L7ndySuxEuA==",
       "type": "package",
-      "path": "stackexchange.redis/2.6.96",
+      "path": "stackexchange.redis/2.6.104",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4624,19 +4653,19 @@
         "lib/netcoreapp3.1/StackExchange.Redis.xml",
         "lib/netstandard2.0/StackExchange.Redis.dll",
         "lib/netstandard2.0/StackExchange.Redis.xml",
-        "stackexchange.redis.2.6.96.nupkg.sha512",
+        "stackexchange.redis.2.6.104.nupkg.sha512",
         "stackexchange.redis.nuspec"
       ]
     },
-    "Swashbuckle.AspNetCore/6.4.0": {
-      "sha512": "eUBr4TW0up6oKDA5Xwkul289uqSMgY0xGN4pnbOIBqCcN9VKGGaPvHX3vWaG/hvocfGDP+MGzMA0bBBKz2fkmQ==",
+    "Swashbuckle.AspNetCore/6.5.0": {
+      "sha512": "FK05XokgjgwlCI6wCT+D4/abtQkL1X1/B9Oas6uIwHFmYrIO9WUD5aLC9IzMs9GnHfUXOtXZ2S43gN1mhs5+aA==",
       "type": "package",
-      "path": "swashbuckle.aspnetcore/6.4.0",
+      "path": "swashbuckle.aspnetcore/6.5.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "build/Swashbuckle.AspNetCore.props",
-        "swashbuckle.aspnetcore.6.4.0.nupkg.sha512",
+        "swashbuckle.aspnetcore.6.5.0.nupkg.sha512",
         "swashbuckle.aspnetcore.nuspec"
       ]
     },
@@ -4739,10 +4768,10 @@
         "swashbuckle.aspnetcore.swaggergen.nuspec"
       ]
     },
-    "Swashbuckle.AspNetCore.SwaggerUI/6.4.0": {
-      "sha512": "1Hh3atb3pi8c+v7n4/3N80Jj8RvLOXgWxzix6w3OZhB7zBGRwsy7FWr4e3hwgPweSBpwfElqj4V4nkjYabH9nQ==",
+    "Swashbuckle.AspNetCore.SwaggerUI/6.5.0": {
+      "sha512": "OvbvxX+wL8skxTBttcBsVxdh73Fag4xwqEU2edh4JMn7Ws/xJHnY/JB1e9RoCb6XpDxUF3hD9A0Z1lEUx40Pfw==",
       "type": "package",
-      "path": "swashbuckle.aspnetcore.swaggerui/6.4.0",
+      "path": "swashbuckle.aspnetcore.swaggerui/6.5.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4752,13 +4781,16 @@
         "lib/net6.0/Swashbuckle.AspNetCore.SwaggerUI.dll",
         "lib/net6.0/Swashbuckle.AspNetCore.SwaggerUI.pdb",
         "lib/net6.0/Swashbuckle.AspNetCore.SwaggerUI.xml",
+        "lib/net7.0/Swashbuckle.AspNetCore.SwaggerUI.dll",
+        "lib/net7.0/Swashbuckle.AspNetCore.SwaggerUI.pdb",
+        "lib/net7.0/Swashbuckle.AspNetCore.SwaggerUI.xml",
         "lib/netcoreapp3.0/Swashbuckle.AspNetCore.SwaggerUI.dll",
         "lib/netcoreapp3.0/Swashbuckle.AspNetCore.SwaggerUI.pdb",
         "lib/netcoreapp3.0/Swashbuckle.AspNetCore.SwaggerUI.xml",
         "lib/netstandard2.0/Swashbuckle.AspNetCore.SwaggerUI.dll",
         "lib/netstandard2.0/Swashbuckle.AspNetCore.SwaggerUI.pdb",
         "lib/netstandard2.0/Swashbuckle.AspNetCore.SwaggerUI.xml",
-        "swashbuckle.aspnetcore.swaggerui.6.4.0.nupkg.sha512",
+        "swashbuckle.aspnetcore.swaggerui.6.5.0.nupkg.sha512",
         "swashbuckle.aspnetcore.swaggerui.nuspec"
       ]
     },
@@ -6276,27 +6308,27 @@
   "projectFileDependencyGroups": {
     "net7.0": [
       "AutoMapper >= 12.0.1",
-      "AutoMapper.Extensions.Microsoft.DependencyInjection >= 12.0.0",
-      "Autofac >= 6.5.0",
+      "AutoMapper.Extensions.Microsoft.DependencyInjection >= 12.0.1",
+      "Autofac >= 7.0.1",
       "Autofac.Extensions.DependencyInjection >= 8.0.0",
       "FINE.Data >= 1.0.0",
       "FINE.Service >= 1.0.0",
       "Google.Apis.Auth.AspNetCore3 >= 1.60.0",
       "Google.Apis.Oauth2.v2 >= 1.60.0.1869",
-      "Hangfire.AspNetCore >= 1.7.33",
-      "Hangfire.Core >= 1.7.33",
+      "Hangfire.AspNetCore >= 1.7.34",
+      "Hangfire.Core >= 1.7.34",
       "IdentityServer4.AccessTokenValidation >= 3.0.1",
       "Microsoft.AspNet.WebApi.Client >= 5.2.9",
-      "Microsoft.AspNetCore.Authentication.JwtBearer >= 7.0.3",
+      "Microsoft.AspNetCore.Authentication.JwtBearer >= 7.0.5",
       "Microsoft.AspNetCore.Http.Abstractions >= 2.2.0",
-      "Microsoft.AspNetCore.OpenApi >= 7.0.3",
-      "Microsoft.EntityFrameworkCore.Design >= 7.0.3",
+      "Microsoft.AspNetCore.OpenApi >= 7.0.5",
+      "Microsoft.EntityFrameworkCore.Design >= 7.0.5",
       "Microsoft.Extensions.DependencyInjection >= 7.0.0",
       "NetTopologySuite.IO.GeoJSON >= 3.0.0",
-      "ServiceStack.Interfaces >= 6.7.0",
-      "ServiceStack.Redis >= 6.7.0",
-      "StackExchange.Redis >= 2.6.96",
-      "Swashbuckle.AspNetCore >= 6.4.0",
+      "ServiceStack.Interfaces >= 6.8.0",
+      "ServiceStack.Redis >= 6.8.0",
+      "StackExchange.Redis >= 2.6.104",
+      "Swashbuckle.AspNetCore >= 6.5.0",
       "Swashbuckle.AspNetCore.Annotations >= 6.5.0",
       "Swashbuckle.AspNetCore.Newtonsoft >= 6.5.0"
     ]
@@ -6353,11 +6385,11 @@
           },
           "AutoMapper.Extensions.Microsoft.DependencyInjection": {
             "target": "Package",
-            "version": "[12.0.0, )"
+            "version": "[12.0.1, )"
           },
           "Autofac": {
             "target": "Package",
-            "version": "[6.5.0, )"
+            "version": "[7.0.1, )"
           },
           "Autofac.Extensions.DependencyInjection": {
             "target": "Package",
@@ -6373,11 +6405,11 @@
           },
           "Hangfire.AspNetCore": {
             "target": "Package",
-            "version": "[1.7.33, )"
+            "version": "[1.7.34, )"
           },
           "Hangfire.Core": {
             "target": "Package",
-            "version": "[1.7.33, )"
+            "version": "[1.7.34, )"
           },
           "IdentityServer4.AccessTokenValidation": {
             "target": "Package",
@@ -6389,7 +6421,7 @@
           },
           "Microsoft.AspNetCore.Authentication.JwtBearer": {
             "target": "Package",
-            "version": "[7.0.3, )"
+            "version": "[7.0.5, )"
           },
           "Microsoft.AspNetCore.Http.Abstractions": {
             "target": "Package",
@@ -6397,13 +6429,13 @@
           },
           "Microsoft.AspNetCore.OpenApi": {
             "target": "Package",
-            "version": "[7.0.3, )"
+            "version": "[7.0.5, )"
           },
           "Microsoft.EntityFrameworkCore.Design": {
             "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "suppressParent": "All",
             "target": "Package",
-            "version": "[7.0.3, )"
+            "version": "[7.0.5, )"
           },
           "Microsoft.Extensions.DependencyInjection": {
             "target": "Package",
@@ -6415,19 +6447,19 @@
           },
           "ServiceStack.Interfaces": {
             "target": "Package",
-            "version": "[6.7.0, )"
+            "version": "[6.8.0, )"
           },
           "ServiceStack.Redis": {
             "target": "Package",
-            "version": "[6.7.0, )"
+            "version": "[6.8.0, )"
           },
           "StackExchange.Redis": {
             "target": "Package",
-            "version": "[2.6.96, )"
+            "version": "[2.6.104, )"
           },
           "Swashbuckle.AspNetCore": {
             "target": "Package",
-            "version": "[6.4.0, )"
+            "version": "[6.5.0, )"
           },
           "Swashbuckle.AspNetCore.Annotations": {
             "target": "Package",

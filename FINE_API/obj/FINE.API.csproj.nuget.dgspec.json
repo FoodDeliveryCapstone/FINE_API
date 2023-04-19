@@ -42,29 +42,29 @@
           "dependencies": {
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Proxies": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Relational": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             }
           },
           "imports": [
@@ -133,11 +133,11 @@
             },
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
-              "version": "[12.0.0, )"
+              "version": "[12.0.1, )"
             },
             "BarCode": {
               "target": "Package",
-              "version": "[2023.3.2, )"
+              "version": "[2023.4.1, )"
             },
             "FirebaseAdmin": {
               "target": "Package",
@@ -157,11 +157,11 @@
             },
             "Hangfire.AspNetCore": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "Hangfire.Core": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "Microsoft.AspNet.WebApi.Client": {
               "target": "Package",
@@ -169,7 +169,7 @@
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.AspNetCore.Http.Abstractions": {
               "target": "Package",
@@ -177,29 +177,29 @@
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Proxies": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Relational": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.Extensions.DependencyInjection": {
               "target": "Package",
@@ -215,15 +215,15 @@
             },
             "ServiceStack.Interfaces": {
               "target": "Package",
-              "version": "[6.7.0, )"
+              "version": "[6.8.0, )"
             },
             "ServiceStack.Redis": {
               "target": "Package",
-              "version": "[6.7.0, )"
+              "version": "[6.8.0, )"
             },
             "StackExchange.Redis": {
               "target": "Package",
-              "version": "[2.6.96, )"
+              "version": "[2.6.104, )"
             }
           },
           "imports": [
@@ -295,11 +295,11 @@
             },
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
-              "version": "[12.0.0, )"
+              "version": "[12.0.1, )"
             },
             "Autofac": {
               "target": "Package",
-              "version": "[6.5.0, )"
+              "version": "[7.0.1, )"
             },
             "Autofac.Extensions.DependencyInjection": {
               "target": "Package",
@@ -315,11 +315,11 @@
             },
             "Hangfire.AspNetCore": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "Hangfire.Core": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "IdentityServer4.AccessTokenValidation": {
               "target": "Package",
@@ -331,7 +331,7 @@
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.AspNetCore.Http.Abstractions": {
               "target": "Package",
@@ -339,13 +339,13 @@
             },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.Extensions.DependencyInjection": {
               "target": "Package",
@@ -357,19 +357,19 @@
             },
             "ServiceStack.Interfaces": {
               "target": "Package",
-              "version": "[6.7.0, )"
+              "version": "[6.8.0, )"
             },
             "ServiceStack.Redis": {
               "target": "Package",
-              "version": "[6.7.0, )"
+              "version": "[6.8.0, )"
             },
             "StackExchange.Redis": {
               "target": "Package",
-              "version": "[2.6.96, )"
+              "version": "[2.6.104, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.4.0, )"
+              "version": "[6.5.0, )"
             },
             "Swashbuckle.AspNetCore.Annotations": {
               "target": "Package",

@@ -318,7 +318,7 @@
         <member name="M:FINE.API.Controllers.AreaController.GetAreas(FINE.Service.DTO.Response.AreaResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
             Get List Areas    
-            </summary>   
+            </summary>    
         </member>
         <member name="M:FINE.API.Controllers.AreaController.GetAreaById(System.Int32)">
             <summary>

@@ -1,4 +1,5 @@
-﻿using FINE.Service.DTO.Request;
+﻿using FINE.Service.Caches;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Area;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -21,7 +22,8 @@ namespace FINE.API.Controllers
 
         /// <summary>
         /// Get List Areas    
-        /// </summary>      
+        /// </summary>    
+        [Cache]
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<AreaResponse>>> GetAreas([FromQuery] AreaResponse request, [FromQuery] PagingRequest paging)
         {
