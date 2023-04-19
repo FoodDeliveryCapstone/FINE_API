@@ -98,14 +98,30 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Update Order
+        /// Cancel Order
         /// </summary>
         [HttpPut("usercancel")]
-        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> UpdateCancelOrder(int orderId)
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> CancelOrder(int orderId)
         {
             try
             {
-                return await _orderService.UpdateCancelOrder(orderId);
+                return await _orderService.CancelOrder(orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Update Order Status
+        /// </summary>
+        [HttpPut("orderStatus")]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> UpdateOrderStatus(int orderId)
+        {
+            try
+            {
+                return await _orderService.UpdateOrder(orderId);
             }
             catch (ErrorResponse ex)
             {
