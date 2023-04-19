@@ -62,7 +62,7 @@ public class ProductController : Controller
     /// </summary>
 
     [HttpGet("menu/{menuId}")]
-    public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProductsByMenuId([FromRoute] int menuId, [FromQuery] PagingRequest paging)
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuResponse>>> GetProductsByMenuId([FromRoute] int menuId, [FromQuery] PagingRequest paging)
     {
         return await _productService.GetProductByMenu(menuId, paging);
     }

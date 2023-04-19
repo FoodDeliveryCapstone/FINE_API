@@ -24,7 +24,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<ProductResponse>> GetProductByCode(string code);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByStore(int storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByCategory(int cateId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductByMenu(int menuId, PagingRequest paging);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
     }
@@ -317,7 +317,7 @@ namespace FINE.Service.Service
             await _unitOfWork.CommitAsync();
         }
 
-        public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProductByMenu(int menuId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductByMenu(int menuId, PagingRequest paging)
         {
             try
             {
@@ -329,16 +329,14 @@ namespace FINE.Service.Service
                         MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
                 #endregion
 
-                var product = _unitOfWork.Repository<Product>().GetAll()
+                var product = _unitOfWork.Repository<ProductInMenu>().GetAll()
 
-                  .Include(x => x.ProductInMenus)
-                  .ThenInclude(x => x.Menu)
-                 .Where(x => x.ProductInMenus.Any(x => x.Menu.Id == menuId))
+                 .Where(x => x.MenuId == menuId)
 
-                 .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
+                 .ProjectTo<ProductInMenuResponse>(_mapper.ConfigurationProvider)
                  .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-                return new BaseResponsePagingViewModel<ProductResponse>()
+                return new BaseResponsePagingViewModel<ProductInMenuResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {
