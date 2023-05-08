@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Castle.Core.Resource;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.Commons;
@@ -13,8 +14,9 @@ namespace FINE.Service.Service
 {
     public interface IFcmTokenService
     {
-        Task<Fcmtoken> AddFcmToken(string fcmToken, int customerId);
-        Fcmtoken AddStaffFcmToken(string fcmToken, int staffId);
+        void AddFcmToken(string fcmToken, int customerId);
+
+        void AddStaffFcmToken(string fcmToken, int staffId);
 
         int RemoveFcmTokens(ICollection<string> fcmTokens);
 
@@ -37,12 +39,12 @@ namespace FINE.Service.Service
             _fmService = fmService;
         }
 
-        public async Task<Fcmtoken> AddFcmToken(string fcmToken, int customerId)
+        public void AddFcmToken(string fcmToken, int customerId)
         {
             try
             {
                 var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
-                    .FirstOrDefault(x => x.Token.Equals(fcmToken));
+                    .FirstOrDefault(x =>x.CustomerId == customerId);
 
                 if (fcm == null)
                 {
@@ -51,20 +53,22 @@ namespace FINE.Service.Service
                     var newtoken = new Fcmtoken()
                     {
                         Token = fcmToken,
-                        CustomerId = customerId
+                        CustomerId = customerId,
+                        CreateAt = DateTime.UtcNow
                     };
-                    await _unitOfWork.Repository<Fcmtoken>().InsertAsync(newtoken);
-                    await _unitOfWork.CommitAsync();
+                    _unitOfWork.Repository<Fcmtoken>().Insert(newtoken);
+                    _unitOfWork.Commit();
                 }
-                else if (!fcm.CustomerId.Equals(customerId))
+                else if (!fcm.Token.Equals(fcmToken))
                 {
-                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
-
+                    //_fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+                    fcm.Token = fcmToken;
                     fcm.CustomerId = customerId;
-                    await _unitOfWork.Repository<Fcmtoken>().Update(fcm, fcm.Id);
-                    await _unitOfWork.CommitAsync();
+                    fcm.UpdateAt= DateTime.UtcNow;
+
+                    _unitOfWork.Repository<Fcmtoken>().UpdateDetached(fcm);
+                    _unitOfWork.Commit();
                 }
-                return fcm;
             }
             catch (Exception ex)
             {
@@ -72,25 +76,36 @@ namespace FINE.Service.Service
             }
         }
 
-        public Fcmtoken AddStaffFcmToken(string fcmToken, int staffId)
+        public void AddStaffFcmToken(string fcmToken, int staffId)
         {
             try
             {
-                var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.Token.Equals(fcmToken));
+                var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
+                    .FirstOrDefault(x => x.StaffId == staffId);
 
                 if (fcm == null)
                 {
-                    _unitOfWork.Repository<Fcmtoken>().Insert(new Fcmtoken() { Token = fcmToken, StaffId = staffId, CreateAt = DateTime.Now });
-                    _unitOfWork.Commit();
-                }
-                else if (!fcm.CustomerId.Equals(staffId))
-                {
-                    fcm.StaffId = staffId;
-                    _unitOfWork.Repository<Fcmtoken>().UpdateDetached(fcm);
-                    _unitOfWork.Commit();
-                }
+                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
 
-                return fcm;
+                    var newtoken = new Fcmtoken()
+                    {
+                        Token = fcmToken,
+                        StaffId = staffId,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _unitOfWork.Repository<Fcmtoken>().Insert(newtoken);
+                    _unitOfWork.Commit();
+                }
+                else if (!fcm.Token.Equals(fcmToken))
+                {
+                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+
+                    fcm.StaffId = staffId;
+                    fcm.UpdateAt = DateTime.UtcNow;
+
+                    _unitOfWork.Repository<Fcmtoken>().Update(fcm, fcm.Id);
+                    _unitOfWork.Commit();
+                }
             }
             catch (Exception ex)
             {

@@ -1,6 +1,7 @@
 ﻿using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Store;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,7 +25,14 @@ namespace FINE.API.Controllers
         public async Task<ActionResult<BaseResponsePagingViewModel<StoreResponse>>> GetStores
             ([FromQuery] StoreResponse request, [FromQuery] PagingRequest paging)
         {
-            return await _storeService.GetStores(request, paging);
+            try
+            {
+                return await _storeService.GetStores(request, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
@@ -34,27 +42,31 @@ namespace FINE.API.Controllers
         public async Task<ActionResult<BaseResponseViewModel<StoreResponse>>> GetStoreById
             ([FromRoute] int storeId)
         {
-            return await _storeService.GetStoreById(storeId);
+            try
+            {
+                return await _storeService.GetStoreById(storeId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
+     
 
         /// <summary>
-        /// Create Store
+        /// Get List Store By TimeslotId
         /// </summary>
-        [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<StoreResponse>>> CreateStore
-            ([FromBody] CreateStoreRequest request)
+        [HttpGet("timeslot/{timeslotId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<StoreResponse>>> GetStoreByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
         {
-            return await _storeService.CreateStore(request);
-        }
-
-        /// <summary>
-        /// Update Store
-        /// </summary>
-        [HttpPut("{storeId}")]
-        public async Task<ActionResult<BaseResponseViewModel<StoreResponse>>> UpdateStore
-            ([FromRoute] int storeId, [FromBody] UpdateStoreRequest request)
-        {
-            return await _storeService.UpdateStore(storeId, request);
+            try
+            {
+                return await _storeService.GetStoreByTimeslot(timeslotId, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
     }
 }

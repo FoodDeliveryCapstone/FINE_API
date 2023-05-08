@@ -5,9 +5,9 @@ namespace FINE.Data.UnitOfWork
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly FineStgDbContext _context;
+        private readonly FineDevDbContext _context;
 
-        public UnitOfWork(FineStgDbContext context)
+        public UnitOfWork(FineDevDbContext context)
         {
             _context = context;
         }

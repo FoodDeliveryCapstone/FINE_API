@@ -34,6 +34,7 @@ namespace FINE.API.Mapper
             CreateMap<Customer, CustomerResponse>().ReverseMap();
             CreateMap<Customer, OrderCustomerResponse>().ReverseMap();
             CreateMap<Customer, OrderCustomerResponse>().ReverseMap();
+            CreateMap<Customer, OrderDetailResponse>();
             CreateMap<CreateCustomerRequest, Customer>();
             CreateMap<UpdateCustomerRequest, Customer>();
 
@@ -80,25 +81,38 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Order
-
-            CreateMap<Order, OrderResponse>().ReverseMap();
-            CreateMap<CreatePreOrderRequest, GenOrderResponse>().ReverseMap();
-            CreateMap<ListDetailByStore, OrderResponse>().ReverseMap();
             CreateMap<Order, GenOrderResponse>().ReverseMap();
-            CreateMap<TimeSlot, OrderTimeSlotResponse>().ReverseMap();
+            CreateMap<Order, OrderResponse>()
+                .ForMember(x => x.StoreName, opt => opt.MapFrom(y => y.Store.StoreName))
+                .ReverseMap();
+            CreateMap<Order, OrderDetailResponse>();
+            CreateMap<Order, Order>()
+                .ForMember(x => x.GeneralOrderId, otp => otp.MapFrom(x => x.Id))
+                .ForMember(x => x.Id, y => y.Ignore())
+                .ForMember(x => x.ShippingFee, y => y.Ignore())
+                .ForMember(x => x.InverseGeneralOrder, y => y.Ignore());
+
+            CreateMap<CreatePreOrderRequest, GenOrderResponse>();
+            CreateMap<CreatePreOrderRequest, OrderResponse>();
+            CreateMap<ListDetailByStore, OrderResponse>().ReverseMap();
             CreateMap<CreatePreOrderRequest, Order>();
-            CreateMap<CreatePreOrderRequest, OrderResponse>().ReverseMap();
+            CreateMap<CreateGenOrderRequest, Order>()
+                .ForMember(x => x.InverseGeneralOrder, y => y.Ignore());
+
+            CreateMap<CreateOrderRequest, Order>();
 
             #endregion
 
             #region OrderDetail
 
-            CreateMap<OrderDetail, OrderDetailResponse>().ReverseMap();
+            CreateMap<OrderDetail, OrderDetailResponse>()
+               .IncludeMembers(x => x.Order, x => x.Order.Customer)
+               .ReverseMap();
             CreateMap<CreatePreOrderDetailRequest, OrderDetail>();
+            CreateMap<CreateOrderDetailRequest, OrderDetail>();
             CreateMap<CreatePreOrderDetailRequest, OrderDetailResponse>();
             CreateMap<PreOrderDetailRequest, OrderDetailResponse>();
-
-
+            CreateMap<CreateOrderDetailRequest, OrderDetail>();
             #endregion
 
             #region Store
@@ -126,7 +140,7 @@ namespace FINE.API.Mapper
 
             #region Campus
 
-            //CreateMap<Campus, CampusResponse>().ReverseMap();
+            CreateMap<Campus, CampusResponse>().ReverseMap();
             CreateMap<CreateCampusRequest, Campus>();
             CreateMap<UpdateCampusRequest, Campus>();
 
@@ -176,6 +190,7 @@ namespace FINE.API.Mapper
             #region TimeSlot
 
             CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
+            CreateMap<TimeSlot, OrderTimeSlotResponse>().ReverseMap();
             CreateMap<CreateTimeslotRequest, TimeSlot>();
             CreateMap<UpdateTimeslotRequest, TimeSlot>();
 
@@ -209,6 +224,9 @@ namespace FINE.API.Mapper
                 .IncludeMembers(x => x.Product, x => x.Product.Store, x => x.Product.Category)
                 .ReverseMap();
             CreateMap<UpdateProductInMenuRequest, AddProductToMenuRequest>();
+            #endregion
+            #region Revenue
+            CreateMap<Order, RevenueResponse>().ReverseMap();
             #endregion
 
             #region

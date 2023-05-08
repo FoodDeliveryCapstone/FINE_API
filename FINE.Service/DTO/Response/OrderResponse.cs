@@ -41,7 +41,10 @@ namespace FINE.Service.DTO.Response
 
         public int? ShipperId { get; set; }
 
+        public int ItemQuantity { get; set; }
+
         public string? Note { get; set; }
+
         public List<OrderResponse> InverseGeneralOrder { get; set; }
     }
 
@@ -65,6 +68,8 @@ namespace FINE.Service.DTO.Response
 
         public string? StoreName { get; set; }
 
+        public int? ItemQuantity { get; set; }
+
         public List<OrderDetailResponse> OrderDetails { get; set; }
 
     }
@@ -76,9 +81,9 @@ namespace FINE.Service.DTO.Response
 
         public int ProductInMenuId { get; set; }
 
-        public string ProductCode { get; set; }
+        public string? ProductCode { get; set; }
 
-        public string ProductName { get; set; }
+        public string? ProductName { get; set; }
 
         public int? ComboId { get; set; }
 
@@ -93,6 +98,8 @@ namespace FINE.Service.DTO.Response
         public double FinalAmount { get; set; }
 
         public string? Note { get; set; }
+        public int OrderStatus { get; set; }
+        public DateTime CheckInDate { get; set; }
     }
 
     public class OrderCustomerResponse

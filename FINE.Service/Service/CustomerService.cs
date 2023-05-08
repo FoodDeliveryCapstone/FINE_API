@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Castle.Core.Resource;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.Commons;
@@ -12,6 +13,7 @@ using FINE.Service.Utilities;
 using FirebaseAdmin.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Client;
 using NTQ.Sdk.Core.Utilities;
 using System;
 using System.Linq.Dynamic.Core;
@@ -24,7 +26,6 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId);
-
         Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
@@ -75,6 +76,34 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId)
+        {
+            try
+            {
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                    .Where(x => x.Id == customerId)
+                    .FirstOrDefaultAsync();
+
+                if (customer == null)
+                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
+                        CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+                return new BaseResponseViewModel<CustomerResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
+        }
 
         public async Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging)
         {
@@ -260,7 +289,7 @@ namespace FINE.Service.Service
                     var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
 
                     if (data.FcmToken != null && !data.FcmToken.Trim().Equals(""))
-                        _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
+                         _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
 
                     return new BaseResponseViewModel<LoginResponse>()
                     {
@@ -366,35 +395,6 @@ namespace FINE.Service.Service
             if (fcmToken != null && !fcmToken.Trim().Equals("") && !await _customerFcmtokenService.ValidToken(fcmToken))
             {
                 _customerFcmtokenService.RemoveFcmTokens(new List<string> { fcmToken });
-            }
-        }
-
-        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId)
-        {
-            try
-            {
-                var customer = await _unitOfWork.Repository<Customer>().GetAll()
-                    .Where(x => x.Id == customerId)
-                    .FirstOrDefaultAsync();
-
-                if (customer == null)
-                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
-                        CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<CustomerResponse>(customer)
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw;
             }
         }
     }

@@ -13,21 +13,22 @@ namespace FINE.Service.DTO.Request.Order
 
         public string DeliveryPhone { get; set; }
 
-        public DateTime CheckInDate { get; set; }
-
         public double TotalAmount { get; set; }
 
-        public int OrderStatus { get; set; }
+        public double? Discount { get; set; }
+
+        public double FinalAmount { get; set; }
+
+        public double ShippingFee { get; set; }
 
         public int OrderType { get; set; }
-
-        public int CustomerId { get; set; }
 
         public int TimeSlotId { get; set; }
 
         public int RoomId { get; set; }
 
-        public string? Note { get; set; }
+        public int? ItemQuantity { get; set; }
+
         public List<CreateOrderRequest> InverseGeneralOrder { get; set; }
     }
 
@@ -37,9 +38,13 @@ namespace FINE.Service.DTO.Request.Order
 
         public double TotalAmount { get; set; }
 
+        public double? Discount { get; set; }
+
         public double FinalAmount { get; set; }
 
         public int? StoreId { get; set; }
+
+        public int? ItemQuantity { get; set; }
 
         public List<CreateOrderDetailRequest> OrderDetails { get; set; }
     }
@@ -52,8 +57,6 @@ namespace FINE.Service.DTO.Request.Order
 
         public string ProductName { get; set; }
 
-        public int StoreId { get; set; }
-
         public int? ComboId { get; set; }
 
         public double UnitPrice { get; set; }
@@ -61,6 +64,8 @@ namespace FINE.Service.DTO.Request.Order
         public int Quantity { get; set; }
 
         public double TotalAmount { get; set; }
+
+        public double? Discount { get; set; }
 
         public double FinalAmount { get; set; }
 

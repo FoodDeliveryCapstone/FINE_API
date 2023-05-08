@@ -9,8 +9,6 @@ namespace FINE.Service.DTO.Request.Order
 {
     public class CreatePreOrderRequest
     {
-        public int CustomerId { get; set; }
-
         public string? DeliveryPhone { get; set; }
 
         public int OrderType { get; set; }
@@ -39,6 +37,8 @@ namespace FINE.Service.DTO.Request.Order
         public string StoreName { get; set; }
 
         public double TotalAmount { get; set; }
+
+        public int TotalProduct { get; set; }
 
         public List<PreOrderDetailRequest> Details { get; set; }
     }

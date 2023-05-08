@@ -13,6 +13,9 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.OpenApi.Models;
+using Reso.Core.Extension;
+using ServiceStack.Redis;
+using StackExchange.Redis;
 using System.Reflection;
 using System.Text;
 
@@ -47,10 +50,14 @@ namespace FINE.API
                         .AllowAnyMethod();
                     });
             });
+
+            services.AddSingleton<IConnectionMultiplexer>(_ =>ConnectionMultiplexer.Connect(Configuration["Endpoint:RedisEndpoint"]));
+            services.AddMemoryCache();
+            services.ConfigMemoryCacheAndRedisCache(Configuration["Endpoint:RedisEndpoint"]);
             services.AddControllersWithViews()
                 .AddNewtonsoftJson(options =>
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-            );;
+            ); 
             services.AddControllers(options =>
             {
                 options.Conventions.Add(new RouteTokenTransformerConvention(new SlugifyParameterTransformer()));
@@ -134,9 +141,15 @@ namespace FINE.API
             builder.RegisterType<ProductCollectionTimeSlotService>().As<IProductCollectionTimeSlotService>();
             builder.RegisterType<TimeslotService>().As<ITimeslotService>();
             builder.RegisterType<MenuService>().As<IMenuService>();
-            builder.RegisterType<AddProductToMenuService>().As<IAddProductToMenuService>();
+            builder.RegisterType<ProductToMenuService>().As<IProductToMenuService>();
             builder.RegisterType<RoomService>().As<IRoomService>();
             builder.RegisterType<FloorService>().As<IFloorService>();
+            builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();
+            builder.RegisterType<RevenueService>().As<IRevenueService>();
+
+            builder.Register<IRedisClientsManager>(c =>
+            new RedisManagerPool(Configuration.GetConnectionString("RedisConnectionString")));
+            builder.Register(c => c.Resolve<IRedisClientsManager>().GetCacheClient());
 
             builder.RegisterGeneric(typeof(GenericRepository<>))
             .As(typeof(IGenericRepository<>))

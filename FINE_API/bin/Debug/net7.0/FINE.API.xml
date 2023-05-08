@@ -49,6 +49,11 @@
             Get product By CategoryId
              </summary>
         </member>
+        <member name="M:FINE.API.Controllers.AdminController.AdminProductController.GetProductsByMenuId(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Product By MenuId
+            </summary>
+        </member>
         <member name="M:FINE.API.Controllers.AdminController.AdminProductController.CreateProduct(FINE.Service.DTO.Request.Product.CreateProductRequest)">
             <summary>
             Create Product
@@ -57,6 +62,16 @@
         <member name="M:FINE.API.Controllers.AdminController.AdminProductController.UpdateProduct(System.Int32,FINE.Service.DTO.Request.Product.UpdateProductRequest)">
             <summary>
             Update Product
+            </summary>    
+        </member>
+        <member name="M:FINE.API.Controllers.AdminController.AdminProductController.AddProductToMenu(FINE.Service.DTO.Request.ProductInMenu.AddProductToMenuRequest)">
+            <summary>
+            Add Product to Menu
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminController.AdminProductController.UpdateProductInMenu(System.Int32,FINE.Service.DTO.Request.ProductInMenu.UpdateProductInMenuRequest)">
+            <summary>
+            Update Product in Menu
             </summary>    
         </member>
         <member name="M:FINE.API.Controllers.AdminCampusController.GetListCampus(FINE.Service.DTO.Response.CampusResponse,FINE.Service.DTO.Request.PagingRequest)">
@@ -78,6 +93,36 @@
             <summary>
             Update Campus
             </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminCustomerController.GetCustomers(FINE.Service.DTO.Response.CustomerResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get list Customer for system admin
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminMenuController.GetMenus(FINE.Service.DTO.Response.MenuResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Menu
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminMenuController.GetMenuById(System.Int32)">
+            <summary>
+            Get Menu By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminMenuController.GetMenusByTimeslot(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Menu by TimeslotId
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminMenuController.CreateMenu(FINE.Service.DTO.Request.Menu.CreateMenuRequest)">
+            <summary>
+            Create Menu
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminMenuController.UpdateMenu(System.Int32,FINE.Service.DTO.Request.Menu.UpdateMenuRequest)">
+            <summary>
+            Update Menu
+            </summary>    
         </member>
         <member name="M:FINE.API.Controllers.AdminControler.AdminProductCollectionController.GetAllProductCollection(FINE.Service.DTO.Response.ProductCollectionResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
@@ -102,6 +147,36 @@
         <member name="M:FINE.API.Controllers.AdminControler.AdminProductCollectionController.UpdateProductCollection(System.Int32,FINE.Service.DTO.Request.ProductCollection.UpdateProductCollectionRequest)">
             <summary>
             Update Product Collection
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminRevenueController.GetTotalRevenue(FINE.Service.DTO.Request.DateFilter)">
+            <summary>
+            Get System Revenue
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminRevenueController.GetStoreRevenue(System.Int32,FINE.Service.DTO.Request.DateFilter)">
+            <summary>
+            Get Store Revenue
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminStoreController.GetStores(FINE.Service.DTO.Response.StoreResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Store
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminStoreController.GetStoreById(System.Int32)">
+            <summary>
+            Get Store By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminStoreController.CreateStore(FINE.Service.DTO.Request.Store.CreateStoreRequest)">
+            <summary>
+            Create Store
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminControler.AdminStoreController.UpdateStore(System.Int32,FINE.Service.DTO.Request.Store.UpdateStoreRequest)">
+            <summary>
+            Update Store
             </summary>
         </member>
         <member name="M:FINE.API.Controllers.AdminControler.AdminTimeSlotController.GetTimeslots(FINE.Service.DTO.Response.TimeslotResponse,FINE.Service.DTO.Request.PagingRequest)">
@@ -172,31 +247,6 @@
              </summary>
             
         </member>
-        <member name="M:FINE.API.Controllers.AdminControler.SystemCategoryController.GetAllSystemCategory(FINE.Service.DTO.Response.SystemCategoryResponse,FINE.Service.DTO.Request.PagingRequest)">
-            <summary>
-            Get All System Category
-            </summary>
-        </member>
-        <member name="M:FINE.API.Controllers.AdminControler.SystemCategoryController.GetSystemCategoryById(System.Int32)">
-            <summary>
-            Get System Category By Id
-            </summary>
-        </member>
-        <member name="M:FINE.API.Controllers.AdminControler.SystemCategoryController.GetSystemCategoryByCode(System.String)">
-            <summary>
-            Get System Category By Code
-            </summary>
-        </member>
-        <member name="M:FINE.API.Controllers.AdminControler.SystemCategoryController.CreateSystemCategory(FINE.Service.DTO.Request.SystemCategory.CreateSystemCategoryRequest)">
-            <summary>
-            Create System Category
-            </summary>
-        </member>
-        <member name="M:FINE.API.Controllers.AdminControler.SystemCategoryController.UpdateSystemCategory(System.Int32,FINE.Service.DTO.Request.SystemCategory.UpdateSystemCategoryRequest)">
-            <summary>
-            Update System Category
-            </summary>
-        </member>
         <member name="M:FINE.API.Controllers.AdminStaffController.AdminStaffController.GetStaffs(FINE.Service.DTO.Response.StaffResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
             Get List Staff    
@@ -215,6 +265,31 @@
         <member name="M:FINE.API.Controllers.AdminStaffController.AdminStaffController.UpdateStaff(System.Int32,FINE.Service.DTO.Request.Staff.UpdateStaffRequest)">
             <summary>
             Update Staff 
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminSystemCategoryController.GetAllSystemCategory(FINE.Service.DTO.Response.SystemCategoryResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get All System Category
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminSystemCategoryController.GetSystemCategoryById(System.Int32)">
+            <summary>
+            Get System Category By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminSystemCategoryController.GetSystemCategoryByCode(System.String)">
+            <summary>
+            Get System Category By Code
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminSystemCategoryController.CreateSystemCategory(FINE.Service.DTO.Request.SystemCategory.CreateSystemCategoryRequest)">
+            <summary>
+            Create System Category
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.AdminSystemCategoryController.UpdateSystemCategory(System.Int32,FINE.Service.DTO.Request.SystemCategory.UpdateSystemCategoryRequest)">
+            <summary>
+            Update System Category
             </summary>
         </member>
         <member name="M:FINE.API.Controllers.AdminUniversityController.GetUniversities(FINE.Service.DTO.Response.UniversityResponse,FINE.Service.DTO.Request.PagingRequest)">
@@ -240,6 +315,21 @@
              </summary>
             
         </member>
+        <member name="M:FINE.API.Controllers.AreaController.GetAreas(FINE.Service.DTO.Response.AreaResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Areas    
+            </summary>    
+        </member>
+        <member name="M:FINE.API.Controllers.AreaController.GetAreaById(System.Int32)">
+            <summary>
+            Get Area By Id
+            </summary>      
+        </member>
+        <member name="M:FINE.API.Controllers.AreaController.GetAreaCampusById(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <sumary>
+            Get Area By campusID
+            </sumary>
+        </member>
         <member name="M:FINE.API.Controllers.BlogPostController.GetBlogPost(FINE.Service.DTO.Response.BlogPostResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
             Get List Blog Posts    
@@ -264,7 +354,37 @@
             </summary>
             
         </member>
-        <member name="M:FINE.API.Controllers.CustomerController.UpdateCustomer(System.Int32,FINE.Service.DTO.Request.Customer.UpdateCustomerRequest)">
+        <member name="M:FINE.API.Controllers.CampusController.GetListCampus(FINE.Service.DTO.Response.CampusResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Campus
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.CampusController.GetCampusById(System.Int32)">
+            <summary>
+            Get Campus By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.CustomerController.GetCustomerById(System.Int32)">
+            <summary>
+            lấy thông tin khách hàng bằng ID
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FINE.API.Controllers.CustomerController.GetCustomerByToken">
+            <summary>
+            lấy thông tin khách hàng bằng token
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FINE.API.Controllers.CustomerController.GetOrderByCustomerId(FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Lấy tất cả order của user 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FINE.API.Controllers.CustomerController.UpdateCustomer(FINE.Service.DTO.Request.Customer.UpdateCustomerRequest)">
             <summary>
             Update thông tin khách hàng
             </summary>
@@ -284,6 +404,31 @@
             </summary>
             <param name="data"></param>
             <returns></returns>
+        </member>
+        <member name="M:FINE.API.Controllers.FloorController.GetFloorByCampus(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get Floor by CampusId 
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.MenuController.GetMenus(FINE.Service.DTO.Response.MenuResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Menu
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.MenuController.GetMenuById(System.Int32)">
+            <summary>
+            Get Menu By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.MenuController.GetMenusByTimeslot(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Menu by TimeslotId
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.MenuController.GetMenuWithProductByTimeslot(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Menu with ProductList by TimeslotId
+            </summary>
         </member>
         <member name="M:FINE.API.Controllers.NotifyController.GetNotifys(FINE.Service.DTO.Response.NotifyResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
@@ -309,9 +454,49 @@
             </summary>
             
         </member>
-        <member name="M:FINE.API.Controllers.OrderController.CreatePreOrder(FINE.Service.DTO.Request.Order.CreateOrderRequest)">
+        <member name="M:FINE.API.Controllers.OrderController.GetOrders(FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get orders
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.OrderController.GetOrderById(System.Int32)">
+            <summary>
+            Get order by Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.OrderController.CreatePreOrder(FINE.Service.DTO.Request.Order.CreatePreOrderRequest)">
             <summary>
             Create PreOrder
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.OrderController.CreateOrder(FINE.Service.DTO.Request.Order.CreateGenOrderRequest)">
+            <summary>
+            Create Order
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.OrderController.CancelOrder(System.Int32)">
+            <summary>
+            Cancel Order
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.OrderController.UpdateOrderStatus(System.Int32)">
+            <summary>
+            Update Order Status
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductCollectionController.GetAllProductCollection(FINE.Service.DTO.Response.ProductCollectionResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Product Collection
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductCollectionController.GetProductCollectionById(System.Int32)">
+            <summary>
+            Get Product Collection By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductCollectionController.GetProductsByStoreId(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Product Collection By StoreId
             </summary>
         </member>
         <member name="M:FINE.API.Controllers.ProductCollectionItemController.GetAllProductCollectionItem(FINE.Service.DTO.Response.ProductCollectionItemResponse,FINE.Service.DTO.Request.PagingRequest)">
@@ -374,9 +559,59 @@
             Update Product Collection Time Slot
             </summary>
         </member>
+        <member name="M:FINE.API.Controllers.ProductController.GetProducts(FINE.Service.DTO.Response.ProductResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Product
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductController.GetProductById(System.Int32)">
+            <summary>
+            Get Product By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductController.GetProductsByStoreId(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Product By StoreId
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductController.GetProductByCategory(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get product By CategoryId
+             </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductController.GetProductsByMenuId(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Product By MenuId
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductInMenuController.GetProductByProductInMenu(System.Int32)">
+            <summary>
+            Get Product By ProductInMenuId
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.ProductInMenuController.GetProductInMenuByStore(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Product in Menu By StoreId
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.RoomController.GetRooms(FINE.Service.DTO.Response.RoomResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Room  
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.RoomController.GetRoomByFloorAndArea(System.Int32,System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get Room by FloorId and AreaId  
+            </summary>
+        </member>
         <member name="M:FINE.API.Controllers.StaffController.Login(FINE.Service.DTO.Request.LoginRequest)">
             <summary>
             Login Admin
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.StaffController.GetStaffs(FINE.Service.DTO.Response.StaffResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get all staff for system admin
             </summary>
         </member>
         <member name="M:FINE.API.Controllers.StoreCategoryController.GetAllStoreCategory(FINE.Service.DTO.Response.StoreCategoryResponse,FINE.Service.DTO.Request.PagingRequest)">
@@ -414,14 +649,39 @@
             Get Store By Id
             </summary>
         </member>
-        <member name="M:FINE.API.Controllers.StoreController.CreateStore(FINE.Service.DTO.Request.Store.CreateStoreRequest)">
+        <member name="M:FINE.API.Controllers.StoreController.GetStoreByTimeslot(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
-            Create Store
+            Get List Store By TimeslotId
             </summary>
         </member>
-        <member name="M:FINE.API.Controllers.StoreController.UpdateStore(System.Int32,FINE.Service.DTO.Request.Store.UpdateStoreRequest)">
+        <member name="M:FINE.API.Controllers.SystemCategoryController.GetAllSystemCategory(FINE.Service.DTO.Response.SystemCategoryResponse,FINE.Service.DTO.Request.PagingRequest)">
             <summary>
-            Update Store
+            Get All System Category
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.SystemCategoryController.GetSystemCategoryById(System.Int32)">
+            <summary>
+            Get System Category By Id
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.SystemCategoryController.GetSystemCategoryByCode(System.String)">
+            <summary>
+            Get System Category By Code
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.TimeslotController.GetTimeslots(FINE.Service.DTO.Response.TimeslotResponse,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get List Timeslot    
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.TimeslotController.GetTimeslotById(System.Int32)">
+            <summary>
+            Get Timeslot by Id  
+            </summary>
+        </member>
+        <member name="M:FINE.API.Controllers.TimeslotController.GetTimeslotsByCampus(System.Int32,FINE.Service.DTO.Request.PagingRequest)">
+            <summary>
+            Get Timeslot by CampusId  
             </summary>
         </member>
     </members>

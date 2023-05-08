@@ -1,4 +1,5 @@
-﻿using FINE.Service.DTO.Request.Order;
+﻿using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
@@ -18,6 +19,38 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Get orders
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrders([FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _orderService.GetOrders(paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Get order by Id
+        /// </summary>
+        [HttpGet("orderId")]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> GetOrderById(int orderId)
+        {
+            try
+            {
+                return await _orderService.GetOrderById(orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Create PreOrder
         /// </summary>
         [HttpPost("preOrder")]
@@ -25,7 +58,70 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return await _orderService.CreatePreOrder(request);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == -1)
+                {
+                    return Unauthorized();
+                }
+
+                return await _orderService.CreatePreOrder(customerId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Create Order
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> CreateOrder([FromBody] CreateGenOrderRequest request)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == -1)
+                {
+                    return Unauthorized();
+                }
+                return await _orderService.CreateOrder(customerId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Cancel Order
+        /// </summary>
+        [HttpPut("usercancel")]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> CancelOrder(int orderId)
+        {
+            try
+            {
+                return await _orderService.CancelOrder(orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Update Order Status
+        /// </summary>
+        [HttpPut("orderStatus")]
+        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> UpdateOrderStatus(int orderId)
+        {
+            try
+            {
+                return await _orderService.UpdateOrder(orderId);
             }
             catch (ErrorResponse ex)
             {

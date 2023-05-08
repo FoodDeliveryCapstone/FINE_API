@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj": {}
+    "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj": {}
   },
   "projects": {
-    "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
+    "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj",
+        "projectUniqueName": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj",
         "projectName": "FINE.Data",
-        "projectPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj",
+        "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj",
         "packagesPath": "C:\\Users\\denwi\\.nuget\\packages\\",
-        "outputPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\obj\\",
+        "outputPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\denwi\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -42,29 +42,29 @@
           "dependencies": {
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Proxies": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Relational": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             }
           },
           "imports": [
@@ -83,18 +83,18 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.200\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.202\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj": {
+    "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj",
+        "projectUniqueName": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj",
         "projectName": "FINE.Service",
-        "projectPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj",
+        "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj",
         "packagesPath": "C:\\Users\\denwi\\.nuget\\packages\\",
-        "outputPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Service\\obj\\",
+        "outputPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\denwi\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -111,8 +111,8 @@
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
-                "projectPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj"
+              "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
+                "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj"
               }
             }
           }
@@ -133,7 +133,11 @@
             },
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
-              "version": "[12.0.0, )"
+              "version": "[12.0.1, )"
+            },
+            "BarCode": {
+              "target": "Package",
+              "version": "[2023.4.1, )"
             },
             "FirebaseAdmin": {
               "target": "Package",
@@ -153,11 +157,11 @@
             },
             "Hangfire.AspNetCore": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "Hangfire.Core": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "Microsoft.AspNet.WebApi.Client": {
               "target": "Package",
@@ -165,7 +169,7 @@
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.AspNetCore.Http.Abstractions": {
               "target": "Package",
@@ -173,29 +177,29 @@
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Proxies": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Relational": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.Extensions.DependencyInjection": {
               "target": "Package",
@@ -204,6 +208,22 @@
             "NTQ.Sdk.Core": {
               "target": "Package",
               "version": "[1.1.6, )"
+            },
+            "Reso.Core": {
+              "target": "Package",
+              "version": "[1.0.19, )"
+            },
+            "ServiceStack.Interfaces": {
+              "target": "Package",
+              "version": "[6.8.0, )"
+            },
+            "ServiceStack.Redis": {
+              "target": "Package",
+              "version": "[6.8.0, )"
+            },
+            "StackExchange.Redis": {
+              "target": "Package",
+              "version": "[2.6.104, )"
             }
           },
           "imports": [
@@ -222,18 +242,18 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.200\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.202\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj": {
+    "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
+        "projectUniqueName": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
         "projectName": "FINE.API",
-        "projectPath": "D:\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
+        "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
         "packagesPath": "C:\\Users\\denwi\\.nuget\\packages\\",
-        "outputPath": "D:\\FINE Repo\\FINE_Product_API\\FINE_API\\obj\\",
+        "outputPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\denwi\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -250,11 +270,11 @@
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
-                "projectPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj"
+              "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
+                "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj"
               },
-              "D:\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj": {
-                "projectPath": "D:\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj"
+              "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj": {
+                "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj"
               }
             }
           }
@@ -275,11 +295,11 @@
             },
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
-              "version": "[12.0.0, )"
+              "version": "[12.0.1, )"
             },
             "Autofac": {
               "target": "Package",
-              "version": "[6.5.0, )"
+              "version": "[7.0.1, )"
             },
             "Autofac.Extensions.DependencyInjection": {
               "target": "Package",
@@ -295,11 +315,11 @@
             },
             "Hangfire.AspNetCore": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "Hangfire.Core": {
               "target": "Package",
-              "version": "[1.7.33, )"
+              "version": "[1.7.34, )"
             },
             "IdentityServer4.AccessTokenValidation": {
               "target": "Package",
@@ -311,7 +331,7 @@
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.AspNetCore.Http.Abstractions": {
               "target": "Package",
@@ -319,13 +339,13 @@
             },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[7.0.3, )"
+              "version": "[7.0.5, )"
             },
             "Microsoft.Extensions.DependencyInjection": {
               "target": "Package",
@@ -335,13 +355,21 @@
               "target": "Package",
               "version": "[3.0.0, )"
             },
+            "ServiceStack.Interfaces": {
+              "target": "Package",
+              "version": "[6.8.0, )"
+            },
+            "ServiceStack.Redis": {
+              "target": "Package",
+              "version": "[6.8.0, )"
+            },
             "StackExchange.Redis": {
               "target": "Package",
-              "version": "[2.6.96, )"
+              "version": "[2.6.104, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.4.0, )"
+              "version": "[6.5.0, )"
             },
             "Swashbuckle.AspNetCore.Annotations": {
               "target": "Package",
@@ -371,7 +399,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.200\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.202\\RuntimeIdentifierGraph.json"
         }
       }
     }

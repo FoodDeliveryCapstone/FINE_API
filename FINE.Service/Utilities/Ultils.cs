@@ -44,7 +44,13 @@ namespace FINE.Service.Utilities
             return new string(Enumerable.Repeat(chars, length)
                                         .Select(s => s[pass.Next(s.Length)]).ToArray());
         }
+
         public static string ToSnakeCase(this string o) => Regex.Replace(o, @"(\w)([A-Z])", "$1-$2").ToLower();
+
+        public static DateTime GetCurrentDatetime()
+        {
+            return DateTime.UtcNow.AddHours(7);
+        }
 
         public static bool CheckVNPhone(string phoneNumber)
         {
@@ -58,6 +64,24 @@ namespace FINE.Service.Utilities
             }
             else
                 return false;
+        }
+
+        public static (DateTime, DateTime) GetLastAndFirstDateInCurrentMonth()
+        {
+            var now = DateTime.Now;
+            var first = new DateTime(now.Year, now.Month, 1);
+            var last = first.AddMonths(1).AddDays(-1);
+            return (first, last);
+        }
+
+        public static DateTime GetStartOfDate(this DateTime value)
+        {
+            return new DateTime(value.Year, value.Month, value.Day, 0, 0, 0);
+        }
+
+        public static DateTime GetEndOfDate(this DateTime value)
+        {
+            return new DateTime(value.Year, value.Month, value.Day, 23, 59, 59);
         }
     }
 }

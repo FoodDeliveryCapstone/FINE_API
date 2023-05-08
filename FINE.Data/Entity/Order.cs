@@ -41,6 +41,8 @@ public partial class Order
 
     public int? ShipperId { get; set; }
 
+    public int ItemQuantity { get; set; }
+
     public string? Note { get; set; }
 
     public virtual Customer? Customer { get; set; }
@@ -60,4 +62,6 @@ public partial class Order
     public virtual Room Room { get; set; } = null!;
 
     public virtual Staff? Shipper { get; set; }
+
+    public virtual Store? Store { get; set; }
 }

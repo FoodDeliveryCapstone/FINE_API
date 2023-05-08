@@ -1,7 +1,8 @@
-﻿using System.Net.NetworkInformation;
+﻿using FINE.Service.Caches;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Area;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,8 +22,8 @@ namespace FINE.API.Controllers
 
         /// <summary>
         /// Get List Areas    
-        /// </summary>
-       
+        /// </summary>    
+        [Cache]
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<AreaResponse>>> GetAreas([FromQuery] AreaResponse request, [FromQuery] PagingRequest paging)
         {
@@ -38,16 +39,20 @@ namespace FINE.API.Controllers
 
         /// <summary>
         /// Get Area By Id
-        /// </summary>
-       
+        /// </summary>      
         [HttpGet("{areaId}")]
-        public async Task<ActionResult<BaseResponseViewModel<AreaResponse>>> GetAreaById([FromRoute] int Id)
+        public async Task<ActionResult<BaseResponseViewModel<AreaResponse>>> GetAreaById([FromRoute] int areaId)
         {
-            return await _areaService.GetAreaById(Id);
+            try
+            {
+                return await _areaService.GetAreaById(areaId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
-
-      
         /// <sumary>
         /// Get Area By campusID
         /// </sumary>
@@ -55,7 +60,14 @@ namespace FINE.API.Controllers
         public async Task<ActionResult<BaseResponsePagingViewModel<AreaResponse>>> GetAreaCampusById
               ([FromRoute] int campusId, [FromQuery] PagingRequest paging)
         {
-            return await _areaService.GetAreaByCampusId(campusId, paging);
+            try
+            {
+                return await _areaService.GetAreaByCampusId(campusId, paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
     }
 }
