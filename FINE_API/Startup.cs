@@ -11,6 +11,7 @@ using FirebaseAdmin;
 using Google.Apis.Auth.AspNetCore3;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.OpenApi.Models;
 using Reso.Core.Extension;
@@ -51,13 +52,14 @@ namespace FINE.API
                     });
             });
 
-            services.AddSingleton<IConnectionMultiplexer>(_ =>ConnectionMultiplexer.Connect(Configuration["Endpoint:RedisEndpoint"]));
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(Configuration["Endpoint:RedisEndpoint"]));
             services.AddMemoryCache();
             services.ConfigMemoryCacheAndRedisCache(Configuration["Endpoint:RedisEndpoint"]);
-            services.AddControllersWithViews()
-                .AddNewtonsoftJson(options =>
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-            ); 
+            services.AddMvc(option => option.EnableEndpointRouting = false)
+                .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
+                .AddNewtonsoftJson(opt => opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
             services.AddControllers(options =>
             {
                 options.Conventions.Add(new RouteTokenTransformerConvention(new SlugifyParameterTransformer()));
