@@ -21,7 +21,8 @@ public interface IAddProductToMenuService
 {
     Task<BaseResponseViewModel<ProductInMenuResponse>> AddProductIntoMenu(AddProductToMenuRequest request);
     Task<BaseResponseViewModel<ProductInMenuResponse>> UpdateProductInMenu(int productInMenuId, UpdateProductInMenuRequest request);
-   
+    Task<BaseResponseViewModel<AddProductToMenuResponse>> UpdateAllProductInMenuStatus(UpdateAllProductInMenuStatusRequest request);
+
 }
 
 public class AddProductToMenuService : IAddProductToMenuService
@@ -59,7 +60,7 @@ public class AddProductToMenuService : IAddProductToMenuService
                     ProductInMenuErrorEnums.PRODUCT_ALREADY_IN_MENU.GetDisplayName());
             #endregion
 
-        var productInMenu = _mapper.Map<AddProductToMenuRequest, ProductInMenu>(request);
+            var productInMenu = _mapper.Map<AddProductToMenuRequest, ProductInMenu>(request);
 
             productInMenu.ProductId = product.Id;
             productInMenu.StoreId = product.StoreId;
@@ -80,7 +81,7 @@ public class AddProductToMenuService : IAddProductToMenuService
                 Data = _mapper.Map<ProductInMenuResponse>(productInMenu)
             };
         }
-        catch(ErrorResponse ex)
+        catch (ErrorResponse ex)
         {
             throw;
         }
@@ -101,7 +102,7 @@ public class AddProductToMenuService : IAddProductToMenuService
             updateProductInMenu.ProductId = productInMenu.ProductId;
             updateProductInMenu.MenuId = productInMenu.MenuId;
             updateProductInMenu.StoreId = productInMenu.StoreId;
-            updateProductInMenu.UpdatedAt= DateTime.Now;
+            updateProductInMenu.UpdatedAt = DateTime.Now;
 
             await _unitOfWork.Repository<ProductInMenu>().UpdateDetached(updateProductInMenu);
             await _unitOfWork.CommitAsync();
@@ -122,5 +123,42 @@ public class AddProductToMenuService : IAddProductToMenuService
             throw;
         }
     }
-  
+
+    public async Task<BaseResponseViewModel<AddProductToMenuResponse>> UpdateAllProductInMenuStatus(UpdateAllProductInMenuStatusRequest request)
+    {
+        try
+        {
+            var productsInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().ToList();
+            foreach (var productInMenu in productsInMenu)
+            {
+                if(productInMenu.IsAvailable == true)
+                {
+                    productInMenu.IsAvailable = false;
+                }
+                else if(productInMenu.IsAvailable == false)
+                {
+                    productInMenu.IsAvailable = true;
+                }
+
+                await _unitOfWork.Repository<ProductInMenu>().UpdateDetached(productInMenu);
+            }
+            await _unitOfWork.CommitAsync();
+
+            return new BaseResponseViewModel<AddProductToMenuResponse>()
+            {
+                Status = new StatusViewModel()
+                {
+                    Message = "Success",
+                    Success = true,
+                    ErrorCode = 0
+                },
+                //Data = ;
+            };
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+
+    }
 }

@@ -139,4 +139,21 @@ public class AdminProductController : Controller
             return BadRequest(ex.Error);
         }
     }
+
+    /// <summary>
+    /// Update All Product in Menu Status
+    /// </summary>    
+    //[Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpPut("productInMenu/status")]
+    public async Task<ActionResult<BaseResponseViewModel<AddProductToMenuResponse>>> UpdateAllProductInMenuStatus([FromBody] UpdateAllProductInMenuStatusRequest request)
+    {
+        try
+        {
+            return await _addProductToMenuService.UpdateAllProductInMenuStatus(request);
+        }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
 }
