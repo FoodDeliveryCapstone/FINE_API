@@ -29,7 +29,8 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return await _areaService.GetAreas(request, paging);
+                var rs =  await _areaService.GetAreas(request, paging);
+                return Ok(rs);
             }
             catch (Exception ex)
             {
