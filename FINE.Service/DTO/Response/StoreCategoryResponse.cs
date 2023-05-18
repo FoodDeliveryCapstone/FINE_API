@@ -4,9 +4,9 @@ namespace FINE.Service.DTO.Response
 {
     public class StoreCategoryResponse
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
-        public int StoreId { get; set; }
+        public int? StoreId { get; set; }
 
         public string? Name { get; set; }
 
@@ -14,7 +14,7 @@ namespace FINE.Service.DTO.Response
 
         public bool IsActive { get; set; }
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
     }

@@ -8,9 +8,9 @@ namespace FINE.Service.DTO.Response
 {
     public class TimeslotResponse
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
-        public int CampusId { get; set; }
+        public int? CampusId { get; set; }
 
         public TimeSpan ArriveTime { get; set; }
 
@@ -18,7 +18,7 @@ namespace FINE.Service.DTO.Response
 
         public bool IsActive { get; set; }
 
-        public DateTime CreateAt { get; set; }
+        public DateTime? CreateAt { get; set; }
 
         public DateTime? UpdateAt { get; set; }
 

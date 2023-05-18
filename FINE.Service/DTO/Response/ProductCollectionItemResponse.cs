@@ -4,7 +4,7 @@ namespace FINE.Service.DTO.Response
 {
     public class ProductCollectionItemResponse
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
         public int ProductCollectionId { get; set; }
 
@@ -12,7 +12,7 @@ namespace FINE.Service.DTO.Response
 
         public bool Active { get; set; }
 
-        public DateTime CreateAt { get; set; }
+        public DateTime? CreateAt { get; set; }
 
         public DateTime? UpdateAt { get; set; }
     }

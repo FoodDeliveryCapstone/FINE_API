@@ -9,15 +9,15 @@ namespace FINE.Service.DTO.Response
 {
     public class MenuResponse
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
-        public int TimeSlotId { get; set; }
+        public int? TimeSlotId { get; set; }
 
         public string? MenuName { get; set; }
 
         public bool IsActive { get; set; }
 
-        public DateTime CreateAt { get; set; }
+        public DateTime? CreateAt { get; set; }
 
         public DateTime? UpdateAt { get; set; }
 
