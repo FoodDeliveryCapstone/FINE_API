@@ -18,7 +18,7 @@ namespace FINE.Service.DTO.Response
         public int? StoreId { get; set; }
         public int Type { get; set; }
         public int? Position { get; set; }
-        public bool Active { get; set; }
+        public bool? Active { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; } 
 

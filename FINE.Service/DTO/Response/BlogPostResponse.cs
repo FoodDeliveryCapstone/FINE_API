@@ -13,7 +13,7 @@ namespace FINE.Service.DTO.Response
         public string? Title { get; set; }
         public string? BlogContent { get; set; }
         public string? ImageUrl { get; set; }
-        public bool Active { get; set; }
+        public bool? Active { get; set; }
         public bool? IsDialog { get; set; }
         public string? Metadata { get; set; }
         public DateTime? CreateAt { get; set; }

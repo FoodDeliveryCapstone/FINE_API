@@ -14,7 +14,7 @@ namespace FINE.Service.DTO.Response
         public string? ContactName { get; set; }
         public string? ContactEmail { get; set; }
         public string? ImageUrl { get; set; }
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
     }

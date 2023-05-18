@@ -17,7 +17,7 @@ namespace FINE.Service.DTO.Response
         public double BasePrice { get; set; }
         public double? SizePrice { get; set; }
         public string? Size { get; set; }
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
 

@@ -14,7 +14,7 @@ namespace FINE.Service.DTO.Response
 
         public int? CampusId { get; set; }
 
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; }
 
         public DateTime? CreateAt { get; set; }
 

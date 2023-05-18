@@ -16,7 +16,7 @@ namespace FINE.Service.DTO.Response
 
         public TimeSpan CheckoutTime { get; set; }
 
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; }
 
         public DateTime? CreateAt { get; set; }
 

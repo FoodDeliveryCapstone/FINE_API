@@ -10,7 +10,7 @@ namespace FINE.Service.DTO.Response
 
         public int ProductId { get; set; }
 
-        public bool Active { get; set; }
+        public bool? Active { get; set; }
 
         public DateTime? CreateAt { get; set; }
 

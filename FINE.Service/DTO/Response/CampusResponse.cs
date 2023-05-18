@@ -12,7 +12,7 @@
 
         public string? Code { get; set; }
 
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; }
 
         public DateTime? CreateAt { get; set; }
 
