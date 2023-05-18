@@ -203,18 +203,19 @@ namespace FINE.Service.Utilities
             {
                 size = limitPaging;
             }
+
             if (size < 1)
             {
                 size = defaultPaging;
             }
+
             if (page < 1)
             {
                 page = 1;
             }
+
             int total = source.Count();
-            IQueryable<TResult> results = source
-                .Skip((page - 1) * size)
-                .Take(size);
+            IQueryable<TResult> results = source.Skip((page - 1) * size).Take(size);
             return (total, results);
         }
     }
