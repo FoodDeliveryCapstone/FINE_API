@@ -4,6 +4,6 @@
     <Import Project="$(NuGetPackageRoot)system.text.json\7.0.0\buildTransitive\net6.0\System.Text.Json.targets" Condition="Exists('$(NuGetPackageRoot)system.text.json\7.0.0\buildTransitive\net6.0\System.Text.Json.targets')" />
     <Import Project="$(NuGetPackageRoot)microsoft.extensions.logging.abstractions\7.0.0\buildTransitive\net6.0\Microsoft.Extensions.Logging.Abstractions.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.extensions.logging.abstractions\7.0.0\buildTransitive\net6.0\Microsoft.Extensions.Logging.Abstractions.targets')" />
     <Import Project="$(NuGetPackageRoot)microsoft.entityframeworkcore.sqlserver.nettopologysuite\7.0.5\build\net6.0\Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.entityframeworkcore.sqlserver.nettopologysuite\7.0.5\build\net6.0\Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite.targets')" />
-    <Import Project="$(NuGetPackageRoot)barcode\2023.4.1\buildTransitive\netstandard2.0\BarCode.targets" Condition="Exists('$(NuGetPackageRoot)barcode\2023.4.1\buildTransitive\netstandard2.0\BarCode.targets')" />
+    <Import Project="$(NuGetPackageRoot)barcode\2023.5.1\buildTransitive\netstandard2.0\BarCode.targets" Condition="Exists('$(NuGetPackageRoot)barcode\2023.5.1\buildTransitive\netstandard2.0\BarCode.targets')" />
   </ImportGroup>
 </Project>
