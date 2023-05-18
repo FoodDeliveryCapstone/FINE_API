@@ -8,7 +8,7 @@ using FINE.Service.DTO.Request.Campus;
 using FINE.Service.DTO.Request.Store_Category;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
-using NTQ.Sdk.Core.Utilities;
+using FINE.Service.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
 
@@ -36,11 +36,11 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<StoreCategoryResponse>> GetAllStoreCategory(StoreCategoryResponse filter, PagingRequest paging)
         {
             var storeCategory = _unitOfWork.Repository<StoreCategory>().GetAll()
-               .ProjectTo<StoreCategoryResponse>(_mapper.ConfigurationProvider)
-               .DynamicFilter(filter)
-           .DynamicSort(filter)
-           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-           Constants.DefaultPaging);
+                                           .ProjectTo<StoreCategoryResponse>(_mapper.ConfigurationProvider)
+                                           .DynamicFilter(filter)
+                                           .DynamicSort(filter)
+                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                           Constants.DefaultPaging);
 
             return new BaseResponsePagingViewModel<StoreCategoryResponse>()
             {

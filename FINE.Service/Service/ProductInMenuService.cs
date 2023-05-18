@@ -10,9 +10,9 @@ using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Algorithm;
-using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service

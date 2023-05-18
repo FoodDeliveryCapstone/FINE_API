@@ -8,7 +8,7 @@ using FINE.Service.DTO.Request.Campus;
 using FINE.Service.DTO.Request.Product_Collection_Item;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
-using NTQ.Sdk.Core.Utilities;
+using FINE.Service.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -56,11 +56,10 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductCollectionItemResponse>> GetAllProductCollectionItem(ProductCollectionItemResponse filter, PagingRequest paging)
         {
             var productCollectionItem = _unitOfWork.Repository<ProductionCollectionItem>().GetAll()
-               .ProjectTo<ProductCollectionItemResponse>(_mapper.ConfigurationProvider)
-               .DynamicFilter(filter)
-           .DynamicSort(filter)
-           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-           Constants.DefaultPaging);
+                                       .ProjectTo<ProductCollectionItemResponse>(_mapper.ConfigurationProvider)
+                                       .DynamicFilter(filter)
+                                       .DynamicSort(filter)
+                                       .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             return new BaseResponsePagingViewModel<ProductCollectionItemResponse>()
             {
@@ -98,9 +97,9 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductCollectionItemResponse>> GetProductCollectionItemByProduct(int productId, PagingRequest paging)
         {
             var productCollectionItem = _unitOfWork.Repository<ProductionCollectionItem>().GetAll()
-               .Where(x => x.ProductId == productId)
-               .ProjectTo<ProductCollectionItemResponse>(_mapper.ConfigurationProvider)
-               .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+                                                   .Where(x => x.ProductId == productId)
+                                                   .ProjectTo<ProductCollectionItemResponse>(_mapper.ConfigurationProvider)
+                                                   .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             var product = _unitOfWork.Repository<Product>().GetAll()
                         .FirstOrDefault(x => x.Id == productId);
@@ -123,9 +122,9 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductCollectionItemResponse>> GetProductCollectionItemByProductCollection(int productCollectionId, PagingRequest paging)
         {
             var productCollectionItem = _unitOfWork.Repository<ProductionCollectionItem>().GetAll()
-               .Where(x => x.ProductCollectionId == productCollectionId)
-               .ProjectTo<ProductCollectionItemResponse>(_mapper.ConfigurationProvider)
-               .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+                                                   .Where(x => x.ProductCollectionId == productCollectionId)
+                                                   .ProjectTo<ProductCollectionItemResponse>(_mapper.ConfigurationProvider)
+                                                   .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             var productCollection = _unitOfWork.Repository<Product>().GetAll()
                         .FirstOrDefault(x => x.Id == productCollectionId);

@@ -12,7 +12,6 @@ using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using NetTopologySuite.Algorithm;
-using NTQ.Sdk.Core.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;

@@ -11,8 +11,8 @@ using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
-using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service;
