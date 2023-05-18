@@ -54,19 +54,21 @@ namespace FINE.Service.Service
         {
             try
             {
-                var orderDetailHTML = "";
                 var body = "";
                 var contentOrder = "";
                 var contentOrderDetail = "";
-                using (StreamReader reader = new StreamReader(Path.Combine(Environment.CurrentDirectory, "EmailTemplate.html")))
+
+                var path = Environment.CurrentDirectory + "\\Template";
+
+                using (StreamReader reader = new StreamReader(Path.Combine(path, "EmailTemplate.html")))
                 {
                     body = await reader.ReadToEndAsync();
                 }
-                using (StreamReader reader = new StreamReader(Path.Combine(Environment.CurrentDirectory, "ContentOrder.html")))
+                using (StreamReader reader = new StreamReader(Path.Combine(path, "ContentOrder.html")))
                 {
                     contentOrder = await reader.ReadToEndAsync();
                 }
-                using (StreamReader reader = new StreamReader(Path.Combine(Environment.CurrentDirectory, "ContentOrderDetail.html")))
+                using (StreamReader reader = new StreamReader(Path.Combine(path, "ContentOrderDetail.html")))
                 {
                     contentOrderDetail = await reader.ReadToEndAsync();
                 }
@@ -75,16 +77,16 @@ namespace FINE.Service.Service
                     var storeName = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == order.StoreId).StoreName;
                     foreach (var orderDetail in order.OrderDetails)
                     {
-                        contentOrderDetail = contentOrderDetail.Replace("{quan}", orderDetail.Quantity.ToString())
+                        var orderDetailHTML = contentOrderDetail.Replace("{quan}", orderDetail.Quantity.ToString())
                             .Replace("{productName}", orderDetail.ProductName)
                             .Replace("{price}", orderDetail.TotalAmount.ToString());
-                        orderDetailHTML += contentOrderDetail;
+                        contentOrderDetail += orderDetailHTML;
                     }
                     contentOrder = contentOrder.Replace("{StoreName}", storeName)
                                                .Replace("{orderId}", order.OrderCode)
                                                .Replace("{quantity}", order.ItemQuantity.ToString())
                                                .Replace("{totalOrder}", order.TotalAmount.ToString())
-                                               .Replace("{orderDetail}", orderDetailHTML);
+                                               .Replace("{orderDetail}", contentOrderDetail);
                 }
                 var roomNumber = _unitOfWork.Repository<Room>().GetAll().FirstOrDefault(x => x.Id == genOrder.RoomId).RoomNumber;
                 body = body.Replace("{Total}", genOrder.TotalAmount.ToString())
