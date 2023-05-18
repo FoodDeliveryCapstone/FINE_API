@@ -102,8 +102,6 @@ namespace FINE.Service.Service
             {
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                           .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
-                                          .DynamicFilter(filter)
-                                          .DynamicSort(filter)
                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
                                         Constants.DefaultPaging);
                 return new BaseResponsePagingViewModel<TimeslotResponse>()
