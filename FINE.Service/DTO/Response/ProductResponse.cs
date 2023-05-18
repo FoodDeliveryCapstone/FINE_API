@@ -14,7 +14,7 @@ namespace FINE.Service.DTO.Response
         public int? StoreId { get; set; }
         public string? StoreName { get; set; }
         public string? ImageUrl { get; set; }
-        public double BasePrice { get; set; }
+        public double? BasePrice { get; set; }
         public double? SizePrice { get; set; }
         public string? Size { get; set; }
         public bool? IsActive { get; set; }

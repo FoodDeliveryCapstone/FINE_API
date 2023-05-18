@@ -193,12 +193,11 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProducts(ProductResponse filter,
             PagingRequest paging)
         {
-            var product = _unitOfWork.Repository<Product>().GetAll()
-                .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
-                .DynamicFilter(filter)
-                .DynamicSort(filter)
-                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                    Constants.DefaultPaging);
+                var product = _unitOfWork.Repository<Product>().GetAll()
+                                    .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
+                                    .DynamicFilter(filter)
+                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
 
 
             return new BaseResponsePagingViewModel<ProductResponse>()
