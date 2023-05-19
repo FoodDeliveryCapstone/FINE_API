@@ -13,11 +13,11 @@ namespace FINE.API.Controllers.AdminController;
 public class AdminProductController : Controller
 {
     private readonly IProductService _productService;
-    private readonly IAddProductToMenuService _addProductToMenuService;
-    public AdminProductController(IProductService productService, IAddProductToMenuService addProductToMenuService)
+    private readonly IProductInMenuService _productInMenuService;
+    public AdminProductController(IProductService productService, IProductInMenuService productInMenuService)
     {
         _productService = productService;
-        _addProductToMenuService = addProductToMenuService;
+        _productInMenuService = productInMenuService;
     }
 
     /// <summary>
@@ -110,12 +110,12 @@ public class AdminProductController : Controller
     /// Add Product to Menu
     /// </summary>
     [HttpPost("productInMenu")]
-    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    //[Authorize(Roles = "SystemAdmin, StoreManager")]
     public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> AddProductToMenu([FromBody] AddProductToMenuRequest request)
     {
         try
         {
-            return await _addProductToMenuService.AddProductIntoMenu(request);
+            return await _productInMenuService.AddProductIntoMenu(request);
         }
         catch (ErrorResponse ex)
         {
@@ -126,13 +126,13 @@ public class AdminProductController : Controller
     /// <summary>
     /// Update Product in Menu
     /// </summary>    
-    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    //[Authorize(Roles = "SystemAdmin, StoreManager")]
     [HttpPut("productInMenu/{productInMenuId}")]
     public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> UpdateProductInMenu([FromRoute] int productInMenuId, [FromBody] UpdateProductInMenuRequest request)
     {
         try
         {
-            return await _addProductToMenuService.UpdateProductInMenu(productInMenuId, request);
+            return await _productInMenuService.UpdateProductInMenu(productInMenuId, request);
         }
         catch (ErrorResponse ex)
         {
@@ -149,7 +149,7 @@ public class AdminProductController : Controller
     {
         try
         {
-            return await _addProductToMenuService.UpdateAllProductInMenuStatus(request);
+            return await _productInMenuService.UpdateAllProductInMenuStatus(request);
         }
         catch (ErrorResponse ex)
         {
