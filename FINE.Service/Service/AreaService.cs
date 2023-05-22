@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Azure.Core;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.Commons;
@@ -8,8 +7,8 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Area;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
-using NTQ.Sdk.Core.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -100,13 +99,12 @@ namespace FINE.Service.Service
         {
             try
             {
-                var area = _unitOfWork.Repository<Area>().GetAll()
+                var areas = _unitOfWork.Repository<Area>().GetAll()
                                     .Include(x => x.Rooms)
                                     .ProjectTo<AreaResponse>(_mapper.ConfigurationProvider)
-                                    .DynamicFilter(filter)
-                                    .DynamicSort(filter)
-                                    .PagingQueryable(paging.Page, paging.PageSize, 
-                                    Constants.LimitPaging, Constants.DefaultPaging);
+                                    .DynamicFilter<AreaResponse>(filter)
+                                    .PagingQueryable(paging.Page, paging.PageSize,
+                               Constants.LimitPaging, Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<AreaResponse>()
                 {
@@ -114,9 +112,9 @@ namespace FINE.Service.Service
                     {
                         Page = paging.Page,
                         Size = paging.PageSize,
-                        Total = area.Item1
+                        Total = areas.Item1
                     },
-                    Data = area.Item2.ToList()
+                    Data = areas.Item2.ToList()
                 };
             }
             catch (Exception ex)
@@ -173,7 +171,7 @@ namespace FINE.Service.Service
                 var area = _unitOfWork.Repository<Area>().GetAll()
                                         .Where(x => x.CampusId == campusId)
                                         .ProjectTo<AreaResponse>(_mapper.ConfigurationProvider)
-                                        .PagingQueryable(paging.Page, paging.PageSize, 
+                                        .PagingQueryable(paging.Page, paging.PageSize,
                                         Constants.LimitPaging, Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<AreaResponse>()

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using FINE.Service.Exceptions;
+using FINE.Service.Caches;
 
 namespace FINE.API.Controllers
 {
@@ -21,6 +22,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get List Room  
         /// </summary>
+        [Cache(1000)]
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<RoomResponse>>> GetRooms
             ([FromQuery] RoomResponse filter, [FromQuery] PagingRequest paging)

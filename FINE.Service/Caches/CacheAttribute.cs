@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace FINE.Service.Caches
-{ 
+{
     public class CacheAttribute : Attribute, IAsyncActionFilter
     {
         private readonly int _timeToLiveSeconds;
@@ -26,7 +26,7 @@ namespace FINE.Service.Caches
             var cacheKey = GenerateCacheKeyFromRequest(context.HttpContext.Request);
             var cacheResponse = await CacheManager.GetObjectAsync<object>(null, cacheService, cacheKey);
 
-            if(cacheResponse != null)
+            if (cacheResponse != null)
             {
                 var containResult = new ContentResult
                 {
@@ -39,7 +39,7 @@ namespace FINE.Service.Caches
             }
 
             var executedConext = await next();
-            if(executedConext.Result is OkObjectResult objectResult)
+            if (executedConext.Result is OkObjectResult objectResult)
             {
                 await CacheManager.SetObjectAsync(TimeSpan.FromMilliseconds(_timeToLiveSeconds), null, cacheService,
                     cacheKey, objectResult.Value);

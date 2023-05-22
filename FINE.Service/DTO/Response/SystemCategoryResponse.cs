@@ -8,7 +8,7 @@ namespace FINE.Service.DTO.Response
 {
     public class SystemCategoryResponse
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
         public string? CategoryCode { get; set; }
 
         public string? CategoryName { get; set; }
@@ -17,7 +17,7 @@ namespace FINE.Service.DTO.Response
 
         public bool ShowOnHome { get; set; }
 
-        public DateTime CreateAt { get; set; }
+        public DateTime? CreateAt { get; set; }
 
         public DateTime? UpdateAt { get; set; }
     }

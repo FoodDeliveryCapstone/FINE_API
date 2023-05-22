@@ -1,4 +1,5 @@
-﻿using FINE.Service.DTO.Request;
+﻿using FINE.Service.Caches;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -20,11 +21,11 @@ public class ProductController : Controller
     /// <summary>
     /// Get List Product
     /// </summary>
- 
     [HttpGet]
     public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProducts([FromQuery] ProductResponse request, [FromQuery] PagingRequest paging)
     {
-        return await _productService.GetProducts(request, paging);
+        var rs = await _productService.GetProducts(request, paging);
+        return Ok(rs);
     }
 
     /// <summary>

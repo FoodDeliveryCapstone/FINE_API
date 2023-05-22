@@ -8,8 +8,8 @@ namespace FINE.Service.DTO.Response
 {
     public class StaffReportResponse
     {
-        public int Id { get; set; }
-        public int StaffId { get; set; }
+        public int? Id { get; set; }
+        public int? StaffId { get; set; }
         public double? TotalRestaurantCost { get; set; }
         public int? TotalOrder { get; set; }
         public int? TotalProduct { get; set; }

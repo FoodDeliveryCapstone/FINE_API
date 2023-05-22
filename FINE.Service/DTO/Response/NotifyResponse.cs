@@ -9,8 +9,8 @@ namespace FINE.Service.DTO.Response
 {
     public class NotifyResponse
     {
-        public int Id { get; set; }
-        public int CustomerId { get; set; }
+        public int? Id { get; set; }
+        public int? CustomerId { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
         public bool? IsRead { get; set; }

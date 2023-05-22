@@ -7,8 +7,8 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
-using NTQ.Sdk.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -102,8 +102,6 @@ namespace FINE.Service.Service
             {
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                           .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
-                                          .DynamicFilter(filter)
-                                          .DynamicSort(filter)
                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
                                         Constants.DefaultPaging);
                 return new BaseResponsePagingViewModel<TimeslotResponse>()

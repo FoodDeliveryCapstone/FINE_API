@@ -8,7 +8,6 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
-using NTQ.Sdk.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

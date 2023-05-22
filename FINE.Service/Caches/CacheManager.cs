@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.Extensions.Caching.Distributed;
+﻿using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -22,12 +20,12 @@ namespace FINE.Service.Caches
             string key = null, CancellationToken token = default(CancellationToken)) where T : class
         {
             T rs = null;
-            if(memoryCache != null && memoryCache.TryGetValue(key, out rs))
+            if (memoryCache != null && memoryCache.TryGetValue(key, out rs))
             {
                 return rs;
             }
 
-            if(distributedCache != null)
+            if (distributedCache != null)
             {
                 try
                 {
@@ -39,7 +37,7 @@ namespace FINE.Service.Caches
                 }
             }
 
-            if(memoryCache != null && rs != null)
+            if (memoryCache != null && rs != null)
             {
                 memoryCache.Set(key, rs);
             }
@@ -49,12 +47,12 @@ namespace FINE.Service.Caches
         public static async System.Threading.Tasks.Task SetObjectAsync(IMemoryCache memoryCache = null,
             IDistributedCache distributedCache = null, string key = null, object obj = null)
         {
-            if(memoryCache != null)
+            if (memoryCache != null)
             {
                 memoryCache.Set(key, obj);
             }
 
-            if(distributedCache != null)
+            if (distributedCache != null)
             {
                 try
                 {
@@ -80,12 +78,12 @@ namespace FINE.Service.Caches
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             });
 
-            if(memoryCache != null)
+            if (memoryCache != null)
             {
                 memoryCache.Set(key, obj);
             }
 
-            if(distributedCache != null)
+            if (distributedCache != null)
             {
                 try
                 {
@@ -104,12 +102,12 @@ namespace FINE.Service.Caches
         public static async System.Threading.Tasks.Task RemoveObjectAsync(IMemoryCache memoryCache = null,
             IDistributedCache distributedCache = null, string key = null, object obj = null)
         {
-            if(memoryCache != null)
+            if (memoryCache != null)
             {
                 memoryCache.Remove(key);
             }
 
-            if(distributedCache != null)
+            if (distributedCache != null)
             {
                 try
                 {
