@@ -14,7 +14,6 @@ using FirebaseAdmin.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
-using NTQ.Sdk.Core.Utilities;
 using System;
 using System.Linq.Dynamic.Core;
 using static FINE.Service.Helpers.Enum;

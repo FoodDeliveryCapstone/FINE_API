@@ -23,7 +23,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get List Areas    
         /// </summary>    
-        [Cache(1800000)]
+        [Cache(1000)]
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<AreaResponse>>> GetAreas([FromQuery] AreaResponse request, [FromQuery] PagingRequest paging)
         {

@@ -21,7 +21,6 @@ public class ProductController : Controller
     /// <summary>
     /// Get List Product
     /// </summary>
-    [Cache(1800000)]
     [HttpGet]
     public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProducts([FromQuery] ProductResponse request, [FromQuery] PagingRequest paging)
     {

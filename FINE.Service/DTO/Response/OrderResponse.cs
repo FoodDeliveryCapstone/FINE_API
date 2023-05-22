@@ -9,7 +9,7 @@ namespace FINE.Service.DTO.Response
 {
     public class GenOrderResponse
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
         public string OrderCode { get; set; }
 

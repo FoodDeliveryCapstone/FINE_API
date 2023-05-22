@@ -7,7 +7,7 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Product_Collection_Time_Slot;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
-using NTQ.Sdk.Core.Utilities;
+using FINE.Service.Utilities;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -55,11 +55,10 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductCollectionTimeSlotResponse>> GetAllProductCollectionTimeSlot(ProductCollectionTimeSlotResponse filter, PagingRequest paging)
         {
             var productCollectionTimeSlot = _unitOfWork.Repository<ProductCollectionTimeSlot>().GetAll()
-                .ProjectTo<ProductCollectionTimeSlotResponse>(_mapper.ConfigurationProvider)
-                .DynamicFilter(filter)
-            .DynamicSort(filter)
-            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-            Constants.DefaultPaging);
+                                                       .ProjectTo<ProductCollectionTimeSlotResponse>(_mapper.ConfigurationProvider)
+                                                       .DynamicFilter(filter)
+                                                       .DynamicSort(filter)
+                                                       .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             return new BaseResponsePagingViewModel<ProductCollectionTimeSlotResponse>()
             {
@@ -97,9 +96,9 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductCollectionTimeSlotResponse>> GetProductCollectionTimeSlotByProductCollection(int productCollectionId, PagingRequest paging)
         {
             var productCollectionTimeSlot = _unitOfWork.Repository<ProductCollectionTimeSlot>().GetAll()
-                .Where(x => x.ProductCollectionId == productCollectionId)
-                .ProjectTo<ProductCollectionTimeSlotResponse>(_mapper.ConfigurationProvider)
-                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+                                                        .Where(x => x.ProductCollectionId == productCollectionId)
+                                                        .ProjectTo<ProductCollectionTimeSlotResponse>(_mapper.ConfigurationProvider)
+                                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             var productCollection = _unitOfWork.Repository<ProductCollection>().GetAll()
                         .FirstOrDefault(x => x.Id == productCollectionId);
@@ -122,9 +121,9 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductCollectionTimeSlotResponse>> GetProductCollectionTimeSlotByTimeSlot(int timeSlotId, PagingRequest paging)
         {
             var productCollectionTimeSlot = _unitOfWork.Repository<ProductCollectionTimeSlot>().GetAll()
-               .Where(x => x.TimeSlotId == timeSlotId)
-               .ProjectTo<ProductCollectionTimeSlotResponse>(_mapper.ConfigurationProvider)
-               .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+                                                       .Where(x => x.TimeSlotId == timeSlotId)
+                                                       .ProjectTo<ProductCollectionTimeSlotResponse>(_mapper.ConfigurationProvider)
+                                                       .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
             var timeSlot = _unitOfWork.Repository<TimeSlot>().GetAll()
                         .FirstOrDefault(x => x.Id == timeSlotId);

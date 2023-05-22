@@ -170,6 +170,14 @@ namespace FINE.API.Mapper
 
             #endregion
 
+            #region UniversityInfo
+
+            CreateMap<UniversityInfo, UniversityInfoResponse>().ReverseMap();
+            CreateMap<CreateUniversityInfoRequest, UniversityInfo>();
+            CreateMap<UpdateUniversityInfoRequest, UniversityInfo>();
+
+            #endregion
+
             #region Menu
 
             CreateMap<Menu, MenuResponse>().ForMember(menuResponse => menuResponse.Products, map => map.MapFrom(menu => menu.ProductInMenus)).ReverseMap();
@@ -215,6 +223,7 @@ namespace FINE.API.Mapper
             CreateMap<ProductInMenu, ProductInMenuResponse>()
                 .IncludeMembers(x => x.Product, x => x.Product.Store, x => x.Product.Category)
                 .ReverseMap();
+            CreateMap<UpdateProductInMenuRequest, AddProductToMenuRequest>();
             #endregion
             #region Revenue
             CreateMap<Order, RevenueResponse>().ReverseMap();

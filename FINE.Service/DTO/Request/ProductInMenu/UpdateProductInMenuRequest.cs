@@ -12,4 +12,9 @@ namespace FINE.Service.DTO.Request.ProductInMenu
         public int Status { get; set; }
         public bool? IsAvailable { get; set; }
     }
+
+    public class UpdateAllProductInMenuStatusRequest
+    {
+
+    }
 }

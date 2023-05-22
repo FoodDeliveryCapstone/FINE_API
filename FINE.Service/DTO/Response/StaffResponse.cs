@@ -8,7 +8,7 @@ namespace FINE.Service.DTO.Response
 {
     public class StaffResponse
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
         public string? Name { get; set; } = null!;
 
@@ -22,7 +22,7 @@ namespace FINE.Service.DTO.Response
 
         public bool? IsAvailable { get; set; }
 
-        public DateTime CreateAt { get; set; }
+        public DateTime? CreateAt { get; set; }
 
         public DateTime? UpdateAt { get; set; }
     }
