@@ -135,7 +135,10 @@ namespace FINE.Service.Helpers
 
             //400
             [Display(Name = "This notify already exsist!")]
-            NOTIFY_EXSIST = 4001,
+            NOTIFY_EXSIST = 4001, 
+            [Display(Name = "Data is null!")]
+            DATA_NULL = 4002,
+
         }
 
         public enum StaffReportErrorEnum

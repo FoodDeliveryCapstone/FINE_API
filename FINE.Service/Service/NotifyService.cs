@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -22,7 +23,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<NotifyResponse>> GetNotifys(NotifyResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<NotifyResponse>> GetNotifyById(int notifyId);
-        Task<BaseResponseViewModel<NotifyResponse>> CreateNotify(CreateNotifyRequest request);
+        Task<bool> CreateOrderNotify(NotifyRequestModel request);
         Task<BaseResponseViewModel<NotifyResponse>> UpdateNotify(int notifyId, UpdateNotifyRequest reuqest);
     }
 
@@ -37,26 +38,65 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponseViewModel<NotifyResponse>> CreateNotify(CreateNotifyRequest request)
+        public async Task<bool> CreateOrderNotify(NotifyRequestModel request)
         {
-            var notify = _mapper.Map<CreateNotifyRequest, Notify>(request);
-            notify.IsRead = false;
-            notify.Active = true;
-            notify.CreateAt = DateTime.Now;
-
-            await _unitOfWork.Repository<Notify>().InsertAsync(notify);
-            await _unitOfWork.CommitAsync();
-
-            return new BaseResponseViewModel<NotifyResponse>()
+            if (request.CustomerId == null)
             {
-                Status = new StatusViewModel()
+                throw new ErrorResponse(404, (int)NotifyErrorEnum.NOT_FOUND_ID,
+                                    NotifyErrorEnum.NOT_FOUND_ID.GetDisplayName());
+            }
+
+            if (request.Type == (int)NotifyTypeEnum.ForOrder)
+            {
+                switch (request.OrderStatus)
                 {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                Data = _mapper.Map<NotifyResponse>(notify)
-            };
+                    case (int)OrderStatusEnum.Processing:
+                        request.Title = "Trạng thái đơn hàng";
+                        request.Description = $"Đơn hàng mới {request.OrderCode} ";
+                        break;
+                    case (int)OrderStatusEnum.Finished:
+                        request.Title = "Trạng thái đơn hàng";
+                        request.Description = $"Đơn hàng {request.OrderCode} hoàn thành";
+                        break;
+                    case (int)OrderStatusEnum.UserCancel:
+                        request.Title = "Trạng thái đơn hàng";
+                        request.Description = $"Đơn hàng {request.OrderCode} đã hủy";
+                        break;
+                    //case (int)OrderStatusEnum.OnlinePaid:
+                    //    request.Title = "Trạng thái đơn hàng";
+                    //    request.Description = $"Đơn hàng {request.OrderId} đã thanh toán ";
+                    //    break;
+                }
+            }
+            else if (request.Type == (int)NotifyTypeEnum.ForGift)
+            {
+                if (String.IsNullOrEmpty(request.Title))
+                {
+                    request.Title = "";
+                }
+                if (String.IsNullOrEmpty(request.Description))
+                {
+                    request.Description = "";
+                }
+            }
+            try
+            {
+                _unitOfWork.Repository<Notify>().Insert(new Notify
+                {
+                    CustomerId = request.CustomerId,
+                    Title = request.Title,
+                    Description = request.Description,
+                    IsRead = false,
+                    Active = true,
+                    CreateAt = DateTime.Now
+                });
+
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+            return true;
         }
 
         public async Task<BaseResponseViewModel<NotifyResponse>> GetNotifyById(int notifyId)

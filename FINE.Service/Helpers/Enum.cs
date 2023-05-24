@@ -108,6 +108,11 @@ namespace FINE.Service.Helpers
             IsAvtive = 2,
             IsRead = 2
         }
+        public enum NotifyTypeEnum
+        {
+            ForOrder = 1,
+            ForGift = 2,
+        }
 
         public enum UniversityStatusEnum
         {

@@ -24,6 +24,7 @@ using IronBarCode;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Hangfire.Server;
 using Microsoft.Extensions.Configuration;
+using Hangfire;
 
 namespace FINE.Service.Service
 {
@@ -41,13 +42,15 @@ namespace FINE.Service.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly INotifyService _notifyService;
         private readonly IConfiguration _configuration;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, INotifyService notifyService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
+            _notifyService = notifyService;
         }
 
         public async Task<string> CreateMailMessage(Order genOrder)
@@ -105,6 +108,7 @@ namespace FINE.Service.Service
                 throw new Exception(ex.Message);
             }
         }
+
         public async Task<bool> SendMailMessage(Order order)
         {
             try
@@ -191,9 +195,9 @@ namespace FINE.Service.Service
 
                 var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
 
-                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
                 #region Phân store trong order detail
@@ -338,9 +342,9 @@ namespace FINE.Service.Service
 
                 var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
 
-                //if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
-                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
                 #region Customer
@@ -379,9 +383,25 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Order>().InsertAsync(genOrder);
                 await _unitOfWork.CommitAsync();
 
-                SendMailMessage(genOrder);
+                try
+                {
+                    // create Notification for customer
+                    var notifyRequest = new NotifyRequestModel
+                    {
+                        CustomerId = customer.Id,
+                        CustomerName = customer.Name,
+                        OrderCode = genOrder.OrderCode,
+                        OrderStatus = genOrder.OrderStatus,
+                        Type = (int)NotifyTypeEnum.ForOrder
+                    };                    
+                    BackgroundJob.Enqueue(() => _notifyService.CreateOrderNotify(notifyRequest));
 
+                    BackgroundJob.Enqueue(() => SendMailMessage(genOrder));
 
+                }catch(Exception ex)
+                {
+                    throw ex;
+                }
                 return new BaseResponseViewModel<GenOrderResponse>()
                 {
                     Status = new StatusViewModel()
