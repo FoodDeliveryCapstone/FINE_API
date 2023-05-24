@@ -1,67 +1,95 @@
 ﻿using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.BlogPost;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
 using FINE.Service.Service;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+namespace FINE.API.Controllers;
 
-namespace FINE.API.Controllers
+[Route(Helpers.SettingVersionApi.ApiVersion)]
+[ApiController]
+public class BlogPostController : ControllerBase
 {
-    [Route(Helpers.SettingVersionApi.ApiVersion)]
-    [ApiController]
-    public class BlogPostController : ControllerBase
+    private readonly IBlogPostService _blogPostService;
+
+    public BlogPostController(IBlogPostService blogPostService)
     {
-        private readonly IBlogPostService _blogPostService;
+        _blogPostService = blogPostService;
+    }
 
-        public BlogPostController(IBlogPostService blogPostService)
-        {
-            _blogPostService = blogPostService;
-        }
-
-        /// <summary>
-        /// Get List Blog Posts    
-        /// </summary>
-        /// 
-        [HttpGet]
-        public async Task<ActionResult<BaseResponsePagingViewModel<BlogPostResponse>>> GetBlogPost
-            ([FromQuery] BlogPostResponse filter, [FromQuery] PagingRequest paging)
+    /// <summary>
+    /// Get List Blog Posts    
+    /// </summary>
+    /// 
+    [HttpGet]
+    public async Task<ActionResult<BaseResponsePagingViewModel<BlogPostResponse>>> GetBlogPost
+        ([FromQuery] BlogPostResponse filter, [FromQuery] PagingRequest paging)
+    {
+        try
         {
             return await _blogPostService.GetBlogPost(filter, paging);
         }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
 
-        /// <summary>
-        /// Get List Blog Posts By Id     
-        /// </summary>
-        /// 
-        [HttpGet("{blogPostId}")]
+    /// <summary>
+    /// Get List Blog Posts By Id     
+    /// </summary>
+    /// 
+    [HttpGet("{blogPostId}")]
 
-        public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> GetBlogPostById
-            ([FromRoute] int blogPostId)
+    public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> GetBlogPostById
+        ([FromRoute] int blogPostId)
+    {
+        try
         {
             return await _blogPostService.GetBlogPostById(blogPostId);
         }
-
-        /// <summary>
-        /// Create Blog Post
-        /// </summary>
-        /// 
-        [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> CreateBlogPost
-            ([FromBody] CreateBlogPostRequest request)
+        catch (ErrorResponse ex)
         {
-            return await _blogPostService.CreateBlogPost(request);
-        }
-
-        /// <summary>
-        /// Update Blog Posts    
-        /// </summary>
-        /// 
-        [HttpPut("{blogPostId}")]
-        public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> UpdateBlogPost
-           ([FromRoute] int blogPostId, [FromBody] UpdateBlogPostRequest request)
-        {
-            return await _blogPostService.UpdateBlogPost(blogPostId, request);
+            return BadRequest(ex.Error);
         }
 
     }
+
+    /// <summary>
+    /// Create Blog Post
+    /// </summary>
+    /// 
+    [HttpPost]
+    public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> CreateBlogPost
+        ([FromBody] CreateBlogPostRequest request)
+    {
+        try
+        {
+            return await _blogPostService.CreateBlogPost(request);
+        }
+        catch(ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
+    /// <summary>
+    /// Update Blog Posts    
+    /// </summary>
+    /// 
+    [HttpPut("{blogPostId}")]
+    public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> UpdateBlogPost
+        ([FromRoute] int blogPostId, [FromBody] UpdateBlogPostRequest request)
+    {
+        try
+        {
+            return await _blogPostService.UpdateBlogPost(blogPostId, request);
+        }
+        catch(ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
 }
+
