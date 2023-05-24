@@ -55,41 +55,5 @@ public class BlogPostController : ControllerBase
 
     }
 
-    /// <summary>
-    /// Create Blog Post
-    /// </summary>
-    /// 
-    [HttpPost]
-    public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> CreateBlogPost
-        ([FromBody] CreateBlogPostRequest request)
-    {
-        try
-        {
-            return await _blogPostService.CreateBlogPost(request);
-        }
-        catch(ErrorResponse ex)
-        {
-            return BadRequest(ex.Error);
-        }
-    }
-
-    /// <summary>
-    /// Update Blog Posts    
-    /// </summary>
-    /// 
-    [HttpPut("{blogPostId}")]
-    public async Task<ActionResult<BaseResponseViewModel<BlogPostResponse>>> UpdateBlogPost
-        ([FromRoute] int blogPostId, [FromBody] UpdateBlogPostRequest request)
-    {
-        try
-        {
-            return await _blogPostService.UpdateBlogPost(blogPostId, request);
-        }
-        catch(ErrorResponse ex)
-        {
-            return BadRequest(ex.Error);
-        }
-    }
-
 }
 
