@@ -46,10 +46,10 @@ namespace FINE.API.Controllers
         /// </summary>
         /// 
         [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<NotifyResponse>>> CreateNotify
-            ([FromBody] CreateNotifyRequest request)
+        public async Task<ActionResult<bool>> CreateNotify
+            ([FromBody] NotifyRequestModel request)
         {
-            return await _notifyService.CreateNotify(request);
+            return await _notifyService.CreateOrderNotify(request);
         }
 
         /// <summary>
