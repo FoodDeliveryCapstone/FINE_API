@@ -15,7 +15,7 @@ namespace FINE.Service.DTO.Response
 
         public string? ImageUrl { get; set; }
 
-        public bool ShowOnHome { get; set; }
+        public bool? ShowOnHome { get; set; }
 
         public DateTime? CreateAt { get; set; }
 
