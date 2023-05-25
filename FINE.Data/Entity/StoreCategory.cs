@@ -19,7 +19,7 @@ public partial class StoreCategory
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<CategoryStoreItem> CategoryStoreItems { get; } = new List<CategoryStoreItem>();
+    public virtual ICollection<CategoryStoreItem> CategoryStoreItems { get; set; } = new List<CategoryStoreItem>();
 
     public virtual Store Store { get; set; } = null!;
 }

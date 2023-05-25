@@ -27,5 +27,5 @@ public partial class Account
 
     public virtual MembershipCard MembershipCard { get; set; } = null!;
 
-    public virtual ICollection<Transaction> Transactions { get; } = new List<Transaction>();
+    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 }

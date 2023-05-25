@@ -27,11 +27,11 @@ public partial class Staff
 
     public virtual Customer? Customer { get; set; }
 
-    public virtual ICollection<Fcmtoken> Fcmtokens { get; } = new List<Fcmtoken>();
+    public virtual ICollection<Fcmtoken> Fcmtokens { get; set; } = new List<Fcmtoken>();
 
-    public virtual ICollection<Order> Orders { get; } = new List<Order>();
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
-    public virtual ICollection<StaffReport> StaffReports { get; } = new List<StaffReport>();
+    public virtual ICollection<StaffReport> StaffReports { get; set; } = new List<StaffReport>();
 
     public virtual Store? Store { get; set; }
 }

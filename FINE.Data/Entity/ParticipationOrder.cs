@@ -27,5 +27,5 @@ public partial class ParticipationOrder
 
     public virtual Order GeneralOrder { get; set; } = null!;
 
-    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; } = new List<ParticipationOrderDetail>();
+    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; set; } = new List<ParticipationOrderDetail>();
 }

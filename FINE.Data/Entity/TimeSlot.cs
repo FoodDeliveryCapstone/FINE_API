@@ -21,7 +21,7 @@ public partial class TimeSlot
 
     public virtual Campus Campus { get; set; } = null!;
 
-    public virtual ICollection<Menu> Menus { get; } = new List<Menu>();
+    public virtual ICollection<Menu> Menus { get; set; } = new List<Menu>();
 
-    public virtual ICollection<ProductCollectionTimeSlot> ProductCollectionTimeSlots { get; } = new List<ProductCollectionTimeSlot>();
+    public virtual ICollection<ProductCollectionTimeSlot> ProductCollectionTimeSlots { get; set; } = new List<ProductCollectionTimeSlot>();
 }

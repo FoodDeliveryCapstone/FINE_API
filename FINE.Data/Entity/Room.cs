@@ -21,5 +21,5 @@ public partial class Room
 
     public virtual Floor Floor { get; set; } = null!;
 
-    public virtual ICollection<Order> Orders { get; } = new List<Order>();
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }

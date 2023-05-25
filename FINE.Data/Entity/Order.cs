@@ -49,15 +49,15 @@ public partial class Order
 
     public virtual Order? GeneralOrder { get; set; }
 
-    public virtual ICollection<Order> InverseGeneralOrder { get; } = new List<Order>();
+    public virtual ICollection<Order> InverseGeneralOrder { get; set; } = new List<Order>();
 
-    public virtual ICollection<OrderDetail> OrderDetails { get; } = new List<OrderDetail>();
+    public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
-    public virtual ICollection<OrderFeedback> OrderFeedbacks { get; } = new List<OrderFeedback>();
+    public virtual ICollection<OrderFeedback> OrderFeedbacks { get; set; } = new List<OrderFeedback>();
 
-    public virtual ICollection<ParticipationOrder> ParticipationOrders { get; } = new List<ParticipationOrder>();
+    public virtual ICollection<ParticipationOrder> ParticipationOrders { get; set; } = new List<ParticipationOrder>();
 
-    public virtual ICollection<Payment> Payments { get; } = new List<Payment>();
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
     public virtual Room Room { get; set; } = null!;
 
