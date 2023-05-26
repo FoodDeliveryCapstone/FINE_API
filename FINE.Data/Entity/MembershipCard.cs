@@ -23,7 +23,7 @@ public partial class MembershipCard
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual ICollection<Account> Accounts { get; } = new List<Account>();
+    public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
 
     public virtual Customer Customer { get; set; } = null!;
 }

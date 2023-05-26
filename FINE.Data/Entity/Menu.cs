@@ -11,13 +11,15 @@ public partial class Menu
 
     public string MenuName { get; set; } = null!;
 
+    public string? ImgUrl { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTime CreateAt { get; set; }
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual ICollection<ProductInMenu> ProductInMenus { get; } = new List<ProductInMenu>();
+    public virtual ICollection<ProductInMenu> ProductInMenus { get; set; } = new List<ProductInMenu>();
 
     public virtual TimeSlot TimeSlot { get; set; } = null!;
 }

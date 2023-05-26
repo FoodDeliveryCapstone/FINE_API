@@ -25,7 +25,7 @@ public partial class ProductCollection
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual ICollection<ProductCollectionTimeSlot> ProductCollectionTimeSlots { get; } = new List<ProductCollectionTimeSlot>();
+    public virtual ICollection<ProductCollectionTimeSlot> ProductCollectionTimeSlots { get; set; } = new List<ProductCollectionTimeSlot>();
 
-    public virtual ICollection<ProductionCollectionItem> ProductionCollectionItems { get; } = new List<ProductionCollectionItem>();
+    public virtual ICollection<ProductionCollectionItem> ProductionCollectionItems { get; set; } = new List<ProductionCollectionItem>();
 }

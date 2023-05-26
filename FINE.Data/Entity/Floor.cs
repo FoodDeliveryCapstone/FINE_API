@@ -19,5 +19,5 @@ public partial class Floor
 
     public virtual Campus Campus { get; set; } = null!;
 
-    public virtual ICollection<Room> Rooms { get; } = new List<Room>();
+    public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 }

@@ -25,9 +25,9 @@ public partial class ProductInMenu
 
     public virtual Menu? Menu { get; set; }
 
-    public virtual ICollection<OrderDetail> OrderDetails { get; } = new List<OrderDetail>();
+    public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
-    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; } = new List<ParticipationOrderDetail>();
+    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; set; } = new List<ParticipationOrderDetail>();
 
     public virtual Product? Product { get; set; }
 }

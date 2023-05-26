@@ -21,15 +21,15 @@ public partial class Store
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<BlogPost> BlogPosts { get; } = new List<BlogPost>();
+    public virtual ICollection<BlogPost> BlogPosts { get; set; } = new List<BlogPost>();
 
     public virtual Campus Campus { get; set; } = null!;
 
-    public virtual ICollection<Order> Orders { get; } = new List<Order>();
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
-    public virtual ICollection<Product> Products { get; } = new List<Product>();
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
-    public virtual ICollection<Staff> Staff { get; } = new List<Staff>();
+    public virtual ICollection<Staff> Staff { get; set; } = new List<Staff>();
 
-    public virtual ICollection<StoreCategory> StoreCategories { get; } = new List<StoreCategory>();
+    public virtual ICollection<StoreCategory> StoreCategories { get; set; } = new List<StoreCategory>();
 }

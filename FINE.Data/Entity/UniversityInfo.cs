@@ -17,7 +17,7 @@ public partial class UniversityInfo
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual ICollection<Customer> Customers { get; } = new List<Customer>();
+    public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();
 
     public virtual University University { get; set; } = null!;
 }

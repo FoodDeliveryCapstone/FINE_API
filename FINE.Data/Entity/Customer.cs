@@ -27,21 +27,21 @@ public partial class Customer
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual ICollection<Fcmtoken> Fcmtokens { get; } = new List<Fcmtoken>();
+    public virtual ICollection<Fcmtoken> Fcmtokens { get; set; } = new List<Fcmtoken>();
 
-    public virtual ICollection<MembershipCard> MembershipCards { get; } = new List<MembershipCard>();
+    public virtual ICollection<MembershipCard> MembershipCards { get; set; } = new List<MembershipCard>();
 
-    public virtual ICollection<Notify> Notifies { get; } = new List<Notify>();
+    public virtual ICollection<Notify> Notifies { get; set; } = new List<Notify>();
 
-    public virtual ICollection<OrderFeedback> OrderFeedbacks { get; } = new List<OrderFeedback>();
+    public virtual ICollection<OrderFeedback> OrderFeedbacks { get; set; } = new List<OrderFeedback>();
 
-    public virtual ICollection<Order> Orders { get; } = new List<Order>();
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
-    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; } = new List<ParticipationOrderDetail>();
+    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; set; } = new List<ParticipationOrderDetail>();
 
-    public virtual ICollection<ParticipationOrder> ParticipationOrders { get; } = new List<ParticipationOrder>();
+    public virtual ICollection<ParticipationOrder> ParticipationOrders { get; set; } = new List<ParticipationOrder>();
 
-    public virtual ICollection<Staff> Staff { get; } = new List<Staff>();
+    public virtual ICollection<Staff> Staff { get; set; } = new List<Staff>();
 
     public virtual UniversityInfo UniInfo { get; set; } = null!;
 }

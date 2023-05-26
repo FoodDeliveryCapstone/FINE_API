@@ -19,9 +19,9 @@ public partial class ProductCombo
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<OrderDetail> OrderDetails { get; } = new List<OrderDetail>();
+    public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
-    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; } = new List<ParticipationOrderDetail>();
+    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; set; } = new List<ParticipationOrderDetail>();
 
-    public virtual ICollection<ProductComboItem> ProductComboItems { get; } = new List<ProductComboItem>();
+    public virtual ICollection<ProductComboItem> ProductComboItems { get; set; } = new List<ProductComboItem>();
 }

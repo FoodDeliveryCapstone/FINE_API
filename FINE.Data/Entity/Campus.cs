@@ -21,13 +21,13 @@ public partial class Campus
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual ICollection<Area> Areas { get; } = new List<Area>();
+    public virtual ICollection<Area> Areas { get; set; } = new List<Area>();
 
-    public virtual ICollection<Floor> Floors { get; } = new List<Floor>();
+    public virtual ICollection<Floor> Floors { get; set; } = new List<Floor>();
 
-    public virtual ICollection<Store> Stores { get; } = new List<Store>();
+    public virtual ICollection<Store> Stores { get; set; } = new List<Store>();
 
-    public virtual ICollection<TimeSlot> TimeSlots { get; } = new List<TimeSlot>();
+    public virtual ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
 
     public virtual University University { get; set; } = null!;
 }

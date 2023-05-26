@@ -35,17 +35,17 @@ public partial class Product
 
     public virtual SystemCategory Category { get; set; } = null!;
 
-    public virtual ICollection<CategoryStoreItem> CategoryStoreItems { get; } = new List<CategoryStoreItem>();
+    public virtual ICollection<CategoryStoreItem> CategoryStoreItems { get; set; } = new List<CategoryStoreItem>();
 
     public virtual Product? GeneralProduct { get; set; }
 
-    public virtual ICollection<Product> InverseGeneralProduct { get; } = new List<Product>();
+    public virtual ICollection<Product> InverseGeneralProduct { get; set; } = new List<Product>();
 
-    public virtual ICollection<ProductComboItem> ProductComboItems { get; } = new List<ProductComboItem>();
+    public virtual ICollection<ProductComboItem> ProductComboItems { get; set; } = new List<ProductComboItem>();
 
-    public virtual ICollection<ProductInMenu> ProductInMenus { get; } = new List<ProductInMenu>();
+    public virtual ICollection<ProductInMenu> ProductInMenus { get; set; } = new List<ProductInMenu>();
 
-    public virtual ICollection<ProductionCollectionItem> ProductionCollectionItems { get; } = new List<ProductionCollectionItem>();
+    public virtual ICollection<ProductionCollectionItem> ProductionCollectionItems { get; set; } = new List<ProductionCollectionItem>();
 
     public virtual Store Store { get; set; } = null!;
 }

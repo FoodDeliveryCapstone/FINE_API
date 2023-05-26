@@ -23,7 +23,7 @@ public partial class University
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual ICollection<Campus> Campuses { get; } = new List<Campus>();
+    public virtual ICollection<Campus> Campuses { get; set; } = new List<Campus>();
 
-    public virtual ICollection<UniversityInfo> UniversityInfos { get; } = new List<UniversityInfo>();
+    public virtual ICollection<UniversityInfo> UniversityInfos { get; set; } = new List<UniversityInfo>();
 }
