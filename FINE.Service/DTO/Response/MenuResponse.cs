@@ -14,6 +14,7 @@ namespace FINE.Service.DTO.Response
         public int? TimeSlotId { get; set; }
 
         public string? MenuName { get; set; }
+        public string? ImgUrl { get; set; }
 
         public bool? IsActive { get; set; }
 
