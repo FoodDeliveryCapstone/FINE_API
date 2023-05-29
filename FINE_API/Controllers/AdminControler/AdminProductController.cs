@@ -13,11 +13,11 @@ namespace FINE.API.Controllers.AdminController;
 public class AdminProductController : Controller
 {
     private readonly IProductService _productService;
-    private readonly IProductToMenuService _productToMenuService;
-    public AdminProductController(IProductService productService, IProductToMenuService productToMenuService)
+    private readonly IProductInMenuService _productInMenuService;
+    public AdminProductController(IProductService productService, IProductInMenuService productInMenuService)
     {
         _productService = productService;
-        _productToMenuService = productToMenuService;
+        _productInMenuService = productInMenuService;
     }
 
     /// <summary>
@@ -69,14 +69,7 @@ public class AdminProductController : Controller
     [HttpGet("menu/{menuId}")]
     public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuResponse>>> GetProductsByMenuId([FromRoute] int menuId, [FromQuery] PagingRequest paging)
     {
-        try
-        {
-            return await _productService.GetProductByMenu(menuId, paging);
-        }
-        catch(ErrorResponse ex)
-        {
-            return BadRequest(ex.Error);
-        }
+        return await _productService.GetProductByMenu(menuId, paging);
     }
 
     /// <summary>
@@ -117,12 +110,12 @@ public class AdminProductController : Controller
     /// Add Product to Menu
     /// </summary>
     [HttpPost("productInMenu")]
-    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    //[Authorize(Roles = "SystemAdmin, StoreManager")]
     public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> AddProductToMenu([FromBody] AddProductToMenuRequest request)
     {
         try
         {
-            return await _productToMenuService.AddProductIntoMenu(request);
+            return await _productInMenuService.AddProductIntoMenu(request);
         }
         catch (ErrorResponse ex)
         {
@@ -133,13 +126,30 @@ public class AdminProductController : Controller
     /// <summary>
     /// Update Product in Menu
     /// </summary>    
-    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    //[Authorize(Roles = "SystemAdmin, StoreManager")]
     [HttpPut("productInMenu/{productInMenuId}")]
     public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> UpdateProductInMenu([FromRoute] int productInMenuId, [FromBody] UpdateProductInMenuRequest request)
     {
         try
         {
-            return await _productToMenuService.UpdateProductInMenu(productInMenuId, request);
+            return await _productInMenuService.UpdateProductInMenu(productInMenuId, request);
+        }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
+    /// <summary>
+    /// Update All Product in Menu Status
+    /// </summary>    
+    //[Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpPut("productInMenu/status")]
+    public async Task<ActionResult<BaseResponseViewModel<AddProductToMenuResponse>>> UpdateAllProductInMenuStatus([FromBody] UpdateAllProductInMenuStatusRequest request)
+    {
+        try
+        {
+            return await _productInMenuService.UpdateAllProductInMenuStatus(request);
         }
         catch (ErrorResponse ex)
         {

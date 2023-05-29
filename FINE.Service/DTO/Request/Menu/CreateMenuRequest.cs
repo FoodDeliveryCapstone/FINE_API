@@ -11,6 +11,7 @@ namespace FINE.Service.DTO.Request.Menu
         public int TimeSlotId { get; set; }
 
         public string MenuName { get; set; } = null!;
+        public string? ImgUrl { get; set; }
 
         public bool IsActive { get; set; }
 

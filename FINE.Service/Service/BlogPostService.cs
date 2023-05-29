@@ -8,12 +8,6 @@ using FINE.Service.DTO.Request.BlogPost;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
-using NetTopologySuite.Algorithm;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -42,10 +36,14 @@ namespace FINE.Service.Service
             try
             {
                 var blogPost = _mapper.Map<CreateBlogPostRequest, BlogPost>(request);
+
                 blogPost.Active = true;
+                blogPost.IsDialog = true;
                 blogPost.CreateAt = DateTime.Now;
+
                 await _unitOfWork.Repository<BlogPost>().InsertAsync(blogPost);
                 await _unitOfWork.CommitAsync();
+
                 return new BaseResponseViewModel<BlogPostResponse>()
                 {
                     Status = new StatusViewModel()
@@ -57,7 +55,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<BlogPostResponse>(blogPost)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
@@ -85,7 +83,7 @@ namespace FINE.Service.Service
                     Data = blogPost.Item2.ToList()
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
@@ -110,7 +108,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<BlogPostResponse>(blogPost)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }
@@ -121,13 +119,17 @@ namespace FINE.Service.Service
             try
             {
                 var blogPost = _unitOfWork.Repository<BlogPost>().Find(x => x.Id == blogPostId);
+
                 if (blogPost == null)
                     throw new ErrorResponse(404, (int)BlogPostErrorEnums.NOT_FOUND_ID,
                                        BlogPostErrorEnums.NOT_FOUND_ID.GetDisplayName());
-                var blogPostMappingResult = _mapper.Map<UpdateBlogPostRequest, BlogPost>(request, blogPost);
-                blogPostMappingResult.UpdateAt = DateTime.Now;
-                await _unitOfWork.Repository<BlogPost>().UpdateDetached(blogPostMappingResult);
+                var updateBlogPost = _mapper.Map<UpdateBlogPostRequest, BlogPost>(request, blogPost);
+
+                updateBlogPost.UpdateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<BlogPost>().UpdateDetached(updateBlogPost);
                 await _unitOfWork.CommitAsync();
+
                 return new BaseResponseViewModel<BlogPostResponse>()
                 {
                     Status = new StatusViewModel()
@@ -136,10 +138,10 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<BlogPostResponse>(blogPostMappingResult)
+                    Data = _mapper.Map<BlogPostResponse>(updateBlogPost)
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw;
             }

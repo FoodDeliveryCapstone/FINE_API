@@ -37,6 +37,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId, CreateGenOrderRequest request);
         Task<BaseResponseViewModel<GenOrderResponse>> CancelOrder(int orderId);
         Task<BaseResponseViewModel<GenOrderResponse>> UpdateOrder(int orderId);
+        Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderForShipper(PagingRequest paging);
     }
     public class OrderService : IOrderService
     {
@@ -554,6 +555,34 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderForShipper(PagingRequest paging)
+        {
+            try
+            {
+                var order = _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.OrderStatus == 4)
+                                        .OrderByDescending(x => x.CheckInDate)
+                                        .ProjectTo<GenOrderResponse>(_mapper.ConfigurationProvider)
+                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<GenOrderResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = order.Item1
+                    },
+                    Data = order.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }

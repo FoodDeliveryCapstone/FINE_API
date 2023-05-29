@@ -117,7 +117,10 @@ namespace FINE.API.Mapper
 
             #region Store
 
-            CreateMap<Store, StoreResponse>().ReverseMap();
+            CreateMap<Store, StoreResponse>()
+                .IncludeMembers(x => x.Campus)
+                .ReverseMap();
+            CreateMap<StoreResponse, Campus>().ReverseMap();
             CreateMap<CreateStoreRequest, Store>();
             CreateMap<UpdateStoreRequest, Store>();
 
@@ -139,8 +142,7 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Campus
-
-            CreateMap<Campus, CampusResponse>().ReverseMap();
+            CreateMap<Campus, CampusResponse>().ReverseMap();           
             CreateMap<CreateCampusRequest, Campus>();
             CreateMap<UpdateCampusRequest, Campus>();
 
@@ -167,6 +169,14 @@ namespace FINE.API.Mapper
             CreateMap<University, UniversityResponse>().ReverseMap();
             CreateMap<CreateUniversityRequest, University>();
             CreateMap<UpdateUniversityRequest, University>();
+
+            #endregion
+
+            #region UniversityInfo
+
+            CreateMap<UniversityInfo, UniversityInfoResponse>().ReverseMap();
+            CreateMap<CreateUniversityInfoRequest, UniversityInfo>();
+            CreateMap<UpdateUniversityInfoRequest, UniversityInfo>();
 
             #endregion
 
@@ -215,6 +225,7 @@ namespace FINE.API.Mapper
             CreateMap<ProductInMenu, ProductInMenuResponse>()
                 .IncludeMembers(x => x.Product, x => x.Product.Store, x => x.Product.Category)
                 .ReverseMap();
+            CreateMap<UpdateProductInMenuRequest, AddProductToMenuRequest>();
             #endregion
             #region Revenue
             CreateMap<Order, RevenueResponse>().ReverseMap();

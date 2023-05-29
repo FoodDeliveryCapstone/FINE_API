@@ -33,15 +33,11 @@ namespace FINE.Service.Service
     {
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
-        private IProductToMenuService _addProductToMenuService;
 
-
-
-        public ProductService(IMapper mapper, IUnitOfWork unitOfWork, IProductToMenuService addProductToMenuService)
+        public ProductService(IMapper mapper, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
-            _addProductToMenuService = addProductToMenuService;
         }
 
         public async Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request)
@@ -77,18 +73,6 @@ namespace FINE.Service.Service
                 }
                 await _unitOfWork.Repository<Product>().InsertAsync(product);
                 await _unitOfWork.CommitAsync();
-                //Add Product to Menu 
-                if (request.addProductToMenu != null && request.addProductToMenu.Count() > 0)
-                {
-
-                    var genProduct = _unitOfWork.Repository<Product>().Find(x => x.ProductCode == product.ProductCode);
-                    var addProductToMenu = request.addProductToMenu.FirstOrDefault();
-                    if (addProductToMenu.ProductId == null)
-                    {
-                        addProductToMenu.ProductId = genProduct.Id;
-                    }
-                    await _addProductToMenuService.AddProductIntoMenu(addProductToMenu);
-                }
 
                 return new BaseResponseViewModel<ProductResponse>()
                 {
