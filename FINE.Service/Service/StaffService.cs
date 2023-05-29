@@ -141,7 +141,7 @@ namespace FINE.Service.Service
                     }
                 };
 
-            if (staff.RoleType == (int)SystemRoleEnum.StoreManager)
+            if (staff.RoleType == (int)SystemRoleTypeEnum.StoreManager)
             {
                 if (staff.StoreId == null)
                 {

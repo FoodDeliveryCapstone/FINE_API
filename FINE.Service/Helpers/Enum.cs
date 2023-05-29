@@ -23,7 +23,7 @@ namespace FINE.Service.Helpers
             Staff = 2
         }
 
-        public enum SystemRoleEnum
+        public enum SystemRoleTypeEnum
         {
             [Display(Name = "Những con cáo")]
             SystemAdmin = 1,
@@ -33,7 +33,7 @@ namespace FINE.Service.Helpers
             Shipper = 3
         }
 
-        public enum CampusEnum
+        public enum CampusTypeEnum
         {
             FPT = 1,
         }
@@ -57,6 +57,13 @@ namespace FINE.Service.Helpers
         {
             AtStore = 1,
             Delivery = 2
+        }
+
+        public enum UpdateOrderTypeEnum
+        {
+            UserCancel = 1,
+            FinishOrder = 2,
+            UpdateDetails = 3
         }
 
         public enum ProductStatusEnum

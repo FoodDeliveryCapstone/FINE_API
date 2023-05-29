@@ -28,7 +28,7 @@ namespace FINE.Service.Helpers
             };                     
             if (role != 0)
             {
-                permClaims.Add(new Claim(ClaimTypes.Role, ((SystemRoleEnum)role).ToString()));
+                permClaims.Add(new Claim(ClaimTypes.Role, ((SystemRoleTypeEnum)role).ToString()));
             }
             var token = new JwtSecurityToken(tokenConfig["Issuer"],
                 tokenConfig["Issuer"],

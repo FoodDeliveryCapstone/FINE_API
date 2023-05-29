@@ -379,7 +379,7 @@ namespace FINE.Service.Service
             var randomCode = new Random();
             switch (uniId)
             {
-                case (int)CampusEnum.FPT:
+                case (int)CampusTypeEnum.FPT:
                     string chars = "0123456789";
                     int length = 10;
                     return new string(Enumerable.Repeat(chars, length)
