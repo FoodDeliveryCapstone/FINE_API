@@ -19,6 +19,10 @@ public partial class TimeSlot
 
     public DateTime? UpdateAt { get; set; }
 
+    public bool? ShowOnHome { get; set; }
+
+    public string? Description { get; set; }
+
     public virtual Campus Campus { get; set; } = null!;
 
     public virtual ICollection<Menu> Menus { get; set; } = new List<Menu>();

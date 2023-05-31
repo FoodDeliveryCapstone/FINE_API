@@ -13,6 +13,8 @@ public partial class Menu
 
     public string? ImgUrl { get; set; }
 
+    public int? Position { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTime CreateAt { get; set; }

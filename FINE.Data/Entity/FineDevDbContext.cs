@@ -85,9 +85,9 @@ public partial class FineDevDbContext : DbContext
 
     public virtual DbSet<UniversityInfo> UniversityInfos { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=52.221.192.64;Database=FINE_dev_db;User ID=finedb;Password=5HazQl5%82M7aj@b2AC5Q;MultipleActiveResultSets=true;Integrated Security=true;Trusted_Connection=False\n;Encrypt=True;TrustServerCertificate=True", x => x.UseNetTopologySuite());
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=52.221.192.64;Database=FINE_dev_db;User ID=finedb;Password=5HazQl5%82M7aj@b2AC5Q;MultipleActiveResultSets=true;Integrated Security=true;Trusted_Connection=False;Encrypt=True;TrustServerCertificate=True", x => x.UseNetTopologySuite());
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -283,6 +283,7 @@ public partial class FineDevDbContext : DbContext
             entity.Property(e => e.CheckInDate).HasColumnType("datetime");
             entity.Property(e => e.DeliveryPhone).HasMaxLength(50);
             entity.Property(e => e.OrderCode).HasMaxLength(30);
+            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Customer).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.CustomerId)
@@ -332,7 +333,9 @@ public partial class FineDevDbContext : DbContext
         {
             entity.ToTable("OrderFeedback");
 
+            entity.Property(e => e.CreateAt).HasColumnType("datetime");
             entity.Property(e => e.OrderFbContent).HasMaxLength(256);
+            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Customer).WithMany(p => p.OrderFeedbacks)
                 .HasForeignKey(d => d.CustomerId)

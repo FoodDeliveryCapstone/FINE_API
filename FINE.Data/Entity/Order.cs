@@ -45,6 +45,8 @@ public partial class Order
 
     public string? Note { get; set; }
 
+    public DateTime? UpdateAt { get; set; }
+
     public virtual Customer? Customer { get; set; }
 
     public virtual Order? GeneralOrder { get; set; }

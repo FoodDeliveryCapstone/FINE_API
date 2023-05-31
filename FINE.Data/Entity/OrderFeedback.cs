@@ -17,6 +17,10 @@ public partial class OrderFeedback
 
     public string? Description { get; set; }
 
+    public DateTime CreateAt { get; set; }
+
+    public DateTime? UpdateAt { get; set; }
+
     public virtual Customer Customer { get; set; } = null!;
 
     public virtual Order Order { get; set; } = null!;
