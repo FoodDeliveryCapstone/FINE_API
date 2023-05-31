@@ -46,7 +46,14 @@ namespace FINE.Service.Service
             try
             {
                 var timeslot = _mapper.Map<CreateTimeslotRequest, TimeSlot>(request);
-                timeslot.CreateAt = DateTime.Now;
+
+                TimeSpan arriveTime = request.ArriveTime.TimeOfDay;
+                TimeSpan checkoutTime = request.CheckoutTime.TimeOfDay;
+
+                timeslot.ArriveTime = arriveTime;
+                timeslot.CheckoutTime = checkoutTime;
+                timeslot.IsActive = false;
+                timeslot.CreateAt = DateTime.Now;              
 
                 await _unitOfWork.Repository<TimeSlot>().InsertAsync(timeslot);
                 await _unitOfWork.CommitAsync();
@@ -102,6 +109,7 @@ namespace FINE.Service.Service
             {
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                           .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
+                                          .DynamicFilter(filter)
                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
                                         Constants.DefaultPaging);
                 return new BaseResponsePagingViewModel<TimeslotResponse>()
@@ -131,9 +139,16 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
                                         TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
-                var timeslotMappingResult = _mapper.Map<UpdateTimeslotRequest, TimeSlot>(request, timeslot);
+                var timeslotUpdate = _mapper.Map<UpdateTimeslotRequest, TimeSlot>(request, timeslot);
 
-                await _unitOfWork.Repository<TimeSlot>().UpdateDetached(timeslotMappingResult);
+                TimeSpan arriveTime = request.ArriveTime.TimeOfDay;
+                TimeSpan checkoutTime = request.CheckoutTime.TimeOfDay;
+
+                timeslot.ArriveTime = arriveTime;
+                timeslot.CheckoutTime = checkoutTime;
+                timeslot.UpdateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<TimeSlot>().UpdateDetached(timeslotUpdate);
                 await _unitOfWork.CommitAsync();
 
                 return new BaseResponseViewModel<TimeslotResponse>()
@@ -144,7 +159,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<TimeslotResponse>(timeslotMappingResult)
+                    Data = _mapper.Map<TimeslotResponse>(timeslotUpdate)
                 };
             }
             catch(Exception ex)

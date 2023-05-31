@@ -12,9 +12,9 @@ namespace FINE.Service.DTO.Response
 
         public int? CampusId { get; set; }
 
-        public TimeSpan ArriveTime { get; set; }
+        public TimeSpan? ArriveTime { get; set; }
 
-        public TimeSpan CheckoutTime { get; set; }
+        public TimeSpan? CheckoutTime { get; set; }
 
         public bool? IsActive { get; set; }
 
