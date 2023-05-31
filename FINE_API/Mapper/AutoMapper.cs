@@ -194,11 +194,11 @@ namespace FINE.API.Mapper
             CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
             CreateMap<TimeSlot, OrderTimeSlotResponse>().ReverseMap();
             CreateMap<CreateTimeslotRequest, TimeSlot>()
-                .ForMember(dest => dest.ArriveTime, opt => opt.MapFrom(src => src.ArriveTime.TimeOfDay))
-                .ForMember(dest => dest.CheckoutTime, opt => opt.MapFrom(src => src.CheckoutTime.TimeOfDay));
+                .ForMember(dest => dest.ArriveTime, opt => opt.MapFrom(src => src.ArriveTime.ToTimeSpan()))
+                .ForMember(dest => dest.CheckoutTime, opt => opt.MapFrom(src => src.CheckoutTime.ToTimeSpan()));
             CreateMap<UpdateTimeslotRequest, TimeSlot>()
-                .ForMember(dest => dest.ArriveTime, opt => opt.MapFrom(src => src.ArriveTime.TimeOfDay))
-                .ForMember(dest => dest.CheckoutTime, opt => opt.MapFrom(src => src.CheckoutTime.TimeOfDay)); 
+                .ForMember(dest => dest.ArriveTime, opt => opt.MapFrom(src => src.ArriveTime.ToTimeSpan()))
+                .ForMember(dest => dest.CheckoutTime, opt => opt.MapFrom(src => src.CheckoutTime.ToTimeSpan())); 
 
             #endregion
 

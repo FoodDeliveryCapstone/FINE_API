@@ -47,11 +47,8 @@ namespace FINE.Service.Service
             {
                 var timeslot = _mapper.Map<CreateTimeslotRequest, TimeSlot>(request);
 
-                TimeSpan arriveTime = request.ArriveTime.TimeOfDay;
-                TimeSpan checkoutTime = request.CheckoutTime.TimeOfDay;
-
-                timeslot.ArriveTime = arriveTime;
-                timeslot.CheckoutTime = checkoutTime;
+                timeslot.ArriveTime = request.ArriveTime.ToTimeSpan();
+                timeslot.CheckoutTime = request.CheckoutTime.ToTimeSpan();
                 timeslot.IsActive = false;
                 timeslot.CreateAt = DateTime.Now;              
 
@@ -140,12 +137,9 @@ namespace FINE.Service.Service
                                         TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
                 var timeslotUpdate = _mapper.Map<UpdateTimeslotRequest, TimeSlot>(request, timeslot);
-
-                TimeSpan arriveTime = request.ArriveTime.TimeOfDay;
-                TimeSpan checkoutTime = request.CheckoutTime.TimeOfDay;
-
-                timeslot.ArriveTime = arriveTime;
-                timeslot.CheckoutTime = checkoutTime;
+    
+                timeslot.ArriveTime = request.ArriveTime.ToTimeSpan();
+                timeslot.CheckoutTime = request.CheckoutTime.ToTimeSpan();
                 timeslot.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<TimeSlot>().UpdateDetached(timeslotUpdate);

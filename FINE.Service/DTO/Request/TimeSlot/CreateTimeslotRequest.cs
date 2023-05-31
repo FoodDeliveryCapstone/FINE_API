@@ -9,7 +9,7 @@ namespace FINE.Service.DTO.Request.TimeSlot
     public class CreateTimeslotRequest
     {
         public int CampusId { get; set; }
-        public DateTime ArriveTime { get; set; }
-        public DateTime CheckoutTime { get; set; }
+        public TimeOnly ArriveTime { get; set; }
+        public TimeOnly CheckoutTime { get; set; }
     }
 }
