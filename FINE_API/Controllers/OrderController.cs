@@ -4,6 +4,7 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.API.Controllers
 {
@@ -99,30 +100,14 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Cancel Order
-        /// </summary>
-        [HttpPut("usercancel")]
-        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> CancelOrder(int orderId)
-        {
-            try
-            {
-                return await _orderService.CancelOrder(orderId);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
-
-        /// <summary>
         /// Update Order Status
         /// </summary>
         [HttpPut("orderStatus")]
-        public async Task<ActionResult<BaseResponseViewModel<GenOrderResponse>>> UpdateOrderStatus(int orderId)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> UpdateOrderStatus(int orderId, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request)
         {
             try
             {
-                return await _orderService.UpdateOrder(orderId);
+                return await _orderService.UpdateOrder(orderId, orderStatus, request);
             }
             catch (ErrorResponse ex)
             {

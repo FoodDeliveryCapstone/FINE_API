@@ -21,23 +21,6 @@ namespace FINE.API.Controllers.AdminControler
             _orderService = orderService;
         }
 
-        // <summary>
-        /// Get Orders for Shipper
-        /// </summary>
-        [Authorize(Roles = "Shipper")]
-        [HttpGet("shipper")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<GenOrderResponse>>> GetOrdersForShipper([FromQuery] PagingRequest paging)
-        {
-            try
-            {
-                return await _orderService.GetOrderForShipper(paging);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
-
         /// <summary>
         /// Get orders for staff
         /// </summary>

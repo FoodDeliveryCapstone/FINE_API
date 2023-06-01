@@ -7,10 +7,11 @@ using System.Reflection;
 using System.Linq.Dynamic.Core;
 using FINE.Service.Attributes;
 using System.Collections;
+using FINE.Data.Entity;
 
 namespace FINE.Service.Utilities
 {
-    public static class Ultils
+    public static class Utils
     {
         public static string GenerateRandomCode()
         {
@@ -69,6 +70,20 @@ namespace FINE.Service.Utilities
             }
             else
                 return false;
+        }
+
+        public static bool CheckTimeSlot(TimeSlot timeSlot)
+        {
+            var currentTime = GetCurrentDatetime().TimeOfDay;
+            var rangeCheck = currentTime.Hours - timeSlot.ArriveTime.Hours;
+
+            if (rangeCheck > 0 || (rangeCheck == 0 
+                && (currentTime.Minutes - timeSlot.ArriveTime.Minutes) > 15))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public static (DateTime, DateTime) GetLastAndFirstDateInCurrentMonth()

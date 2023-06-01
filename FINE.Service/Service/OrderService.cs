@@ -35,9 +35,8 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging);
         Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(int customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId, CreateGenOrderRequest request);
-        Task<BaseResponseViewModel<GenOrderResponse>> CancelOrder(int orderId);
-        Task<BaseResponseViewModel<GenOrderResponse>> UpdateOrder(int orderId);
-        Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderForShipper(PagingRequest paging);
+        Task<BaseResponseViewModel<dynamic>> CreateCoOrder(int customerId, CreateGenOrderRequest request);
+        Task<BaseResponseViewModel<dynamic>> UpdateOrder(int orderId, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
     }
     public class OrderService : IOrderService
     {
@@ -194,9 +193,11 @@ namespace FINE.Service.Service
                 #region Timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
-                var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
+                if (timeSlot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
-                if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                if (!Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -254,7 +255,7 @@ namespace FINE.Service.Service
 
                 var orderCount = _unitOfWork.Repository<Order>().GetAll().Count() + 1;
                 genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
-                                        orderCount.ToString().PadLeft(3, '0') + "." + Ultils.GenerateRandomCode();
+                                        orderCount.ToString().PadLeft(3, '0') + "." + Utils.GenerateRandomCode();
 
                 #region Gen customer + delivery phone
 
@@ -262,7 +263,7 @@ namespace FINE.Service.Service
 
                 if (customer.Phone.Contains(request.DeliveryPhone) == null)
                 {
-                    if (!Ultils.CheckVNPhone(request.DeliveryPhone))
+                    if (!Utils.CheckVNPhone(request.DeliveryPhone))
                         throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
                                                 OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
                 }
@@ -341,20 +342,22 @@ namespace FINE.Service.Service
                 #region Timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
-                var range = timeSlot.ArriveTime.Subtract(TimeSpan.FromMinutes(15));
+                if (timeSlot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
-                if (DateTime.Now.TimeOfDay.CompareTo(range) > 0)
+                if (!Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
-                #region Customer
+                #region Customer + delivery phone
                 var customer = await _unitOfWork.Repository<Customer>().GetById(customerId);
 
                 //check phone number
                 if (customer.Phone.Contains(request.DeliveryPhone) == null)
                 {
-                    if (!Ultils.CheckVNPhone(request.DeliveryPhone))
+                    if (!Utils.CheckVNPhone(request.DeliveryPhone))
                         throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
                                                 OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
                 }
@@ -470,7 +473,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<GenOrderResponse>> CancelOrder(int orderId)
+        public async Task CancelOrder(int orderId)
         {
             try
             {
@@ -511,16 +514,6 @@ namespace FINE.Service.Service
 
                 await _unitOfWork.Repository<Order>().UpdateDetached(order);
                 await _unitOfWork.CommitAsync();
-
-                return new BaseResponseViewModel<GenOrderResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    }
-                };
             }
             catch (ErrorResponse ex)
             {
@@ -528,7 +521,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<GenOrderResponse>> UpdateOrder(int orderId)
+        public async Task<BaseResponseViewModel<dynamic>> UpdateOrder(int orderId, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request)
         {
             try
             {
@@ -539,12 +532,47 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND_ID,
                               OrderErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
-                order.OrderStatus = (int)OrderStatusEnum.Finished;
+                switch (orderStatus)
+                {
+                    case UpdateOrderTypeEnum.UserCancel:
 
-                await _unitOfWork.Repository<Order>().UpdateDetached(order);
-                await _unitOfWork.CommitAsync();
+                        if (order.OrderStatus != (int)OrderStatusEnum.PaymentPending
+                            || order.OrderStatus != (int)OrderStatusEnum.Processing)
+                            throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_CANCEL_ORDER,
+                              OrderErrorEnums.CANNOT_CANCEL_ORDER.GetDisplayName());
 
-                return new BaseResponseViewModel<GenOrderResponse>()
+                         CancelOrder(orderId);
+                        break;
+
+                    case UpdateOrderTypeEnum.FinishOrder:
+
+                        if (order.OrderStatus != (int)OrderStatusEnum.Delivering)
+                            throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_FINISH_ORDER,
+                              OrderErrorEnums.CANNOT_FINISH_ORDER.GetDisplayName());
+
+                        order.OrderStatus = (int)OrderStatusEnum.Finished;
+
+                        await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                        await _unitOfWork.CommitAsync();
+                        break;
+
+                    case UpdateOrderTypeEnum.UpdateDetails:
+
+                        if (order.OrderStatus == (int)OrderStatusEnum.Finished)
+                            throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_CANCEL_ORDER,
+                              OrderErrorEnums.CANNOT_CANCEL_ORDER.GetDisplayName());
+
+                        if(request.DeliveryPhone != null && !Utils.CheckVNPhone(request.DeliveryPhone))
+                                throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
+                                                        OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
+                        
+                        var updateOrder = _mapper.Map<UpdateOrderRequest, Order>(request, order);
+                        updateOrder.UpdateAt = DateTime.Now;
+                        await _unitOfWork.Repository<Order>().UpdateDetached(updateOrder);
+                        break;
+                }
+
+                return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -560,29 +588,42 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderForShipper(PagingRequest paging)
+        public async Task<BaseResponseViewModel<dynamic>> CreateCoOrder(int customerId, CreateGenOrderRequest request)
         {
             try
             {
-                var order = _unitOfWork.Repository<Order>().GetAll()
-                                        .Where(x => x.OrderStatus == 4)
-                                        .OrderByDescending(x => x.CheckInDate)
-                                        .ProjectTo<GenOrderResponse>(_mapper.ConfigurationProvider)
-                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                        Constants.DefaultPaging);
+                #region Timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
-                return new BaseResponsePagingViewModel<GenOrderResponse>()
+                if (timeSlot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+
+                if (!Utils.CheckTimeSlot(timeSlot))
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
+
+                #region Customer
+                var customer = await _unitOfWork.Repository<Customer>().GetById(customerId);
+
+                //check phone number
+                if (customer.Phone.Contains(request.DeliveryPhone) == null)
                 {
-                    Metadata = new PagingsMetadata()
-                    {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = order.Item1
-                    },
-                    Data = order.Item2.ToList()
-                };
+                    if (!Utils.CheckVNPhone(request.DeliveryPhone))
+                        throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
+                                                OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
+                }
+                if (!request.DeliveryPhone.StartsWith("+84"))
+                {
+                    request.DeliveryPhone = request.DeliveryPhone.TrimStart(new char[] { '0' });
+                    request.DeliveryPhone = "+84" + request.DeliveryPhone;
+                }
+                #endregion
+
+                return null;
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
