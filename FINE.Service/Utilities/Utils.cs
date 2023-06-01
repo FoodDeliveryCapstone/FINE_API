@@ -75,10 +75,10 @@ namespace FINE.Service.Utilities
         public static bool CheckTimeSlot(TimeSlot timeSlot)
         {
             var currentTime = GetCurrentDatetime().TimeOfDay;
-            var rangeCheck = currentTime.Hours - timeSlot.ArriveTime.Hours;
+            var rangeCheck = timeSlot.ArriveTime.Hours - currentTime.Hours;
 
             if (rangeCheck > 0 || (rangeCheck == 0 
-                && (currentTime.Minutes - timeSlot.ArriveTime.Minutes) > 15))
+                && (timeSlot.ArriveTime.Minutes - currentTime.Minutes) >= 45))
             {
                 return true;
             }

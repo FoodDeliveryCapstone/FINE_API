@@ -11,5 +11,6 @@ namespace FINE.Service.DTO.Request.TimeSlot
         public int CampusId { get; set; }
         public TimeOnly ArriveTime { get; set; }
         public TimeOnly CheckoutTime { get; set; }
+        public bool IsActive { get; set; }
     }
 }

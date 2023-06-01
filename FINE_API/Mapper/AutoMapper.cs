@@ -182,7 +182,9 @@ namespace FINE.API.Mapper
 
             #region Menu
 
-            CreateMap<Menu, MenuResponse>().ForMember(menuResponse => menuResponse.Products, map => map.MapFrom(menu => menu.ProductInMenus)).ReverseMap();
+            CreateMap<Menu, MenuResponse>()
+                .ForMember(menuResponse => menuResponse.Products, map => map.MapFrom(menu => menu.ProductInMenus))
+                .ReverseMap();
             CreateMap<CreateMenuRequest, Menu>();
             CreateMap<UpdateMenuRequest, Menu>();           
             CreateMap<Menu, ProductResponse>();
@@ -194,32 +196,26 @@ namespace FINE.API.Mapper
             CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
             CreateMap<TimeSlot, OrderTimeSlotResponse>().ReverseMap();
             CreateMap<CreateTimeslotRequest, TimeSlot>()
-                .ForMember(dest => dest.ArriveTime, opt => opt.MapFrom(src => src.ArriveTime.ToTimeSpan()))
-                .ForMember(dest => dest.CheckoutTime, opt => opt.MapFrom(src => src.CheckoutTime.ToTimeSpan()));
+                .ForMember(x => x.ArriveTime, opt => opt.Ignore())
+                .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
             CreateMap<UpdateTimeslotRequest, TimeSlot>()
-                .ForMember(dest => dest.ArriveTime, opt => opt.MapFrom(src => src.ArriveTime.ToTimeSpan()))
-                .ForMember(dest => dest.CheckoutTime, opt => opt.MapFrom(src => src.CheckoutTime.ToTimeSpan())); 
+                .ForMember(x => x.ArriveTime, opt => opt.Ignore())
+                .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
 
             #endregion
 
             #region Product In Menu
-            CreateMap<ProductInMenu, AddProductToMenuResponse>().ReverseMap();
             CreateMap<AddProductToMenuRequest, ProductInMenu>();
             CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
-            //CreateMap<ProductInMenu, ProductResponse>()/*.ReverseMap()*/;
             CreateMap<ProductInMenu, Product>().ReverseMap();
             CreateMap<Store, ProductInMenuResponse>().ReverseMap();
             CreateMap<SystemCategory, ProductInMenuResponse>().ReverseMap();
             CreateMap<ProductInMenu, ProductInMenuResponse>()
                 .IncludeMembers(x => x.Product, x => x.Product.Store, x => x.Product.Category)
                 .ReverseMap();
-            CreateMap<UpdateProductInMenuRequest, AddProductToMenuRequest>();
-            #endregion
-            #region Revenue
-            CreateMap<Order, RevenueResponse>().ReverseMap();
             #endregion
 
-            #region
+            #region Floor
             CreateMap<Floor, FloorResponse>().ReverseMap();
             #endregion
         }

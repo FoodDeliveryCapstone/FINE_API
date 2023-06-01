@@ -19,8 +19,14 @@ namespace FINE.Service.Helpers
             //400 
             [Display(Name = "Invalid phone number")]
             INVALID_PHONE_NUMBER = 4001,
+            [Display(Name = "Cannot cancel order")]
+            CANNOT_CANCEL_ORDER = 4002,
+            [Display(Name = "Cannot finish order right now")]
+            CANNOT_FINISH_ORDER = 4003,
+            [Display(Name = "Cannot update order right now")]
+            CANNOT_UPDATE_ORDER = 4004,
             //404 
-            [Display(Name = "Not found this order id!")]
+            [Display(Name = "Not found this order!")]
             NOT_FOUND_ID = 4041
         }
 
@@ -103,7 +109,7 @@ namespace FINE.Service.Helpers
             OUT_OF_TIMESLOT = 4001,
             //404
             [Display(Name = "Not found this time slot Id!")]
-            NOT_FOUND_ID = 4041,
+            NOT_FOUND = 4041,
         }
 
         public enum ProductCollectionTimeSlotErrorEnums

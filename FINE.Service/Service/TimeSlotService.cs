@@ -22,10 +22,8 @@ namespace FINE.Service.Service
     public interface ITimeslotService
     {
         Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeSlots(TimeslotResponse filter, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging);
         Task<BaseResponseViewModel<TimeslotResponse>> GetTimeSlotById(int timeslotId);
         Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeslotsByCampus(int campusId, PagingRequest paging);
-
         Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request);
         Task<BaseResponseViewModel<TimeslotResponse>> UpdateTimeslot(int timeslotId, UpdateTimeslotRequest request);
     }
@@ -47,10 +45,9 @@ namespace FINE.Service.Service
             {
                 var timeslot = _mapper.Map<CreateTimeslotRequest, TimeSlot>(request);
 
-                timeslot.ArriveTime = request.ArriveTime.ToTimeSpan();
-                timeslot.CheckoutTime = request.CheckoutTime.ToTimeSpan();
-                timeslot.IsActive = false;
-                timeslot.CreateAt = DateTime.Now;              
+                timeslot.ArriveTime = TimeSpan.Parse(request.ArriveTime.ToString("HH:mm:ss"));
+                timeslot.CheckoutTime = TimeSpan.Parse(request.CheckoutTime.ToString("HH:mm:ss"));
+                timeslot.CreateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<TimeSlot>().InsertAsync(timeslot);
                 await _unitOfWork.CommitAsync();
@@ -80,8 +77,8 @@ namespace FINE.Service.Service
                                               .FirstOrDefault(x => x.Id == timeslotId);
                 if (timeslot == null)
                 {
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                                        TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
                 }
                 return new BaseResponseViewModel<TimeslotResponse>()
                 {
@@ -133,16 +130,16 @@ namespace FINE.Service.Service
                 var timeslot = _unitOfWork.Repository<TimeSlot>()
                                                 .Find(x => x.Id == timeslotId);
                 if (timeslot == null)
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                                        TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+                
+                timeslot.ArriveTime = TimeSpan.Parse(request.ArriveTime.ToString("HH:mm:ss"));
+                timeslot.CheckoutTime = TimeSpan.Parse(request.CheckoutTime.ToString("HH:mm:ss"));
 
-                var timeslotUpdate = _mapper.Map<UpdateTimeslotRequest, TimeSlot>(request, timeslot);
-    
-                timeslot.ArriveTime = request.ArriveTime.ToTimeSpan();
-                timeslot.CheckoutTime = request.CheckoutTime.ToTimeSpan();
-                timeslot.UpdateAt = DateTime.Now;
+                var updateTimeslot = _mapper.Map<UpdateTimeslotRequest, TimeSlot>(request, timeslot);
+                updateTimeslot.UpdateAt = DateTime.Now;  
 
-                await _unitOfWork.Repository<TimeSlot>().UpdateDetached(timeslotUpdate);
+                await _unitOfWork.Repository<TimeSlot>().UpdateDetached(updateTimeslot);
                 await _unitOfWork.CommitAsync();
 
                 return new BaseResponseViewModel<TimeslotResponse>()
@@ -153,7 +150,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<TimeslotResponse>(timeslotUpdate)
+                    Data = _mapper.Map<TimeslotResponse>(updateTimeslot)
                 };
             }
             catch(Exception ex)
@@ -161,45 +158,6 @@ namespace FINE.Service.Service
                 throw;
             }
         }
-
-        public async Task<BaseResponsePagingViewModel<TimeslotResponse>> GetProductByTimeSlot(int timeslotId, PagingRequest paging)
-        {
-            try
-            {
-                var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
-                                              .Include(x => x.ProductCollectionTimeSlots)
-                                              .ThenInclude(x => x.ProductCollection)
-                                              .ThenInclude(x => x.ProductionCollectionItems)
-                                              .ThenInclude(x => x.Product)
-                                              .Where(x => x.Id == timeslotId)
-                                              .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
-                                              .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
-                #region Check Timeslot
-                //if (timeslot == null)
-                //{
-                //    throw new ErrorResponse(404, (int)TimeslotErrorEnums.NOT_FOUND_TIME,
-                //                        TimeslotErrorEnums.NOT_FOUND_TIME.GetDisplayName());
-                //}
-                #endregion
-
-                return new BaseResponsePagingViewModel<TimeslotResponse>()
-                {
-                    Metadata = new PagingsMetadata()
-                    {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = timeslot.Item1
-                    },
-                    Data = timeslot.Item2.ToList()
-                };
-            }
-            catch(Exception ex)
-            {
-                throw;
-            }
-        }
-
 
         public async Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeslotsByCampus(int campusId, PagingRequest paging)
         {
