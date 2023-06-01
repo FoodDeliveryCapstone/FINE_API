@@ -64,7 +64,7 @@ namespace FINE.Service.Service
 
             var staff = _mapper.Map<CreateStaffRequest,Staff>(request);
 
-            staff.Password = Ultils.GetHash(request.Pass, _fineSugar);
+            staff.Password = Utils.GetHash(request.Pass, _fineSugar);
             staff.IsAvailable = true;
             staff.CreateAt = DateTime.Now;
 
@@ -130,7 +130,7 @@ namespace FINE.Service.Service
                                     .Where(x => x.Username.Equals(request.UserName) && x.IsAvailable == true)
                                     .FirstOrDefault();
 
-            if (staff == null || !Ultils.CompareHash(request.Password, staff.Password, _fineSugar))
+            if (staff == null || !Utils.CompareHash(request.Password, staff.Password, _fineSugar))
                 return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()

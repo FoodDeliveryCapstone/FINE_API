@@ -47,21 +47,21 @@ namespace FINE.Service.Service
                 var to = filter?.ToDate;
                 if (from == null && to == null)
                 {
-                    from = Ultils.GetLastAndFirstDateInCurrentMonth().Item1;
+                    from = Utils.GetLastAndFirstDateInCurrentMonth().Item1;
                     //to = Ultils.GetCurrentDatetime().AddDays(-1);
-                    to = Ultils.GetCurrentDatetime();
+                    to = Utils.GetCurrentDatetime();
                 }
 
                 if (from == null)
                 {
                     //from = Ultils.GetCurrentDatetime().AddDays(-1);
-                    from = Ultils.GetCurrentDatetime();
+                    from = Utils.GetCurrentDatetime();
                 }
 
                 if (to == null)
                 {
                     //to = Ultils.GetCurrentDatetime().AddDays(-1);
-                    to = Ultils.GetCurrentDatetime();
+                    to = Utils.GetCurrentDatetime();
                 }
                 #endregion
 
@@ -107,21 +107,21 @@ namespace FINE.Service.Service
                 var to = filter?.ToDate;
                 if (from == null && to == null)
                 {
-                    from = Ultils.GetLastAndFirstDateInCurrentMonth().Item1;
+                    from = Utils.GetLastAndFirstDateInCurrentMonth().Item1;
                     //to = Ultils.GetCurrentDatetime().AddDays(-1);
-                    to = Ultils.GetCurrentDatetime();
+                    to = Utils.GetCurrentDatetime();
                 }
 
                 if (from == null)
                 {
                     //from = Ultils.GetCurrentDatetime().AddDays(-1);
-                    from = Ultils.GetCurrentDatetime();
+                    from = Utils.GetCurrentDatetime();
                 }
 
                 if (to == null)
                 {
                     //to = Ultils.GetCurrentDatetime().AddDays(-1);
-                    to = Ultils.GetCurrentDatetime();
+                    to = Utils.GetCurrentDatetime();
                 }
                 #endregion
 

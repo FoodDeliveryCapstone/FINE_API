@@ -156,8 +156,8 @@ namespace FINE.Service.Service
                 var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                               .FirstOrDefault(x => x.Id == timeslotId);
                 if (checkTimeslot == null)
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                        TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
                 #endregion
 
                 var store = _unitOfWork.Repository<Store>().GetAll()

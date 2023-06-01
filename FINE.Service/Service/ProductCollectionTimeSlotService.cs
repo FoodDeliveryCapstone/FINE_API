@@ -128,8 +128,8 @@ namespace FINE.Service.Service
             var timeSlot = _unitOfWork.Repository<TimeSlot>().GetAll()
                         .FirstOrDefault(x => x.Id == timeSlotId);
             if (timeSlot == null)
-                throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                    TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                    TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
             return new BaseResponsePagingViewModel<ProductCollectionTimeSlotResponse>()
             {

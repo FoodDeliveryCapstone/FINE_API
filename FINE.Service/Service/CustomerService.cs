@@ -145,7 +145,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)CampusErrorEnums.NOT_FOUND_ID, CampusErrorEnums.NOT_FOUND_ID.GetDisplayName());
                 #endregion
 
-                var code = Ultils.GenerateRandomCode();
+                var code = Utils.GenerateRandomCode();
 
                 customer.CustomerCode = uniInfo.University.UniCode + "-" + code;
                 customer.UniversityId = uniInfo.University.Id;
@@ -184,7 +184,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
                                          CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
 
-                var checkPhone = Ultils.CheckVNPhone(request.Phone);
+                var checkPhone = Utils.CheckVNPhone(request.Phone);
 
                 if (checkPhone == false)
                     throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,

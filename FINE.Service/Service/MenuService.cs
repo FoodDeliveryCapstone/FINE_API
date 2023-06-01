@@ -168,8 +168,8 @@ namespace FINE.Service.Service
                               .FirstOrDefault(x => x.Id == timeslotId);
 
                 if (timeslot == null)
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                        TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
                 return new BaseResponsePagingViewModel<MenuResponse>()
                 {
@@ -203,8 +203,8 @@ namespace FINE.Service.Service
                               .FirstOrDefault(x => x.Id == timeslotId);
 
                 if (timeslot == null)
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND_ID,
-                        TimeSlotErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
                 return new BaseResponsePagingViewModel<MenuResponse>()
                 {
