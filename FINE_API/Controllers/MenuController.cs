@@ -71,23 +71,5 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
-
-        /// <summary>
-        /// Get List Menu with ProductList by TimeslotId
-        /// </summary>
-
-        [HttpGet("timeslot/{timeslotId}/product")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenuWithProductByTimeslot([FromRoute] int timeslotId, [FromQuery] PagingRequest paging)
-        {
-            try
-            {
-                return await _menuService.GetMenuWithProductByTimeslot(timeslotId, paging);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
-
     }
 }
