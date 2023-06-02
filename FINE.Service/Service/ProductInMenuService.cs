@@ -13,14 +13,15 @@ using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Algorithm;
+using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
 {
     public interface IProductInMenuService
     {
-        Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId);
-        Task<List<ProductInMenuResponse>> GetProductInMenuByStore(int storeId, PagingRequest paging);
+        Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductInMenuById(int productInMenuId);
+        Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductInMenuByStore(int storeId,ProductInMenuResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<ProductInMenuResponse>> AddProductIntoMenu(AddProductToMenuRequest request);
         Task<BaseResponseViewModel<ProductInMenuResponse>> UpdateProductInMenu(int productInMenuId, UpdateProductInMenuRequest request);
         Task<BaseResponseViewModel<AddProductToMenuResponse>> UpdateAllProductInMenuStatus(UpdateAllProductInMenuStatusRequest request);
@@ -39,15 +40,16 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductByProductInMenu(int productInMenuId)
+        public async Task<BaseResponseViewModel<ProductInMenuResponse>> GetProductInMenuById(int productInMenuId)
         {
             try
             {
                 var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
                    .FirstOrDefault(x => x.Id == productInMenuId);
+
                 if (productInMenu == null)
-                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND_ID,
-                        ProductInMenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                        ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
 
 
                 return new BaseResponseViewModel<ProductInMenuResponse>()
@@ -67,31 +69,32 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<List<ProductInMenuResponse>> GetProductInMenuByStore(int storeId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductInMenuByStore(int storeId, ProductInMenuResponse filter ,PagingRequest paging)
         {
             try
             {
                 var store = _unitOfWork.Repository<Store>().GetAll()
                   .FirstOrDefault(x => x.Id == storeId);
                 if (store == null)
-                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
-                        StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND,
+                        StoreErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
                    .Where(x => x.StoreId == storeId)
                    .ProjectTo<ProductInMenuResponse>(_mapper.ConfigurationProvider)
-                   .ToList();
+                   .DynamicFilter(filter)
+                   .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-                var result = new List<ProductInMenuResponse>();
-                foreach (var item in products)
+                return new BaseResponsePagingViewModel<ProductInMenuResponse>()
                 {
-                    if (!result.Any(x => x.ProductId == item.ProductId))
+                    Metadata = new PagingsMetadata()
                     {
-                        result.Add(item);
-                    }
-                }
-
-                return result;
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = products.Item1
+                    },
+                    Data = products.Item2.ToList()
+                };
             }
             catch (ErrorResponse ex)
             {
@@ -103,38 +106,35 @@ namespace FINE.Service.Service
         {
             try
             {
-               
-
-                foreach (var product in request.addProducts)
+                foreach (var productInMenu in request.Products)
                 {
-                    var productInMenu = _mapper.Map<AddProductToMenuRequest, ProductInMenu>(request);
                     var menu = _unitOfWork.Repository<Menu>().GetAll()
                         .FirstOrDefault(x => x.Id == request.MenuId);
                     if (menu == null)
-                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_ID,
-                            MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
+                            MenuErrorEnums.NOT_FOUND.GetDisplayName());
 
-                    var products = _unitOfWork.Repository<Product>().GetAll()
-                        .FirstOrDefault(x => x.Id == product.ProductId);
-                    if (products == null)
-                        throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
-                            ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    var product = _unitOfWork.Repository<Product>().GetAll()
+                        .FirstOrDefault(x => x.Id == productInMenu.ProductId);
+                    if (product == null)
+                        throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND,
+                            ProductErrorEnums.NOT_FOUND.GetDisplayName());
 
                     var checkProductInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                       .FirstOrDefault(x => x.ProductId == product.ProductId && x.MenuId == request.MenuId);
+                       .FirstOrDefault(x => x.ProductId == productInMenu.ProductId && x.MenuId == request.MenuId);
                     if (checkProductInMenu != null)
                         throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.PRODUCT_ALREADY_IN_MENU,
                             ProductInMenuErrorEnums.PRODUCT_ALREADY_IN_MENU.GetDisplayName());
 
                     var addProductToMenu = new ProductInMenu() 
                     {
-                        ProductId = product.ProductId,
-                        Price = product.Price,
-                        Status = product.Status,
+                        ProductId = productInMenu.ProductId,
+                        Price = productInMenu.Price,
                         MenuId = menu.Id,
-                        StoreId = products.StoreId,
+                        StoreId = product.StoreId,
                         CreatedAt = DateTime.Now,
-                        IsAvailable = false,
+                        Status = (int)ProductInMenuStatusEnum.Wait,
+                        IsAvailable = true,
                     };
 
                     await _unitOfWork.Repository<ProductInMenu>().InsertAsync(addProductToMenu);
@@ -164,14 +164,11 @@ namespace FINE.Service.Service
                 var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
                      .FirstOrDefault(x => x.Id == productInMenuId);
                 if (productInMenu == null)
-                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND_ID,
-                        ProductInMenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                        ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var updateProductInMenu = _mapper.Map<UpdateProductInMenuRequest, ProductInMenu>(request, productInMenu);
 
-                updateProductInMenu.ProductId = productInMenu.ProductId;
-                updateProductInMenu.MenuId = productInMenu.MenuId;
-                updateProductInMenu.StoreId = productInMenu.StoreId;
                 updateProductInMenu.UpdatedAt = DateTime.Now;
 
                 await _unitOfWork.Repository<ProductInMenu>().UpdateDetached(updateProductInMenu);

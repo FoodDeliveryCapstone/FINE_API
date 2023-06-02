@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.DTO.Request.ProductInMenu
 {
@@ -12,12 +13,11 @@ namespace FINE.Service.DTO.Request.ProductInMenu
     {
         public int? MenuId { get; set; }
 
-        public List<ProductInMenuRequest>? addProducts { get; set; }
+        public List<ProductInMenuRequest>? Products { get; set; }
     }
     public class ProductInMenuRequest
     {
         public int? ProductId { get; set; }
         public double? Price { get; set; }
-        public int Status { get; set; }
     }
 }

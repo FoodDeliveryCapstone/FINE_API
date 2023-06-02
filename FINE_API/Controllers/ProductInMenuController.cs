@@ -20,14 +20,14 @@ public class ProductInMenuController : ControllerBase
     }
 
     /// <summary>
-    /// Get Product By ProductInMenuId
+    /// Get Product By Id
     /// </summary>
     [HttpGet("{productInMenuId}")]
     public async Task<ActionResult<BaseResponseViewModel<ProductInMenuResponse>>> GetProductByProductInMenu([FromRoute] int productInMenuId)
     {
         try
         {
-            return await _productInMenuService.GetProductByProductInMenu(productInMenuId);
+            return await _productInMenuService.GetProductInMenuById(productInMenuId);
         }
         catch (ErrorResponse ex)
         {
@@ -40,7 +40,7 @@ public class ProductInMenuController : ControllerBase
     /// </summary>
 
     [HttpGet("productInMenu/store/{storeId}")]
-    public async Task<ActionResult<List<ProductInMenuResponse>>> GetProductInMenuByStore([FromRoute] int storeId, [FromQuery] PagingRequest paging)
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductInMenuResponse>>> GetProductInMenuByStore([FromRoute] int storeId, [FromQuery] ProductInMenuResponse filter,[FromQuery] PagingRequest paging)
     {
         try
         {
