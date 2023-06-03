@@ -104,8 +104,8 @@ namespace FINE.Service.Service
             var product = _unitOfWork.Repository<Product>().GetAll()
                         .FirstOrDefault(x => x.Id == productId);
             if (product == null)
-                throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
-                    ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND,
+                    ProductErrorEnums.NOT_FOUND.GetDisplayName());
 
             return new BaseResponsePagingViewModel<ProductCollectionItemResponse>()
             {

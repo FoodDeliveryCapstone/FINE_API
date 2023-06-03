@@ -68,8 +68,8 @@ namespace FINE.Service.Service
                 var store = _unitOfWork.Repository<Store>().GetAll()
                                             .FirstOrDefault(x => x.Id == storeId);
                 if (store == null)
-                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
-                                        StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND,
+                                        StoreErrorEnums.NOT_FOUND.GetDisplayName());
                 return new BaseResponseViewModel<StoreResponse>()
                 {
                     Status = new StatusViewModel()
@@ -122,8 +122,8 @@ namespace FINE.Service.Service
                 .FirstOrDefault(x => x.Id == storeId);
 
                 if (store == null)
-                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
-                        StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND,
+                        StoreErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var updateStore = _mapper.Map<UpdateStoreRequest, Store>(request, store);
 

@@ -53,8 +53,8 @@ namespace FINE.Service.Helpers
         public enum ProductErrorEnums
         {
             //404
-            [Display(Name = "Not found this product id!")]
-            NOT_FOUND_ID = 4041,
+            [Display(Name = "Not found this product!")]
+            NOT_FOUND = 4041,
 
             [Display(Name = "Not found this product code!")]
             NOT_FOUND_CODE = 4042,
@@ -67,8 +67,8 @@ namespace FINE.Service.Helpers
         public enum StoreErrorEnums
         {
             //404
-            [Display(Name = "Not found this store id!")]
-            NOT_FOUND_ID = 4041,
+            [Display(Name = "Not found this store!")]
+            NOT_FOUND = 4041,
 
             [Display(Name = "Not found this store code!")]
             NOT_FOUND_CODE = 4042,
@@ -227,10 +227,10 @@ namespace FINE.Service.Helpers
         public enum MenuErrorEnums
         {
             //404
-            [Display(Name = "Not found this menu id!")]
-            NOT_FOUND_ID = 4041,
-            [Display(Name = "Not found this menu !")]
-            NOT_FOUND = 4042
+            [Display(Name = "Not found this menu!")]
+            NOT_FOUND = 4041,
+            [Display(Name = "Not found menu in this timeslot!")]
+            NOT_FOUND_MENU_IN_TIMESLOT = 4042
         }
 
         public enum FloorErrorEnums
@@ -243,8 +243,8 @@ namespace FINE.Service.Helpers
         public enum ProductInMenuErrorEnums
         {
             //404
-            [Display(Name = "Not found this product in menu Id!")]
-            NOT_FOUND_ID = 4041,
+            [Display(Name = "Not found this product in menu!")]
+            NOT_FOUND = 4041,
 
             //400
             [Display(Name = "This product already in this menu!")]

@@ -139,8 +139,8 @@ namespace FINE.Service.Service
                 .FirstOrDefault(x => x.Id == productId);
 
             if (product == null)
-                throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
-                    ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND,
+                    ProductErrorEnums.NOT_FOUND.GetDisplayName());
 
             return new BaseResponseViewModel<ProductResponse>()
             {
@@ -206,8 +206,8 @@ namespace FINE.Service.Service
                     .FirstOrDefault(x => x.Id == productId);
 
                 if (product == null)
-                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND_ID,
-                        ProductErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND,
+                        ProductErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var checkProductCode = _unitOfWork.Repository<Product>()
                        .Find(x => x.Id != productId && x.ProductCode == request.ProductCode);
@@ -308,8 +308,8 @@ namespace FINE.Service.Service
                 var checkMenu = _unitOfWork.Repository<Menu>().GetAll()
                               .FirstOrDefault(x => x.Id == menuId);
                 if (checkMenu == null)
-                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_ID,
-                        MenuErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
+                        MenuErrorEnums.NOT_FOUND.GetDisplayName());
                 #endregion
 
                 var product = _unitOfWork.Repository<ProductInMenu>().GetAll()

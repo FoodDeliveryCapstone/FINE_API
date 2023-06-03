@@ -86,8 +86,8 @@ namespace FINE.Service.Service
                          .FirstOrDefault(x => x.Id == storeId);
             if (store == null)
             {
-                throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND_ID,
-                    StoreErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND,
+                    StoreErrorEnums.NOT_FOUND.GetDisplayName());
             }
             return new BaseResponsePagingViewModel<StoreCategoryResponse>()
             {
