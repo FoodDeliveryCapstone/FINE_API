@@ -76,13 +76,14 @@ namespace FINE.Service.Utilities
         {
             var currentTime = GetCurrentDatetime().TimeOfDay;
             var rangeCheck = timeSlot.ArriveTime.Hours - currentTime.Hours;
+            
+            var endOfToday = new DateTime(GetCurrentDatetime().Year, GetCurrentDatetime().Month, GetCurrentDatetime().Day, 23, 59, 59);
 
             if (rangeCheck > 0 || (rangeCheck == 0 
-                && (timeSlot.ArriveTime.Minutes - currentTime.Minutes) >= 45))
+                && (timeSlot.ArriveTime.Minutes - currentTime.Minutes) >= 45 ) || (endOfToday.TimeOfDay.Hours - currentTime.Hours) <= 8)
             {
                 return true;
             }
-
             return false;
         }
 
