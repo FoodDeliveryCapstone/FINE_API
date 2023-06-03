@@ -26,7 +26,7 @@ namespace FINE.API.Controllers
         /// </summary>
 
         [HttpGet]
-        public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenus([FromQuery] MenuResponse request, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<MenuWithoutProductResponse>>> GetMenus([FromQuery] MenuWithoutProductResponse request, [FromQuery] PagingRequest paging)
         {
             try
             {
