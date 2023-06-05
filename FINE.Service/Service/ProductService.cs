@@ -1,7 +1,9 @@
-﻿using System.Linq.Dynamic.Core;
+﻿using System.Data;
+using System.Linq.Dynamic.Core;
 using System.Runtime.CompilerServices;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Azure.Core;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.Commons;
@@ -11,8 +13,10 @@ using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Algorithm;
+using Newtonsoft.Json;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -27,6 +31,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<ProductInMenuResponse>> GetProductByMenu(int menuId, PagingRequest paging);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(int productId, UpdateProductRequest request);
+        void GetProductFromPassioDB();
     }
 
     public class ProductService : IProductService
@@ -135,7 +140,7 @@ namespace FINE.Service.Service
         {
             var product = _unitOfWork.Repository<Product>().GetAll()
                 .Include(x => x.ProductInMenus)
-                
+
                 .FirstOrDefault(x => x.Id == productId);
 
             if (product == null)
@@ -177,11 +182,11 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ProductResponse>> GetProducts(ProductResponse filter,
             PagingRequest paging)
         {
-                var product = _unitOfWork.Repository<Product>().GetAll()
-                                                .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
-                                                .DynamicFilter(filter)
-                                                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                                    Constants.DefaultPaging);
+            var product = _unitOfWork.Repository<Product>().GetAll()
+                                            .ProjectTo<ProductResponse>(_mapper.ConfigurationProvider)
+                                            .DynamicFilter(filter)
+                                            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                                Constants.DefaultPaging);
 
 
             return new BaseResponsePagingViewModel<ProductResponse>()
@@ -201,7 +206,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                //update general product
+                //update general passioProduct
                 var product = _unitOfWork.Repository<Product>().GetAll()
                     .FirstOrDefault(x => x.Id == productId);
 
@@ -221,13 +226,13 @@ namespace FINE.Service.Service
 
                 await _unitOfWork.Repository<Product>().UpdateDetached(updateProduct);
                 await _unitOfWork.CommitAsync();
-                //update product extra (nếu có)
+                //update passioProduct extra (nếu có)
                 if (request.extraProducts != null)
                 {
                     var extraProduct = _unitOfWork.Repository<Product>().GetAll()
                         .Where(x => x.GeneralProductId == productId)
                         .ToList();
-                    //ban đầu sản phẩm không có product extra -> create
+                    //ban đầu sản phẩm không có passioProduct extra -> create
                     if (extraProduct == null)
                     {
                         foreach (var item in request.extraProducts)
@@ -237,7 +242,7 @@ namespace FINE.Service.Service
                         }
                     }
 
-                    // ban đầu sản phẩm có product extra 
+                    // ban đầu sản phẩm có passioProduct extra 
                     foreach (var item in request.extraProducts)
                     {
                         // ktra request đã từng được create hay chưa (chưa có id là chưa từng đc create)
@@ -263,7 +268,7 @@ namespace FINE.Service.Service
                         await _unitOfWork.CommitAsync();
                     }
                 }
-             
+
                 return new BaseResponseViewModel<ProductResponse>()
                 {
                     Status = new StatusViewModel()
@@ -333,6 +338,59 @@ namespace FINE.Service.Service
             catch (Exception ex)
             {
                 throw;
+            }
+        }
+
+        public async void GetProductFromPassioDB()
+        {
+            try
+            {
+                string ConnStr = "Data Source=54.251.108.33;Database=ProdPassio;User Id=admin_passio;Password=vA+Q!N3pZdJyXuerBx9bCF;MultipleActiveResultSets=true;Integrated Security=true;Trusted_Connection=False;Encrypt=True;TrustServerCertificate=True";
+                SqlConnection Conn = new SqlConnection(ConnStr);
+
+                string SqlString = "select * from [Product] where Active = 1 and IsAvailable = 1 and PicURL <> '';";
+
+                SqlDataAdapter sda = new SqlDataAdapter(SqlString, Conn);
+                DataTable dt = new DataTable();
+                Conn.Open();
+                sda.Fill(dt);
+
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory + @"Configuration\" + "listProductPassio.json");
+                using (StreamWriter sw = File.CreateText(path))
+                {
+                    var json = JsonConvert.SerializeObject(dt);
+                    sw.WriteLine(json);
+                }
+                Conn.Close();
+
+                using (StreamReader reader = File.OpenText(path))
+                {
+                    string json = reader.ReadToEnd();
+                    List<CreateProductPassio> lst = JsonConvert.DeserializeObject<List<CreateProductPassio>>(json);
+
+                    foreach(var passioProduct in lst)
+                    {
+                        var newProduct = new CreateProductRequest()
+                        {
+                            ProductCode = passioProduct.Code,
+                            ProductName = passioProduct.ProductName,
+                            CategoryId = 4,
+                            StoreId = 2,
+                            BasePrice = passioProduct.Price,
+                            ImageUrl = passioProduct.PicURL
+                        };
+                        var product = _mapper.Map<CreateProductRequest, Product>(newProduct);
+                        product.CreateAt = DateTime.Now;
+                        _unitOfWork.Repository<Product>().Insert(product);
+                        _unitOfWork.Commit();
+                    }
+                     
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
 

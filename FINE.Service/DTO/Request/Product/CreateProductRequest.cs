@@ -20,12 +20,19 @@ namespace FINE.Service.DTO.Request.Product
         public string? Description { get; set; }
 
         public List<CreateExtraProductRequest>? extraProducts { get; set; }
-        //public List<AddProductToMenuRequest>? addProductToMenu { get; set; }
     }
 
     public class CreateExtraProductRequest
     {
         public double? SizePrice { get; set; }
         public string? Size { get; set; }
+    }
+
+    public class CreateProductPassio
+    {
+        public string ProductName { get; set; }
+        public double Price { get; set; }
+        public string PicURL { get; set; }
+        public string Code { get; set; }
     }
 }

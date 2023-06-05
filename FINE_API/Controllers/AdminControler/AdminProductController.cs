@@ -41,6 +41,15 @@ public class AdminProductController : Controller
     }
 
     /// <summary>
+    /// Get Passio Product from DB Passio 
+    /// </summary>
+    [HttpGet("passio")]
+    public async void GetProductFromPassioDB()
+    {
+         _productService.GetProductFromPassioDB();
+    }
+
+    /// <summary>
     /// Get List Product By StoreId
     /// </summary>
     [Authorize(Roles = "SystemAdmin, StoreManager")]
