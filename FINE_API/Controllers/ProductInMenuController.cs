@@ -44,7 +44,7 @@ public class ProductInMenuController : ControllerBase
     {
         try
         {
-            return await _productInMenuService.GetProductInMenuByStore(storeId, paging);
+            return await _productInMenuService.GetProductInMenuByStore(storeId, filter, paging);
         }
         catch (ErrorResponse ex)
         {
