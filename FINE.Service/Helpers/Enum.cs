@@ -66,10 +66,11 @@ namespace FINE.Service.Helpers
             UpdateDetails = 3
         }
 
-        public enum ProductStatusEnum
+        public enum ProductInMenuStatusEnum
         {
-            Avaliable = 1,
-            OutOfStock = 2
+            Wait =1,
+            Avaliable = 2,
+            OutOfStock = 3
         }
 
         public enum OrderStatusEnum
@@ -133,13 +134,6 @@ namespace FINE.Service.Helpers
             IsActive = 2,
             IsNotDialog = 1,
             IsDialog = 2
-        }
-
-        public enum ProductInMenuStatusEnum
-        {
-            New = 1,
-            Avaliable = 2,
-            OutOfStock = 3
         }
     }
 }
