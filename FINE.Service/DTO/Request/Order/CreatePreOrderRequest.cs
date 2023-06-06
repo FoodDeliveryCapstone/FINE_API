@@ -44,13 +44,13 @@ namespace FINE.Service.DTO.Request.Order
     }
     public class PreOrderDetailRequest
     {
-        public int ProductInMenuId { get; set; }
+        public int Id { get; set; }
 
         public string? ProductCode { get; set; }
 
         public string ProductName { get; set; } = null!;
     
-        public double? UnitPrice { get; set; }
+        public double? Price { get; set; }
 
         public int Quantity { get; set; }
 

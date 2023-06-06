@@ -190,7 +190,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                #region Timeslot
+                #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
                 if (timeSlot == null)
@@ -212,17 +212,19 @@ namespace FINE.Service.Service
                         .Where(x => x.Id == orderDetail.ProductInMenuId)
                         .FirstOrDefault();
 
-                    if (productInMenu.Menu == null)
-                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
-                           MenuErrorEnums.NOT_FOUND.GetDisplayName());
+                    if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                           MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+
+                    if(productInMenu.IsAvailable == false ||productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
 
                     var detail = new PreOrderDetailRequest();
-                    detail.ProductInMenuId = orderDetail.ProductInMenuId;
-                    detail.ProductCode = productInMenu.Product.ProductCode;
-                    detail.ProductName = productInMenu.Product.ProductName;
-                    detail.UnitPrice = productInMenu.Price;
+                    detail = _mapper.Map<PreOrderDetailRequest>(productInMenu);
+
                     detail.Quantity = orderDetail.Quantity;
-                    detail.TotalAmount = (double)(detail.UnitPrice * detail.Quantity);
+                    detail.TotalAmount = (double)(detail.Price * detail.Quantity);
                     detail.FinalAmount = detail.TotalAmount;
                     detail.ComboId = orderDetail.ComboId;
 
@@ -230,11 +232,14 @@ namespace FINE.Service.Service
                     if (!listPreOD.Any(x => x.StoreId == productInMenu.StoreId))
                     {
                         ListDetailByStore preOD = new ListDetailByStore();
+
                         preOD.Details = new List<PreOrderDetailRequest>();
+
                         preOD.StoreId = (int)productInMenu.StoreId;
                         preOD.StoreName = productInMenu.Product.Store.StoreName;
                         preOD.TotalAmount = detail.TotalAmount;
                         preOD.TotalProduct = detail.Quantity;
+
                         preOD.Details.Add(detail);
                         listPreOD.Add(preOD);
                     }
@@ -257,8 +262,6 @@ namespace FINE.Service.Service
                 genOrder.OrderCode = customer.UniInfo.University.UniCode + "-" +
                                         orderCount.ToString().PadLeft(3, '0') + "." + Utils.GenerateRandomCode();
 
-                #region Gen customer + delivery phone
-
                 //check phone number
 
                 if (customer.Phone.Contains(request.DeliveryPhone) == null)
@@ -276,11 +279,7 @@ namespace FINE.Service.Service
 
                 genOrder.Customer = _mapper.Map<OrderCustomerResponse>(customer);
                 genOrder.DeliveryPhone = request.DeliveryPhone;
-                #endregion
-
                 genOrder.CheckInDate = DateTime.Now;
-
-                #region FinalAmount / TotalAmount
                 genOrder.InverseGeneralOrder = new List<OrderResponse>();
 
                 foreach (var store in listPreOD)
@@ -305,7 +304,6 @@ namespace FINE.Service.Service
                         genOrder.ShippingFee += 2000;
                     }
                 }
-                #endregion
 
                 var room = _unitOfWork.Repository<Room>().GetAll().FirstOrDefault(x => x.Id == request.RoomId);
                 genOrder.Room = _mapper.Map<OrderRoomResponse>(room);
@@ -354,7 +352,6 @@ namespace FINE.Service.Service
                 #region Customer + delivery phone
                 var customer = await _unitOfWork.Repository<Customer>().GetById(customerId);
 
-                //check phone number
                 if (customer.Phone.Contains(request.DeliveryPhone) == null)
                 {
                     if (!Utils.CheckVNPhone(request.DeliveryPhone))
@@ -365,11 +362,11 @@ namespace FINE.Service.Service
                 {
                     request.DeliveryPhone = request.DeliveryPhone.TrimStart(new char[] { '0' });
                     request.DeliveryPhone = "+84" + request.DeliveryPhone;
-                }
+                }           
                 #endregion
 
-
                 var genOrder = _mapper.Map<Order>(request);
+
                 genOrder.CheckInDate = DateTime.Now;
                 genOrder.CustomerId = customerId;
                 genOrder.OrderStatus = (int)OrderStatusEnum.Processing;
@@ -378,8 +375,23 @@ namespace FINE.Service.Service
 
                 foreach (var order in request.InverseGeneralOrder)
                 {
-                    var inverseOrder = new Order();
-                    inverseOrder = _mapper.Map<Order>(genOrder);
+                    foreach(var orderDetail in order.OrderDetails)
+                    {
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                       .Include(x => x.Menu)
+                                                       .Include(x => x.Product)
+                                                       .Where(x => x.Id == orderDetail.ProductInMenuId)
+                                                       .FirstOrDefault();
+
+                        if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                               MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+
+                        if (productInMenu.IsAvailable == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                            throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                    }
+                    var inverseOrder = _mapper.Map<Order>(genOrder);
                     inverseOrder = _mapper.Map<CreateOrderRequest, Order>(order, inverseOrder);
                     genOrder.InverseGeneralOrder.Add(inverseOrder);
                 }

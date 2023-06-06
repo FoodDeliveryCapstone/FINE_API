@@ -248,7 +248,9 @@ namespace FINE.Service.Helpers
 
             //400
             [Display(Name = "This product already in this menu!")]
-            PRODUCT_ALREADY_IN_MENU = 4001
+            PRODUCT_ALREADY_IN_MENU = 4001,
+            [Display(Name = "This product is not avaliable!")]
+            PRODUCT_NOT_AVALIABLE = 4002
         }
     }
 }
