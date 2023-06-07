@@ -1,4 +1,4 @@
-﻿namespace FINE.Service.Commons
+﻿namespace FINE.Service.Attributes
 {
     public class Constants
     {

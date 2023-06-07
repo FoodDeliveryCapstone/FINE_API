@@ -3,7 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Castle.Core.Resource;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
-using FINE.Service.Commons;
+using FINE.Service.Attributes;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Customer;
 using FINE.Service.DTO.Response;

@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
-using FINE.Service.Commons;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
@@ -25,6 +24,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Hangfire.Server;
 using Microsoft.Extensions.Configuration;
 using Hangfire;
+using FINE.Service.Attributes;
 
 namespace FINE.Service.Service
 {
@@ -395,6 +395,7 @@ namespace FINE.Service.Service
                     inverseOrder = _mapper.Map<CreateOrderRequest, Order>(order, inverseOrder);
                     genOrder.InverseGeneralOrder.Add(inverseOrder);
                 }
+
 
                 await _unitOfWork.Repository<Order>().InsertAsync(genOrder);
                 await _unitOfWork.CommitAsync();

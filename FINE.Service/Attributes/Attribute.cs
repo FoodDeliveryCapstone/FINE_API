@@ -1,4 +1,4 @@
-﻿namespace FINE.Service.Commons
+﻿namespace FINE.Service.Attributes
 {
     public class BooleanAttribute : Attribute
     {
@@ -30,30 +30,30 @@
     }
 
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-    public class HiddenParamsAttribute : System.Attribute
+    public class HiddenParamsAttribute : Attribute
     {
         public string Params { get; set; }
 
         public HiddenParamsAttribute(string parameters)
         {
-            this.Params = parameters;
+            Params = parameters;
         }
     }
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-    public class HiddenControllerAttribute : System.Attribute
+    public class HiddenControllerAttribute : Attribute
     {
     }
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class StringAttribute : System.Attribute
+    public class StringAttribute : Attribute
     {
     }
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class ImmutableAttribute : System.Attribute
+    public class ImmutableAttribute : Attribute
     {
     }
-    public class SortAttribute : System.Attribute
+    public class SortAttribute : Attribute
     {
     }
 }

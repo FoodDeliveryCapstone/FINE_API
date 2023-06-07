@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
-using FINE.Service.Commons;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.ProductCollection;
 using FINE.Service.DTO.Response;
@@ -20,6 +19,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
+using FINE.Service.Attributes;
 
 namespace FINE.Service.Service
 {
