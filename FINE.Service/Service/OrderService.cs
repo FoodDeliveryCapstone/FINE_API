@@ -411,9 +411,9 @@ namespace FINE.Service.Service
                         OrderStatus = genOrder.OrderStatus,
                         Type = (int)NotifyTypeEnum.ForOrder
                     };                    
-                    BackgroundJob.Enqueue(() => _notifyService.CreateOrderNotify(notifyRequest));
+                    _notifyService.CreateOrderNotify(notifyRequest);
 
-                    BackgroundJob.Enqueue(() => SendMailMessage(genOrder));
+                    SendMailMessage(genOrder);
 
                 }catch(Exception ex)
                 {
