@@ -199,6 +199,7 @@ namespace FINE.API.Mapper
             CreateMap<UpdateMenuRequest, Menu>();           
             CreateMap<Menu, ProductResponse>();
             CreateMap<Menu, ProductInMenu>().ReverseMap();
+            CreateMap<Menu, MenuWithoutProductResponse>();
             #endregion
 
             #region TimeSlot

@@ -26,7 +26,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
         [HttpGet]
-        public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenus([FromQuery] MenuResponse request, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<MenuWithoutProductResponse>>> GetMenus([FromQuery] MenuWithoutProductResponse request, [FromQuery] PagingRequest paging)
         {
             try
             {

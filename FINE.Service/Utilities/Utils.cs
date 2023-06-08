@@ -75,13 +75,14 @@ namespace FINE.Service.Utilities
         {
             var currentTime = GetCurrentDatetime().TimeOfDay;
             var rangeCheck = timeSlot.ArriveTime.Hours - currentTime.Hours;
+            
+            var preOrderTime = new DateTime(GetCurrentDatetime().Year, GetCurrentDatetime().Month, GetCurrentDatetime().Day, 15, 00, 00);
 
             if (rangeCheck > 0 || (rangeCheck == 0 
-                && (timeSlot.ArriveTime.Minutes - currentTime.Minutes) >= 45))
+                && (timeSlot.ArriveTime.Minutes - currentTime.Minutes) >= 45 ) || currentTime.Hours >= preOrderTime.TimeOfDay.Hours)
             {
                 return true;
             }
-
             return false;
         }
 

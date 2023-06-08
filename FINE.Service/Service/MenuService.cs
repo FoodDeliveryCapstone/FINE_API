@@ -19,7 +19,7 @@ namespace FINE.Service.Service
 {
     public interface IMenuService
     {
-        Task<BaseResponsePagingViewModel<MenuResponse>> GetMenus(MenuResponse filter, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<MenuWithoutProductResponse>> GetMenus(MenuWithoutProductResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<MenuResponse>> GetMenuById(int menuId);
         Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslot(int timeslotId, PagingRequest paging);
         Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request);
@@ -92,18 +92,18 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<MenuResponse>> GetMenus(MenuResponse filter, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<MenuWithoutProductResponse>> GetMenus(MenuWithoutProductResponse filter, PagingRequest paging)
         {
             try
             {
                 var menu = _unitOfWork.Repository<Menu>().GetAll()
-                                        .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
+                                        .ProjectTo<MenuWithoutProductResponse>(_mapper.ConfigurationProvider)
                                         .DynamicFilter(filter)
                                         .DynamicSort(filter)
                                         .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
                                         Constants.DefaultPaging);
 
-                return new BaseResponsePagingViewModel<MenuResponse>()
+                return new BaseResponsePagingViewModel<MenuWithoutProductResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {
@@ -124,14 +124,32 @@ namespace FINE.Service.Service
         {
             try
             {
-                var menu = _unitOfWork.Repository<Menu>()
-                     .Find(c => c.Id == menuId);
+                var menu = _unitOfWork.Repository<Menu>().GetAll()
+                     .FirstOrDefault(x => x.Id == menuId);
 
                 if (menu == null)
                     throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
                         MenuErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var updateMenu = _mapper.Map<UpdateMenuRequest, Menu>(request, menu);
+
+                var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                       .Where(x => x.MenuId == menuId);
+                if (request.IsActive == false)
+                {
+                   
+                    foreach (var productInMenuStatus in productInMenu)
+                    {
+                        productInMenuStatus.Status = (int)ProductInMenuStatusEnum.OutOfStock;
+                    }
+                }
+                else
+                {
+                    foreach (var productInMenuStatus in productInMenu)
+                    {
+                        productInMenuStatus.Status = (int)ProductInMenuStatusEnum.Avaliable;
+                    }
+                }
                 updateMenu.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<Menu>().UpdateDetached(updateMenu);
