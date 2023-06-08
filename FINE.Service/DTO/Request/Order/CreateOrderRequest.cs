@@ -21,6 +21,8 @@ namespace FINE.Service.DTO.Request.Order
 
         public double ShippingFee { get; set; }
 
+        public int PaymentType { get; set; }
+
         public int OrderType { get; set; }
 
         public int TimeSlotId { get; set; }

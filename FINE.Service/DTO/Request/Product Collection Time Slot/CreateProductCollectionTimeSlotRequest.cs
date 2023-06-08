@@ -1,4 +1,4 @@
-﻿using FINE.Service.Commons;
+﻿using FINE.Service.Attributes;
 
 namespace FINE.Service.DTO.Request.Product_Collection_Time_Slot
 {
