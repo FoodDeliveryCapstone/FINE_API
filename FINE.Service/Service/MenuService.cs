@@ -11,6 +11,7 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
+using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
 
@@ -157,19 +158,20 @@ namespace FINE.Service.Service
         {
             try
             {
-                var menu = _unitOfWork.Repository<Menu>().GetAll()
-                    .Include(x => x.ProductInMenus)
-                    .ThenInclude(x => x.Product)
-                    .Where(x => x.TimeSlotId == timeslotId)
-                    .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
-                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
-                              .FirstOrDefault(x => x.Id == timeslotId);
+              .FirstOrDefault(x => x.Id == timeslotId);
 
                 if (timeslot == null)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
                         TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var menu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                    .Include(x => x.Menu)
+                                    .Include(x => x.Product)
+                                    .Where(x => x.Menu.TimeSlotId == timeslotId && x.Status == (int)ProductInMenuStatusEnum.Avaliable)
+                                    .GroupBy(x => x.Menu)
+                                    .Select(x => _mapper.Map<MenuResponse>(x.Key))
+                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<MenuResponse>()
                 {

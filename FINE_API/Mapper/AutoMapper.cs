@@ -230,6 +230,7 @@ namespace FINE.API.Mapper
 
             CreateMap<Store, ProductInMenuResponse>().ReverseMap();
             CreateMap<SystemCategory, ProductInMenuResponse>().ReverseMap();
+            CreateMap<IGrouping<Menu,ProductInMenu>, MenuResponse>().ReverseMap();
         }
     }
 }
