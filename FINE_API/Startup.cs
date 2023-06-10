@@ -103,6 +103,7 @@ namespace FINE.API
             });
             services.ConfigureAuthServices(Configuration);
             services.ConnectToConnectionString(Configuration);
+            services.ConfigureHangfireServices(Configuration);
 
             #region Firebase
             var pathToKey = Path.Combine(Directory.GetCurrentDirectory(), "Keys", "firebase.json");
