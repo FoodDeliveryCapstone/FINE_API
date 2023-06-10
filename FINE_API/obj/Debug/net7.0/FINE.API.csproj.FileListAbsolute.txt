@@ -140,6 +140,7 @@ D:\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.genruntimeconfi
 D:\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\ref\FINE.API.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\appsettings.Development.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\appsettings.json
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Configuration\listProductPassio.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Keys\firebase.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\FINE.API.exe
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\FINE.API.deps.json
