@@ -30,6 +30,13 @@ namespace FINE.Service.Helpers
             NOT_FOUND_ID = 4041
         }
 
+        public enum PaymentErrorEnums
+        {
+            //400 
+            [Display(Name = "Payment fail!!!")]
+            PAYMENT_FAIL = 4001,
+        }
+
         public enum CustomerErrorEnums
         {
             //400

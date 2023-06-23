@@ -68,7 +68,7 @@ namespace FINE.Service.Helpers
 
         public enum ProductInMenuStatusEnum
         {
-            Wait =1,
+            Wait = 1,
             Avaliable = 2,
             OutOfStock = 3
         }
@@ -94,6 +94,19 @@ namespace FINE.Service.Helpers
             MoMo = 2,
         }
 
+        public enum PaymentStatusEnum
+        {
+            Processing = 1,
+            Finish = 2,
+            Fail = 3,
+        }
+
+        public enum PaymentAppTypeEnum
+        {
+            Web = 1,
+            Mobile = 2
+        }
+
         public enum ShippingStatusEnum
         {
             NewOrder = 5,
@@ -116,6 +129,7 @@ namespace FINE.Service.Helpers
             IsAvtive = 2,
             IsRead = 2
         }
+
         public enum NotifyTypeEnum
         {
             ForOrder = 1,
@@ -129,11 +143,23 @@ namespace FINE.Service.Helpers
         }
 
         public enum BlogPostStatusEnum
-        { 
+        {
             IsNotActive = 1,
             IsActive = 2,
             IsNotDialog = 1,
             IsDialog = 2
+        }
+
+        public enum MomoResultCode
+        {
+            //Thành công
+            Success = 0,
+            //Truy cập bị từ chối.
+            AccessDenied = 11,
+            // Giao vẫn đang chờ người dùng xác nhận thanh toán;
+            // trạng thái của giao dịch sẽ được tự động thay đổi ngay sau khi người dùng xác nhận hoặc hủy thanh toán.
+            ReConfirm = 8000,
+
         }
     }
 }

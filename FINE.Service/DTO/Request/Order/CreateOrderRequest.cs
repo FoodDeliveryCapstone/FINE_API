@@ -1,6 +1,7 @@
 ﻿using FINE.Service.DTO.Response;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace FINE.Service.DTO.Request.Order
     public class CreateGenOrderRequest
     {
         public string OrderCode { get; set; }
-
+        [Required]
         public string DeliveryPhone { get; set; }
 
         public double TotalAmount { get; set; }
@@ -20,13 +21,15 @@ namespace FINE.Service.DTO.Request.Order
         public double FinalAmount { get; set; }
 
         public double ShippingFee { get; set; }
-
+        [Required]
         public int PaymentType { get; set; }
+        [Required]
+        public int PaymentAppType { get; set; }
 
         public int OrderType { get; set; }
-
+        [Required]
         public int TimeSlotId { get; set; }
-
+        [Required]
         public int RoomId { get; set; }
 
         public int? ItemQuantity { get; set; }

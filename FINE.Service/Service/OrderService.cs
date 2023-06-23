@@ -34,7 +34,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrders(PagingRequest paging);
         Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrderByCustomerId(int customerId, PagingRequest paging);
         Task<BaseResponseViewModel<GenOrderResponse>> CreatePreOrder(int customerId, CreatePreOrderRequest request);
-        Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId, CreateGenOrderRequest request);
+        Task<BaseResponseViewModel<dynamic>> CreateOrder(int customerId, CreateGenOrderRequest request);
         Task<BaseResponseViewModel<dynamic>> CreateCoOrder(int customerId, CreateGenOrderRequest request);
         Task<BaseResponseViewModel<dynamic>> UpdateOrder(int orderId, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
     }
@@ -44,13 +44,17 @@ namespace FINE.Service.Service
         private readonly IMapper _mapper;
         private readonly INotifyService _notifyService;
         private readonly IConfiguration _configuration;
+        private readonly IPaymentService _paymentService;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, INotifyService notifyService)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, 
+                            IConfiguration configuration, INotifyService notifyService,
+                            IPaymentService paymentService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
             _notifyService = notifyService;
+            _paymentService = paymentService;
         }
 
         public async Task<string> CreateMailMessage(Order genOrder)
@@ -333,7 +337,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<GenOrderResponse>> CreateOrder(int customerId, CreateGenOrderRequest request)
+        public async Task<BaseResponseViewModel<dynamic>> CreateOrder(int customerId, CreateGenOrderRequest request)
         {
             try
             {
@@ -369,7 +373,7 @@ namespace FINE.Service.Service
 
                 genOrder.CheckInDate = DateTime.Now;
                 genOrder.CustomerId = customerId;
-                genOrder.OrderStatus = (int)OrderStatusEnum.Processing;
+                genOrder.OrderStatus = (int)OrderStatusEnum.PaymentPending;
                 genOrder.IsConfirm = false;
                 genOrder.IsPartyMode = false;
 
@@ -388,7 +392,7 @@ namespace FINE.Service.Service
                                MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
 
                         if (productInMenu.IsAvailable == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                            throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                            throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
                            ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
                     }
                     var inverseOrder = _mapper.Map<Order>(genOrder);
@@ -396,6 +400,12 @@ namespace FINE.Service.Service
                     genOrder.InverseGeneralOrder.Add(inverseOrder);
                 }
 
+                var payment = _paymentService.PreparePayment(request.PaymentType, request.PaymentAppType, genOrder);
+                if (payment.IsFaulted == null)
+                    throw new ErrorResponse(400, (int)PaymentErrorEnums.PAYMENT_FAIL,
+                                            PaymentErrorEnums.PAYMENT_FAIL.GetDisplayName());
+                genOrder.Payments = new List<Payment>();
+                genOrder.Payments.Add(payment.Result);
 
                 await _unitOfWork.Repository<Order>().InsertAsync(genOrder);
                 await _unitOfWork.CommitAsync();
@@ -419,7 +429,7 @@ namespace FINE.Service.Service
                 {
                     throw ex;
                 }
-                return new BaseResponseViewModel<GenOrderResponse>()
+                return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
                     {
