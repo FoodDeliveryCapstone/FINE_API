@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace FINE.Data.Entity;
 
-public partial class Payment
+public partial class OtherAmount
 {
     public Guid Id { get; set; }
 
@@ -11,15 +11,13 @@ public partial class Payment
 
     public double Amount { get; set; }
 
-    public int PaymentType { get; set; }
+    public int Type { get; set; }
 
-    public int Status { get; set; }
+    public string? Note { get; set; }
 
     public DateTime CreateAt { get; set; }
 
     public DateTime? UpdateAt { get; set; }
-
-    public string? Note { get; set; }
 
     public virtual Order Order { get; set; } = null!;
 }

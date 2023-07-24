@@ -5,17 +5,15 @@ namespace FINE.Data.Entity;
 
 public partial class ProductInMenu
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int? ProductId { get; set; }
+    public Guid ProductId { get; set; }
 
-    public int? MenuId { get; set; }
+    public Guid MenuId { get; set; }
 
-    public int? StoreId { get; set; }
+    public double Price { get; set; }
 
-    public double? Price { get; set; }
-
-    public bool IsAvailable { get; set; }
+    public bool IsActive { get; set; }
 
     public int Status { get; set; }
 
@@ -23,11 +21,9 @@ public partial class ProductInMenu
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual Menu? Menu { get; set; }
+    public virtual Menu Menu { get; set; } = null!;
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
-    public virtual ICollection<ParticipationOrderDetail> ParticipationOrderDetails { get; set; } = new List<ParticipationOrderDetail>();
-
-    public virtual Product? Product { get; set; }
+    public virtual Product Product { get; set; } = null!;
 }

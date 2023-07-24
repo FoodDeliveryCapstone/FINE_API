@@ -5,11 +5,11 @@ namespace FINE.Data.Entity;
 
 public partial class Store
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int CampusId { get; set; }
+    public Guid DestinationId { get; set; }
 
-    public string? StoreName { get; set; }
+    public string StoreName { get; set; } = null!;
 
     public string? ImageUrl { get; set; }
 
@@ -17,19 +17,15 @@ public partial class Store
 
     public bool IsActive { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<BlogPost> BlogPosts { get; set; } = new List<BlogPost>();
-
-    public virtual Campus Campus { get; set; } = null!;
+    public virtual Destination Destination { get; set; } = null!;
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
     public virtual ICollection<Staff> Staff { get; set; } = new List<Staff>();
-
-    public virtual ICollection<StoreCategory> StoreCategories { get; set; } = new List<StoreCategory>();
 }

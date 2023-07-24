@@ -5,9 +5,9 @@ namespace FINE.Data.Entity;
 
 public partial class Transaction
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int AccountId { get; set; }
+    public Guid AccountId { get; set; }
 
     public double Amount { get; set; }
 
@@ -16,8 +16,6 @@ public partial class Transaction
     public bool IsIncrease { get; set; }
 
     public int Status { get; set; }
-
-    public int BrandId { get; set; }
 
     public int Type { get; set; }
 

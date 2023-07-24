@@ -5,11 +5,11 @@ namespace FINE.Data.Entity;
 
 public partial class Floor
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
+
+    public Guid DestionationId { get; set; }
 
     public int Number { get; set; }
-
-    public int CampusId { get; set; }
 
     public bool IsActive { get; set; }
 
@@ -17,7 +17,7 @@ public partial class Floor
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual Campus Campus { get; set; } = null!;
+    public virtual Destination Destionation { get; set; } = null!;
 
-    public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
+    public virtual ICollection<Station> Stations { get; set; } = new List<Station>();
 }

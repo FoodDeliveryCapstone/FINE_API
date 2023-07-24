@@ -5,11 +5,9 @@ namespace FINE.Data.Entity;
 
 public partial class Fcmtoken
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int? CustomerId { get; set; }
-
-    public int? StaffId { get; set; }
+    public Guid? CustomerId { get; set; }
 
     public string Token { get; set; } = null!;
 
@@ -18,6 +16,4 @@ public partial class Fcmtoken
     public DateTime? UpdateAt { get; set; }
 
     public virtual Customer? Customer { get; set; }
-
-    public virtual Staff? Staff { get; set; }
 }

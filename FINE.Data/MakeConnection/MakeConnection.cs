@@ -10,7 +10,7 @@ namespace FINE.Data.MakeConnection
     {
         public static IServiceCollection ConnectToConnectionString(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<FineDevDbContext>(options =>
+            services.AddDbContext<FineDevDbV2Context>(options =>
             {
                 options.UseLazyLoadingProxies();
                 options.UseSqlServer(configuration.GetConnectionString("SQLServerDatabase"), sql => sql.UseNetTopologySuite());

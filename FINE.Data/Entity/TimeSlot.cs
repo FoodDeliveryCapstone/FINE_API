@@ -5,9 +5,9 @@ namespace FINE.Data.Entity;
 
 public partial class TimeSlot
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int CampusId { get; set; }
+    public Guid DestinationId { get; set; }
 
     public TimeSpan ArriveTime { get; set; }
 
@@ -19,13 +19,11 @@ public partial class TimeSlot
 
     public DateTime? UpdateAt { get; set; }
 
-    public bool? ShowOnHome { get; set; }
-
     public string? Description { get; set; }
 
-    public virtual Campus Campus { get; set; } = null!;
+    public virtual Destination Destination { get; set; } = null!;
 
     public virtual ICollection<Menu> Menus { get; set; } = new List<Menu>();
 
-    public virtual ICollection<ProductCollectionTimeSlot> ProductCollectionTimeSlots { get; set; } = new List<ProductCollectionTimeSlot>();
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }

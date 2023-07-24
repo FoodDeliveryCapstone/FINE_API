@@ -7,15 +7,13 @@ public partial class OrderDetail
 {
     public int Id { get; set; }
 
-    public int OrderId { get; set; }
+    public Guid OrderId { get; set; }
 
-    public int ProductInMenuId { get; set; }
+    public Guid ProductInMenuId { get; set; }
 
     public string ProductCode { get; set; } = null!;
 
     public string ProductName { get; set; } = null!;
-
-    public int? ComboId { get; set; }
 
     public double UnitPrice { get; set; }
 
@@ -28,8 +26,6 @@ public partial class OrderDetail
     public double FinalAmount { get; set; }
 
     public string? Note { get; set; }
-
-    public virtual ProductCombo? Combo { get; set; }
 
     public virtual Order Order { get; set; } = null!;
 

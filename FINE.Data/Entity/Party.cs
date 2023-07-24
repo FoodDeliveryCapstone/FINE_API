@@ -3,19 +3,19 @@ using System.Collections.Generic;
 
 namespace FINE.Data.Entity;
 
-public partial class OrderFeedback
+public partial class Party
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int OrderId { get; set; }
+    public Guid OrderId { get; set; }
 
-    public int CustomerId { get; set; }
+    public Guid CustomerId { get; set; }
 
-    public string? OrderFbContent { get; set; }
+    public string? PartyCode { get; set; }
 
-    public int Rating { get; set; }
+    public int Status { get; set; }
 
-    public string? Description { get; set; }
+    public bool IsActive { get; set; }
 
     public DateTime CreateAt { get; set; }
 

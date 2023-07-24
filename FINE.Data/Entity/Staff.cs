@@ -5,7 +5,7 @@ namespace FINE.Data.Entity;
 
 public partial class Staff
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = null!;
 
     public string Name { get; set; } = null!;
 
@@ -15,23 +15,15 @@ public partial class Staff
 
     public int RoleType { get; set; }
 
-    public int? StoreId { get; set; }
+    public Guid? StoreId { get; set; }
 
-    public int? CustomerId { get; set; }
-
-    public bool? IsAvailable { get; set; }
+    public bool IsActive { get; set; }
 
     public DateTime CreateAt { get; set; }
 
     public DateTime? UpdateAt { get; set; }
 
-    public virtual Customer? Customer { get; set; }
-
-    public virtual ICollection<Fcmtoken> Fcmtokens { get; set; } = new List<Fcmtoken>();
-
-    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
-
-    public virtual ICollection<StaffReport> StaffReports { get; set; } = new List<StaffReport>();
+    public virtual ICollection<StationReport> StationReports { get; set; } = new List<StationReport>();
 
     public virtual Store? Store { get; set; }
 }

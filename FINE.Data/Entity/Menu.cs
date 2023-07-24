@@ -5,15 +5,15 @@ namespace FINE.Data.Entity;
 
 public partial class Menu
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int TimeSlotId { get; set; }
+    public Guid TimeSlotId { get; set; }
 
     public string MenuName { get; set; } = null!;
 
-    public string? ImgUrl { get; set; }
+    public string ImgUrl { get; set; } = null!;
 
-    public int? Position { get; set; }
+    public int Position { get; set; }
 
     public bool IsActive { get; set; }
 
