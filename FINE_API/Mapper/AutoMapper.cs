@@ -30,6 +30,26 @@ namespace FINE.API.Mapper
             CreateMap<Floor, FloorResponse>().ReverseMap();
             #endregion
 
+            #region Area
+
+            #endregion
+
+            #region Sation
+
+            #endregion
+
+            #region Box
+
+            #endregion
+
+            #region Store
+
+            CreateMap<Store, StoreResponse>().ReverseMap();
+            CreateMap<CreateStoreRequest, Store>();
+            CreateMap<UpdateStoreRequest, Store>();
+
+            #endregion
+
             //#region Customer
 
             //CreateMap<Customer, CustomerResponse>().ReverseMap();
@@ -89,16 +109,7 @@ namespace FINE.API.Mapper
             //CreateMap<Product, PreOrderDetailRequest>();
             //#endregion
 
-            //#region Store
 
-            //CreateMap<Store, StoreResponse>()
-            //    .IncludeMembers(x => x.Destination)
-            //    .ReverseMap();
-            //CreateMap<StoreResponse, Destination>().ReverseMap();
-            //CreateMap<CreateStoreRequest, Store>();
-            //CreateMap<UpdateStoreRequest, Store>();
-
-            //#endregion
 
             //#region Staff
 
