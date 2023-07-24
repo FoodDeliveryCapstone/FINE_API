@@ -8,7 +8,7 @@ namespace FINE.Service.DTO.Request.TimeSlot
 {
     public class UpdateTimeslotRequest
     {
-        public int CampusId { get; set; }
+        public int DestinationId { get; set; }
         public TimeOnly ArriveTime { get; set; }
         public TimeOnly CheckoutTime { get; set; }
         public bool IsActive { get; set; }

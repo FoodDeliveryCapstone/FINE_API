@@ -138,6 +138,13 @@ D:\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.xml
 D:\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.pdb
 D:\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.genruntimeconfig.cache
 D:\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\ref\FINE.API.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.csproj.AssemblyReference.cache
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.GeneratedMSBuildEditorConfig.editorconfig
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfoInputs.cache
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfo.cs
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.csproj.CoreCompileInputs.cache
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.MvcApplicationPartsAssemblyInfo.cs
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.MvcApplicationPartsAssemblyInfo.cache
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\appsettings.Development.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\appsettings.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Configuration\listProductPassio.json
@@ -170,6 +177,8 @@ D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Google.Apis.Cor
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Google.Apis.Oauth2.v2.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Hangfire.AspNetCore.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Hangfire.Core.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Hangfire.MemoryStorage.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Hangfire.SqlServer.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Humanizer.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\IdentityModel.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\IdentityModel.AspNetCore.OAuth2Introspection.dll
@@ -228,6 +237,7 @@ D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Swashbuckle.Asp
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\System.CodeDom.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\System.Configuration.ConfigurationManager.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\System.Data.SqlClient.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\System.Drawing.Common.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\System.IdentityModel.Tokens.Jwt.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\System.Linq.Dynamic.Core.dll
@@ -262,6 +272,11 @@ D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win-ar
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win-arm64\native\sni.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win-x64\native\sni.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win-x86\native\sni.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\unix\lib\netstandard2.0\System.Data.SqlClient.dll
+D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win\lib\netstandard2.0\System.Data.SqlClient.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\unix\lib\netcoreapp3.0\System.Drawing.Common.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\runtimes\win\lib\netstandard2.0\System.Runtime.Caching.dll
@@ -271,13 +286,6 @@ D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\FINE.Data.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\FINE.Service.dll
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\FINE.Data.pdb
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\FINE.Service.pdb
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.csproj.AssemblyReference.cache
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.GeneratedMSBuildEditorConfig.editorconfig
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfoInputs.cache
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfo.cs
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.csproj.CoreCompileInputs.cache
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.MvcApplicationPartsAssemblyInfo.cs
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.MvcApplicationPartsAssemblyInfo.cache
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\staticwebassets\msbuild.FINE.API.Microsoft.AspNetCore.StaticWebAssets.props
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\staticwebassets\msbuild.build.FINE.API.props
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\staticwebassets\msbuild.buildMultiTargeting.FINE.API.props

@@ -14,7 +14,7 @@ namespace FINE.Service.Helpers
 {
     public class AccessTokenManager
     {
-        public static string GenerateJwtToken(string name, int role, int? staffId, IConfiguration configuration)
+        public static string GenerateJwtToken(string name, int role, Guid? id, IConfiguration configuration)
         {
             var tokenConfig = configuration.GetSection("Token");
             var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(tokenConfig["SecretKey"]));
@@ -24,7 +24,7 @@ namespace FINE.Service.Helpers
             {
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, name),
-                new Claim(ClaimTypes.NameIdentifier, staffId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, id.ToString()),
             };                     
             if (role != 0)
             {

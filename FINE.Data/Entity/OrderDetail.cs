@@ -5,7 +5,7 @@ namespace FINE.Data.Entity;
 
 public partial class OrderDetail
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public Guid OrderId { get; set; }
 

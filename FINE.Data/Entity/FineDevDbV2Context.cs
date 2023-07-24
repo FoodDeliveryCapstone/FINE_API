@@ -183,9 +183,9 @@ public partial class FineDevDbV2Context : DbContext
 
         modelBuilder.Entity<Destination>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK_Brand");
-
             entity.ToTable("Destination");
+
+            entity.HasIndex(e => e.Code, "IX_Destination").IsUnique();
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Code).HasMaxLength(50);
@@ -213,6 +213,7 @@ public partial class FineDevDbV2Context : DbContext
         {
             entity.ToTable("Feedback");
 
+            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
@@ -377,6 +378,7 @@ public partial class FineDevDbV2Context : DbContext
         {
             entity.ToTable("OrderDetail");
 
+            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.ProductCode).HasMaxLength(50);
             entity.Property(e => e.ProductName).HasMaxLength(225);
 
@@ -541,9 +543,7 @@ public partial class FineDevDbV2Context : DbContext
 
         modelBuilder.Entity<Staff>(entity =>
         {
-            entity.Property(e => e.Id)
-                .HasMaxLength(10)
-                .IsFixedLength();
+            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
             entity.Property(e => e.Name).HasMaxLength(256);
             entity.Property(e => e.Password).HasMaxLength(256);
@@ -600,9 +600,6 @@ public partial class FineDevDbV2Context : DbContext
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
-            entity.Property(e => e.StaffId)
-                .HasMaxLength(10)
-                .IsFixedLength();
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Box).WithMany(p => p.StationReports)

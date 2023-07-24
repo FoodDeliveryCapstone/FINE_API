@@ -3,7 +3,7 @@
     public class CreateAreaRequest
     {
         public string Name { get; set; } = null!;
-        public int CampusId { get; set; }
+        public int DestinationId { get; set; }
         public string AreaCode { get; set; } = null!;
     }
 }

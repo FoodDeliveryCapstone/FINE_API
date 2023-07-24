@@ -24,12 +24,12 @@ namespace FINE.Service.Service
     public interface ICustomerService
     {
         Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
-        Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId);
+        Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
         Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task Logout(string fcmToken);
-        Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(int customerId, UpdateCustomerRequest request);
+        Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
     }
     public class CustomerService : ICustomerService
     {
@@ -37,18 +37,16 @@ namespace FINE.Service.Service
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly IFcmTokenService _customerFcmtokenService;
-        private readonly IMembershipCardService _membershipCardService;
-        private readonly IAccountService _accountService;
+        //private readonly IAccountService _accountService;
 
         public CustomerService(IUnitOfWork unitOfWork, IMapper mapper, IFcmTokenService customerFcmtokenService,
-                                IConfiguration configuration, IMembershipCardService membershipCardService, IAccountService accountService)
+                                IConfiguration configuration /*IAccountService accountService*/)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _configuration = configuration;
             _customerFcmtokenService = customerFcmtokenService;
-            _membershipCardService = membershipCardService;
-            _accountService = accountService;
+            //_accountService = accountService;
         }
 
         public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email)
@@ -75,10 +73,11 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(int customerId)
+        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string id)
         {
             try
             {
+                var customerId = Guid.Parse(id);
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                     .Where(x => x.Id == customerId)
                     .FirstOrDefaultAsync();
@@ -137,19 +136,14 @@ namespace FINE.Service.Service
                 var customer = _mapper.Map<CreateCustomerRequest, Customer>(request);
 
                 #region recognize school by email root
+
                 string[] splitEmail = customer.Email.Split('@');
                 var rootEmail = splitEmail[1];
-                var uniInfo = _unitOfWork.Repository<UniversityInfo>().GetAll()
-                                            .FirstOrDefault(x => x.Domain.Contains(rootEmail));
-                if (uniInfo == null)
-                    throw new ErrorResponse(404, (int)CampusErrorEnums.NOT_FOUND_ID, CampusErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
                 #endregion
 
                 var code = Utils.GenerateRandomCode();
 
-                customer.CustomerCode = uniInfo.University.UniCode + "-" + code;
-                customer.UniversityId = uniInfo.University.Id;
-                customer.UniInfoId = uniInfo.Id;
                 customer.CreateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<Customer>().InsertAsync(customer);
@@ -172,10 +166,11 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(int customerId, UpdateCustomerRequest request)
+        public async Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string id, UpdateCustomerRequest request)
         {
             try
             {
+                var customerId = Guid.Parse(id);
                 Customer customer = null;
                 customer = _unitOfWork.Repository<Customer>()
                                         .Find(c => c.Id == customerId);
@@ -249,18 +244,14 @@ namespace FINE.Service.Service
 
                     //create account (wallet) for customer
                     customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
-
-                    CreateNewMemberShipCard(customer.UniversityId, customer.Id);
-
-                    var membership = _membershipCardService.GetMembershipCardActiveByCustomerIdAndBrandId(customer.Id, customer.UniversityId);
+                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email));               
 
                     //generate token
                     var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
 
                     decimal balance = 0;
                     decimal point = 0;
-                    var account = _accountService.GetAccountByCustomerId(customer.Id).Result;
+                    //var account = _accountService.GetAccountByCustomerId(customer.Id).Result;
 
                     //Add fcm token 
                     if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
@@ -283,7 +274,7 @@ namespace FINE.Service.Service
                 }
                 else
                 {
-                    CheckMembershipCard(customer, customer.UniversityId);
+                    //CheckMembershipCard(customer, customer.UniversityId);
 
                     var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
 
@@ -312,82 +303,82 @@ namespace FINE.Service.Service
             }
         }
 
-        public void CreateNewMemberShipCard(int uniId, int customerId)
-        {
-            try
-            {
-                string newCardCode = GenerateNewMembershipCardCode(uniId);
-                var card = _membershipCardService.GetMembershipCardByCodeByBrandId(newCardCode, uniId);
+        //public void CreateNewMemberShipCard(int uniId, int customerId)
+        //{
+        //    try
+        //    {
+        //        string newCardCode = GenerateNewMembershipCardCode(uniId);
+        //        var card = _membershipCardService.GetMembershipCardByCodeByBrandId(newCardCode, uniId);
 
-                while (card != null)
-                {
-                    newCardCode = GenerateNewMembershipCardCode(uniId);
-                }
+        //        while (card != null)
+        //        {
+        //            newCardCode = GenerateNewMembershipCardCode(uniId);
+        //        }
 
-                var newMembershipCard = _membershipCardService.AddMembershipCard(newCardCode, uniId, customerId).Result;
+        //        var newMembershipCard = _membershipCardService.AddMembershipCard(newCardCode, uniId, customerId).Result;
 
-                _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.CreditAccount);
-                _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.PointAccount);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+        //        _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.CreditAccount);
+        //        _accountService.CreateAccountByMemCard(newMembershipCard.CardCode, 0, uniId, newMembershipCard.Id, (int)AccountTypeEnum.PointAccount);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
-        private void CheckMembershipCard(Customer customer, int uniId)
-        {
-            try
-            {
-                var membershipCard = customer.MembershipCards.Where(q => (bool)q.Active).FirstOrDefault();
-                //Check MemberShipCard exist
-                if (membershipCard != null)
-                {
-                    var accountList = membershipCard.Accounts.ToList();
-                    if (accountList.Count() > 0)
-                    {
-                        //Create CreditAccount
-                        if (accountList.Where(x => x.Type == (int)AccountTypeEnum.CreditAccount) == null)
-                        {
-                            _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.CreditAccount);
-                        }
-                        //Create PointAccount
-                        if (accountList.Where(q => q.Type == (int)AccountTypeEnum.PointAccount) == null)
-                        {
-                            _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.PointAccount);
-                        }
-                    }
-                    else
-                    {
-                        _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.CreditAccount);
-                        _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.PointAccount);
-                    }
-                }
-                else
-                {
-                    //Create new MembershipCard Account
-                    CreateNewMemberShipCard(uniId, customer.Id);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-        public static string GenerateNewMembershipCardCode(int uniId)
-        {
-            var randomCode = new Random();
-            switch (uniId)
-            {
-                case (int)CampusTypeEnum.FPT:
-                    string chars = "0123456789";
-                    int length = 10;
-                    return new string(Enumerable.Repeat(chars, length)
-                    .Select(s => s[randomCode.Next(s.Length)]).ToArray());
-                default:
-                    return String.Empty;
-            }
-        }
+        //private void CheckMembershipCard(Customer customer, int uniId)
+        //{
+        //    try
+        //    {
+        //        var membershipCard = customer.MembershipCards.Where(q => (bool)q.Active).FirstOrDefault();
+        //        //Check MemberShipCard exist
+        //        if (membershipCard != null)
+        //        {
+        //            var accountList = membershipCard.Accounts.ToList();
+        //            if (accountList.Count() > 0)
+        //            {
+        //                //Create CreditAccount
+        //                if (accountList.Where(x => x.Type == (int)AccountTypeEnum.CreditAccount) == null)
+        //                {
+        //                    _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.CreditAccount);
+        //                }
+        //                //Create PointAccount
+        //                if (accountList.Where(q => q.Type == (int)AccountTypeEnum.PointAccount) == null)
+        //                {
+        //                    _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.PointAccount);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.CreditAccount);
+        //                _accountService.CreateAccountByMemCard(membershipCard.CardCode, 0, uniId, membershipCard.Id, (int)AccountTypeEnum.PointAccount);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            //Create new MembershipCard Account
+        //            CreateNewMemberShipCard(uniId, customer.Id);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
+        //public static string GenerateNewMembershipCardCode(int uniId)
+        //{
+        //    var randomCode = new Random();
+        //    switch (uniId)
+        //    {
+        //        case (int)DestinationTypeEnum.FPT:
+        //            string chars = "0123456789";
+        //            int length = 10;
+        //            return new string(Enumerable.Repeat(chars, length)
+        //            .Select(s => s[randomCode.Next(s.Length)]).ToArray());
+        //        default:
+        //            return String.Empty;
+        //    }
+        //}
 
         public async Task Logout(string fcmToken)
         {

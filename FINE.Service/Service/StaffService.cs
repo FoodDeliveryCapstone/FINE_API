@@ -30,10 +30,10 @@ namespace FINE.Service.Service
     public interface IStaffService
     {
         Task<BaseResponsePagingViewModel<StaffResponse>> GetStaffs(StaffResponse filter, PagingRequest paging);
-        Task<BaseResponseViewModel<StaffResponse>> GetStaffById(int staffId);
+        Task<BaseResponseViewModel<StaffResponse>> GetStaffById(string staffId);
         Task<BaseResponseViewModel<dynamic>> Login(LoginRequest request);
         Task<BaseResponseViewModel<StaffResponse>> CreateAdminManager(CreateStaffRequest request);
-        Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(int staffId, UpdateStaffRequest request);
+        Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request);
     }
 
     public class StaffService : IStaffService
@@ -65,7 +65,6 @@ namespace FINE.Service.Service
             var staff = _mapper.Map<CreateStaffRequest,Staff>(request);
 
             staff.Password = Utils.GetHash(request.Pass, _fineSugar);
-            staff.IsAvailable = true;
             staff.CreateAt = DateTime.Now;
 
             await _unitOfWork.Repository<Staff>().InsertAsync(staff);
@@ -83,8 +82,9 @@ namespace FINE.Service.Service
             };
         }
 
-        public async Task<BaseResponseViewModel<StaffResponse>> GetStaffById(int staffId)
+        public async Task<BaseResponseViewModel<StaffResponse>> GetStaffById(string id)
         {
+            var staffId = Guid.Parse(id);
             var staff = _unitOfWork.Repository<Staff>().GetAll()
                                    .FirstOrDefault(x => x.Id == staffId);
             if (staff == null)
@@ -127,7 +127,7 @@ namespace FINE.Service.Service
         public async Task<BaseResponseViewModel<dynamic>> Login(LoginRequest request)
         {
             var staff = _unitOfWork.Repository<Staff>().GetAll()
-                                    .Where(x => x.Username.Equals(request.UserName) && x.IsAvailable == true)
+                                    .Where(x => x.Username.Equals(request.UserName))
                                     .FirstOrDefault();
 
             if (staff == null || !Utils.CompareHash(request.Password, staff.Password, _fineSugar))
@@ -150,17 +150,17 @@ namespace FINE.Service.Service
                         Status = new StatusViewModel()
                         {
                             Success = false,
-                            Message = CampusErrorEnums.NOT_FOUND_ID.GetDisplayName(),
-                            ErrorCode = (int)CampusErrorEnums.NOT_FOUND_ID
+                            Message = DestinationErrorEnums.NOT_FOUND_ID.GetDisplayName(),
+                            ErrorCode = (int)DestinationErrorEnums.NOT_FOUND_ID
                         }
                     };
                 }
             }
 
-            if (request.FcmToken != null && request.FcmToken.Trim().Length > 0)
-                _customerFcmtokenService.AddStaffFcmToken(request.FcmToken, staff.Id);
+            //if (request.FcmToken != null && request.FcmToken.Trim().Length > 0)
+            //    _customerFcmtokenService.AddStaffFcmToken(request.FcmToken, staff.Id);
 
-            var token = AccessTokenManager.GenerateJwtToken(staff.Name, staff.RoleType, staff.Id, _config);
+            //var token = AccessTokenManager.GenerateJwtToken(staff.Name, staff.RoleType, staff.Id, _config);
             return new BaseResponseViewModel<dynamic>()
             {
                 Status = new StatusViewModel()
@@ -171,15 +171,16 @@ namespace FINE.Service.Service
                 },
                 Data = new
                 {
-                    AccessToken = token,
+                    //AccessToken = token,
                     Name = staff.Name,
                     Roles = staff.RoleType
                 }
             };
         }
 
-        public async Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(int staffId, UpdateStaffRequest request)
+        public async Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string id, UpdateStaffRequest request)
         {
+            var staffId = Guid.Parse(id);
             var staff = _unitOfWork.Repository<Staff>().Find(x => x.Id == staffId);
             if (staff == null)
             {

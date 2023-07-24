@@ -14,9 +14,9 @@ namespace FINE.Service.Service
 {
     public interface IFcmTokenService
     {
-        void AddFcmToken(string fcmToken, int customerId);
+        void AddFcmToken(string fcmToken, Guid customerId);
 
-        void AddStaffFcmToken(string fcmToken, int staffId);
+        //void AddStaffFcmToken(string fcmToken, string staffId);
 
         int RemoveFcmTokens(ICollection<string> fcmTokens);
 
@@ -39,7 +39,7 @@ namespace FINE.Service.Service
             _fmService = fmService;
         }
 
-        public void AddFcmToken(string fcmToken, int customerId)
+        public void AddFcmToken(string fcmToken, Guid customerId)
         {
             try
             {
@@ -76,42 +76,42 @@ namespace FINE.Service.Service
             }
         }
 
-        public void AddStaffFcmToken(string fcmToken, int staffId)
-        {
-            try
-            {
-                var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
-                    .FirstOrDefault(x => x.StaffId == staffId);
+        //public void AddStaffFcmToken(string fcmToken, Guid staffId)
+        //{
+        //    try
+        //    {
+        //        var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
+        //            .FirstOrDefault(x => x.StaffId == staffId);
 
-                if (fcm == null)
-                {
-                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+        //        if (fcm == null)
+        //        {
+        //            _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
 
-                    var newtoken = new Fcmtoken()
-                    {
-                        Token = fcmToken,
-                        StaffId = staffId,
-                        CreateAt = DateTime.UtcNow
-                    };
-                    _unitOfWork.Repository<Fcmtoken>().Insert(newtoken);
-                    _unitOfWork.Commit();
-                }
-                else if (!fcm.Token.Equals(fcmToken))
-                {
-                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
+        //            var newtoken = new Fcmtoken()
+        //            {
+        //                Token = fcmToken,
+        //                StaffId = staffId,
+        //                CreateAt = DateTime.UtcNow
+        //            };
+        //            _unitOfWork.Repository<Fcmtoken>().Insert(newtoken);
+        //            _unitOfWork.Commit();
+        //        }
+        //        else if (!fcm.Token.Equals(fcmToken))
+        //        {
+        //            _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
 
-                    fcm.StaffId = staffId;
-                    fcm.UpdateAt = DateTime.UtcNow;
+        //            fcm.StaffId = staffId;
+        //            fcm.UpdateAt = DateTime.UtcNow;
 
-                    _unitOfWork.Repository<Fcmtoken>().Update(fcm, fcm.Id);
-                    _unitOfWork.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
+        //            _unitOfWork.Repository<Fcmtoken>().Update(fcm, fcm.Id);
+        //            _unitOfWork.Commit();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw;
+        //    }
+        //}
 
         public int RemoveFcmTokens(ICollection<string> fcmTokens)
         {

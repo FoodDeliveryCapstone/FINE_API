@@ -120,35 +120,35 @@ namespace FINE.API
             // Register your own things directly with Autofac, like:
             builder.RegisterType<UnitOfWork>().As<IUnitOfWork>();
 
-            builder.RegisterType<AreaService>().As<IAreaService>();
-            builder.RegisterType<StaffService>().As<IStaffService>();
-            builder.RegisterType<OrderService>().As<IOrderService>();
-            builder.RegisterType<StoreService>().As<IStoreService>();
-            builder.RegisterType<CampusService>().As<ICampusService>();
-            builder.RegisterType<NotifyService>().As<INotifyService>();
-            builder.RegisterType<PaymentService>().As<IPaymentService>();
-            builder.RegisterType<ProductService>().As<IProductService>();
-            builder.RegisterType<AccountService>().As<IAccountService>();
-            builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
-            builder.RegisterType<CustomerService>().As<ICustomerService>();
-            builder.RegisterType<BlogPostService>().As<IBlogPostService>();
-            builder.RegisterType<UniversityService>().As<IUniversityService>();
-            builder.RegisterType<StaffReportService>().As<IStaffReportService>();
-            builder.RegisterType<StoreCategoryService>().As<IStoreCategoryService>();
-            builder.RegisterType<MembershipCardService>().As<IMembershipCardService>();
-            builder.RegisterType<UniversityInfoService>().As<IUniversityInfoService>();
-            builder.RegisterType<SystemCategoryService>().As<ISystemCategoryService>();
-            builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
-            builder.RegisterType<ProductCollectionService>().As<IProductCollectionService>();
+            //builder.RegisterType<AreaService>().As<IAreaService>();
+            //builder.RegisterType<StaffService>().As<IStaffService>();
+            //builder.RegisterType<OrderService>().As<IOrderService>();
+            //builder.RegisterType<StoreService>().As<IStoreService>();
+            //builder.RegisterType<DestinationService>().As<IDestinationService>();
+            //builder.RegisterType<NotifyService>().As<INotifyService>();
+            //builder.RegisterType<PaymentService>().As<IPaymentService>();
+            //builder.RegisterType<ProductService>().As<IProductService>();
+            //builder.RegisterType<AccountService>().As<IAccountService>();
+            //builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
+            //builder.RegisterType<CustomerService>().As<ICustomerService>();
+            //builder.RegisterType<BlogPostService>().As<IBlogPostService>();
+            //builder.RegisterType<UniversityService>().As<IUniversityService>();
+            //builder.RegisterType<StaffReportService>().As<IStaffReportService>();
+            //builder.RegisterType<StoreCategoryService>().As<IStoreCategoryService>();
+            //builder.RegisterType<MembershipCardService>().As<IMembershipCardService>();
+            //builder.RegisterType<UniversityInfoService>().As<IUniversityInfoService>();
+            //builder.RegisterType<SystemCategoryService>().As<ISystemCategoryService>();
+            //builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
+            //builder.RegisterType<ProductCollectionService>().As<IProductCollectionService>();
 
-            builder.RegisterType<ProductCollectionItemService>().As<IProductCollectionItemService>();
-            builder.RegisterType<ProductCollectionTimeSlotService>().As<IProductCollectionTimeSlotService>();
-            builder.RegisterType<TimeslotService>().As<ITimeslotService>();
-            builder.RegisterType<MenuService>().As<IMenuService>();           
-            builder.RegisterType<RoomService>().As<IRoomService>();
-            builder.RegisterType<FloorService>().As<IFloorService>();
-            builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();
-            builder.RegisterType<RevenueService>().As<IRevenueService>();
+            //builder.RegisterType<ProductCollectionItemService>().As<IProductCollectionItemService>();
+            //builder.RegisterType<ProductCollectionTimeSlotService>().As<IProductCollectionTimeSlotService>();
+            //builder.RegisterType<TimeslotService>().As<ITimeslotService>();
+            //builder.RegisterType<MenuService>().As<IMenuService>();           
+            //builder.RegisterType<RoomService>().As<IRoomService>();
+            //builder.RegisterType<FloorService>().As<IFloorService>();
+            //builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();
+            //builder.RegisterType<RevenueService>().As<IRevenueService>();
 
             builder.Register<IRedisClientsManager>(c =>
             new RedisManagerPool(Configuration.GetConnectionString("RedisConnectionString")));

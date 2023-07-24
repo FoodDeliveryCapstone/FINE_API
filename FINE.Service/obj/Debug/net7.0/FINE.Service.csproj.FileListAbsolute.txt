@@ -28,8 +28,6 @@ D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\refint\FINE.Service.
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.pdb
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\FINE.Service.genruntimeconfig.cache
 D:\FINE Repo\FINE_Product_API\FINE.Service\obj\Debug\net7.0\ref\FINE.Service.dll
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\appsettings.Development.json
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\appsettings.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Service.deps.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Service.runtimeconfig.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE.Service\bin\Debug\net7.0\FINE.Service.dll

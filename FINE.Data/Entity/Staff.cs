@@ -5,7 +5,7 @@ namespace FINE.Data.Entity;
 
 public partial class Staff
 {
-    public string Id { get; set; } = null!;
+    public Guid Id { get; set; }
 
     public string Name { get; set; } = null!;
 

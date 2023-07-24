@@ -33,7 +33,7 @@ namespace FINE.Service.Helpers
             Shipper = 3
         }
 
-        public enum CampusTypeEnum
+        public enum DestinationTypeEnum
         {
             FPT = 1,
         }

@@ -7,7 +7,7 @@ public partial class StationReport
 {
     public Guid Id { get; set; }
 
-    public string StaffId { get; set; } = null!;
+    public Guid StaffId { get; set; }
 
     public Guid BoxId { get; set; }
 

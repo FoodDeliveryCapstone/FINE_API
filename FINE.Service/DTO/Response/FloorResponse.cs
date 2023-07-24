@@ -12,7 +12,7 @@ namespace FINE.Service.DTO.Response
 
         public int Number { get; set; }
 
-        public int? CampusId { get; set; }
+        public int? DestinationId { get; set; }
 
         public bool? IsActive { get; set; }
 

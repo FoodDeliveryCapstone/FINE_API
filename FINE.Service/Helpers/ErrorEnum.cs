@@ -40,13 +40,13 @@ namespace FINE.Service.Helpers
             NOT_FOUND_ID = 4041
         }
 
-        public enum CampusErrorEnums
+        public enum DestinationErrorEnums
         {
             //400
-            [Display(Name = "This campus code already exsist!")]
-            CAMPUS_CODE_EXSIST = 4001,
+            [Display(Name = "This Destination code already exsist!")]
+            Destination_CODE_EXSIST = 4001,
             //404
-            [Display(Name = "Not found this campus id!")]
+            [Display(Name = "Not found this Destination id!")]
             NOT_FOUND_ID = 4041
         }
 
