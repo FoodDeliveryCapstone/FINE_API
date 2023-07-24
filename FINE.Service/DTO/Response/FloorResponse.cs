@@ -8,11 +8,11 @@ namespace FINE.Service.DTO.Response
 {
     public class FloorResponse
     {
-        public int? Id { get; set; }
+        public Guid? Id { get; set; }
 
-        public int Number { get; set; }
+        public Guid? DestionationId { get; set; }
 
-        public int? DestinationId { get; set; }
+        public int? Number { get; set; }
 
         public bool? IsActive { get; set; }
 

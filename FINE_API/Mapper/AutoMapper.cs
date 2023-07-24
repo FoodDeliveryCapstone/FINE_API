@@ -20,11 +20,15 @@ namespace FINE.API.Mapper
     {
         public AutoMapperProfile()
         {
-            //#region Destination
-            //CreateMap<Destination, DestinationResponse>().ReverseMap();
-            //CreateMap<CreateDestinationRequest, Destination>();
-            //CreateMap<UpdateDestinationRequest, Destination>();
-            //#endregion
+            #region Destination
+            CreateMap<Destination, DestinationResponse>().ReverseMap();
+            CreateMap<CreateDestinationRequest, Destination>();
+            CreateMap<UpdateDestinationRequest, Destination>();
+            #endregion
+
+            #region Floor
+            CreateMap<Floor, FloorResponse>().ReverseMap();
+            #endregion
 
             //#region Customer
 
@@ -137,10 +141,6 @@ namespace FINE.API.Mapper
 
             //CreateMap<AddProductToMenuRequest, ProductInMenu>();
             //CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
-            //#endregion
-
-            //#region Floor
-            //CreateMap<Floor, FloorResponse>().ReverseMap();
             //#endregion
 
             //CreateMap<Store, ProductInMenuResponse>().ReverseMap();

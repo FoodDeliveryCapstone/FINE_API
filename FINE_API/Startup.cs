@@ -120,11 +120,13 @@ namespace FINE.API
             // Register your own things directly with Autofac, like:
             builder.RegisterType<UnitOfWork>().As<IUnitOfWork>();
 
+            builder.RegisterType<FloorService>().As<IFloorService>();
+            builder.RegisterType<DestinationService>().As<IDestinationService>();
+
             //builder.RegisterType<AreaService>().As<IAreaService>();
             //builder.RegisterType<StaffService>().As<IStaffService>();
             //builder.RegisterType<OrderService>().As<IOrderService>();
             //builder.RegisterType<StoreService>().As<IStoreService>();
-            //builder.RegisterType<DestinationService>().As<IDestinationService>();
             //builder.RegisterType<NotifyService>().As<INotifyService>();
             //builder.RegisterType<PaymentService>().As<IPaymentService>();
             //builder.RegisterType<ProductService>().As<IProductService>();
@@ -146,7 +148,6 @@ namespace FINE.API
             //builder.RegisterType<TimeslotService>().As<ITimeslotService>();
             //builder.RegisterType<MenuService>().As<IMenuService>();           
             //builder.RegisterType<RoomService>().As<IRoomService>();
-            //builder.RegisterType<FloorService>().As<IFloorService>();
             //builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();
             //builder.RegisterType<RevenueService>().As<IRevenueService>();
 
