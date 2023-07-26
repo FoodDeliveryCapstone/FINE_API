@@ -27,6 +27,8 @@ public partial class Order
 
     public Guid StoreId { get; set; }
 
+    public Guid StationId { get; set; }
+
     public bool IsConfirm { get; set; }
 
     public bool IsPartyMode { get; set; }
