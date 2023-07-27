@@ -36,8 +36,8 @@ namespace FINE.Service.Helpers
             [Display(Name = "Invalid phone number!")]
             INVALID_PHONENUMBER = 4001,
             //404
-            [Display(Name = "Not found this customer id!")]
-            NOT_FOUND_ID = 4041
+            [Display(Name = "Not found this customer!")]
+            NOT_FOUND = 4041
         }
 
         public enum DestinationErrorEnums
@@ -46,8 +46,8 @@ namespace FINE.Service.Helpers
             [Display(Name = "This Destination code already exsist!")]
             Destination_CODE_EXSIST = 4001,
             //404
-            [Display(Name = "Not found this Destination id!")]
-            NOT_FOUND_ID = 4041
+            [Display(Name = "Not found this destination!")]
+            NOT_FOUND = 4041
         }
 
         public enum ProductErrorEnums
@@ -81,8 +81,8 @@ namespace FINE.Service.Helpers
         public enum AreaErrorEnums
         {
             //404
-            [Display(Name = "Not found this area Id!")]
-            NOT_FOUND_ID = 4041,
+            [Display(Name = "Not found this area!")]
+            NOT_FOUND = 4041,
 
             [Display(Name = "Not found this area code!")]
             NOT_FOUND_CODE = 4042,
@@ -92,45 +92,14 @@ namespace FINE.Service.Helpers
             CODE_EXSIST = 4001,
         }
 
-        public enum UnversityInfoErrorEnums
-        {
-            //404
-            [Display(Name = "University Infor Id not found")]
-            NOT_FOUND_ID = 4041,
-
-            //400
-            [Display(Name = "This University Infor already exsist!")]
-            UNIVERSITYINFO_EXSIST = 4001,
-        }
         public enum TimeSlotErrorEnums
         {
             //400
             [Display(Name = "Out of Time Slot!")]
             OUT_OF_TIMESLOT = 4001,
             //404
-            [Display(Name = "Not found this time slot Id!")]
+            [Display(Name = "Not found this time slot!")]
             NOT_FOUND = 4041,
-        }
-
-        public enum ProductCollectionTimeSlotErrorEnums
-        {
-            //404
-            [Display(Name = "Not found this product collection time slot Id!")]
-            NOT_FOUND_ID = 4041,
-        }
-
-        public enum SystemCategoryErrorEnums
-        {
-            //404
-            [Display(Name = "Not found this system category Id!")]
-            NOT_FOUND_ID = 4041,
-
-            [Display(Name = "Not found this system category code!")]
-            NOT_FOUND_CODE = 4042,
-
-            //400
-            [Display(Name = "This system category code already exsist!")]
-            CODE_EXSIST = 4001,
         }
 
         public enum NotifyErrorEnum
@@ -147,81 +116,17 @@ namespace FINE.Service.Helpers
 
         }
 
-        public enum StaffReportErrorEnum
-        {
-            //404
-            [Display(Name = "Not found Staff report base on this staff Id!")]
-            NOT_FOUND_ID = 4041,
-
-            //400
-            [Display(Name = "This Staff Report already exsist!")]
-            STAFF_REPORT_EXSIST = 4001,
-        }
-
-
-        public enum StoreCategoryErrorEnums
-        {
-            //404
-            [Display(Name = "Not found this store category Id!")]
-            NOT_FOUND_ID = 4041,
-        }
-
-        public enum ProductCollectionErrorEnums
-        {
-            //404
-            [Display(Name = "Not found this product collection Id!")]
-            NOT_FOUND_ID = 4041,
-
-        }
-
-        public enum ProductCollectionItemErrorEnums
-        {
-            //404
-            [Display(Name = "Not found this product collection item Id!")]
-            NOT_FOUND_ID = 4041,
-
-        }
-
-
         public enum StaffErrorEnum
         {
             //404
-            [Display(Name = "Staff ID not found!")]
-            NOT_FOUND_ID = 4041,
-            [Display(Name = "Staff need to have customer account first!")]
-            NOT_FOUND_CUSTOMER_ID = 4042,
+            [Display(Name = "Staff not found!")]
+            NOT_FOUND = 4041,
 
             //400
             [Display(Name = "This staff already exsist!")]
             STAFF_EXSIST = 4001,
             [Display(Name = "Username or password is not correct")]
             LOGIN_FAIL = 4002,
-        }
-
-        public enum BlogPostErrorEnums
-        {
-            //404
-            [Display(Name = "Not found this Blog Post Id!")]
-            NOT_FOUND_ID = 4041,
-
-
-            //400
-            [Display(Name = "This Blog Post already exsist!")]
-            BLOGPOST_EXSIST = 4001,
-        }
-
-        public enum UniversityErrorenums
-        {
-            //404
-            [Display(Name = "Not found this university Id!")]
-            NOT_FOUND_ID = 4041,
-
-            [Display(Name = "Not found this university code!")]
-            NOT_FOUND_CODE = 4042,
-
-            //400
-            [Display(Name = "This university code already exsist!")]
-            CODE_EXSIST = 4001,
         }
 
         public enum MenuErrorEnums
@@ -236,8 +141,8 @@ namespace FINE.Service.Helpers
         public enum FloorErrorEnums
         {
             //404
-            [Display(Name = "Not found this floor Id!")]
-            NOT_FOUND_ID = 4041,
+            [Display(Name = "Not found this floor!")]
+            NOT_FOUND = 4041,
         }
 
         public enum ProductInMenuErrorEnums

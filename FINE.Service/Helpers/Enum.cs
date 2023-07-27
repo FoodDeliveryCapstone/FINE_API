@@ -4,19 +4,6 @@ namespace FINE.Service.Helpers
 {
     public class Enum
     {
-        //public enum AreaEnum
-        //{
-        // "Khu A - Khu vực trống đồng" = 1
-        // "Khu B - Khu vực tiện lợi 7Element" = 2
-        // "Khu C - Khu vực thư viện" = 3
-        // "Khu D - Khu vực Passio" = 4
-        //}
-
-        //6h30 - 7h 
-        //9h15-9h45
-        //12h 12h30
-        //2h45- 3h15
-
         public enum FcmTokenType
         {
             Customer = 1,
@@ -44,19 +31,16 @@ namespace FINE.Service.Helpers
             PointAccount = 2
         }
 
-        public enum MembershipCardTypeEnum
-        {
-            Free = 1,
-            Green = 2,
-            Siver = 3,
-            Gold = 4,
-            Platinum = 5,
-        }
-
         public enum OrderTypeEnum
         {
             AtStore = 1,
             Delivery = 2
+        }
+
+        public enum OtherAmountTypeEnum
+        {
+            ShippingFee = 1,
+            Discount = 2
         }
 
         public enum UpdateOrderTypeEnum
@@ -120,20 +104,6 @@ namespace FINE.Service.Helpers
         {
             ForOrder = 1,
             ForGift = 2,
-        }
-
-        public enum UniversityStatusEnum
-        {
-            IsStudent = 1,
-            IsTeacher = 2
-        }
-
-        public enum BlogPostStatusEnum
-        { 
-            IsNotActive = 1,
-            IsActive = 2,
-            IsNotDialog = 1,
-            IsDialog = 2
         }
     }
 }

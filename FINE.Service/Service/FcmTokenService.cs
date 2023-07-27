@@ -48,8 +48,7 @@ namespace FINE.Service.Service
 
                 if (fcm == null)
                 {
-                    _fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
-
+                    //_fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
                     var newtoken = new Fcmtoken()
                     {
                         Token = fcmToken,
@@ -63,8 +62,7 @@ namespace FINE.Service.Service
                 {
                     //_fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
                     fcm.Token = fcmToken;
-                    fcm.CustomerId = customerId;
-                    fcm.UpdateAt= DateTime.UtcNow;
+                    fcm.UpdateAt= DateTime.Now;
 
                     _unitOfWork.Repository<Fcmtoken>().UpdateDetached(fcm);
                     _unitOfWork.Commit();

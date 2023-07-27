@@ -9,7 +9,7 @@ namespace FINE.Service.Service
 {
     public class FireBaseService
     {
-        public static int GetUserIdFromHeaderToken(string accessToken)
+        public static string GetUserIdFromHeaderToken(string accessToken)
         {
             var handler = new JwtSecurityTokenHandler();
             try
@@ -18,12 +18,26 @@ namespace FINE.Service.Service
             }
             catch (Exception)
             {
-                return -1;
+                return null;
             }
             var tokenS = handler.ReadToken(accessToken) as JwtSecurityToken;
             var claims = tokenS.Claims;
-            var id = Int32.Parse(claims.Where(x => x.Type == ClaimTypes.NameIdentifier).FirstOrDefault().Value.ToString());
+            var id = claims.Where(x => x.Type == ClaimTypes.NameIdentifier).FirstOrDefault().Value.ToString();
             return id;
+        }
+        public async static Task<UserRecord> GetUserRecordByIdToken(string idToken)
+        {
+            try
+            {
+                var auth = FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance;
+                FirebaseToken decodedToken = await auth.VerifyIdTokenAsync(idToken);
+                UserRecord userRecord = await auth.GetUserAsync(decodedToken.Uid);
+                return userRecord;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }

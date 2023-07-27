@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,7 +15,7 @@ namespace FINE.Service.Helpers
 {
     public class AccessTokenManager
     {
-        public static string GenerateJwtToken(string name, int role, Guid? id, IConfiguration configuration)
+        public static string GenerateJwtToken(string name, string[] roles, Guid? id, IConfiguration configuration)
         {
             var tokenConfig = configuration.GetSection("Token");
             var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(tokenConfig["SecretKey"]));
@@ -25,10 +26,13 @@ namespace FINE.Service.Helpers
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, name),
                 new Claim(ClaimTypes.NameIdentifier, id.ToString()),
-            };                     
-            if (role != 0)
+            };
+            if (roles != null && roles.Length > 0)
             {
-                permClaims.Add(new Claim(ClaimTypes.Role, ((SystemRoleTypeEnum)role).ToString()));
+                foreach (string role in roles)
+                {
+                    permClaims.Add(new Claim(ClaimTypes.Role, role));
+                }
             }
             var token = new JwtSecurityToken(tokenConfig["Issuer"],
                 tokenConfig["Issuer"],

@@ -14,6 +14,7 @@ using FirebaseAdmin.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
+using NetTopologySuite.Mathematics;
 using System;
 using System.Linq.Dynamic.Core;
 using static FINE.Service.Helpers.Enum;
@@ -23,13 +24,13 @@ namespace FINE.Service.Service
 {
     public interface ICustomerService
     {
-        Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
+        //Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
-        Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
-        Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
-        Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
+        //Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
+        //Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
+        Task<BaseResponseViewModel<LoginResponse>> LoginByMail(ExternalAuthRequest data);
+        //Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
         Task Logout(string fcmToken);
-        Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
     }
     public class CustomerService : ICustomerService
     {
@@ -49,169 +50,12 @@ namespace FINE.Service.Service
             //_accountService = accountService;
         }
 
-        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email)
+        public async Task<BaseResponseViewModel<LoginResponse>> LoginByMail(ExternalAuthRequest data)
         {
             try
             {
-                var customer = await _unitOfWork.Repository<Customer>().GetAll()
-                     .Where(x => x.Email.Contains(email)).FirstOrDefaultAsync();
+                string newAccessToken = null;
 
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<CustomerResponse>(customer)
-                };
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string id)
-        {
-            try
-            {
-                var customerId = Guid.Parse(id);
-                var customer = await _unitOfWork.Repository<Customer>().GetAll()
-                    .Where(x => x.Id == customerId)
-                    .FirstOrDefaultAsync();
-
-                if (customer == null)
-                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
-                        CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<CustomerResponse>(customer)
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw;
-            }
-        }
-
-        public async Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging)
-        {
-            try
-            {
-                var customers = _unitOfWork.Repository<Customer>().GetAll()
-                    .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
-                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
-                return new BaseResponsePagingViewModel<CustomerResponse>()
-                {
-                    Metadata = new PagingsMetadata()
-                    {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = customers.Item1
-                    },
-                    Data = customers.Item2.ToList()
-                };
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request)
-        {
-            try
-            {
-
-                var customer = _mapper.Map<CreateCustomerRequest, Customer>(request);
-
-                #region recognize school by email root
-
-                string[] splitEmail = customer.Email.Split('@');
-                var rootEmail = splitEmail[1];
-
-                #endregion
-
-                var code = Utils.GenerateRandomCode();
-
-                customer.CreateAt = DateTime.Now;
-
-                await _unitOfWork.Repository<Customer>().InsertAsync(customer);
-                await _unitOfWork.CommitAsync();
-
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<CustomerResponse>(customer)
-                };
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string id, UpdateCustomerRequest request)
-        {
-            try
-            {
-                var customerId = Guid.Parse(id);
-                Customer customer = null;
-                customer = _unitOfWork.Repository<Customer>()
-                                        .Find(c => c.Id == customerId);
-
-                if (customer == null)
-                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
-                                         CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-                var checkPhone = Utils.CheckVNPhone(request.Phone);
-
-                if (checkPhone == false)
-                    throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,
-                                        CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName());
-
-                customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
-
-                await _unitOfWork.Repository<Customer>().UpdateDetached(customer);
-                await _unitOfWork.CommitAsync();
-
-                return new BaseResponseViewModel<CustomerResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<CustomerResponse>(customer)
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data)
-        {
-            try
-            {
-                // check fcm token 
                 if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
                 {
                     if (!await _customerFcmtokenService.ValidToken(data.FcmToken))
@@ -240,68 +84,159 @@ namespace FINE.Service.Service
                     };
 
                     //create customer
-                    await CreateCustomer(newCustomer);
-
-                    //create account (wallet) for customer
-                    customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email));               
-
-                    //generate token
-                    var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
-
-                    decimal balance = 0;
-                    decimal point = 0;
-                    //var account = _accountService.GetAccountByCustomerId(customer.Id).Result;
-
-                    //Add fcm token 
-                    if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
-                        _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
-
-                    return new BaseResponseViewModel<LoginResponse>()
-                    {
-                        Status = new StatusViewModel()
-                        {
-                            Message = "Success",
-                            Success = true,
-                            ErrorCode = 0
-                        },
-                        Data = new LoginResponse()
-                        {
-                            access_token = newToken,
-                            customer = _mapper.Map<CustomerResponse>(customer)
-                        }
-                    };
+                    var customerResult = CreateCustomer(newCustomer).Result.Data;
+                    customer = _mapper.Map<Customer>(customerResult);
                 }
-                else
+
+                _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
+                newAccessToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, null, customer.Id, _configuration);
+                
+                return new BaseResponseViewModel<LoginResponse>()
                 {
-                    //CheckMembershipCard(customer, customer.UniversityId);
-
-                    var newToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, 0, customer.Id, _configuration);
-
-                    if (data.FcmToken != null && !data.FcmToken.Trim().Equals(""))
-                         _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
-
-                    return new BaseResponseViewModel<LoginResponse>()
+                    Status = new StatusViewModel()
                     {
-                        Status = new StatusViewModel()
-                        {
-                            Message = "Success",
-                            Success = true,
-                            ErrorCode = 0
-                        },
-                        Data = new LoginResponse()
-                        {
-                            access_token = newToken,
-                            customer = _mapper.Map<CustomerResponse>(customer)
-                        }
-                    };
-                }
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = new LoginResponse()
+                    {
+                        access_token = newAccessToken,
+                        customer = _mapper.Map<CustomerResponse>(customer)
+                    }
+                };
             }
             catch (ErrorResponse ex)
             {
                 throw ex;
             }
         }
+
+        public async Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request)
+        {
+            try
+            {
+                var customer = _mapper.Map<CreateCustomerRequest, Customer>(request);
+
+                customer.Id = Guid.NewGuid();
+                customer.CustomerCode = customer.Id.ToString() + '_' + DateTime.Now.Date.ToString("ddMMyyyy");
+                customer.CreateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Customer>().InsertAsync(customer);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<CustomerResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string id)
+        {
+            try
+            {
+                var customerId = Guid.Parse(id);
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                    .Where(x => x.Id == customerId)
+                    .FirstOrDefaultAsync();
+
+                if (customer == null)
+                    throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND,
+                        CustomerErrorEnums.NOT_FOUND.GetDisplayName());
+
+                return new BaseResponseViewModel<CustomerResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
+        }
+
+        //public async Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging)
+        //{
+        //    try
+        //    {
+        //        var customers = _unitOfWork.Repository<Customer>().GetAll()
+        //            .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
+        //            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+        //        return new BaseResponsePagingViewModel<CustomerResponse>()
+        //        {
+        //            Metadata = new PagingsMetadata()
+        //            {
+        //                Page = paging.Page,
+        //                Size = paging.PageSize,
+        //                Total = customers.Item1
+        //            },
+        //            Data = customers.Item2.ToList()
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw;
+        //    }
+        //}
+
+        //public async Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string id, UpdateCustomerRequest request)
+        //{
+        //    try
+        //    {
+        //        var customerId = Guid.Parse(id);
+        //        var customer = _unitOfWork.Repository<Customer>()
+        //                                .Find(c => c.Id == customerId);
+        //        if (customer == null)
+        //            throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND_ID,
+        //                                 CustomerErrorEnums.NOT_FOUND_ID.GetDisplayName());
+
+        //        if (request.Phone != null)
+        //        {
+        //            var checkPhone = Utils.CheckVNPhone(request.Phone);
+        //            if (checkPhone == false)
+        //                throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,
+        //                                    CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName());
+        //        }
+
+        //        customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
+
+        //        await _unitOfWork.Repository<Customer>().UpdateDetached(customer);
+        //        await _unitOfWork.CommitAsync();
+
+        //        return new BaseResponseViewModel<CustomerResponse>()
+        //        {
+        //            Status = new StatusViewModel()
+        //            {
+        //                Message = "Success",
+        //                Success = true,
+        //                ErrorCode = 0
+        //            },
+        //            Data = _mapper.Map<CustomerResponse>(customer)
+        //        };
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
         //public void CreateNewMemberShipCard(int uniId, int customerId)
         //{

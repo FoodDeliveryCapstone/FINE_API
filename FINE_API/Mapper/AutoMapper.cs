@@ -43,10 +43,22 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Store
-
             CreateMap<Store, StoreResponse>().ReverseMap();
             CreateMap<CreateStoreRequest, Store>();
             CreateMap<UpdateStoreRequest, Store>();
+            #endregion
+
+            #region Order + OrderDetail
+            CreateMap<CreateOrderRequest, Order>();
+            CreateMap<CreateOrderDetail, OrderDetail>();
+            CreateMap<OrderOtherAmount, OtherAmount>().ReverseMap();
+
+            CreateMap<Order, OrderResponse>().ReverseMap();
+            CreateMap<OrderDetail, OrderDetailResponse>().ReverseMap();
+            CreateMap<Customer, CustomerOrderResponse>().ReverseMap();
+            CreateMap<TimeSlot, TimeSlotOrderResponse>().ReverseMap();
+            CreateMap<Station, StationOrderResponse>().ReverseMap();
+
 
             #endregion
 
@@ -78,38 +90,6 @@ namespace FINE.API.Mapper
             //CreateMap<Store, ProductResponse>();
 
             //#endregion
-
-            //#region Order
-            //CreateMap<Order, GenOrderResponse>().ReverseMap();
-            //CreateMap<Order, OrderResponse>()
-            //    .ForMember(x => x.StoreName, opt => opt.MapFrom(y => y.Store.StoreName))
-            //    .ReverseMap();
-            //CreateMap<Order, OrderDetailResponse>();
-
-            //CreateMap<CreatePreOrderRequest, GenOrderResponse>();
-            //CreateMap<CreatePreOrderRequest, OrderResponse>();
-            //CreateMap<ListDetailByStore, OrderResponse>().ReverseMap();
-            //CreateMap<CreatePreOrderRequest, Order>();
-
-            //CreateMap<CreateOrderRequest, Order>();
-
-            //#endregion
-
-            //#region OrderDetail
-
-            //CreateMap<CreatePreOrderDetailRequest, OrderDetail>();
-            //CreateMap<CreatePreOrderDetailRequest, OrderDetailResponse>();
-
-            //CreateMap<CreateOrderDetailRequest, OrderDetail>();
-
-            //CreateMap<PreOrderDetailRequest, OrderDetailResponse>();
-            //CreateMap<ProductInMenu, PreOrderDetailRequest>()
-            //            .IncludeMembers(x => x.Product)
-            //            .ReverseMap();
-            //CreateMap<Product, PreOrderDetailRequest>();
-            //#endregion
-
-
 
             //#region Staff
 
