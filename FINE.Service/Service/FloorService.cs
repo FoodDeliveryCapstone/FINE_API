@@ -40,8 +40,8 @@ namespace FINE.Service.Service
                 var checkDestination = _unitOfWork.Repository<Floor>().GetAll()
                               .FirstOrDefault(x => x.Id == destinationGuid);
                 if (checkDestination == null)
-                    throw new ErrorResponse(404, (int)DestinationErrorEnums.NOT_FOUND_ID,
-                        DestinationErrorEnums.NOT_FOUND_ID.GetDisplayName());
+                    throw new ErrorResponse(404, (int)DestinationErrorEnums.NOT_FOUND,
+                        DestinationErrorEnums.NOT_FOUND.GetDisplayName());
                 #endregion
 
                 var floor = _unitOfWork.Repository<Floor>().GetAll()

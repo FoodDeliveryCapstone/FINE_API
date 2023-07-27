@@ -121,7 +121,7 @@ namespace FINE.API
             builder.RegisterType<UnitOfWork>().As<IUnitOfWork>();
 
             builder.RegisterType<FloorService>().As<IFloorService>();
-            builder.RegisterType<DestinationService>().As<IDestinationService>();
+            //builder.RegisterType<DestinationService>().As<IDestinationService>();
             //builder.RegisterType<AreaService>().As<IAreaService>();
             builder.RegisterType<StoreService>().As<IStoreService>();
 
