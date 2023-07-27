@@ -9,7 +9,7 @@ public partial class Order
 
     public string OrderCode { get; set; } = null!;
 
-    public int? CustomerId { get; set; }
+    public Guid CustomerId { get; set; }
 
     public DateTime CheckInDate { get; set; }
 

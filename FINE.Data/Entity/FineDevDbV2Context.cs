@@ -398,8 +398,6 @@ public partial class FineDevDbV2Context : DbContext
             entity.ToTable("OtherAmount");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.CreateAt).HasColumnType("datetime");
-            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Order).WithMany(p => p.OtherAmounts)
                 .HasForeignKey(d => d.OrderId)

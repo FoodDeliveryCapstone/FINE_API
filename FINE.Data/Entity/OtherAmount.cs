@@ -15,9 +15,5 @@ public partial class OtherAmount
 
     public string? Note { get; set; }
 
-    public DateTime CreateAt { get; set; }
-
-    public DateTime? UpdateAt { get; set; }
-
     public virtual Order Order { get; set; } = null!;
 }
