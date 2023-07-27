@@ -343,11 +343,6 @@ public partial class FineDevDbV2Context : DbContext
             entity.Property(e => e.OrderCode).HasMaxLength(30);
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.Store).WithMany(p => p.Orders)
-                .HasForeignKey(d => d.StoreId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Order_Store");
-
             entity.HasOne(d => d.TimeSlot).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.TimeSlotId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -391,6 +386,11 @@ public partial class FineDevDbV2Context : DbContext
                 .HasForeignKey(d => d.ProductInMenuId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_OrderDetail_ProductInMenu");
+
+            entity.HasOne(d => d.Store).WithMany(p => p.OrderDetails)
+                .HasForeignKey(d => d.StoreId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OrderDetail_Store");
         });
 
         modelBuilder.Entity<OtherAmount>(entity =>

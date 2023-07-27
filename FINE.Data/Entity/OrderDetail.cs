@@ -11,6 +11,8 @@ public partial class OrderDetail
 
     public Guid ProductInMenuId { get; set; }
 
+    public Guid StoreId { get; set; }
+
     public string ProductCode { get; set; } = null!;
 
     public string ProductName { get; set; } = null!;
@@ -30,4 +32,6 @@ public partial class OrderDetail
     public virtual Order Order { get; set; } = null!;
 
     public virtual ProductInMenu ProductInMenu { get; set; } = null!;
+
+    public virtual Store Store { get; set; } = null!;
 }

@@ -25,8 +25,6 @@ public partial class Order
 
     public Guid TimeSlotId { get; set; }
 
-    public Guid StoreId { get; set; }
-
     public Guid StationId { get; set; }
 
     public bool IsConfirm { get; set; }
@@ -48,8 +46,6 @@ public partial class Order
     public virtual ICollection<Party> Parties { get; set; } = new List<Party>();
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
-
-    public virtual Store Store { get; set; } = null!;
 
     public virtual TimeSlot TimeSlot { get; set; } = null!;
 }
