@@ -7,67 +7,47 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Request.Order
 {
-    public class CreateGenOrderRequest
+    public class CreateOrderRequest
     {
         public string OrderCode { get; set; }
 
-        public string DeliveryPhone { get; set; }
+        public int? CustomerId { get; set; }
 
         public double TotalAmount { get; set; }
 
-        public double? Discount { get; set; }
-
         public double FinalAmount { get; set; }
 
-        public double ShippingFee { get; set; }
-
-        public int PaymentType { get; set; }
+        public double TotalOtherAmount { get; set; }
 
         public int OrderType { get; set; }
 
-        public int TimeSlotId { get; set; }
+        public Guid TimeSlotId { get; set; }
 
-        public int RoomId { get; set; }
+        public Guid StationId { get; set; }
 
-        public int? ItemQuantity { get; set; }
+        public bool IsPartyMode { get; set; }
 
-        public List<CreateOrderRequest> InverseGeneralOrder { get; set; }
+        public int ItemQuantity { get; set; }
+
+        public List<CreateOrderDetail> OrderDetails { get; set; }
+
+        public List<OrderOtherAmount> OtherAmounts { get; set; }
     }
-
-    public class CreateOrderRequest
+    public class CreateOrderDetail
     {
-        public string OrderCode { get; set; } = null!;
+        public Guid OrderId { get; set; }
 
-        public double TotalAmount { get; set; }
+        public Guid ProductInMenuId { get; set; }
 
-        public double? Discount { get; set; }
+        public string ProductCode { get; set; } = null!;
 
-        public double FinalAmount { get; set; }
-
-        public int? StoreId { get; set; }
-
-        public int? ItemQuantity { get; set; }
-
-        public List<CreateOrderDetailRequest> OrderDetails { get; set; }
-    }
-
-        public class CreateOrderDetailRequest
-    {
-        public int ProductInMenuId { get; set; }
-
-        public string ProductCode { get; set; }
-
-        public string ProductName { get; set; }
-
-        public int? ComboId { get; set; }
+        public string ProductName { get; set; } = null!;
 
         public double UnitPrice { get; set; }
 
         public int Quantity { get; set; }
 
         public double TotalAmount { get; set; }
-
-        public double? Discount { get; set; }
 
         public double FinalAmount { get; set; }
 
