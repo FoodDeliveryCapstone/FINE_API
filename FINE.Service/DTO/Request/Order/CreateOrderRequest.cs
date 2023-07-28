@@ -11,8 +11,6 @@ namespace FINE.Service.DTO.Request.Order
     {
         public string OrderCode { get; set; }
 
-        public int? CustomerId { get; set; }
-
         public double TotalAmount { get; set; }
 
         public double FinalAmount { get; set; }
