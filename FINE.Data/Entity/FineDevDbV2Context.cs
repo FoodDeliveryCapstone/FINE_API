@@ -500,7 +500,7 @@ public partial class FineDevDbV2Context : DbContext
             entity.HasOne(d => d.Product).WithMany(p => p.ProductInMenus)
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ProductInMenu_Product");
+                .HasConstraintName("FK_ProductInMenu_ProductAttribute");
         });
 
         modelBuilder.Entity<Schema>(entity =>

@@ -29,7 +29,5 @@ public partial class Product
 
     public virtual ICollection<ProductAttribute> ProductAttributes { get; set; } = new List<ProductAttribute>();
 
-    public virtual ICollection<ProductInMenu> ProductInMenus { get; set; } = new List<ProductInMenu>();
-
     public virtual Store Store { get; set; } = null!;
 }

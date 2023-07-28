@@ -24,4 +24,6 @@ public partial class ProductAttribute
     public DateTime? UpdateAt { get; set; }
 
     public virtual Product Product { get; set; } = null!;
+
+    public virtual ICollection<ProductInMenu> ProductInMenus { get; set; } = new List<ProductInMenu>();
 }

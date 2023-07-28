@@ -23,5 +23,5 @@ public partial class ProductInMenu
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
-    public virtual Product Product { get; set; } = null!;
+    public virtual ProductAttribute Product { get; set; } = null!;
 }
