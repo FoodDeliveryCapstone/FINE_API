@@ -132,10 +132,10 @@ namespace FINE.Service.Service
                     var detail = new OrderDetailResponse()
                     {
                         ProductInMenuId = productInMenu.ProductId,
-                        ProductName = productInMenu.Product.ProductName,
-                        UnitPrice = productInMenu.Price,
+                        ProductName = productInMenu.Product.Name,
+                        UnitPrice = productInMenu.Product.Price,
                         Quantity = orderDetail.Quantity,
-                        TotalAmount = (double)(productInMenu.Price * orderDetail.Quantity)
+                        TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
                     };
                     listOrderDetail.Add(detail);
                     order.ItemQuantity += detail.Quantity;
