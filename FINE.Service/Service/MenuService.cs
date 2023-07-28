@@ -9,6 +9,7 @@ using FINE.Service.DTO.Request.Menu;
 using FINE.Service.DTO.Request.Store;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
 using static FINE.Service.Helpers.Enum;
@@ -21,7 +22,7 @@ namespace FINE.Service.Service
     {
         //Task<BaseResponsePagingViewModel<MenuWithoutProductResponse>> GetMenus(MenuWithoutProductResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<MenuResponse>> GetMenuById(string menuId);
-        Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslot(string timeslotId, PagingRequest paging);
+        Task<BaseResponseViewModel<List<MenuResponse>>> GetMenuByTimeslot(string timeslotId, PagingRequest paging);
         //Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request);
         //Task<BaseResponseViewModel<MenuResponse>> UpdateMenu(int menuId, UpdateMenuRequest request);
     }
@@ -151,12 +152,21 @@ namespace FINE.Service.Service
             try
             {
                 var menu = _unitOfWork.Repository<Menu>().GetAll()
-                                    .Include(x => x.ProductInMenus)
-                                    .ThenInclude(x => x.Product)
+                                    .Where(x => x.Id == Guid.Parse(menuId))
+                                    .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
                                     .FirstOrDefault();
+
                 if (menu == null)
                     throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
                                         MenuErrorEnums.NOT_FOUND.GetDisplayName());
+
+                menu.Products = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                            .Include(x => x.Product)
+                                            .ThenInclude(x => x.Product)
+                                            .Where(x => x.MenuId == menu.Id)
+                                            .GroupBy(x => x.Product.Product)
+                                            .Select(x => _mapper.Map<ProductResponse>(x.Key))
+                                            .ToList();
 
                 return new BaseResponseViewModel<MenuResponse>()
                 {
@@ -166,7 +176,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<MenuResponse>(menu)
+                    Data = menu
                 };
             }
             catch (Exception ex)
@@ -175,7 +185,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslot(string timeslotId, PagingRequest paging)
+        public async Task<BaseResponseViewModel<List<MenuResponse>>> GetMenuByTimeslot(string timeslotId, PagingRequest paging)
         {
             try
             {
@@ -186,22 +196,30 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
                         TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
-                var menu = _unitOfWork.Repository<Menu>().GetAll()
-                                    .Include(x => x.ProductInMenus)
-                                    .ThenInclude(x => x.Product)
+                var listMenu = _unitOfWork.Repository<Menu>().GetAll()
                                     .Where(x => x.TimeSlotId == Guid.Parse(timeslotId) && x.ProductInMenus.Any(z => z.Status == (int)ProductInMenuStatusEnum.Avaliable))
                                     .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
-                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
-
-                return new BaseResponsePagingViewModel<MenuResponse>()
+                                    .ToList();
+                foreach(var menu in listMenu)
                 {
-                    Metadata = new PagingsMetadata()
+                    menu.Products = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                            .Include(x => x.Product)
+                                            .ThenInclude(x => x.Product)
+                                            .Where(x => x.MenuId == menu.Id)
+                                            .GroupBy(x => x.Product.Product)
+                                            .Select(x => _mapper.Map<ProductResponse>(x.Key))
+                                            .ToList();
+                }
+
+                return new BaseResponseViewModel<List<MenuResponse>>()
+                {
+                    Status = new StatusViewModel()
                     {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = menu.Item1
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
                     },
-                    Data = menu.Item2.ToList()
+                    Data = listMenu
                 };
             }
             catch (Exception ex)

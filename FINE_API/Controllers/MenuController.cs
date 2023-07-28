@@ -59,7 +59,7 @@ namespace FINE.API.Controllers
         /// </summary>
 
         [HttpGet("timeslot/{timeslotId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<MenuResponse>>> GetMenusByTimeslot([FromRoute] string timeslotId, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponseViewModel<List<MenuResponse>>>> GetMenusByTimeslot([FromRoute] string timeslotId, [FromQuery] PagingRequest paging)
         {
             try
             {
