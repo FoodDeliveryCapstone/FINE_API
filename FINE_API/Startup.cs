@@ -19,6 +19,7 @@ using ServiceStack.Redis;
 using StackExchange.Redis;
 using System.Reflection;
 using System.Text;
+using static FINE.Service.Service.ITimeslotService;
 
 namespace FINE.API
 {
@@ -124,6 +125,8 @@ namespace FINE.API
             builder.RegisterType<DestinationService>().As<IDestinationService>();
             //builder.RegisterType<AreaService>().As<IAreaService>();
             builder.RegisterType<StoreService>().As<IStoreService>();
+            builder.RegisterType<TimeslotService>().As<ITimeslotService>();
+
             builder.RegisterType<OrderService>().As<IOrderService>();
 
             builder.RegisterType<AccountService>().As<IAccountService>();
@@ -135,8 +138,6 @@ namespace FINE.API
             //builder.RegisterType<NotifyService>().As<INotifyService>();
             //builder.RegisterType<PaymentService>().As<IPaymentService>();
             //builder.RegisterType<ProductService>().As<IProductService>();
-
-            //builder.RegisterType<TimeslotService>().As<ITimeslotService>();
             //builder.RegisterType<MenuService>().As<IMenuService>();           
             //builder.RegisterType<RoomService>().As<IRoomService>();
             //builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();

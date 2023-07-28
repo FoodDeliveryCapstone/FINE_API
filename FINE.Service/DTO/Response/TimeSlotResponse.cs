@@ -8,22 +8,20 @@ namespace FINE.Service.DTO.Response
 {
     public class TimeslotResponse
     {
-        public int? Id { get; set; }
+        public Guid Id { get; set; }
 
-        public int? CampusId { get; set; }
+        public Guid DestinationId { get; set; }
 
-        public TimeSpan? ArriveTime { get; set; }
+        public TimeSpan ArriveTime { get; set; }
 
-        public TimeSpan? CheckoutTime { get; set; }
+        public TimeSpan CheckoutTime { get; set; }
 
-        public bool? IsActive { get; set; }
+        public bool IsActive { get; set; }
 
-        public DateTime? CreateAt { get; set; }
+        public DateTime CreateAt { get; set; }
 
         public DateTime? UpdateAt { get; set; }
 
-       
-
-
+        public string? Description { get; set; }
     }
 }

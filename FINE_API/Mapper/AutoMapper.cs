@@ -26,6 +26,18 @@ namespace FINE.API.Mapper
             CreateMap<UpdateDestinationRequest, Destination>();
             #endregion
 
+
+            #region TimeSlot
+
+            CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
+            //CreateMap<CreateTimeslotRequest, TimeSlot>()
+            //    .ForMember(x => x.ArriveTime, opt => opt.Ignore())
+            //    .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
+            //CreateMap<UpdateTimeslotRequest, TimeSlot>()
+            //    .ForMember(x => x.ArriveTime, opt => opt.Ignore())
+            //    .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
+            #endregion
+
             #region Floor
             CreateMap<Floor, FloorResponse>().ReverseMap();
             #endregion
@@ -34,7 +46,7 @@ namespace FINE.API.Mapper
 
             #endregion
 
-            #region Sation
+            #region Station
 
             #endregion
 
@@ -109,19 +121,6 @@ namespace FINE.API.Mapper
             //CreateMap<Menu, ProductResponse>();
             //CreateMap<Menu, ProductInMenu>().ReverseMap();
             //CreateMap<Menu, MenuWithoutProductResponse>();
-            //#endregion
-
-            //#region TimeSlot
-
-            //CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
-            //CreateMap<TimeSlot, OrderTimeSlotResponse>().ReverseMap();
-            //CreateMap<CreateTimeslotRequest, TimeSlot>()
-            //    .ForMember(x => x.ArriveTime, opt => opt.Ignore())
-            //    .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
-            //CreateMap<UpdateTimeslotRequest, TimeSlot>()
-            //    .ForMember(x => x.ArriveTime, opt => opt.Ignore())
-            //    .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
-
             //#endregion
 
             //#region Product In Menu
