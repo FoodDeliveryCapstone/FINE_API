@@ -33,8 +33,6 @@ public partial class Order
 
     public int ItemQuantity { get; set; }
 
-    public string? Note { get; set; }
-
     public DateTime? UpdateAt { get; set; }
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
