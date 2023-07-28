@@ -20,7 +20,7 @@ namespace FINE.Service.Service
     public interface IMenuService
     {
         //Task<BaseResponsePagingViewModel<MenuWithoutProductResponse>> GetMenus(MenuWithoutProductResponse filter, PagingRequest paging);
-        //Task<BaseResponseViewModel<MenuResponse>> GetMenuById(int menuId);
+        Task<BaseResponseViewModel<MenuResponse>> GetMenuById(string menuId);
         Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslot(string timeslotId, PagingRequest paging);
         //Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request);
         //Task<BaseResponseViewModel<MenuResponse>> UpdateMenu(int menuId, UpdateMenuRequest request);
@@ -49,32 +49,6 @@ namespace FINE.Service.Service
         //        await _unitOfWork.Repository<Menu>().InsertAsync(menu);
         //        await _unitOfWork.CommitAsync();
 
-        //        return new BaseResponseViewModel<MenuResponse>()
-        //        {
-        //            Status = new StatusViewModel()
-        //            {
-        //                Message = "Success",
-        //                Success = true,
-        //                ErrorCode = 0
-        //            },
-        //            Data = _mapper.Map<MenuResponse>(menu)
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
-
-        //public async Task<BaseResponseViewModel<MenuResponse>> GetMenuById(int menuId)
-        //{
-        //    try
-        //    {
-        //        var menu = _unitOfWork.Repository<Menu>().GetAll()
-        //                                    .FirstOrDefault(x => x.Id == menuId);
-        //        if (menu == null)
-        //            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
-        //                                MenuErrorEnums.NOT_FOUND.GetDisplayName());
         //        return new BaseResponseViewModel<MenuResponse>()
         //        {
         //            Status = new StatusViewModel()
@@ -171,6 +145,35 @@ namespace FINE.Service.Service
         //        throw;
         //    }
         //}
+
+        public async Task<BaseResponseViewModel<MenuResponse>> GetMenuById(string menuId)
+        {
+            try
+            {
+                var menu = _unitOfWork.Repository<Menu>().GetAll()
+                                    .Include(x => x.ProductInMenus)
+                                    .ThenInclude(x => x.Product)
+                                    .FirstOrDefault();
+                if (menu == null)
+                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
+                                        MenuErrorEnums.NOT_FOUND.GetDisplayName());
+
+                return new BaseResponseViewModel<MenuResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<MenuResponse>(menu)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
 
         public async Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslot(string timeslotId, PagingRequest paging)
         {

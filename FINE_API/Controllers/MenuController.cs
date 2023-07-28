@@ -41,18 +41,18 @@ namespace FINE.API.Controllers
         ///// Get Menu By Id
         ///// </summary>
 
-        //[HttpGet("{menuId}")]
-        //public async Task<ActionResult<BaseResponseViewModel<MenuResponse>>> GetMenuById([FromRoute] int menuId)
-        //{
-        //    try
-        //    {
-        //        return await _menuService.GetMenuById(menuId);
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        return BadRequest(ex.Error);
-        //    }
-        //}
+        [HttpGet("{id}")]
+        public async Task<ActionResult<BaseResponseViewModel<MenuResponse>>> GetMenuById([FromRoute] string id)
+        {
+            try
+            {
+                return await _menuService.GetMenuById(id);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
 
         /// <summary>
         /// Get List Menu by TimeslotId
