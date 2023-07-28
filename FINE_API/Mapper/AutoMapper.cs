@@ -60,6 +60,24 @@ namespace FINE.API.Mapper
             CreateMap<UpdateStoreRequest, Store>();
             #endregion
 
+            #region Menu
+            CreateMap<Menu, MenuResponse>().ReverseMap();
+            CreateMap<CreateMenuRequest, Menu>();
+            CreateMap<UpdateMenuRequest, Menu>();
+            #endregion
+
+            #region Product In Menu
+            CreateMap<ProductInMenu, ProductInMenuResponse>().ReverseMap();
+            CreateMap<ProductAttribute, ProductInMenuResponse>().ReverseMap();
+
+            //CreateMap<AddProductToMenuRequest, ProductInMenu>();
+            //CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
+            #endregion
+
+            #region Product Attribute
+            CreateMap<ProductAttribute, ProductAttributeResponse>().ReverseMap();
+            #endregion
+
             #region Order + OrderDetail
             CreateMap<CreateOrderRequest, Order>();
             CreateMap<CreateOrderDetail, OrderDetail>();
@@ -70,19 +88,15 @@ namespace FINE.API.Mapper
             CreateMap<Customer, CustomerOrderResponse>().ReverseMap();
             CreateMap<TimeSlot, TimeSlotOrderResponse>().ReverseMap();
             CreateMap<Station, StationOrderResponse>().ReverseMap();
-
-
             #endregion
 
-            //#region Customer
-
-            //CreateMap<Customer, CustomerResponse>().ReverseMap();
-            //CreateMap<Customer, OrderCustomerResponse>().ReverseMap();
-            //CreateMap<Customer, OrderDetailResponse>();
-            //CreateMap<CreateCustomerRequest, Customer>();
+            #region Customer
+            CreateMap<Customer, CustomerResponse>().ReverseMap();
+            CreateMap<CreateCustomerRequest, Customer>();
             //CreateMap<UpdateCustomerRequest, Customer>();
+            #endregion
 
-            //#endregion
+
 
             //#region Product
 
@@ -109,28 +123,6 @@ namespace FINE.API.Mapper
             //CreateMap<CreateStaffRequest, Staff>();
             //CreateMap<UpdateStaffRequest, Staff>();
 
-            //#endregion
-
-            //#region Menu
-
-            //CreateMap<Menu, MenuResponse>()
-            //    .ForMember(x => x.Products, map => map.MapFrom(menu => menu.ProductInMenus))
-            //    .ReverseMap();
-            //CreateMap<CreateMenuRequest, Menu>();
-            //CreateMap<UpdateMenuRequest, Menu>();
-            //CreateMap<Menu, ProductResponse>();
-            //CreateMap<Menu, ProductInMenu>().ReverseMap();
-            //CreateMap<Menu, MenuWithoutProductResponse>();
-            //#endregion
-
-            //#region Product In Menu
-            //CreateMap<ProductInMenu, ProductInMenuResponse>()
-            //            .IncludeMembers(x => x.Product, x => x.Product.Store, x => x.Product.Category)
-            //            .ReverseMap();
-            //CreateMap<ProductInMenu, Product>().ReverseMap();
-
-            //CreateMap<AddProductToMenuRequest, ProductInMenu>();
-            //CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
             //#endregion
 
             //CreateMap<Store, ProductInMenuResponse>().ReverseMap();
