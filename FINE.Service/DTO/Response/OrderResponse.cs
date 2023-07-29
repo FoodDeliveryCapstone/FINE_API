@@ -48,7 +48,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid OrderId { get; set; }
          
-        public Guid ProductInMenuId { get; set; }                             
+        public Guid ProductId { get; set; }                             
 
         public string ProductCode { get; set; } = null!;
 
