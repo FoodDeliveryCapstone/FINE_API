@@ -33,8 +33,7 @@ namespace FINE.Service.Helpers
 
         public enum OrderTypeEnum
         {
-            AtStore = 1,
-            Delivery = 2
+            Delivery = 1
         }
 
         public enum OtherAmountTypeEnum
@@ -74,8 +73,8 @@ namespace FINE.Service.Helpers
 
         public enum PaymentTypeEnum
         {
-            Cash = 1,
-            MoMo = 2,
+            FineWallet = 1,
+            VnPay = 2,
         }
 
         public enum ShippingStatusEnum

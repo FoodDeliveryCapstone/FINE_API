@@ -88,16 +88,13 @@ namespace FINE.Service.Service
                 #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
-                if (timeSlot == null)
-                {
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
-                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
-                }
-                else if (!Utils.CheckTimeSlot(timeSlot))
-                {
+                if (timeSlot == null || timeSlot.IsActive == false)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
+                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
+
+                if (!Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-                }
                 #endregion
 
                 var order = new OrderResponse()
@@ -110,9 +107,12 @@ namespace FINE.Service.Service
                     IsConfirm = false,
                     IsPartyMode = false
                 };
+                order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                            .Where(x => x.Id ==Guid.Parse(customerId))
+                                            .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
+                                            .FirstOrDefaultAsync();
 
-
-                List<OrderDetailResponse> listOrderDetail = new List<OrderDetailResponse>();
+                order.OrderDetails = new List<OrderDetailResponse>();
                 foreach (var orderDetail in request.OrderDetails)
                 {
                     var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
@@ -137,7 +137,7 @@ namespace FINE.Service.Service
                         Quantity = orderDetail.Quantity,
                         TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
                     };
-                    listOrderDetail.Add(detail);
+                    order.OrderDetails.Add(detail);
                     order.ItemQuantity += detail.Quantity;
                     order.TotalAmount += detail.TotalAmount;
                 }
@@ -147,9 +147,11 @@ namespace FINE.Service.Service
                     Amount = 15000,
                     AmountType = (int)OtherAmountTypeEnum.ShippingFee
                 };
+                order.OtherAmounts = new List<OrderOtherAmount>();
                 order.OtherAmounts.Add(otherAmount);
                 order.TotalOtherAmount += otherAmount.Amount;
                 order.FinalAmount = order.TotalAmount + order.TotalOtherAmount;
+                order.Point = (int)(order.FinalAmount / 10000);
 
                 return new BaseResponseViewModel<OrderResponse>()
                 {
@@ -172,16 +174,25 @@ namespace FINE.Service.Service
         {
             try
             {
-                #region Timeslot
+                #region Check data
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
-                if (timeSlot == null)
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
-                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+                if (timeSlot == null || timeSlot.IsActive == false)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
+                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
                 if (!Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+
+                var customer = _unitOfWork.Repository<Customer>().GetAll()
+                                        .FirstOrDefault(x => x.Id == Guid.Parse(customerId));
+                if (customer.Phone == null)
+                    throw new ErrorResponse(400, (int)CustomerErrorEnums.MISSING_PHONENUMBER,
+                                            CustomerErrorEnums.MISSING_PHONENUMBER.GetDisplayName());
+
+                var station = _unitOfWork.Repository<Station>().GetAll()
+                                        .FirstOrDefault(x => x.Id == Guid.Parse(customerId));
                 #endregion
 
                 var order = _mapper.Map<Order>(request);
@@ -189,6 +200,7 @@ namespace FINE.Service.Service
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
+
 
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();

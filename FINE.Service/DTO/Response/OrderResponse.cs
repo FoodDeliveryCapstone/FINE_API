@@ -29,6 +29,8 @@ namespace FINE.Service.DTO.Response
 
         public StationOrderResponse StationOrder { get; set; }
 
+        public int Point { get; set; }
+
         public bool IsConfirm { get; set; }
 
         public bool IsPartyMode { get; set; }
@@ -87,7 +89,7 @@ namespace FINE.Service.DTO.Response
 
     public class TimeSlotOrderResponse
     {
-        public int? Id { get; set; }
+        public string? Id { get; set; }
 
         public TimeSpan? ArriveTime { get; set; }
 

@@ -23,9 +23,13 @@ namespace FINE.Service.DTO.Request.Order
 
         public Guid StationId { get; set; }
 
+        public int PaymentType { get; set; }
+
         public bool IsPartyMode { get; set; }
 
         public int ItemQuantity { get; set; }
+
+        public int Point { get; set; }
 
         public List<CreateOrderDetail> OrderDetails { get; set; }
 

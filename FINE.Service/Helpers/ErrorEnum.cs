@@ -35,6 +35,8 @@ namespace FINE.Service.Helpers
             //400
             [Display(Name = "Invalid phone number!")]
             INVALID_PHONENUMBER = 4001,
+            [Display(Name = "Customer needs to update phone number!")]
+            MISSING_PHONENUMBER = 4002,
             //404
             [Display(Name = "Not found this customer!")]
             NOT_FOUND = 4041
@@ -97,6 +99,8 @@ namespace FINE.Service.Helpers
             //400
             [Display(Name = "Out of Time Slot!")]
             OUT_OF_TIMESLOT = 4001,
+            [Display(Name = "Time Slot is unavailiable!")]
+            TIMESLOT_UNAVAILIABLE = 4001,
             //404
             [Display(Name = "Not found this time slot!")]
             NOT_FOUND = 4041,
