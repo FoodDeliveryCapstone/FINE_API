@@ -17,7 +17,7 @@ namespace FINE.Service.DTO.Request.Order
     }
     public class CreatePreOrderDetailRequest
     {
-        public Guid ProductInMenuId { get; set; }
+        public Guid ProductId { get; set; }
 
         public int Quantity { get; set; }
                                               
