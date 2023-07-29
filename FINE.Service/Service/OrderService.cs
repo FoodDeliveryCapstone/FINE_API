@@ -118,7 +118,7 @@ namespace FINE.Service.Service
                     var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
                         .Include(x => x.Menu)
                         .Include(x => x.Product)
-                        .Where(x => x.ProductId == orderDetail.ProductInMenuId)
+                        .Where(x => x.ProductId == orderDetail.ProductId)
                         .FirstOrDefault();
 
                     if(productInMenu == null)
