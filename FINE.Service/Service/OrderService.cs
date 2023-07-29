@@ -121,13 +121,21 @@ namespace FINE.Service.Service
                         .Where(x => x.Id == orderDetail.ProductInMenuId)
                         .FirstOrDefault();
 
-                    if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                    if(productInMenu == null)
+                    {
+                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                           ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+                    }
+                    else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                    {
                         throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
                            MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
-
-                    if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                    }
+                    else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                    {
                         throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                    }
 
                     var detail = new OrderDetailResponse()
                     {
