@@ -141,6 +141,7 @@ namespace FINE.Service.Service
                     {
                         ProductId = productInMenu.ProductId,
                         ProductName = productInMenu.Product.Name,
+                        ProductCode = productInMenu.Product.Code,   
                         UnitPrice = productInMenu.Product.Price,
                         Quantity = orderDetail.Quantity,
                         TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
