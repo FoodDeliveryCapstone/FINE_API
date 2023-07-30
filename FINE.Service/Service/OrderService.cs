@@ -228,8 +228,8 @@ namespace FINE.Service.Service
                 else
                 {
                     order.OrderStatus = (int)OrderStatusEnum.Processing;
-                    await _unitOfWork.Repository<Order>().UpdateDetached(order);
-                    await _unitOfWork.CommitAsync();
+                     _unitOfWork.Repository<Order>().UpdateDetached(order);
+                     _unitOfWork.CommitAsync();
                 }
 
                 return new BaseResponseViewModel<OrderResponse>()
