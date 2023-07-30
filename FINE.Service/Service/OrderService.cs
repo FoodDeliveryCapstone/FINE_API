@@ -35,7 +35,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
-        //Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string id, CreateGenOrderRequest request);
+        //Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string customerId);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
     }
     public class OrderService : IOrderService
@@ -232,15 +232,7 @@ namespace FINE.Service.Service
             }
             catch (ErrorResponse ex)
             {
-                return new BaseResponseViewModel<OrderResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = ex.Error.Message,
-                        Success = false,
-                        ErrorCode = ex.Error.ErrorCode
-                    }
-                };
+                throw ex;
             }
         }
 
