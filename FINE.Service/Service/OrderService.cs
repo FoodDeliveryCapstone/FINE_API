@@ -100,7 +100,7 @@ namespace FINE.Service.Service
                 var order = new OrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy") + "-" + customerId,
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
