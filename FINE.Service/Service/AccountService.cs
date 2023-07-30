@@ -91,8 +91,6 @@ namespace FINE.Service.Service
 
                         await _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
                         await _unitOfWork.Repository<Account>().UpdateDetached(creditAccount);
-                        await _unitOfWork.CommitAsync();
-
                     }
                     catch (ErrorResponse ex)
                     {
@@ -106,7 +104,6 @@ namespace FINE.Service.Service
                     pointAccount.Balance += amount;
                     pointAccount.UpdateAt = DateTime.Now;
                     await _unitOfWork.Repository<Account>().UpdateDetached(pointAccount);
-                    await _unitOfWork.CommitAsync();
                 }
 
                 return new BaseResponseViewModel<bool>

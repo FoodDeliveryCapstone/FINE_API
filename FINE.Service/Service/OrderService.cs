@@ -30,12 +30,13 @@ namespace FINE.Service.Service
 {
     public interface IOrderService
     {
-        //Task<BaseResponseViewModel<GenOrderResponse>> GetOrderById(string id);
+        //Task<BaseResponseViewModel<OrderResponse>> GetOrderById(Guid id);
         //Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrders(PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
-        //Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string customerId);
+        Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
+        Task<BaseResponseViewModel<OrderResponse>> JoinPartyOrder(string customerId, string partyCode);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
     }
     public class OrderService : IOrderService
@@ -109,7 +110,7 @@ namespace FINE.Service.Service
                     IsPartyMode = false
                 };
                 order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
-                                            .Where(x => x.Id ==Guid.Parse(customerId))
+                                            .Where(x => x.Id == Guid.Parse(customerId))
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
                                             .FirstOrDefaultAsync();
 
@@ -122,7 +123,7 @@ namespace FINE.Service.Service
                         .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
                         .FirstOrDefault();
 
-                    if(productInMenu == null)
+                    if (productInMenu == null)
                     {
                         throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
                            ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
@@ -146,7 +147,7 @@ namespace FINE.Service.Service
                         ProductInMenuId = productInMenu.Id,
                         StoreId = productInMenu.Product.Product.StoreId,
                         ProductName = productInMenu.Product.Name,
-                        ProductCode = productInMenu.Product.Code,   
+                        ProductCode = productInMenu.Product.Code,
                         UnitPrice = productInMenu.Product.Price,
                         Quantity = orderDetail.Quantity,
                         TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
@@ -218,7 +219,6 @@ namespace FINE.Service.Service
 
 
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
-                await _unitOfWork.CommitAsync();
 
                 var isSuccessPayment = _paymentService.CreatePayment(order, request.Point, request.PaymentType).Result.Status;
                 if (isSuccessPayment.Success == false)
@@ -228,8 +228,8 @@ namespace FINE.Service.Service
                 else
                 {
                     order.OrderStatus = (int)OrderStatusEnum.Processing;
-                     _unitOfWork.Repository<Order>().UpdateDetached(order);
-                     _unitOfWork.CommitAsync();
+                    _unitOfWork.Repository<Order>().UpdateDetached(order);
+                    _unitOfWork.CommitAsync();
                 }
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -249,55 +249,191 @@ namespace FINE.Service.Service
             }
         }
 
-        //    public async Task<BaseResponseViewModel<GenOrderResponse>> GetOrderById(int orderId)
-        //    {
-        //        try
-        //        {
-        //            var order = await _unitOfWork.Repository<Order>().GetAll()
-        //                .FirstOrDefaultAsync(x => x.Id == orderId);
-        //            return new BaseResponseViewModel<GenOrderResponse>()
-        //            {
-        //                Status = new StatusViewModel()
-        //                {
-        //                    Message = "Success",
-        //                    Success = true,
-        //                    ErrorCode = 0
-        //                },
-        //                Data = _mapper.Map<GenOrderResponse>(order)
-        //            };
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            throw ex;
-        //        }
-        //    }
+        public async Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string customerId, CreatePreOrderRequest request)
+        {
+            try
+            {
+                #region check timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
-        //    public async Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrders(PagingRequest paging)
-        //    {
-        //        try
-        //        {
-        //            var order = _unitOfWork.Repository<Order>().GetAll()
-        //                                    .OrderByDescending(x => x.CheckInDate)
-        //                                    .ProjectTo<GenOrderResponse>(_mapper.ConfigurationProvider)
-        //                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-        //                                    Constants.DefaultPaging);
+                if (timeSlot == null || timeSlot.IsActive == false)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
+                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-        //            return new BaseResponsePagingViewModel<GenOrderResponse>()
-        //            {
-        //                Metadata = new PagingsMetadata()
-        //                {
-        //                    Page = paging.Page,
-        //                    Size = paging.PageSize,
-        //                    Total = order.Item1
-        //                },
-        //                Data = order.Item2.ToList()
-        //            };
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            throw ex;
-        //        }
-        //    }
+                if (!Utils.CheckTimeSlot(timeSlot))
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
+
+                var order = new Order()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + customerId,
+                    CustomerId = Guid.Parse(customerId),
+                    CheckInDate = DateTime.Now,
+                    OrderStatus = (int)OrderStatusEnum.PreOrder,
+                    TimeSlotId = timeSlot.Id,              
+                    IsConfirm = false,
+                    IsPartyMode = true
+                };
+
+                order.OrderDetails = new List<OrderDetail>();
+                foreach (var orderDetail in request.OrderDetails)
+                {
+                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                        .Include(x => x.Menu)
+                        .Include(x => x.Product)
+                        .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                        .FirstOrDefault();
+
+                    if (productInMenu == null)
+                    {
+                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                           ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+                    }
+                    else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                    {
+                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                           MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+                    }
+                    else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                    {
+                        throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                    }
+
+                    var detail = new OrderDetail()
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = order.Id,
+                        ProductInMenuId = productInMenu.Id,
+                        StoreId = productInMenu.Product.Product.StoreId,
+                        ProductName = productInMenu.Product.Name,
+                        ProductCode = productInMenu.Product.Code,
+                        UnitPrice = productInMenu.Product.Price,
+                        Quantity = orderDetail.Quantity,
+                        TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
+                    };
+                    order.OrderDetails.Add(detail);
+                    order.ItemQuantity += detail.Quantity;
+                    order.TotalAmount += detail.TotalAmount;
+                }
+                order.OtherAmounts = new List<OtherAmount>();
+                var otherAmount = new OtherAmount()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    Amount = 15000,
+                    Type = (int)OtherAmountTypeEnum.ShippingFee
+                };
+                order.OtherAmounts.Add(otherAmount);
+                order.TotalOtherAmount += otherAmount.Amount;
+                order.FinalAmount = order.TotalAmount + order.TotalOtherAmount;
+
+                order.Parties = new List<Party>();
+                var party = new Party()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId= order.Id,
+                    CustomerId = Guid.Parse(customerId),
+                    PartyCode = Utils.GenerateRandomPartyCode(),
+                    Status = (int)PartyOrderStatus.NotConfirm,
+                    IsActive = true,
+                    CreateAt = DateTime.Now
+                };
+                order.Parties.Add(party);
+                try
+                {
+                    await _unitOfWork.Repository<Order>().InsertAsync(order);
+                    await _unitOfWork.CommitAsync();
+                }catch(Exception ex)
+                {
+                    throw ex;
+                }
+
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = party.PartyCode
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<OrderResponse>> JoinPartyOrder(string customerId, string partyCode)
+        {
+            try
+            {
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                    .Include(x => x.Order)
+                    .Where(x => x.PartyCode == partyCode)
+                    .FirstOrDefaultAsync();
+
+                if (partyOrder == null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                var newParty = new Party()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = partyOrder.Id,
+                    PartyCode = partyCode,
+                    Status = (int)PartyOrderStatus.NotConfirm,
+                    IsActive = true,
+                    CreateAt = DateTime.Now,
+                };
+
+                _unitOfWork.Repository<Party>().InsertAsync(newParty);
+                _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<OrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<OrderResponse>(partyOrder.Order)
+                };
+
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<OrderResponse>> GetOrderById(Guid id)
+        {
+            try
+            {
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                        .FirstOrDefaultAsync(x => x.Id == id);
+                return new BaseResponseViewModel<OrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<OrderResponse>(order)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
 
         //    public async Task CancelOrder(int orderId)
         //    {

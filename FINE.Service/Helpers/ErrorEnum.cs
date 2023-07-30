@@ -30,6 +30,13 @@ namespace FINE.Service.Helpers
             NOT_FOUND_ID = 4041
         }
 
+        public enum PartyErrorEnums
+        {
+            //400 
+            [Display(Name = "Invalid party code")]
+            INVALID_CODE = 4001,
+        }
+
         public enum PaymentErrorsEnum
         {
             //400 

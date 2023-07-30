@@ -69,7 +69,6 @@ namespace FINE.Service.Service
                 };
 
                  _unitOfWork.Repository<Payment>().InsertAsync(payment);
-                 _unitOfWork.CommitAsync();
 
                 // check account customer + tích điểm 
                 _accountService.CreateTransaction((int)AccountTypeEnum.PointAccount, point, order.CustomerId);

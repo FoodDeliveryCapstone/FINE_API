@@ -25,7 +25,7 @@ public partial class Order
 
     public Guid TimeSlotId { get; set; }
 
-    public Guid StationId { get; set; }
+    public Guid? StationId { get; set; }
 
     public bool IsConfirm { get; set; }
 

@@ -71,6 +71,12 @@ namespace FINE.Service.Helpers
             UserCancel = 11,
         }
 
+        public enum PartyOrderStatus
+        {
+            NotConfirm = 1,
+            AllConfirm = 2
+        }
+
         public enum PaymentTypeEnum
         {
             FineWallet = 1,

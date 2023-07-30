@@ -11,7 +11,7 @@ public partial class Party
 
     public Guid CustomerId { get; set; }
 
-    public string? PartyCode { get; set; }
+    public string PartyCode { get; set; } = null!;
 
     public int Status { get; set; }
 
