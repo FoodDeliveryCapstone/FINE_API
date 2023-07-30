@@ -11,11 +11,9 @@ public partial class Account
 
     public string AccountCode { get; set; } = null!;
 
-    public string AccountName { get; set; } = null!;
-
     public DateTime StartDate { get; set; }
 
-    public decimal Balance { get; set; }
+    public double Balance { get; set; }
 
     public int Type { get; set; }
 

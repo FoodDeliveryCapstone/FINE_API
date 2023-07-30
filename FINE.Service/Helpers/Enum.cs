@@ -77,6 +77,25 @@ namespace FINE.Service.Helpers
             VnPay = 2,
         }
 
+        public enum PaymentStatusEnum
+        {
+            Finish = 1,
+            Processing = 2,
+            Fail = 3
+        }
+
+        public enum TransactionStatusEnum
+        {
+            Processing = 1,
+            Finish = 2
+        }
+
+        public enum TransactionTypeEnum
+        {
+            Recharge = 1,
+            Payment = 2
+        }
+
         public enum ShippingStatusEnum
         {
             NewOrder = 5,

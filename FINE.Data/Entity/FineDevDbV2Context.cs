@@ -99,8 +99,6 @@ public partial class FineDevDbV2Context : DbContext
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.AccountCode).HasMaxLength(50);
-            entity.Property(e => e.AccountName).HasMaxLength(100);
-            entity.Property(e => e.Balance).HasColumnType("money");
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
             entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");

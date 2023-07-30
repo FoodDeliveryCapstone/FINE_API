@@ -42,15 +42,15 @@ namespace FINE.Service.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        //private readonly INotifyService _notifyService;
+        private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration /*INotifyService notifyService*/)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
-            //_notifyService = notifyService;
+            _paymentService = paymentService;
         }
 
         public async Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging)
@@ -213,6 +213,11 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();
 
+                var isSuccessPayment = _paymentService.CreatePayment(order, request.Point, request.PaymentType).Result.Status;
+                if (isSuccessPayment.Success == false)
+                    throw new ErrorResponse(400, isSuccessPayment.ErrorCode, isSuccessPayment.Message);
+
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -226,7 +231,15 @@ namespace FINE.Service.Service
             }
             catch (ErrorResponse ex)
             {
-                throw ex;
+                return new BaseResponseViewModel<OrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = ex.Error.Message,
+                        Success = false,
+                        ErrorCode = ex.Error.ErrorCode
+                    }
+                };
             }
         }
 

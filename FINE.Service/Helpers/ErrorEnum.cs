@@ -30,6 +30,22 @@ namespace FINE.Service.Helpers
             NOT_FOUND_ID = 4041
         }
 
+        public enum PaymentErrorsEnum
+        {
+            //400 
+            [Display(Name = "Invalid payment type")]
+            INVALID_PAYMENT_TYPE = 4001,
+            [Display(Name = "Balance is not enough")]
+            ERROR_BALANCE = 4002,
+        }
+
+        public enum TransactionErrorEnum
+        {
+            //400 
+            [Display(Name = "Create transaction fail")]
+            CREATE_TRANS_FAIL = 4001,
+        }
+
         public enum CustomerErrorEnums
         {
             //400

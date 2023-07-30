@@ -38,16 +38,16 @@ namespace FINE.Service.Service
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly IFcmTokenService _customerFcmtokenService;
-        //private readonly IAccountService _accountService;
+        private readonly IAccountService _accountService;
 
         public CustomerService(IUnitOfWork unitOfWork, IMapper mapper, IFcmTokenService customerFcmtokenService,
-                                IConfiguration configuration /*IAccountService accountService*/)
+                                IConfiguration configuration, IAccountService accountService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _configuration = configuration;
             _customerFcmtokenService = customerFcmtokenService;
-            //_accountService = accountService;
+            _accountService = accountService;
         }
 
         public async Task<BaseResponseViewModel<LoginResponse>> LoginByMail(ExternalAuthRequest data)
@@ -124,6 +124,8 @@ namespace FINE.Service.Service
 
                 await _unitOfWork.Repository<Customer>().InsertAsync(customer);
                 await _unitOfWork.CommitAsync();
+
+                _accountService.CreateAccount(customer.Id, (int)AccountTypeEnum.PointAccount);
 
                 return new BaseResponseViewModel<CustomerResponse>()
                 {
