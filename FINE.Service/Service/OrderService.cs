@@ -139,7 +139,7 @@ namespace FINE.Service.Service
 
                     var detail = new OrderDetailResponse()
                     {
-                        ProductInMenuId = productInMenu.ProductId,
+                        ProductId = productInMenu.ProductId,
                         ProductName = productInMenu.Product.Name,
                         UnitPrice = productInMenu.Product.Price,
                         Quantity = orderDetail.Quantity,
