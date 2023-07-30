@@ -338,7 +338,7 @@ public partial class FineDevDbV2Context : DbContext
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CheckInDate).HasColumnType("datetime");
-            entity.Property(e => e.OrderCode).HasMaxLength(30);
+            entity.Property(e => e.OrderCode).HasMaxLength(100);
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.TimeSlot).WithMany(p => p.Orders)

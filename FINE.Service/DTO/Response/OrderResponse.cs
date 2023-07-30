@@ -9,6 +9,7 @@ namespace FINE.Service.DTO.Response
 {
     public class OrderResponse
     {
+        public Guid Id { get; set; }
         public string OrderCode { get; set; } = null!;
 
         public CustomerOrderResponse Customer { get; set; }
@@ -46,9 +47,15 @@ namespace FINE.Service.DTO.Response
     }
     public class OrderDetailResponse
     {
+        public Guid Id { get; set; }
+
         public Guid OrderId { get; set; }
-         
-        public Guid ProductId { get; set; }                             
+
+        public Guid ProductInMenuId { get; set; }
+
+        public Guid ProductId { get; set; }
+
+        public Guid StoreId { get; set; }
 
         public string ProductCode { get; set; } = null!;
 
@@ -82,6 +89,10 @@ namespace FINE.Service.DTO.Response
 
     public class OrderOtherAmount
     {
+        public Guid Id { get; set; }
+
+        public Guid OrderId { get; set; }
+
         public double Amount { get; set; }
 
         public int AmountType { get; set; }

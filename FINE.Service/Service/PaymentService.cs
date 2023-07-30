@@ -74,10 +74,6 @@ namespace FINE.Service.Service
                 // check account customer + tích điểm 
                 _accountService.CreateTransaction((int)AccountTypeEnum.PointAccount, point, order.CustomerId);
 
-                order.OrderStatus = (int)OrderStatusEnum.Processing;
-                await _unitOfWork.Repository<Order>().UpdateDetached(order);
-                await _unitOfWork.CommitAsync();
-
                 return new BaseResponseViewModel<bool>
                 {
                     Status = new StatusViewModel

@@ -90,7 +90,9 @@ namespace FINE.Service.Service
                         };
 
                         await _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
+                        await _unitOfWork.Repository<Account>().UpdateDetached(creditAccount);
                         await _unitOfWork.CommitAsync();
+
                     }
                     catch (ErrorResponse ex)
                     {
@@ -103,10 +105,9 @@ namespace FINE.Service.Service
                     var pointAccount = account.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.PointAccount);
                     pointAccount.Balance += amount;
                     pointAccount.UpdateAt = DateTime.Now;
+                    await _unitOfWork.Repository<Account>().UpdateDetached(pointAccount);
+                    await _unitOfWork.CommitAsync();
                 }
-
-                await _unitOfWork.Repository<List<Account>>().UpdateDetached(account);
-                await _unitOfWork.CommitAsync();
 
                 return new BaseResponseViewModel<bool>
                 {

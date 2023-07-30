@@ -9,6 +9,8 @@ namespace FINE.Service.DTO.Request.Order
 {
     public class CreateOrderRequest
     {
+        public Guid Id { get; set; }
+
         public string OrderCode { get; set; }
 
         public double TotalAmount { get; set; }
@@ -37,9 +39,13 @@ namespace FINE.Service.DTO.Request.Order
     }
     public class CreateOrderDetail
     {
+        public Guid Id { get; set; }
+
         public Guid OrderId { get; set; }
 
         public Guid ProductInMenuId { get; set; }
+
+        public Guid StoreId { get; set; }
 
         public string ProductCode { get; set; } = null!;
 

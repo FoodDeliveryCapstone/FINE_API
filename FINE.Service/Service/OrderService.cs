@@ -99,6 +99,7 @@ namespace FINE.Service.Service
 
                 var order = new OrderResponse()
                 {
+                    Id = Guid.NewGuid(),
                     OrderCode = DateTime.Now.ToString("ddMMyy") + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = request.OrderType,
@@ -139,7 +140,11 @@ namespace FINE.Service.Service
 
                     var detail = new OrderDetailResponse()
                     {
+                        Id = Guid.NewGuid(),
+                        OrderId = order.Id,
                         ProductId = productInMenu.ProductId,
+                        ProductInMenuId = productInMenu.Id,
+                        StoreId = productInMenu.Product.Product.StoreId,
                         ProductName = productInMenu.Product.Name,
                         ProductCode = productInMenu.Product.Code,   
                         UnitPrice = productInMenu.Product.Price,
@@ -153,6 +158,8 @@ namespace FINE.Service.Service
 
                 var otherAmount = new OrderOtherAmount()
                 {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
                     Amount = 15000,
                     AmountType = (int)OtherAmountTypeEnum.ShippingFee
                 };
@@ -205,7 +212,6 @@ namespace FINE.Service.Service
                 #endregion
 
                 var order = _mapper.Map<Order>(request);
-                order.Id = Guid.NewGuid();
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
@@ -216,8 +222,15 @@ namespace FINE.Service.Service
 
                 var isSuccessPayment = _paymentService.CreatePayment(order, request.Point, request.PaymentType).Result.Status;
                 if (isSuccessPayment.Success == false)
+                {
                     throw new ErrorResponse(400, isSuccessPayment.ErrorCode, isSuccessPayment.Message);
-
+                }
+                else
+                {
+                    order.OrderStatus = (int)OrderStatusEnum.Processing;
+                    await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                    await _unitOfWork.CommitAsync();
+                }
 
                 return new BaseResponseViewModel<OrderResponse>()
                 {
