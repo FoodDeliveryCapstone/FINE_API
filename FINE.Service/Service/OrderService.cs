@@ -231,7 +231,9 @@ namespace FINE.Service.Service
                     _unitOfWork.Repository<Order>().UpdateDetached(order);
                     _unitOfWork.CommitAsync();
                 }
-
+                
+                var resultOrder = _mapper.Map<OrderResponse>(order);
+                resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -240,7 +242,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<OrderResponse>(order)
+                    Data = resultOrder
                 };
             }
             catch (ErrorResponse ex)
