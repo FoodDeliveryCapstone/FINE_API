@@ -234,10 +234,6 @@ namespace FINE.Service.Service
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
                 resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
-                 resultOrder.StationOrder = _unitOfWork.Repository<Station>().GetAll()
-                                            .Where(x => x.Id == request.StationId)
-                                            .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
-                                            .FirstOrDefault();
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
