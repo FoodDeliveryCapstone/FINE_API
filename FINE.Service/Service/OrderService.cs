@@ -30,13 +30,15 @@ namespace FINE.Service.Service
 {
     public interface IOrderService
     {
-        //Task<BaseResponseViewModel<OrderResponse>> GetOrderById(Guid id);
+        Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string id);
         //Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrders(PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
         Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> JoinPartyOrder(string customerId, string partyCode);
+
+        //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
     }
     public class OrderService : IOrderService
@@ -77,6 +79,29 @@ namespace FINE.Service.Service
                 };
             }
             catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string id)
+        {
+            try
+            {
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+                return new BaseResponseViewModel<OrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<OrderResponse>(order)
+                };
+            }
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
@@ -232,6 +257,10 @@ namespace FINE.Service.Service
                     _unitOfWork.CommitAsync();
                 }
 
+                var resultOrder = _mapper.Map<OrderResponse>(order);
+                resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
+                resultOrder.StationOrder = _mapper.Map<StationOrderResponse>(station);
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -240,7 +269,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<OrderResponse>(order)
+                    Data = resultOrder
                 };
             }
             catch (ErrorResponse ex)
@@ -272,7 +301,7 @@ namespace FINE.Service.Service
                     CustomerId = Guid.Parse(customerId),
                     CheckInDate = DateTime.Now,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
-                    TimeSlotId = timeSlot.Id,              
+                    TimeSlotId = timeSlot.Id,
                     IsConfirm = false,
                     IsPartyMode = true
                 };
@@ -334,7 +363,7 @@ namespace FINE.Service.Service
                 var party = new Party()
                 {
                     Id = Guid.NewGuid(),
-                    OrderId= order.Id,
+                    OrderId = order.Id,
                     CustomerId = Guid.Parse(customerId),
                     PartyCode = Utils.GenerateRandomPartyCode(),
                     Status = (int)PartyOrderStatus.NotConfirm,
@@ -346,7 +375,8 @@ namespace FINE.Service.Service
                 {
                     await _unitOfWork.Repository<Order>().InsertAsync(order);
                     await _unitOfWork.CommitAsync();
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     throw ex;
                 }
@@ -411,29 +441,19 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderResponse>> GetOrderById(Guid id)
-        {
-            try
-            {
-                var order = await _unitOfWork.Repository<Order>().GetAll()
-                        .FirstOrDefaultAsync(x => x.Id == id);
-                return new BaseResponseViewModel<OrderResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = _mapper.Map<OrderResponse>(order)
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
+        //public Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId,string orderId , CreatePreOrderRequest request)
+        //{
+        //    try
+        //    {
+        //        var partyOrder = _unitOfWork.Repository<Order>().GetAll()
+        //                                   .Where()
+        //                                   .FirstOrDefault();  
+        //    }
+        //    catch (Exception ex)
+        //    {
 
+        //    }
+        //}
 
         //    public async Task CancelOrder(int orderId)
         //    {
