@@ -47,7 +47,7 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Station
-
+            CreateMap<Station, StationResponse>().ReverseMap();
             #endregion
 
             #region Box

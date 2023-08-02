@@ -117,6 +117,14 @@ namespace FINE.Service.Helpers
             CODE_EXSIST = 4001,
         }
 
+        public enum StationErrorEnums
+        {
+            //404
+            [Display(Name = "Not found this destination!")]
+            NOT_FOUND = 4041,
+
+        }
+
         public enum TimeSlotErrorEnums
         {
             //400

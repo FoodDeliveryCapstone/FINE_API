@@ -123,6 +123,7 @@ namespace FINE.API
 
             builder.RegisterType<FloorService>().As<IFloorService>();
             builder.RegisterType<DestinationService>().As<IDestinationService>();
+            builder.RegisterType<StationService>().As<IStationService>();
             //builder.RegisterType<AreaService>().As<IAreaService>();
             builder.RegisterType<StoreService>().As<IStoreService>();
             builder.RegisterType<TimeslotService>().As<ITimeslotService>();
