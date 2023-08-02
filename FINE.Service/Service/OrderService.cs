@@ -255,7 +255,7 @@ namespace FINE.Service.Service
                 {
                     order.OrderStatus = (int)OrderStatusEnum.Processing;
                     _unitOfWork.Repository<Order>().UpdateDetached(order);
-                    var test = _unitOfWork.Commit();
+                    _unitOfWork.Commit();
                 }
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
