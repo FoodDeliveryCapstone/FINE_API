@@ -22,7 +22,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get order by Id
         /// </summary>
-        [HttpGet("orderId")]
+        [HttpGet("{orderId}")]
         public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> GetOrderById(string orderId)
         {
             try
