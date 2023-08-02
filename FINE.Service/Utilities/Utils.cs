@@ -12,7 +12,7 @@ namespace FINE.Service.Utilities
 {
     public static class Utils
     {
-        public static string GenerateRandomPartyCode()
+        public static string GenerateRandomCode()
         {
             var randomCode = new Random();
 
