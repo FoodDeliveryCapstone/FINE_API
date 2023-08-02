@@ -260,7 +260,7 @@ namespace FINE.Service.Service
                 var resultOrder = _mapper.Map<OrderResponse>(order);
                 resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
                 resultOrder.StationOrder = _mapper.Map<StationOrderResponse>(station);
-
+                
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
