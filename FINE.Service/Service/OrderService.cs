@@ -244,6 +244,7 @@ namespace FINE.Service.Service
 
 
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
+                _unitOfWork.Commit();
 
                 var isSuccessPayment = _paymentService.CreatePayment(order, request.Point, request.PaymentType).Result.Status;
                 if (isSuccessPayment.Success == false)
@@ -254,7 +255,7 @@ namespace FINE.Service.Service
                 {
                     order.OrderStatus = (int)OrderStatusEnum.Processing;
                     _unitOfWork.Repository<Order>().UpdateDetached(order);
-                    _unitOfWork.CommitAsync();
+                    var test = _unitOfWork.Commit();
                 }
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
