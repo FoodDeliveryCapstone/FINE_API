@@ -30,7 +30,7 @@ namespace FINE.Service.Service
 {
     public interface IOrderService
     {
-        Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string id);
+        Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string id);
         //Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrders(PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
@@ -84,12 +84,25 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string id)
+        public async Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string id)
         {
             try
             {
                 var order = await _unitOfWork.Repository<Order>().GetAll()
                                     .FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+
+                var resultOrder = _mapper.Map<OrderResponse>(order);
+
+                resultOrder.Customer = _unitOfWork.Repository<Customer>().GetAll()
+                                        .Where(x => x.Id == Guid.Parse(customerId))
+                                        .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
+                                        .FirstOrDefault();
+                    
+                resultOrder.StationOrder = _unitOfWork.Repository<Station>().GetAll()
+                                        .Where(x => x.Id == order.StationId)
+                                        .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
+                                        .FirstOrDefault();
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -98,7 +111,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<OrderResponse>(order)
+                    Data = resultOrder
                 };
             }
             catch (ErrorResponse ex)

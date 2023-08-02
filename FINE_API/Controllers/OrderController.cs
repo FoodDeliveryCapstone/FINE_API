@@ -22,7 +22,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get order by Id
         /// </summary>
-        [HttpGet("orderId")]
+        [HttpGet("{orderId}")]
         public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> GetOrderById(string orderId)
         {
             try
@@ -35,7 +35,7 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
 
-                return await _orderService.GetOrderById(orderId);
+                return await _orderService.GetOrderById(customerId, orderId);
             }
             catch (ErrorResponse ex)
             {
@@ -58,7 +58,8 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                
+
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.CreatePreOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -82,6 +83,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.CreateOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -104,7 +106,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.CreateCoOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -127,6 +129,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.JoinPartyOrder(customerId, partyCode);
             }
             catch (ErrorResponse ex)
