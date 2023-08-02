@@ -51,6 +51,7 @@ namespace FINE.Service.Service
                     //_fmService.Subcribe(new List<string>() { fcmToken }, Constants.NOTIFICATION_TOPIC);
                     var newtoken = new Fcmtoken()
                     {
+                        Id = Guid.NewGuid(),
                         Token = fcmToken,
                         CustomerId = customerId,
                         CreateAt = DateTime.UtcNow
