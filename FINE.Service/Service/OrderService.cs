@@ -259,10 +259,11 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();
 
-                var isSuccessPayment = _paymentService.CreatePayment(order, request.Point, request.PaymentType).Result.Status;
-                if (isSuccessPayment.Success == false)
+                var isSuccessPayment = await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
+                if (isSuccessPayment == false)
                 {
-                    throw new ErrorResponse(400, isSuccessPayment.ErrorCode, isSuccessPayment.Message);
+                    throw new ErrorResponse(400, (int)TransactionErrorEnum.CREATE_TRANS_FAIL,
+                            TransactionErrorEnum.CREATE_TRANS_FAIL.GetDisplayName());
                 }
                 else
                 {

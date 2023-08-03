@@ -19,7 +19,7 @@ namespace FINE.Service.Service
 {
     public interface IAccountService
     {
-        Task<BaseResponseViewModel<bool>> CreateTransaction(int accountType, double amount, Guid customerId);
+        Task<bool> CreateTransaction(int accountType, double amount, Guid customerId);
         void CreateAccount(Guid customerId, int accountType);
     }
 
@@ -58,7 +58,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<bool>> CreateTransaction(int accountType, double amount, Guid customerId)
+        public async Task<bool> CreateTransaction(int accountType, double amount, Guid customerId)
         {
             try
             {
@@ -106,27 +106,11 @@ namespace FINE.Service.Service
                     await _unitOfWork.Repository<Account>().UpdateDetached(pointAccount);
                 }
 
-                return new BaseResponseViewModel<bool>
-                {
-                    Status = new StatusViewModel
-                    {
-                        Success = true,
-                        Message = "Success",
-                        ErrorCode = 0
-                    }
-                };
+                return true;
             }
             catch (ErrorResponse ex)
             {
-                return new BaseResponseViewModel<bool>
-                {
-                    Status = new StatusViewModel
-                    {
-                        Success = false,
-                        Message = ex.Error.Message,
-                        ErrorCode = ex.Error.ErrorCode
-                    }
-                };
+                return false;
             }
         }
     }

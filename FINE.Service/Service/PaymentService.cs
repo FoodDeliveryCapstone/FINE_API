@@ -19,7 +19,7 @@ namespace FINE.Service.Service
 {
     public interface IPaymentService
     {
-        Task<BaseResponseViewModel<bool>> CreatePayment(Order orderId, int point, int type);
+        Task<bool> CreatePayment(Order orderId, int point, int type);
     }
     public class PaymentService : IPaymentService
     {
@@ -35,17 +35,18 @@ namespace FINE.Service.Service
             _accountService = accountService;
         }
 
-        public async Task<BaseResponseViewModel<bool>> CreatePayment(Order order, int point, int paymentType)
+        public async Task<bool> CreatePayment(Order order, int point, int paymentType)
         {
             try
             {
                 //chia type payment
                 if (paymentType == (int)PaymentTypeEnum.FineWallet)
                 {
-                    var isSuccessTrans = _accountService.CreateTransaction((int)AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId).Result.Status;
-                    if (isSuccessTrans.Success == false)
+                    var isSuccessTrans = _accountService.CreateTransaction((int)AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId).Result;
+                    if (isSuccessTrans == false)
                     {
-                        throw new ErrorResponse(400, isSuccessTrans.ErrorCode, isSuccessTrans.Message);
+                        throw new ErrorResponse(400, (int)TransactionErrorEnum.CREATE_TRANS_FAIL,
+                            TransactionErrorEnum.CREATE_TRANS_FAIL.GetDisplayName());
                     }
                 }
                 else if (paymentType == (int)PaymentTypeEnum.VnPay)
@@ -71,29 +72,13 @@ namespace FINE.Service.Service
                  await _unitOfWork.Repository<Payment>().InsertAsync(payment);
 
                 // check account customer + tích điểm 
-                _accountService.CreateTransaction((int)AccountTypeEnum.PointAccount, point, order.CustomerId);
+                await _accountService.CreateTransaction((int)AccountTypeEnum.PointAccount, point, order.CustomerId);
 
-                return new BaseResponseViewModel<bool>
-                {
-                    Status = new StatusViewModel
-                    {
-                        Success = true,
-                        Message = "success",
-                        ErrorCode = 0
-                    }
-                };
+                return true;
             }
             catch (ErrorResponse ex)
             {
-                return new BaseResponseViewModel<bool>
-                {
-                    Status = new StatusViewModel
-                    {
-                        Success = false,
-                        Message = ex.Error.Message,
-                        ErrorCode = ex.Error.ErrorCode
-                    }
-                };
+                return false;
             }
         }
     }
