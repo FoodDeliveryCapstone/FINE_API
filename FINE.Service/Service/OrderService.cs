@@ -97,7 +97,7 @@ namespace FINE.Service.Service
                                         .Where(x => x.Id == Guid.Parse(customerId))
                                         .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
                                         .FirstOrDefault();
-                    
+
                 resultOrder.StationOrder = _unitOfWork.Repository<Station>().GetAll()
                                         .Where(x => x.Id == order.StationId)
                                         .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
@@ -230,7 +230,7 @@ namespace FINE.Service.Service
             try
             {
                 #region Check data
-                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
                 if (timeSlot == null || timeSlot.IsActive == false)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
@@ -240,14 +240,15 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
-                var customer = _unitOfWork.Repository<Customer>().GetAll()
-                                        .FirstOrDefault(x => x.Id == Guid.Parse(customerId));
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
+
                 if (customer.Phone == null)
                     throw new ErrorResponse(400, (int)CustomerErrorEnums.MISSING_PHONENUMBER,
                                             CustomerErrorEnums.MISSING_PHONENUMBER.GetDisplayName());
 
-                var station = _unitOfWork.Repository<Station>().GetAll()
-                                        .FirstOrDefault(x => x.Id == Guid.Parse(customerId));
+                var station = await _unitOfWork.Repository<Station>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
                 #endregion
 
                 var order = _mapper.Map<Order>(request);
@@ -255,9 +256,8 @@ namespace FINE.Service.Service
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
-
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
-                _unitOfWork.Commit();
+                await _unitOfWork.CommitAsync();
 
                 var isSuccessPayment = _paymentService.CreatePayment(order, request.Point, request.PaymentType).Result.Status;
                 if (isSuccessPayment.Success == false)
@@ -267,8 +267,8 @@ namespace FINE.Service.Service
                 else
                 {
                     order.OrderStatus = (int)OrderStatusEnum.Processing;
-                    _unitOfWork.Repository<Order>().UpdateDetached(order);
-                    _unitOfWork.Commit();
+                    await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                    await _unitOfWork.CommitAsync();
                 }
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);

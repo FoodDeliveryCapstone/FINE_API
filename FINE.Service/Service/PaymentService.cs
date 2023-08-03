@@ -68,7 +68,7 @@ namespace FINE.Service.Service
                     CreateAt = DateTime.Now
                 };
 
-                 _unitOfWork.Repository<Payment>().InsertAsync(payment);
+                 await _unitOfWork.Repository<Payment>().InsertAsync(payment);
 
                 // check account customer + tích điểm 
                 _accountService.CreateTransaction((int)AccountTypeEnum.PointAccount, point, order.CustomerId);
