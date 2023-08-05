@@ -95,7 +95,7 @@ namespace FINE.API.Controllers
         /// Create CoOrder
         /// </summary>
         [HttpPost("coOrder")]
-        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> CreateCoOrder([FromBody] CreatePreOrderRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> CreateCoOrder([FromBody] CreatePreOrderRequest request)
         {
             try
             {

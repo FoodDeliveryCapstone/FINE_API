@@ -35,7 +35,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
-        Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
+        Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> JoinPartyOrder(string customerId, string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
@@ -141,7 +141,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode() + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
-                    OrderType = request.OrderType,
+                    OrderType = (int)request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
                     StationOrder = null,
                     IsConfirm = false,
@@ -275,7 +275,7 @@ namespace FINE.Service.Service
                 var resultOrder = _mapper.Map<OrderResponse>(order);
                 resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
                 resultOrder.StationOrder = _mapper.Map<StationOrderResponse>(station);
-                
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -293,7 +293,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<dynamic>> CreateCoOrder(string customerId, CreatePreOrderRequest request)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request)
         {
             try
             {
@@ -315,52 +315,58 @@ namespace FINE.Service.Service
                     OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + customerId,
                     CustomerId = Guid.Parse(customerId),
                     CheckInDate = DateTime.Now,
+                    TotalAmount = 0,
+                    FinalAmount = 0,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     TimeSlotId = timeSlot.Id,
                     IsConfirm = false,
-                    IsPartyMode = true
+                    IsPartyMode = true,
+                    ItemQuantity = 0
                 };
 
-                order.OrderDetails = new List<OrderDetail>();
-                foreach (var orderDetail in request.OrderDetails)
+                if (request.OrderDetails != null)
                 {
-                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                        .Include(x => x.Menu)
-                        .Include(x => x.Product)
-                        .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
-                        .FirstOrDefault();
+                    order.OrderDetails = new List<OrderDetail>();
+                    foreach (var orderDetail in request.OrderDetails)
+                    {
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                            .Include(x => x.Menu)
+                            .Include(x => x.Product)
+                            .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                            .FirstOrDefault();
 
-                    if (productInMenu == null)
-                    {
-                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
-                           ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
-                    }
-                    else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
-                    {
-                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
-                           MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
-                    }
-                    else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                    {
-                        throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
-                    }
+                        if (productInMenu == null)
+                        {
+                            throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                               ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+                        }
+                        else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                        {
+                            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                               MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+                        }
+                        else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                        {
+                            throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                               ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                        }
 
-                    var detail = new OrderDetail()
-                    {
-                        Id = Guid.NewGuid(),
-                        OrderId = order.Id,
-                        ProductInMenuId = productInMenu.Id,
-                        StoreId = productInMenu.Product.Product.StoreId,
-                        ProductName = productInMenu.Product.Name,
-                        ProductCode = productInMenu.Product.Code,
-                        UnitPrice = productInMenu.Product.Price,
-                        Quantity = orderDetail.Quantity,
-                        TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
-                    };
-                    order.OrderDetails.Add(detail);
-                    order.ItemQuantity += detail.Quantity;
-                    order.TotalAmount += detail.TotalAmount;
+                        var detail = new OrderDetail()
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderId = order.Id,
+                            ProductInMenuId = productInMenu.Id,
+                            StoreId = productInMenu.Product.Product.StoreId,
+                            ProductName = productInMenu.Product.Name,
+                            ProductCode = productInMenu.Product.Code,
+                            UnitPrice = productInMenu.Product.Price,
+                            Quantity = orderDetail.Quantity,
+                            TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
+                        };
+                        order.OrderDetails.Add(detail);
+                        order.ItemQuantity += detail.Quantity;
+                        order.TotalAmount += detail.TotalAmount;
+                    }
                 }
                 order.OtherAmounts = new List<OtherAmount>();
                 var otherAmount = new OtherAmount()
@@ -386,17 +392,11 @@ namespace FINE.Service.Service
                     CreateAt = DateTime.Now
                 };
                 order.Parties.Add(party);
-                try
-                {
-                    await _unitOfWork.Repository<Order>().InsertAsync(order);
-                    await _unitOfWork.CommitAsync();
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
 
-                return new BaseResponseViewModel<dynamic>()
+                await _unitOfWork.Repository<Order>().InsertAsync(order);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -404,7 +404,11 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = party.PartyCode
+                    Data = new CoOrderResponse()
+                    {
+                        PartyCode = party.PartyCode,
+                        Order = _mapper.Map<OrderResponse>(order)
+                    }
                 };
             }
             catch (ErrorResponse ex)

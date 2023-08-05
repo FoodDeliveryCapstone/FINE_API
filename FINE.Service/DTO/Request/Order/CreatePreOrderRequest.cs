@@ -9,11 +9,11 @@ namespace FINE.Service.DTO.Request.Order
 {
     public class CreatePreOrderRequest
     {
-        public int OrderType { get; set; }
+        public int? OrderType { get; set; }
 
-        public Guid TimeSlotId { get; set; }
+        public Guid? TimeSlotId { get; set; }
 
-        public List<CreatePreOrderDetailRequest> OrderDetails { get; set; }
+        public List<CreatePreOrderDetailRequest>? OrderDetails { get; set; }
     }
     public class CreatePreOrderDetailRequest
     {
