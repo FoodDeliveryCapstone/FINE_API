@@ -48,7 +48,7 @@ namespace FINE.API.Controllers
         /// Get CoOrder
         /// </summary>
         [Cache(60)]
-        [HttpGet("{partyCode}")]
+        [HttpGet("coOrder/{partyCode}")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> GetPartyOrder(string partyCode)
         {
             try
@@ -60,8 +60,8 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-
-                return await _orderService.GetPartyOrder(partyCode);
+                var rs = await _orderService.GetPartyOrder(partyCode);
+                return Ok(rs);
             }
             catch (ErrorResponse ex)
             {
