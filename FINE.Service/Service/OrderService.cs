@@ -387,8 +387,8 @@ namespace FINE.Service.Service
                 coOrder.PartyOrder.Add(orderCard);
 
                 var redisValue = JsonConvert.SerializeObject(coOrder);
-                db.SetAdd(coOrder.PartyCode, redisValue);
-
+                db.StringSet(coOrder.PartyCode, redisValue);
+                    
                 var party = new Party()
                 {
                     Id = Guid.NewGuid(),
@@ -455,7 +455,7 @@ namespace FINE.Service.Service
                 coOrder.PartyOrder.Add(orderCard);
 
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
-                db.SetAdd(partyCode, redisNewValue);
+                db.StringSet(partyCode, redisNewValue);
 
                 var newParty = new Party()
                 {
@@ -607,7 +607,7 @@ namespace FINE.Service.Service
                 orderCard.TotalAmount += product.TotalAmount;
 
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
-                db.SetAdd(coOrder.PartyCode, redisValue);
+                db.StringSet(coOrder.PartyCode, redisValue);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
