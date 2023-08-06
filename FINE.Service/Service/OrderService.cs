@@ -511,7 +511,7 @@ namespace FINE.Service.Service
                     throw new TimeoutException("Server Redis không hoạt động");
                 }
 
-                var redisValue = db.StringGet(partyCode);
+                var redisValue = await db.StringGetAsync(partyCode);
                 var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
