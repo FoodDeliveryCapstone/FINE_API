@@ -118,7 +118,7 @@ namespace FINE.API.Controllers
         /// Join CoOrder
         /// </summary>
         [HttpPost("join")]
-        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> JoinCoOrder(string partyCode)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string partyCode)
         {
             try
             {

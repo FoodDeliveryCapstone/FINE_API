@@ -27,6 +27,7 @@ using Hangfire;
 using FINE.Service.Attributes;
 using StackExchange.Redis;
 using Newtonsoft.Json;
+using ServiceStack.Redis;
 
 namespace FINE.Service.Service
 {
@@ -38,7 +39,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
-        Task<BaseResponseViewModel<OrderResponse>> JoinPartyOrder(string customerId, string partyCode);
+        Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
@@ -383,9 +384,8 @@ namespace FINE.Service.Service
                 }
                 coOrder.PartyOrder.Add(orderCard);
 
-                var redisKey = "coOrder" + coOrder.PartyCode.ToString();
                 var redisValue = JsonConvert.SerializeObject(coOrder);
-                db.SetAdd(redisKey, redisValue);
+                db.SetAdd(coOrder.PartyCode, redisValue);
 
                 var party = new Party()
                 {
@@ -417,22 +417,48 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderResponse>> JoinPartyOrder(string customerId, string partyCode)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode)
         {
             try
             {
-                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                    .Include(x => x.Order)
-                    .Where(x => x.PartyCode == partyCode)
-                    .FirstOrDefaultAsync();
 
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.PartyCode == partyCode)
+                                                .FirstOrDefaultAsync();
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                // Tạo kết nối
+                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
+
+                // Lấy DB
+                IDatabase db = redis.GetDatabase(1);
+
+                // Ping thử
+                if (db.Ping().TotalSeconds > 5)
+                {
+                    throw new TimeoutException("Server Redis không hoạt động");
+                }
+
+                var redisValue = db.StringGet(partyCode);
+                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
+
+                var orderCard = new CoOrderPartyCard()
+                {
+                    Customer = _mapper.Map<CustomerCoOrderResponse>(customer)
+                };
+                coOrder.PartyOrder.Add(orderCard);
+
+                var redisNewValue = JsonConvert.SerializeObject(coOrder);
+                db.SetAdd(partyCode, redisNewValue);
 
                 var newParty = new Party()
                 {
                     Id = Guid.NewGuid(),
-                    OrderId = partyOrder.Id,
+                    CustomerId = Guid.Parse(customerId),
                     PartyCode = partyCode,
                     Status = (int)PartyOrderStatus.NotConfirm,
                     IsActive = true,
@@ -442,7 +468,7 @@ namespace FINE.Service.Service
                 _unitOfWork.Repository<Party>().InsertAsync(newParty);
                 _unitOfWork.CommitAsync();
 
-                return new BaseResponseViewModel<OrderResponse>()
+                return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -450,7 +476,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<OrderResponse>(partyOrder.Order)
+                    Data = coOrder
                 };
 
             }
