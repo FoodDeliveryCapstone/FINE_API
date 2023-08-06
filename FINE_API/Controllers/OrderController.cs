@@ -1,4 +1,5 @@
-﻿using FINE.Service.DTO.Request;
+﻿using FINE.Service.Caches;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -46,6 +47,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get CoOrder
         /// </summary>
+        [Cache(60)]
         [HttpGet("{partyCode}")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> GetPartyOrder(string partyCode)
         {
@@ -155,6 +157,30 @@ namespace FINE.API.Controllers
                 }
                 //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.JoinPartyOrder(customerId, partyCode);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Add product into CoOrder
+        /// </summary>
+        [HttpPost("coOrder/card")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> AddProductIntoPartyCode(string partyCode, AddProductCoOrderRequest request)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+                return await _orderService.AddProductIntoPartyCode(customerId, partyCode, request);
             }
             catch (ErrorResponse ex)
             {
