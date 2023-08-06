@@ -25,6 +25,8 @@ using Hangfire.Server;
 using Microsoft.Extensions.Configuration;
 using Hangfire;
 using FINE.Service.Attributes;
+using StackExchange.Redis;
+using Newtonsoft.Json;
 
 namespace FINE.Service.Service
 {
@@ -60,7 +62,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                var order = _unitOfWork.Repository<Order>().GetAll()
+                var order = _unitOfWork.Repository<Data.Entity.Order>().GetAll()
                                         .Where(x => x.CustomerId == Guid.Parse(customerId))
                                         .OrderByDescending(x => x.CheckInDate)
                                         .ProjectTo<OrderResponse>(_mapper.ConfigurationProvider)
@@ -88,7 +90,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                var order = await _unitOfWork.Repository<Order>().GetAll()
+                var order = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
                                     .FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
@@ -251,12 +253,12 @@ namespace FINE.Service.Service
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
                 #endregion
 
-                var order = _mapper.Map<Order>(request);
+                var order = _mapper.Map<Data.Entity.Order>(request);
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
-                await _unitOfWork.Repository<Order>().InsertAsync(order);
+                await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();
 
                 var isSuccessPayment = await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
@@ -268,7 +270,7 @@ namespace FINE.Service.Service
                 else
                 {
                     order.OrderStatus = (int)OrderStatusEnum.Processing;
-                    await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                    await _unitOfWork.Repository<Data.Entity.Order>().UpdateDetached(order);
                     await _unitOfWork.CommitAsync();
                 }
 
@@ -297,6 +299,18 @@ namespace FINE.Service.Service
         {
             try
             {
+                // Tạo kết nối
+                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
+
+                // Lấy DB
+                IDatabase db = redis.GetDatabase(1);
+
+                // Ping thử
+                if (db.Ping().TotalSeconds > 5)
+                {
+                    throw new TimeoutException("Server Redis không hoạt động");
+                }
+
                 #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
@@ -309,24 +323,24 @@ namespace FINE.Service.Service
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
-                var order = new Order()
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
+
+                var coOrder = new CoOrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + customerId,
-                    CustomerId = Guid.Parse(customerId),
-                    CheckInDate = DateTime.Now,
-                    TotalAmount = 0,
-                    FinalAmount = 0,
-                    OrderStatus = (int)OrderStatusEnum.PreOrder,
-                    TimeSlotId = timeSlot.Id,
-                    IsConfirm = false,
-                    IsPartyMode = true,
-                    ItemQuantity = 0
+                    PartyCode = Utils.GenerateRandomCode(),
+                    PartyOrder = new List<CoOrderPartyCard>()
+                };
+
+                var orderCard = new CoOrderPartyCard()
+                {
+                    Customer = _mapper.Map<CustomerCoOrderResponse>(customer),
+                    OrderDetails = new List<CoOrderDetailResponse>()
                 };
 
                 if (request.OrderDetails != null)
                 {
-                    order.OrderDetails = new List<OrderDetail>();
                     foreach (var orderDetail in request.OrderDetails)
                     {
                         var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
@@ -351,49 +365,37 @@ namespace FINE.Service.Service
                                ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
                         }
 
-                        var detail = new OrderDetail()
+                        var product = new CoOrderDetailResponse()
                         {
-                            Id = Guid.NewGuid(),
-                            OrderId = order.Id,
                             ProductInMenuId = productInMenu.Id,
-                            StoreId = productInMenu.Product.Product.StoreId,
+                            ProductId = productInMenu.ProductId,
                             ProductName = productInMenu.Product.Name,
-                            ProductCode = productInMenu.Product.Code,
                             UnitPrice = productInMenu.Product.Price,
                             Quantity = orderDetail.Quantity,
-                            TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
+                            TotalAmount = orderDetail.Quantity * productInMenu.Product.Price,
+                            Note = orderDetail.Note
                         };
-                        order.OrderDetails.Add(detail);
-                        order.ItemQuantity += detail.Quantity;
-                        order.TotalAmount += detail.TotalAmount;
+                        orderCard.OrderDetails.Add(product);
+                        orderCard.ItemQuantity += product.Quantity;
+                        orderCard.TotalAmount += product.TotalAmount;
                     }
                 }
-                order.OtherAmounts = new List<OtherAmount>();
-                var otherAmount = new OtherAmount()
-                {
-                    Id = Guid.NewGuid(),
-                    OrderId = order.Id,
-                    Amount = 15000,
-                    Type = (int)OtherAmountTypeEnum.ShippingFee
-                };
-                order.OtherAmounts.Add(otherAmount);
-                order.TotalOtherAmount += otherAmount.Amount;
-                order.FinalAmount = order.TotalAmount + order.TotalOtherAmount;
+                coOrder.PartyOrder.Add(orderCard);
 
-                order.Parties = new List<Party>();
+                var redisKey = "coOrder" + coOrder.PartyCode.ToString();
+                var redisValue = JsonConvert.SerializeObject(coOrder);
+                db.SetAdd(redisKey, redisValue);
+
                 var party = new Party()
                 {
                     Id = Guid.NewGuid(),
-                    OrderId = order.Id,
                     CustomerId = Guid.Parse(customerId),
-                    PartyCode = Utils.GenerateRandomCode(),
+                    PartyCode = coOrder.PartyCode,
                     Status = (int)PartyOrderStatus.NotConfirm,
                     IsActive = true,
                     CreateAt = DateTime.Now
                 };
-                order.Parties.Add(party);
-
-                await _unitOfWork.Repository<Order>().InsertAsync(order);
+                await _unitOfWork.Repository<Party>().InsertAsync(party);
                 await _unitOfWork.CommitAsync();
 
                 return new BaseResponseViewModel<CoOrderResponse>()
@@ -404,11 +406,8 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = new CoOrderResponse()
-                    {
-                        PartyCode = party.PartyCode,
-                        Order = _mapper.Map<OrderResponse>(order)
-                    }
+                    Data = coOrder
+
                 };
             }
             catch (ErrorResponse ex)

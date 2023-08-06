@@ -7,7 +7,7 @@ public partial class Party
 {
     public Guid Id { get; set; }
 
-    public Guid OrderId { get; set; }
+    public Guid? OrderId { get; set; }
 
     public Guid CustomerId { get; set; }
 
@@ -23,5 +23,5 @@ public partial class Party
 
     public virtual Customer Customer { get; set; } = null!;
 
-    public virtual Order Order { get; set; } = null!;
+    public virtual Order? Order { get; set; }
 }

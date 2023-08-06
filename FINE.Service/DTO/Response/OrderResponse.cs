@@ -7,13 +7,6 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
-    public class CoOrderResponse
-    {
-        public string PartyCode { get; set; }
-
-        public OrderResponse Order { get; set; }
-    }
-
     public class OrderResponse
     {
         public Guid Id { get; set; }

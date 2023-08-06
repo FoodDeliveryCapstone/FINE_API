@@ -419,7 +419,6 @@ public partial class FineDevDbV2Context : DbContext
 
             entity.HasOne(d => d.Order).WithMany(p => p.Parties)
                 .HasForeignKey(d => d.OrderId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Party_Order");
         });
 
@@ -572,8 +571,6 @@ public partial class FineDevDbV2Context : DbContext
         modelBuilder.Entity<Station>(entity =>
         {
             entity.ToTable("Station");
-
-            entity.HasIndex(e => e.AreaCode, "IX_Station").IsUnique();
 
             entity.HasIndex(e => e.Code, "IX_Station_1").IsUnique();
 

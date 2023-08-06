@@ -93,6 +93,7 @@ namespace FINE.API.Mapper
             CreateMap<Order, OrderResponse>().ReverseMap();
             CreateMap<OrderDetail, OrderDetailResponse>().ReverseMap();
             CreateMap<Customer, CustomerOrderResponse>().ReverseMap();
+            CreateMap<Customer, CustomerCoOrderResponse>().ReverseMap();
             CreateMap<TimeSlot, TimeSlotOrderResponse>().ReverseMap();
             CreateMap<Station, StationOrderResponse>().ReverseMap();
             #endregion

@@ -99,14 +99,14 @@ namespace FINE.API.Controllers
         {
             try
             {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+                //if (customerId == null)
+                //{
+                //    return Unauthorized();
+                //}
+                var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.CreateCoOrder(customerId, request);
             }
             catch (ErrorResponse ex)
