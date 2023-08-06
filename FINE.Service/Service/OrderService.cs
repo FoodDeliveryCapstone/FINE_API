@@ -36,6 +36,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string id);
         //Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrders(PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
+        Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
@@ -479,6 +480,49 @@ namespace FINE.Service.Service
                     Data = coOrder
                 };
 
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode)
+        {
+            try
+            {
+
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.PartyCode == partyCode)
+                                                .FirstOrDefaultAsync();
+                if (partyOrder == null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                // Tạo kết nối
+                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
+
+                // Lấy DB
+                IDatabase db = redis.GetDatabase(1);
+
+                // Ping thử
+                if (db.Ping().TotalSeconds > 5)
+                {
+                    throw new TimeoutException("Server Redis không hoạt động");
+                }
+
+                var redisValue = db.StringGet(partyCode);
+                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                return new BaseResponseViewModel<CoOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = coOrder
+                };
             }
             catch (ErrorResponse ex)
             {
