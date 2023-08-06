@@ -338,6 +338,7 @@ namespace FINE.Service.Service
                     Customer = _mapper.Map<CustomerCoOrderResponse>(customer),
                     OrderDetails = new List<CoOrderDetailResponse>()
                 };
+                orderCard.Customer.IsAdmin = true;
 
                 if (request.OrderDetails != null)
                 {

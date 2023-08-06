@@ -50,5 +50,7 @@ namespace FINE.Service.DTO.Response
         public string? Name { get; set; } = null!;
 
         public string? CustomerCode { get; set; } = null!;
+
+        public bool IsAdmin { get; set; }
     }
 }
