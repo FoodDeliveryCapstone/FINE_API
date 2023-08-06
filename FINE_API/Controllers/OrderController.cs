@@ -47,7 +47,6 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get CoOrder
         /// </summary>
-        [Cache(60)]
         [HttpGet("coOrder/{partyCode}")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> GetPartyOrder(string partyCode)
         {
