@@ -574,16 +574,6 @@ namespace FINE.Service.Service
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
 
-                if (orderCard == null)
-                {
-                    var customer = await _unitOfWork.Repository<Customer>().GetAll()
-                                    .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
-                    orderCard = new CoOrderPartyCard()
-                    {
-                        Customer = _mapper.Map<CustomerCoOrderResponse>(customer)
-                    };
-                }
-
                 foreach (var requestOD in request.OrderDetails)
                 {
                     if (requestOD.Quantity == 0)
