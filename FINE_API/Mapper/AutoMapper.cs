@@ -108,13 +108,13 @@ namespace FINE.API.Mapper
 
 
 
-            //#region Staff
+            #region Staff
 
-            //CreateMap<Staff, StaffResponse>().ReverseMap();
-            //CreateMap<CreateStaffRequest, Staff>();
+            CreateMap<Staff, StaffResponse>().ReverseMap();
+            CreateMap<CreateStaffRequest, Staff>();
             //CreateMap<UpdateStaffRequest, Staff>();
 
-            //#endregion
+            #endregion
 
             //CreateMap<Store, ProductInMenuResponse>().ReverseMap();
             //CreateMap<IGrouping<Menu, ProductInMenu>, MenuResponse>().ReverseMap();
