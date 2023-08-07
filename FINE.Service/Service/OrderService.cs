@@ -572,12 +572,12 @@ namespace FINE.Service.Service
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
 
-                foreach (var orderDetail in request.OrderDetails)
+                foreach (var requestOD in request.OrderDetails)
                 {
                     var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
                         .Include(x => x.Menu)
                         .Include(x => x.Product)
-                        .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                        .Where(x => x.ProductId == requestOD.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
                         .FirstOrDefault();
 
                     if (productInMenu == null)
@@ -596,20 +596,29 @@ namespace FINE.Service.Service
                            ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
                     }
 
-                    var product = new CoOrderDetailResponse()
+                    var orderDetailCard =  orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
+                    if (orderDetailCard != null)
                     {
-                        ProductInMenuId = productInMenu.Id,
-                        ProductId = productInMenu.ProductId,
-                        ProductName = productInMenu.Product.Name,
-                        UnitPrice = productInMenu.Product.Price,
-                        Quantity = orderDetail.Quantity,
-                        TotalAmount = orderDetail.Quantity * productInMenu.Product.Price,
-                        Note = orderDetail.Note
-                    };
+                        orderDetailCard.Quantity += requestOD.Quantity;
+                        orderDetailCard.TotalAmount += (requestOD.Quantity * productInMenu.Product.Price);
+                    }
+                    else
+                    {
+                        var product = new CoOrderDetailResponse()
+                        {
+                            ProductInMenuId = productInMenu.Id,
+                            ProductId = productInMenu.ProductId,
+                            ProductName = productInMenu.Product.Name,
+                            UnitPrice = productInMenu.Product.Price,
+                            Quantity = requestOD.Quantity,
+                            TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
+                            Note = requestOD.Note
+                        };
 
-                    orderCard.OrderDetails.Add(product);
-                    orderCard.ItemQuantity += product.Quantity;
-                    orderCard.TotalAmount += product.TotalAmount;
+                        orderCard.OrderDetails.Add(product);
+                        orderCard.ItemQuantity += product.Quantity;
+                        orderCard.TotalAmount += product.TotalAmount;
+                    }
                 }
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
                 var rs = db.StringSet(partyCode, redisNewValue);
