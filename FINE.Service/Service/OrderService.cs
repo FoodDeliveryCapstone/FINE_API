@@ -580,6 +580,9 @@ namespace FINE.Service.Service
                     {
                         var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
                         orderCard.OrderDetails.Remove(orderDetailCard);
+
+                        orderCard.ItemQuantity -= orderDetailCard.Quantity;
+                        orderCard.TotalAmount -= orderDetailCard.TotalAmount;
                     }
                     else
                     {
@@ -608,11 +611,14 @@ namespace FINE.Service.Service
                         var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
                         if (orderDetailCard != null)
                         {
-                            orderDetailCard.Quantity = requestOD.Quantity;
-                            orderDetailCard.TotalAmount = (requestOD.Quantity * productInMenu.Product.Price);
+                            var quantityAdding = requestOD.Quantity -  orderDetailCard.Quantity;
+                            var amountAdding = (requestOD.Quantity * productInMenu.Product.Price) - orderDetailCard.TotalAmount;
 
-                            orderCard.ItemQuantity += requestOD.Quantity;
-                            orderCard.TotalAmount += orderDetailCard.TotalAmount;
+                            orderDetailCard.Quantity = requestOD.Quantity;
+                            orderDetailCard.TotalAmount = (requestOD.Quantity * productInMenu.Product.Price);                         
+
+                            orderCard.ItemQuantity += quantityAdding;
+                            orderCard.TotalAmount += amountAdding;
                         }
                         else
                         {
