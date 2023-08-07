@@ -42,7 +42,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
-        Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, AddProductCoOrderRequest request);
+        Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
@@ -533,7 +533,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, AddProductCoOrderRequest request)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request)
         {
             try
             {
@@ -572,41 +572,45 @@ namespace FINE.Service.Service
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
 
-                var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                                           .Include(x => x.Menu)
-                                           .Include(x => x.Product)
-                                           .Where(x => x.ProductId == request.ProductId && x.Menu.TimeSlotId == request.TimeSlotId)
-                                           .FirstOrDefault();
+                foreach (var orderDetail in request.OrderDetails)
+                {
+                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                        .Include(x => x.Menu)
+                        .Include(x => x.Product)
+                        .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                        .FirstOrDefault();
 
-                if (productInMenu == null)
-                {
-                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
-                       ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
-                }
-                else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
-                {
-                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
-                       MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
-                }
-                else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                {
-                    throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
-                }
+                    if (productInMenu == null)
+                    {
+                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                           ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+                    }
+                    else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                    {
+                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                           MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+                    }
+                    else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                    {
+                        throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                    }
 
-                var product = new CoOrderDetailResponse()
-                {
-                    ProductInMenuId = productInMenu.Id,
-                    ProductId = productInMenu.ProductId,
-                    ProductName = productInMenu.Product.Name,
-                    UnitPrice = productInMenu.Product.Price,
-                    Quantity = request.Quantity,
-                    TotalAmount = request.Quantity * productInMenu.Product.Price,
-                    Note = request.Note
-                };
-                orderCard.OrderDetails.Add(product);
-                orderCard.ItemQuantity += product.Quantity;
-                orderCard.TotalAmount += product.TotalAmount;
+                    var product = new CoOrderDetailResponse()
+                    {
+                        ProductInMenuId = productInMenu.Id,
+                        ProductId = productInMenu.ProductId,
+                        ProductName = productInMenu.Product.Name,
+                        UnitPrice = productInMenu.Product.Price,
+                        Quantity = orderDetail.Quantity,
+                        TotalAmount = orderDetail.Quantity * productInMenu.Product.Price,
+                        Note = orderDetail.Note
+                    };
+
+                    orderCard.OrderDetails.Add(product);
+                    orderCard.ItemQuantity += product.Quantity;
+                    orderCard.TotalAmount += product.TotalAmount;
+                }
 
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
                 db.StringSet(coOrder.PartyCode, redisValue);

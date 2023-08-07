@@ -167,7 +167,7 @@ namespace FINE.API.Controllers
         /// Add product into CoOrder
         /// </summary>
         [HttpPost("coOrder/card")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> AddProductIntoPartyCode(string partyCode, AddProductCoOrderRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> AddProductIntoPartyCode(string partyCode, CreatePreOrderRequest request)
         {
             try
             {
