@@ -120,7 +120,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Open CoOrder
         /// </summary>
-        [HttpPost("coOrder/openOrder")]
+        [HttpPost("coOrder/active")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> OpenCoOrder([FromBody] CreatePreOrderRequest request)
         {
             try
@@ -168,7 +168,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Join CoOrder
         /// </summary>
-        [HttpPost("join")]
+        [HttpPost("coOrder/party")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string partyCode)
         {
             try
@@ -216,7 +216,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Confirm CoOrder
         /// </summary>
-        [HttpPost("coOrder/confirm")]
+        [HttpPost("coOrder/confirmation")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderPartyCard>>> FinalConfirmCoOrder(string partyCode)
         {
             try
