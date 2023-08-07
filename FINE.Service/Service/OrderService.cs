@@ -346,6 +346,7 @@ namespace FINE.Service.Service
                     OrderDetails = new List<CoOrderDetailResponse>()
                 };
                 orderCard.Customer.IsAdmin = true;
+                orderCard.Customer.IsConfirm = false;
 
                 if (request.OrderDetails != null)
                 {
@@ -456,6 +457,7 @@ namespace FINE.Service.Service
                 {
                     Customer = _mapper.Map<CustomerCoOrderResponse>(customer)
                 };
+                orderCard.Customer.IsConfirm = false;
                 coOrder.PartyOrder.Add(orderCard);
 
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
@@ -713,6 +715,10 @@ namespace FINE.Service.Service
                 var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
+                orderCard.Customer.IsConfirm = true;
+
+                var redisNewValue = JsonConvert.SerializeObject(coOrder);
+                var rs = db.StringSet(partyCode, redisNewValue);
                 redis.Close();
                 return new BaseResponseViewModel<CoOrderPartyCard>()
                 {
