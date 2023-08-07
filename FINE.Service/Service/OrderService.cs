@@ -402,7 +402,7 @@ namespace FINE.Service.Service
                 };
                 await _unitOfWork.Repository<Party>().InsertAsync(party);
                 await _unitOfWork.CommitAsync();
-
+                redis.Close();
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -471,7 +471,7 @@ namespace FINE.Service.Service
 
                 _unitOfWork.Repository<Party>().InsertAsync(newParty);
                 _unitOfWork.CommitAsync();
-
+                redis.Close();
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -515,7 +515,7 @@ namespace FINE.Service.Service
 
                 var redisValue = await db.StringGetAsync(partyCode);
                 var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-
+                redis.Close();
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -611,10 +611,9 @@ namespace FINE.Service.Service
                     orderCard.ItemQuantity += product.Quantity;
                     orderCard.TotalAmount += product.TotalAmount;
                 }
-
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
-                db.StringSet(coOrder.PartyCode, redisValue);
-
+                var rs = db.StringSet(partyCode, redisNewValue);
+                redis.Close();
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -662,7 +661,7 @@ namespace FINE.Service.Service
                 var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
-
+                redis.Close();
                 return new BaseResponseViewModel<CoOrderPartyCard>()
                 {
                     Status = new StatusViewModel()
