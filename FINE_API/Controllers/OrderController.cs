@@ -116,11 +116,12 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
+        
         /// <summary>
-        /// Create CoOrder
+        /// Open CoOrder
         /// </summary>
-        [HttpPost("coOrder")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> CreateCoOrder([FromBody] CreatePreOrderRequest request)
+        [HttpPost("coOrder/openOrder")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> OpenCoOrder([FromBody] CreatePreOrderRequest request)
         {
             try
             {
@@ -132,13 +133,38 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
                 //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
-                return await _orderService.CreateCoOrder(customerId, request);
+                return await _orderService.OpenCoOrder(customerId, request);
             }
             catch (ErrorResponse ex)
             {
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Prepare CoOrder
+        /// </summary>
+        [HttpPost("coOrder/preOrder")]
+        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreCoOrder(string timeSlot, string partyCode)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+                return await _orderService.CreatePreCoOrder(customerId, timeSlot, partyCode);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
         /// <summary>
         /// Join CoOrder
         /// </summary>

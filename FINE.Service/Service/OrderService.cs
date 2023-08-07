@@ -29,6 +29,7 @@ using StackExchange.Redis;
 using Newtonsoft.Json;
 using ServiceStack.Redis;
 using Azure.Core;
+using ServiceStack.Web;
 
 namespace FINE.Service.Service
 {
@@ -40,10 +41,11 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
-        Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
+        Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
+        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId,string timeSlotId  ,string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
@@ -300,7 +302,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request)
         {
             try
             {
@@ -688,6 +690,142 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId,string timeSlotId, string partyCode)
+        {
+            try
+            {
+                // Tạo kết nối
+                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
+
+                // Lấy DB
+                IDatabase db = redis.GetDatabase(1);
+
+                // Ping thử
+                if (db.Ping().TotalSeconds > 5)
+                {
+                    throw new TimeoutException("Server Redis không hoạt động");
+                }
+
+                var redisValue = db.StringGet(partyCode);
+                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                #region check timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(timeSlotId));
+
+                if (timeSlot == null || timeSlot.IsActive == false)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
+                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
+
+                if (!Utils.CheckTimeSlot(timeSlot))
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
+
+                var order = new OrderResponse()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode() + "-" + customerId,
+                    OrderStatus = (int)OrderStatusEnum.PreOrder,
+                    OrderType = (int)OrderTypeEnum.Delivery,
+                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
+                    StationOrder = null,
+                    IsConfirm = false,
+                    IsPartyMode = true
+                };
+
+                order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                            .Where(x => x.Id == Guid.Parse(customerId))
+                                            .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
+                                            .FirstOrDefaultAsync();
+
+                order.OrderDetails = new List<OrderDetailResponse>();
+                foreach(var customerOrder in coOrder.PartyOrder)
+                {
+                    foreach (var orderDetail in customerOrder.OrderDetails)
+                    {
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                            .Include(x => x.Menu)
+                            .Include(x => x.Product)
+                            .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                            .FirstOrDefault();
+
+                        if (productInMenu == null)
+                        {
+                            throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                               ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+                        }
+                        else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                        {
+                            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                               MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+                        }
+                        else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                        {
+                            throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                               ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                        }
+                        var product =  order.OrderDetails.Find(x => x.ProductId == orderDetail.ProductId);
+                        if (product == null)
+                        {
+                            var detail = new OrderDetailResponse()
+                            {
+                                Id = Guid.NewGuid(),
+                                OrderId = order.Id,
+                                ProductId = productInMenu.ProductId,
+                                ProductInMenuId = productInMenu.Id,
+                                StoreId = productInMenu.Product.Product.StoreId,
+                                ProductName = productInMenu.Product.Name,
+                                ProductCode = productInMenu.Product.Code,
+                                UnitPrice = productInMenu.Product.Price,
+                                Quantity = orderDetail.Quantity,
+                                TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
+                            };
+                            order.OrderDetails.Add(detail);
+                            order.ItemQuantity += detail.Quantity;
+                            order.TotalAmount += detail.TotalAmount;
+                        }
+                        else
+                        {
+                            product.Quantity += orderDetail.Quantity;
+                            product.TotalAmount += orderDetail.TotalAmount;
+
+                            order.ItemQuantity += product.Quantity;
+                            order.TotalAmount += product.TotalAmount;
+                        }
+                    }
+                }
+
+                var otherAmount = new OrderOtherAmount()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    Amount = 15000,
+                    AmountType = (int)OtherAmountTypeEnum.ShippingFee
+                };
+                order.OtherAmounts = new List<OrderOtherAmount>();
+                order.OtherAmounts.Add(otherAmount);
+                order.TotalOtherAmount += otherAmount.Amount;
+                order.FinalAmount = order.TotalAmount + order.TotalOtherAmount;
+                order.Point = (int)(order.FinalAmount / 10000);
+
+                return new BaseResponseViewModel<OrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = order
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+
+        }
+
         //public Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId,string orderId , CreatePreOrderRequest request)
         //{
         //    try
@@ -817,7 +955,7 @@ namespace FINE.Service.Service
         //        }
         //    }
 
-        //    public async Task<BaseResponseViewModel<dynamic>> CreateCoOrder(int customerId, CreateGenOrderRequest request)
+        //    public async Task<BaseResponseViewModel<dynamic>> OpenCoOrder(int customerId, CreateGenOrderRequest request)
         //    {
         //        try
         //        {
