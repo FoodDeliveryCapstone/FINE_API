@@ -45,7 +45,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
-        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId,string timeSlotId  ,string partyCode);
+        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, string timeSlotId, string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
@@ -392,7 +392,7 @@ namespace FINE.Service.Service
 
                 var redisValue = JsonConvert.SerializeObject(coOrder);
                 db.StringSet(coOrder.PartyCode, redisValue);
-                    
+
                 var party = new Party()
                 {
                     Id = Guid.NewGuid(),
@@ -574,6 +574,16 @@ namespace FINE.Service.Service
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
 
+                if (orderCard == null)
+                {
+                    var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
+                    orderCard = new CoOrderPartyCard()
+                    {
+                        Customer = _mapper.Map<CustomerCoOrderResponse>(customer)
+                    };
+                }
+
                 foreach (var requestOD in request.OrderDetails)
                 {
                     if (requestOD.Quantity == 0)
@@ -608,20 +618,10 @@ namespace FINE.Service.Service
                                ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
                         }
 
-                        var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
-                        if (orderDetailCard != null)
+                        if (orderCard.OrderDetails == null)
                         {
-                            var quantityAdding = requestOD.Quantity -  orderDetailCard.Quantity;
-                            var amountAdding = (requestOD.Quantity * productInMenu.Product.Price) - orderDetailCard.TotalAmount;
+                            orderCard.OrderDetails = new List<CoOrderDetailResponse>();
 
-                            orderDetailCard.Quantity = requestOD.Quantity;
-                            orderDetailCard.TotalAmount = (requestOD.Quantity * productInMenu.Product.Price);                         
-
-                            orderCard.ItemQuantity += quantityAdding;
-                            orderCard.TotalAmount += amountAdding;
-                        }
-                        else
-                        {
                             var product = new CoOrderDetailResponse()
                             {
                                 ProductInMenuId = productInMenu.Id,
@@ -636,9 +636,45 @@ namespace FINE.Service.Service
                             orderCard.OrderDetails.Add(product);
                             orderCard.ItemQuantity += product.Quantity;
                             orderCard.TotalAmount += product.TotalAmount;
+
+                            coOrder.PartyOrder.Add(orderCard);
+                        }
+                        else 
+                        {
+                            var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
+                            if (orderDetailCard != null)
+                            {
+                                var quantityAdding = requestOD.Quantity - orderDetailCard.Quantity;
+                                var amountAdding = (requestOD.Quantity * productInMenu.Product.Price) - orderDetailCard.TotalAmount;
+
+                                orderDetailCard.Quantity = requestOD.Quantity;
+                                orderDetailCard.TotalAmount = (requestOD.Quantity * productInMenu.Product.Price);
+
+                                orderCard.ItemQuantity += quantityAdding;
+                                orderCard.TotalAmount += amountAdding;
+                            }
+                            else
+                            {
+                                var product = new CoOrderDetailResponse()
+                                {
+                                    ProductInMenuId = productInMenu.Id,
+                                    ProductId = productInMenu.ProductId,
+                                    ProductName = productInMenu.Product.Name,
+                                    UnitPrice = productInMenu.Product.Price,
+                                    Quantity = requestOD.Quantity,
+                                    TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
+                                    Note = requestOD.Note
+                                };
+
+                                orderCard.OrderDetails.Add(product);
+                                orderCard.ItemQuantity += product.Quantity;
+                                orderCard.TotalAmount += product.TotalAmount;
+                            }
+
                         }
                     }
                 }
+
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
                 var rs = db.StringSet(partyCode, redisNewValue);
                 redis.Close();
@@ -707,7 +743,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId,string timeSlotId, string partyCode)
+        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, string timeSlotId, string partyCode)
         {
             try
             {
@@ -756,7 +792,7 @@ namespace FINE.Service.Service
                                             .FirstOrDefaultAsync();
 
                 order.OrderDetails = new List<OrderDetailResponse>();
-                foreach(var customerOrder in coOrder.PartyOrder)
+                foreach (var customerOrder in coOrder.PartyOrder)
                 {
                     foreach (var orderDetail in customerOrder.OrderDetails)
                     {
@@ -781,7 +817,7 @@ namespace FINE.Service.Service
                             throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
                                ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
                         }
-                        var product =  order.OrderDetails.Find(x => x.ProductId == orderDetail.ProductId);
+                        var product = order.OrderDetails.Find(x => x.ProductId == orderDetail.ProductId);
                         if (product == null)
                         {
                             var detail = new OrderDetailResponse()
