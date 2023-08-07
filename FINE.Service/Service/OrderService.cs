@@ -28,6 +28,7 @@ using FINE.Service.Attributes;
 using StackExchange.Redis;
 using Newtonsoft.Json;
 using ServiceStack.Redis;
+using Azure.Core;
 
 namespace FINE.Service.Service
 {
@@ -42,6 +43,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> CreateCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, AddProductCoOrderRequest request);
+        Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
@@ -617,6 +619,55 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     }
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode)
+        {
+            try
+            {
+
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.PartyCode == partyCode && x.CustomerId == Guid.Parse(customerId))
+                                                .FirstOrDefaultAsync();
+                if (partyOrder == null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                partyOrder.Status = (int)PartyOrderStatus.Confirm;
+
+                await _unitOfWork.Repository<Party>().UpdateDetached(partyOrder);
+                await _unitOfWork.CommitAsync();
+
+                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
+
+                // Lấy DB
+                IDatabase db = redis.GetDatabase(1);
+
+                // Ping thử
+                if (db.Ping().TotalSeconds > 5)
+                {
+                    throw new TimeoutException("Server Redis không hoạt động");
+                }
+
+                var redisValue = db.StringGet(partyCode);
+                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
+
+                return new BaseResponseViewModel<CoOrderPartyCard>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = orderCard
                 };
             }
             catch (ErrorResponse ex)

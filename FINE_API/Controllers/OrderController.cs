@@ -186,5 +186,29 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Confirm CoOrder
+        /// </summary>
+        [HttpPost("coOrder/confirm")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderPartyCard>>> FinalConfirmCoOrder(string partyCode)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+                return await _orderService.FinalConfirmCoOrder(customerId, partyCode);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }
