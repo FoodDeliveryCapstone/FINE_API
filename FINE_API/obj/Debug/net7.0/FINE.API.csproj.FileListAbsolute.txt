@@ -143,7 +143,6 @@ D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.Genera
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfoInputs.cache
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfo.cs
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.csproj.CoreCompileInputs.cache
-D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.MvcApplicationPartsAssemblyInfo.cs
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.MvcApplicationPartsAssemblyInfo.cache
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\appsettings.Development.json
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\bin\Debug\net7.0\appsettings.json
