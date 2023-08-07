@@ -626,8 +626,6 @@ namespace FINE.Service.Service
                             orderCard.OrderDetails.Add(product);
                             orderCard.ItemQuantity += product.Quantity;
                             orderCard.TotalAmount += product.TotalAmount;
-
-                            coOrder.PartyOrder.Add(orderCard);
                         }
                         else 
                         {
