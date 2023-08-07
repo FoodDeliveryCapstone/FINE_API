@@ -576,50 +576,61 @@ namespace FINE.Service.Service
 
                 foreach (var requestOD in request.OrderDetails)
                 {
-                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                        .Include(x => x.Menu)
-                        .Include(x => x.Product)
-                        .Where(x => x.ProductId == requestOD.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
-                        .FirstOrDefault();
-
-                    if (productInMenu == null)
+                    if (requestOD.Quantity == 0)
                     {
-                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
-                           ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
-                    }
-                    else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
-                    {
-                        throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
-                           MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
-                    }
-                    else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                    {
-                        throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
-                    }
-
-                    var orderDetailCard =  orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
-                    if (orderDetailCard != null)
-                    {
-                        orderDetailCard.Quantity += requestOD.Quantity;
-                        orderDetailCard.TotalAmount += (requestOD.Quantity * productInMenu.Product.Price);
+                        var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
+                        orderCard.OrderDetails.Remove(orderDetailCard);
                     }
                     else
                     {
-                        var product = new CoOrderDetailResponse()
-                        {
-                            ProductInMenuId = productInMenu.Id,
-                            ProductId = productInMenu.ProductId,
-                            ProductName = productInMenu.Product.Name,
-                            UnitPrice = productInMenu.Product.Price,
-                            Quantity = requestOD.Quantity,
-                            TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
-                            Note = requestOD.Note
-                        };
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                            .Include(x => x.Menu)
+                            .Include(x => x.Product)
+                            .Where(x => x.ProductId == requestOD.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                            .FirstOrDefault();
 
-                        orderCard.OrderDetails.Add(product);
-                        orderCard.ItemQuantity += product.Quantity;
-                        orderCard.TotalAmount += product.TotalAmount;
+                        if (productInMenu == null)
+                        {
+                            throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                               ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+                        }
+                        else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                        {
+                            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                               MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+                        }
+                        else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                        {
+                            throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                               ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                        }
+
+                        var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
+                        if (orderDetailCard != null)
+                        {
+                            orderDetailCard.Quantity = requestOD.Quantity;
+                            orderDetailCard.TotalAmount = (requestOD.Quantity * productInMenu.Product.Price);
+
+                            orderCard.ItemQuantity += requestOD.Quantity;
+                            orderCard.TotalAmount += orderDetailCard.TotalAmount;
+                        }
+                        else
+                        {
+                            var product = new CoOrderDetailResponse()
+                            {
+                                ProductInMenuId = productInMenu.Id,
+                                ProductId = productInMenu.ProductId,
+                                ProductName = productInMenu.Product.Name,
+                                UnitPrice = productInMenu.Product.Price,
+                                Quantity = requestOD.Quantity,
+                                TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
+                                Note = requestOD.Note
+                            };
+
+                            orderCard.OrderDetails.Add(product);
+                            orderCard.ItemQuantity += product.Quantity;
+                            orderCard.TotalAmount += product.TotalAmount;
+                        }
                     }
                 }
                 var redisNewValue = JsonConvert.SerializeObject(coOrder);
