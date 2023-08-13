@@ -119,4 +119,32 @@ namespace FINE.Service.DTO.Response
 
         public Guid FloorId { get; set; }
     }
+
+    public class OrderForStaffResponse
+    {
+        public Guid Id { get; set; }
+        public string? OrderCode { get; set; } = null!;
+
+        public Guid? CustomerId { get; set; }
+        public double? FinalAmount { get; set; }
+
+        public int? OrderStatus { get; set; }
+
+        public int? OrderType { get; set; }
+
+        public TimeSlotOrderResponse? TimeSlot { get; set; }
+
+        public Guid? StationId { get; set; }
+
+        public bool? IsConfirm { get; set; }
+
+        public bool? IsPartyMode { get; set; }
+
+        public int? ItemQuantity { get; set; }
+
+        public string? Note { get; set; }
+
+        public List<OrderDetailResponse>? OrderDetails { get; set; }
+
+    }
 }
