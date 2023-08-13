@@ -20,6 +20,7 @@ namespace FINE.Service.Service
     public interface IStationService
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
+        Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
     }
 
     public class StationService : IStationService
@@ -55,6 +56,34 @@ namespace FINE.Service.Service
                         Total = stations.Item1
                     },
                     Data = stations.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId)
+        {
+            try
+            {
+                var id = Guid.Parse(stationId);
+                var station = _unitOfWork.Repository<Station>().GetAll()
+                                .FirstOrDefault(x => x.Id == id);
+                if (station == null)
+                    throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
+                       StationErrorEnums.NOT_FOUND.GetDisplayName());
+
+                return new BaseResponseViewModel<StationResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<StationResponse>(station)
                 };
             }
             catch (ErrorResponse ex)

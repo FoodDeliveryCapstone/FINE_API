@@ -120,7 +120,7 @@ namespace FINE.Service.Helpers
         public enum StationErrorEnums
         {
             //404
-            [Display(Name = "Not found this destination!")]
+            [Display(Name = "Not found this station!")]
             NOT_FOUND = 4041,
 
         }

@@ -7,27 +7,27 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FINE.API.Controllers
 {
-    [Route(Helpers.SettingVersionApi.ApiAdminVersion + "/customer")]
+    [Route(Helpers.SettingVersionApi.ApiAdminVersion + "/station")]
     [ApiController]
-    public class AdminCustomerController : ControllerBase
+    public class AdminStationController : ControllerBase
     {
-        private readonly ICustomerService _customerService;
+        private readonly IStationService _stationService;
 
-        public AdminCustomerController(ICustomerService customerService)
+        public AdminStationController(IStationService stationService)
         {
-            _customerService = customerService;
+            _stationService = stationService;
         }
 
         /// <summary>
-        /// Get Customer by Id
+        /// Get Station by Id
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
-        [HttpGet("{customerId}")]
-        public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> GetCustomerById([FromRoute] string customerId)
+        [HttpGet("{stationId}")]
+        public async Task<ActionResult<BaseResponseViewModel<StationResponse>>> GetStationById([FromRoute] string stationId)
         {
             try
             {
-                var result = await _customerService.GetCustomerById(customerId);
+                var result = await _stationService.GetStationById(stationId);
                 return Ok(result);
             }
             catch (ErrorResponse ex)
