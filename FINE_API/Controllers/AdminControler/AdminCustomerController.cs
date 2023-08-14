@@ -36,6 +36,24 @@ namespace FINE.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Get Customers
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin")]
+        [HttpGet]
+        public async Task<ActionResult<BaseResponsePagingViewModel<CustomerResponse>>> GetCustomers([FromQuery] CustomerResponse filter, [FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                var result = await _customerService.GetCustomers(filter, paging);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
 
     }
 }

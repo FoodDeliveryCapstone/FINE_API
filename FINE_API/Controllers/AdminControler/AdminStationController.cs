@@ -36,6 +36,24 @@ namespace FINE.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Get Stations
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin")]
+        [HttpGet]
+        public async Task<ActionResult<BaseResponsePagingViewModel<StationResponse>>> GetStations([FromQuery] StationResponse filter, [FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                var result = await _stationService.GetStations(filter, paging);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
 
     }
 }

@@ -24,7 +24,7 @@ namespace FINE.Service.Service
 {
     public interface ICustomerService
     {
-        //Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
         //Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
         //Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
@@ -174,30 +174,32 @@ namespace FINE.Service.Service
             }
         }
 
-        //public async Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        var customers = _unitOfWork.Repository<Customer>().GetAll()
-        //            .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
-        //            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+        public async Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse filter, PagingRequest paging)
+        {
+            try
+            {
+                var customer = _unitOfWork.Repository<Customer>().GetAll()
+                    .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
+                    .DynamicFilter(filter)
+                    .DynamicSort(filter)
+                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-        //        return new BaseResponsePagingViewModel<CustomerResponse>()
-        //        {
-        //            Metadata = new PagingsMetadata()
-        //            {
-        //                Page = paging.Page,
-        //                Size = paging.PageSize,
-        //                Total = customers.Item1
-        //            },
-        //            Data = customers.Item2.ToList()
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
+                return new BaseResponsePagingViewModel<CustomerResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = customer.Item1
+                    },
+                    Data = customer.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw;
+            }
+        }
 
         //public async Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string id, UpdateCustomerRequest request)
         //{

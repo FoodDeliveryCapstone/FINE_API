@@ -21,6 +21,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
+        Task<BaseResponsePagingViewModel<StationResponse>> GetStations(StationResponse filter, PagingRequest paging);
     }
 
     public class StationService : IStationService
@@ -84,6 +85,35 @@ namespace FINE.Service.Service
                         ErrorCode = 0
                     },
                     Data = _mapper.Map<StationResponse>(station)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<StationResponse>> GetStations(StationResponse filter, PagingRequest paging)
+        {
+            try
+            {
+                var station = _unitOfWork.Repository<Station>().GetAll()
+                                        .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
+                                        .DynamicFilter(filter)
+                                        .DynamicSort(filter)
+                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<StationResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = station.Item1
+                    },
+                    Data = station.Item2.ToList()
+
                 };
             }
             catch (ErrorResponse ex)
