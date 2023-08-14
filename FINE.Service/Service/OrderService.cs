@@ -30,13 +30,14 @@ using Newtonsoft.Json;
 using ServiceStack.Redis;
 using Azure.Core;
 using ServiceStack.Web;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FINE.Service.Service
 {
     public interface IOrderService
     {
         Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string id);
-        //Task<BaseResponsePagingViewModel<GenOrderResponse>> GetOrders(PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
@@ -629,7 +630,7 @@ namespace FINE.Service.Service
                             orderCard.ItemQuantity += product.Quantity;
                             orderCard.TotalAmount += product.TotalAmount;
                         }
-                        else 
+                        else
                         {
                             var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
                             if (orderDetailCard != null)
@@ -1043,6 +1044,36 @@ namespace FINE.Service.Service
         //        }
         //    }
         //}
+        public async Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging)
+        {
+            try
+            {
+
+                var order = _unitOfWork.Repository<Data.Entity.Order>().GetAll()
+                                        .OrderByDescending(x => x.CheckInDate)
+                                        .ProjectTo<OrderForStaffResponse>(_mapper.ConfigurationProvider)
+                                        .DynamicFilter(filter)
+                                        .DynamicSort(filter)
+                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<OrderForStaffResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = order.Item1
+                    },
+                    Data = order.Item2.ToList()
+
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
 
