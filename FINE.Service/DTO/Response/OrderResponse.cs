@@ -125,7 +125,8 @@ namespace FINE.Service.DTO.Response
         public Guid Id { get; set; }
         public string? OrderCode { get; set; } = null!;
 
-        public Guid? CustomerId { get; set; }
+        public Guid CustomerId { get; set; }
+        public DateTime? CheckInDate { get; set; }
         public double? FinalAmount { get; set; }
 
         public int? OrderStatus { get; set; }
@@ -134,7 +135,7 @@ namespace FINE.Service.DTO.Response
 
         public TimeSlotOrderResponse? TimeSlot { get; set; }
 
-        public Guid? StationId { get; set; }
+        public Guid StationId { get; set; }
 
         public bool? IsConfirm { get; set; }
 
