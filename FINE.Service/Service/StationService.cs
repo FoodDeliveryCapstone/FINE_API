@@ -96,7 +96,8 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<StationResponse>> GetStations(StationResponse filter, PagingRequest paging)
         {
             try
-            {
+            { 
+
                 var station = _unitOfWork.Repository<Station>().GetAll()
                                         .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
                                         .DynamicFilter(filter)
