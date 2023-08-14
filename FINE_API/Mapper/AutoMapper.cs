@@ -120,6 +120,11 @@ namespace FINE.API.Mapper
 
             //CreateMap<Store, ProductInMenuResponse>().ReverseMap();
             //CreateMap<IGrouping<Menu, ProductInMenu>, MenuResponse>().ReverseMap();
+
+            #region Box
+            CreateMap<Box, BoxResponse>().ReverseMap();
+
+            #endregion
         }
     }
 }
