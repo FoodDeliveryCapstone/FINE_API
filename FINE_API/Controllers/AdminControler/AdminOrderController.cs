@@ -37,5 +37,39 @@ namespace FINE.API.Controllers.AdminControler
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Create PreOrder by Admin
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [HttpPost("preOrder")]
+        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreOrder([FromQuery] string customerId,[FromBody] CreatePreOrderRequest request)
+        {
+            try
+            {
+                return await _orderService.CreatePreOrder(customerId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Create Order by Admin
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [HttpPost]
+        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreateOrder([FromQuery] string customerId,[FromBody] CreateOrderRequest request)
+        {
+            try
+            {
+                return await _orderService.CreateOrder(customerId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }
