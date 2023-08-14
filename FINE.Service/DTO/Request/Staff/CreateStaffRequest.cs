@@ -25,10 +25,9 @@ namespace FINE.Service.DTO.Request.Staff
         [Required]
         public String Pass { get; set; } = null!;
 
-        public string? RoleType { get; set; }
+        public int? RoleType { get; set; }
 
-        public int? StoreId { get; set; }
+        public Guid? StoreId { get; set; }
 
-        public int? CustomerId { get; set; }
     }
 }

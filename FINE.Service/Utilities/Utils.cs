@@ -119,6 +119,10 @@ namespace FINE.Service.Utilities
                     DateTime dt = (DateTime)propertyVal;
                     source = source.Where($"{item.Name} >= @0 && {item.Name} < @1", dt.Date, dt.Date.AddDays(1));
                 }
+                else if (item.PropertyType == typeof(Guid))
+                {
+                    source = source.Where($"{item.Name} == @{item.Name}", propertyVal);
+                }
                 else if (item.CustomAttributes.Any(a => a.AttributeType == typeof(ContainAttribute)))
                 {
                     var array = (IList)propertyVal;

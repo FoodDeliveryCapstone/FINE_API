@@ -42,6 +42,31 @@ namespace FINE.Service.Helpers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public static string GenerateJwtToken1(string name, int role, Guid? id, IConfiguration configuration)
+        {
+            var tokenConfig = configuration.GetSection("Token");
+            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(tokenConfig["SecretKey"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var permClaims = new List<Claim>()
+            {
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Name, name),
+                new Claim(ClaimTypes.NameIdentifier, id.ToString()),
+            };
+            if (role != 0)
+            {
+                permClaims.Add(new Claim(ClaimTypes.Role, ((SystemRoleTypeEnum)role).ToString()));
+            }
+            var token = new JwtSecurityToken(tokenConfig["Issuer"],
+                tokenConfig["Issuer"],
+                permClaims,
+                expires: DateTime.Now.AddDays(30),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
 }
   

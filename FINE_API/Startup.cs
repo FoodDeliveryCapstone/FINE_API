@@ -138,7 +138,7 @@ namespace FINE.API
             builder.RegisterType<FcmTokenService>().As<IFcmTokenService>();
             builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
 
-            //builder.RegisterType<StaffService>().As<IStaffService>();
+            builder.RegisterType<StaffService>().As<IStaffService>();
             //builder.RegisterType<NotifyService>().As<INotifyService>();       
             //builder.RegisterType<RoomService>().As<IRoomService>();
             //builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();
