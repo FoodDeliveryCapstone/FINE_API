@@ -141,7 +141,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (!Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType == (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -774,7 +774,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode() + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
-                    OrderType = (int)OrderTypeEnum.Delivery,
+                    OrderType = (int)OrderTypeEnum.OrderToday,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
                     StationOrder = null,
                     IsConfirm = false,

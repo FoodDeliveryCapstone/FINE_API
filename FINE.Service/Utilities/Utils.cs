@@ -73,17 +73,15 @@ namespace FINE.Service.Utilities
 
         public static bool CheckTimeSlot(TimeSlot timeSlot)
         {
-            var currentTime = GetCurrentDatetime().TimeOfDay;
-            var rangeCheck = timeSlot.ArriveTime.Hours - currentTime.Hours;
-            
-            var preOrderTime = new DateTime(GetCurrentDatetime().Year, GetCurrentDatetime().Month, GetCurrentDatetime().Day, 15, 00, 00);
+            var closingTimeSlot = timeSlot.ArriveTime.Add(new TimeSpan(0, -45, 0));
 
-            if (rangeCheck > 0 || (rangeCheck == 0 
-                && (timeSlot.ArriveTime.Minutes - currentTime.Minutes) >= 45 ) || currentTime.Hours >= preOrderTime.TimeOfDay.Hours)
-            {
-                return true;
-            }
-            return false;
+            var currentTime = GetCurrentDatetime().TimeOfDay;
+
+            var checkAvailibleTime = closingTimeSlot - currentTime;
+
+            if(checkAvailibleTime.Hours < 0 || checkAvailibleTime.Minutes < 0)
+                return false;
+            return true;
         }
 
         public static (DateTime, DateTime) GetLastAndFirstDateInCurrentMonth()

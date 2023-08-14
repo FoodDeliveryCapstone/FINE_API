@@ -33,7 +33,8 @@ namespace FINE.Service.Helpers
 
         public enum OrderTypeEnum
         {
-            Delivery = 1
+            OrderToday = 1,
+            OrderLater = 2
         }
 
         public enum OtherAmountTypeEnum
