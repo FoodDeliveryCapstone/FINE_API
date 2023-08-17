@@ -73,7 +73,7 @@ namespace FINE.Service.Caches
             {
                 ContractResolver = new DefaultContractResolver
                 {
-                    NamingStrategy = new SnakeCaseNamingStrategy()
+                    NamingStrategy = new CamelCaseNamingStrategy()
                 },
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             });

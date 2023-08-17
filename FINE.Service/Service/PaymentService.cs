@@ -19,7 +19,7 @@ namespace FINE.Service.Service
 {
     public interface IPaymentService
     {
-        Task<bool> CreatePayment(Order orderId, int point, int type);
+        Task CreatePayment(Order orderId, int point, int type);
     }
     public class PaymentService : IPaymentService
     {
@@ -35,29 +35,11 @@ namespace FINE.Service.Service
             _accountService = accountService;
         }
 
-        public async Task<bool> CreatePayment(Order order, int point, int paymentType)
+        public async Task CreatePayment(Order order, int point, int paymentType)
         {
             try
             {
-                //chia type payment
-                if (paymentType == (int)PaymentTypeEnum.FineWallet)
-                {
-                    var isSuccessTrans = _accountService.CreateTransaction((int)AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId).Result;
-                    if (isSuccessTrans == false)
-                    {
-                        throw new ErrorResponse(400, (int)TransactionErrorEnum.CREATE_TRANS_FAIL,
-                            TransactionErrorEnum.CREATE_TRANS_FAIL.GetDisplayName());
-                    }
-                }
-                else if (paymentType == (int)PaymentTypeEnum.VnPay)
-                {
-
-                }
-                else
-                {
-                    throw new ErrorResponse(400, (int)PaymentErrorsEnum.INVALID_PAYMENT_TYPE,
-                                PaymentErrorsEnum.INVALID_PAYMENT_TYPE.GetDisplayName());
-                }
+                await _accountService.CreateTransaction(TransactionTypeEnum.Payment, AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId);
 
                 var payment = new Payment()
                 {
@@ -69,16 +51,13 @@ namespace FINE.Service.Service
                     CreateAt = DateTime.Now
                 };
 
-                 await _unitOfWork.Repository<Payment>().InsertAsync(payment);
-
-                // check account customer + tích điểm 
-                await _accountService.CreateTransaction((int)AccountTypeEnum.PointAccount, point, order.CustomerId);
-
-                return true;
+                await _unitOfWork.Repository<Payment>().InsertAsync(payment);
+               
+                await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.PointAccount, point, order.CustomerId);
             }
             catch (ErrorResponse ex)
             {
-                return false;
+                throw ex;
             }
         }
     }

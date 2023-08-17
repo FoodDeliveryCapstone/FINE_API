@@ -73,7 +73,7 @@ namespace FINE.Service.Service
                                 .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
 
                 //new customer => add fcm map with Id
-                if (customer == null)
+                if (customer is null)
                 {
                     CreateCustomerRequest newCustomer = new CreateCustomerRequest()
                     {
@@ -116,16 +116,17 @@ namespace FINE.Service.Service
         {
             try
             {
-                var customer = _mapper.Map<CreateCustomerRequest, Customer>(request);
+                var newCustomer = _mapper.Map<CreateCustomerRequest, Customer>(request);
 
-                customer.Id = Guid.NewGuid();
-                customer.CustomerCode = customer.Id.ToString() + '_' + DateTime.Now.Date.ToString("ddMMyyyy");
-                customer.CreateAt = DateTime.Now;
+                newCustomer.Id = Guid.NewGuid();
+                newCustomer.CustomerCode = newCustomer.Id.ToString() + '_' + DateTime.Now.Date.ToString("ddMMyyyy");
+                newCustomer.CreateAt = DateTime.Now;
 
-                await _unitOfWork.Repository<Customer>().InsertAsync(customer);
+                await _unitOfWork.Repository<Customer>().InsertAsync(newCustomer);
+
+                _accountService.CreateAccount(newCustomer.Id);
+
                 await _unitOfWork.CommitAsync();
-
-                _accountService.CreateAccount(customer.Id, (int)AccountTypeEnum.PointAccount);
 
                 return new BaseResponseViewModel<CustomerResponse>()
                 {
@@ -135,7 +136,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<CustomerResponse>(customer)
+                    Data = _mapper.Map<CustomerResponse>(newCustomer)
                 };
             }
             catch (Exception ex)

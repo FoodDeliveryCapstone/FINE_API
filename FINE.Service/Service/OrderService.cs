@@ -270,18 +270,11 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();
 
-                var isSuccessPayment = await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
-                if (isSuccessPayment == false)
-                {
-                    throw new ErrorResponse(400, (int)TransactionErrorEnum.CREATE_TRANS_FAIL,
-                            TransactionErrorEnum.CREATE_TRANS_FAIL.GetDisplayName());
-                }
-                else
-                {
-                    order.OrderStatus = (int)OrderStatusEnum.Processing;
-                    await _unitOfWork.Repository<Data.Entity.Order>().UpdateDetached(order);
-                    await _unitOfWork.CommitAsync();
-                }
+                await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
+
+                order.OrderStatus = (int)OrderStatusEnum.Processing;
+                await _unitOfWork.Repository<Data.Entity.Order>().UpdateDetached(order);
+                await _unitOfWork.CommitAsync();
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
                 resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
