@@ -31,6 +31,7 @@ using ServiceStack.Redis;
 using Azure.Core;
 using ServiceStack.Web;
 using Microsoft.AspNetCore.Mvc;
+using FINE.Service.Helpers;
 
 namespace FINE.Service.Service
 {
@@ -303,22 +304,39 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode)
+        {
+            try
+            {
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.PartyCode == partyCode)
+                                                .FirstOrDefaultAsync();
+                if (partyOrder == null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+
+                return new BaseResponseViewModel<CoOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = coOrder
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request)
         {
             try
             {
-                // Tạo kết nối
-                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
-
-                // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
-
-                // Ping thử
-                if (db.Ping().TotalSeconds > 5)
-                {
-                    throw new TimeoutException("Server Redis không hoạt động");
-                }
-
                 #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
@@ -338,6 +356,7 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     PartyCode = Utils.GenerateRandomCode(),
+                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
                     PartyOrder = new List<CoOrderPartyCard>()
                 };
 
@@ -346,6 +365,7 @@ namespace FINE.Service.Service
                     Customer = _mapper.Map<CustomerCoOrderResponse>(customer),
                     OrderDetails = new List<CoOrderDetailResponse>()
                 };
+
                 orderCard.Customer.IsAdmin = true;
                 orderCard.Customer.IsConfirm = false;
 
@@ -392,8 +412,7 @@ namespace FINE.Service.Service
                 }
                 coOrder.PartyOrder.Add(orderCard);
 
-                var redisValue = JsonConvert.SerializeObject(coOrder);
-                db.StringSet(coOrder.PartyCode, redisValue);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, coOrder.PartyCode, coOrder);
 
                 var party = new Party()
                 {
@@ -406,7 +425,7 @@ namespace FINE.Service.Service
                 };
                 await _unitOfWork.Repository<Party>().InsertAsync(party);
                 await _unitOfWork.CommitAsync();
-                redis.Close();
+
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -436,20 +455,7 @@ namespace FINE.Service.Service
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                // Tạo kết nối
-                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
-
-                // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
-
-                // Ping thử
-                if (db.Ping().TotalSeconds > 5)
-                {
-                    throw new TimeoutException("Server Redis không hoạt động");
-                }
-
-                var redisValue = db.StringGet(partyCode);
-                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                                     .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
@@ -461,8 +467,7 @@ namespace FINE.Service.Service
                 orderCard.Customer.IsConfirm = false;
                 coOrder.PartyOrder.Add(orderCard);
 
-                var redisNewValue = JsonConvert.SerializeObject(coOrder);
-                db.StringSet(partyCode, redisNewValue);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
 
                 var newParty = new Party()
                 {
@@ -476,7 +481,7 @@ namespace FINE.Service.Service
 
                 _unitOfWork.Repository<Party>().InsertAsync(newParty);
                 _unitOfWork.CommitAsync();
-                redis.Close();
+
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -488,49 +493,6 @@ namespace FINE.Service.Service
                     Data = coOrder
                 };
 
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode)
-        {
-            try
-            {
-
-                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode)
-                                                .FirstOrDefaultAsync();
-                if (partyOrder == null)
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
-
-                // Tạo kết nối
-                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
-
-                // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
-
-                // Ping thử
-                if (db.Ping().TotalSeconds > 5)
-                {
-                    throw new TimeoutException("Server Redis không hoạt động");
-                }
-
-                var redisValue = await db.StringGetAsync(partyCode);
-                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-                redis.Close();
-                return new BaseResponseViewModel<CoOrderResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = coOrder
-                };
             }
             catch (ErrorResponse ex)
             {
@@ -560,20 +522,7 @@ namespace FINE.Service.Service
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                // Tạo kết nối
-                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
-
-                // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
-
-                // Ping thử
-                if (db.Ping().TotalSeconds > 5)
-                {
-                    throw new TimeoutException("Server Redis không hoạt động");
-                }
-
-                var redisValue = db.StringGet(partyCode);
-                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
 
@@ -666,9 +615,8 @@ namespace FINE.Service.Service
                     }
                 }
 
-                var redisNewValue = JsonConvert.SerializeObject(coOrder);
-                var rs = db.StringSet(partyCode, redisNewValue);
-                redis.Close();
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -701,26 +649,13 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Party>().UpdateDetached(partyOrder);
                 await _unitOfWork.CommitAsync();
 
-                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
-
-                // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
-
-                // Ping thử
-                if (db.Ping().TotalSeconds > 5)
-                {
-                    throw new TimeoutException("Server Redis không hoạt động");
-                }
-
-                var redisValue = db.StringGet(partyCode);
-                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
                 orderCard.Customer.IsConfirm = true;
 
-                var redisNewValue = JsonConvert.SerializeObject(coOrder);
-                var rs = db.StringSet(partyCode, redisNewValue);
-                redis.Close();
+                var rs = ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+
                 return new BaseResponseViewModel<CoOrderPartyCard>()
                 {
                     Status = new StatusViewModel()
@@ -742,20 +677,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                // Tạo kết nối
-                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379 ,password=zaQ@1234");
-
-                // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
-
-                // Ping thử
-                if (db.Ping().TotalSeconds > 5)
-                {
-                    throw new TimeoutException("Server Redis không hoạt động");
-                }
-
-                var redisValue = db.StringGet(partyCode);
-                var coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(timeSlotId));
@@ -874,176 +796,6 @@ namespace FINE.Service.Service
 
         }
 
-        //public Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId,string orderId , CreatePreOrderRequest request)
-        //{
-        //    try
-        //    {
-        //        var partyOrder = _unitOfWork.Repository<Order>().GetAll()
-        //                                   .Where()
-        //                                   .FirstOrDefault();  
-        //    }
-        //    catch (Exception ex)
-        //    {
-
-        //    }
-        //}
-
-        //    public async Task CancelOrder(int orderId)
-        //    {
-        //        try
-        //        {
-        //            var order = await _unitOfWork.Repository<Order>().GetAll()
-        //                .FirstOrDefaultAsync(x => x.Id == orderId);
-
-        //            if (order == null)
-        //                throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND_ID,
-        //                      OrderErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-        //            if (order.GeneralOrderId != null)
-        //            {
-        //                var genOrder = await _unitOfWork.Repository<Order>().GetAll()
-        //                .FirstOrDefaultAsync(x => x.Id == order.GeneralOrderId);
-
-        //                if (genOrder.InverseGeneralOrder.Count() > 1)
-        //                {
-        //                    genOrder.TotalAmount -= order.TotalAmount;
-        //                    genOrder.Discount -= order.Discount;
-        //                    genOrder.FinalAmount -= order.FinalAmount;
-        //                    genOrder.ShippingFee -= 2000;
-        //                }
-        //                else
-        //                {
-        //                    genOrder.OrderStatus = (int)OrderStatusEnum.UserCancel;
-        //                }
-        //                await _unitOfWork.Repository<Order>().UpdateDetached(genOrder);
-        //                await _unitOfWork.CommitAsync();
-        //            }
-        //            else
-        //            {
-        //                foreach (var inverseOrder in order.InverseGeneralOrder)
-        //                {
-        //                    inverseOrder.OrderStatus = (int)OrderStatusEnum.UserCancel;
-        //                }
-        //            }
-        //            order.OrderStatus = (int)OrderStatusEnum.UserCancel;
-
-        //            await _unitOfWork.Repository<Order>().UpdateDetached(order);
-        //            await _unitOfWork.CommitAsync();
-        //        }
-        //        catch (ErrorResponse ex)
-        //        {
-        //            throw ex;
-        //        }
-        //    }
-
-        //    public async Task<BaseResponseViewModel<dynamic>> UpdateOrder(int orderId, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request)
-        //    {
-        //        try
-        //        {
-        //            var order = await _unitOfWork.Repository<Order>().GetAll()
-        //                .FirstOrDefaultAsync(x => x.Id == orderId);
-
-        //            if (order == null)
-        //                throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND_ID,
-        //                          OrderErrorEnums.NOT_FOUND_ID.GetDisplayName());
-
-        //            switch (orderStatus)
-        //            {
-        //                case UpdateOrderTypeEnum.UserCancel:
-
-        //                    if (order.OrderStatus != (int)OrderStatusEnum.PaymentPending
-        //                        || order.OrderStatus != (int)OrderStatusEnum.Processing)
-        //                        throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_CANCEL_ORDER,
-        //                          OrderErrorEnums.CANNOT_CANCEL_ORDER.GetDisplayName());
-
-        //                    CancelOrder(orderId);
-        //                    break;
-
-        //                case UpdateOrderTypeEnum.FinishOrder:
-
-        //                    if (order.OrderStatus != (int)OrderStatusEnum.Delivering)
-        //                        throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_FINISH_ORDER,
-        //                          OrderErrorEnums.CANNOT_FINISH_ORDER.GetDisplayName());
-
-        //                    order.OrderStatus = (int)OrderStatusEnum.Finished;
-
-        //                    await _unitOfWork.Repository<Order>().UpdateDetached(order);
-        //                    await _unitOfWork.CommitAsync();
-        //                    break;
-
-        //                case UpdateOrderTypeEnum.UpdateDetails:
-
-        //                    if (order.OrderStatus == (int)OrderStatusEnum.Finished)
-        //                        throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_CANCEL_ORDER,
-        //                          OrderErrorEnums.CANNOT_CANCEL_ORDER.GetDisplayName());
-
-        //                    if (request.DeliveryPhone != null && !Utils.CheckVNPhone(request.DeliveryPhone))
-        //                        throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
-        //                                                OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
-
-        //                    var updateOrder = _mapper.Map<UpdateOrderRequest, Order>(request, order);
-        //                    updateOrder.UpdateAt = DateTime.Now;
-        //                    await _unitOfWork.Repository<Order>().UpdateDetached(updateOrder);
-        //                    break;
-        //            }
-
-        //            return new BaseResponseViewModel<dynamic>()
-        //            {
-        //                Status = new StatusViewModel()
-        //                {
-        //                    Message = "Success",
-        //                    Success = true,
-        //                    ErrorCode = 0
-        //                }
-        //            };
-        //        }
-        //        catch (ErrorResponse ex)
-        //        {
-        //            throw ex;
-        //        }
-        //    }
-
-        //    public async Task<BaseResponseViewModel<dynamic>> OpenCoOrder(int customerId, CreateGenOrderRequest request)
-        //    {
-        //        try
-        //        {
-        //            #region Timeslot
-        //            var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
-
-        //            if (timeSlot == null)
-        //                throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
-        //                    TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
-
-        //            if (!Utils.CheckTimeSlot(timeSlot))
-        //                throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-        //                    TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-        //            #endregion
-
-        //            #region Customer
-        //            var customer = await _unitOfWork.Repository<Customer>().GetById(customerId);
-
-        //            //check phone number
-        //            if (customer.Phone.Contains(request.DeliveryPhone) == null)
-        //            {
-        //                if (!Utils.CheckVNPhone(request.DeliveryPhone))
-        //                    throw new ErrorResponse(400, (int)OrderErrorEnums.INVALID_PHONE_NUMBER,
-        //                                            OrderErrorEnums.INVALID_PHONE_NUMBER.GetDisplayName());
-        //            }
-        //            if (!request.DeliveryPhone.StartsWith("+84"))
-        //            {
-        //                request.DeliveryPhone = request.DeliveryPhone.TrimStart(new char[] { '0' });
-        //                request.DeliveryPhone = "+84" + request.DeliveryPhone;
-        //            }
-        //            #endregion
-
-        //            return null;
-        //        }
-        //        catch (ErrorResponse ex)
-        //        {
-        //            throw ex;
-        //        }
-        //    }
-        //}
         public async Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging)
         {
             try
@@ -1074,6 +826,8 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
+
     }
 }
 

@@ -39,13 +39,11 @@ namespace FINE.Service.Service
         {
             try
             {
-                #region check Destination exist
                 var destination = _unitOfWork.Repository<Destination>().GetAll()
                               .FirstOrDefault(x => x.Id == Guid.Parse(destinationId));
                 if (destination == null)
                     throw new ErrorResponse(404, (int)DestinationErrorEnums.NOT_FOUND,
                         DestinationErrorEnums.NOT_FOUND.GetDisplayName());
-                #endregion
 
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                          .Where(x => x.DestinationId == destination.Id)
@@ -63,9 +61,9 @@ namespace FINE.Service.Service
                     Data = timeslot.Item2.ToList()
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
-                throw;
+                throw ex;
             }
         }
     }

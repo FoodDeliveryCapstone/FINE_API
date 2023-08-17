@@ -10,6 +10,12 @@ namespace FINE.Service.Helpers
             Staff = 2
         }
 
+        public enum RedisSetUpType
+        {
+            GET = 1,
+            SET = 2
+        }
+
         public enum SystemRoleTypeEnum
         {
             [Display(Name = "Những con cáo")]
@@ -52,7 +58,7 @@ namespace FINE.Service.Helpers
 
         public enum ProductInMenuStatusEnum
         {
-            Wait =1,
+            Wait = 1,
             Avaliable = 2,
             OutOfStock = 3
         }
