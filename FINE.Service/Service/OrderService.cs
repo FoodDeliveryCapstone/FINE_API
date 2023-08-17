@@ -243,7 +243,7 @@ namespace FINE.Service.Service
                 #region Check data
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                if (timeSlot == null || timeSlot.IsActive == false)
+                if (timeSlot is null || timeSlot.IsActive is false)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
@@ -254,7 +254,7 @@ namespace FINE.Service.Service
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
 
-                if (customer.Phone == null)
+                if (customer.Phone is null)
                     throw new ErrorResponse(400, (int)CustomerErrorEnums.MISSING_PHONENUMBER,
                                             CustomerErrorEnums.MISSING_PHONENUMBER.GetDisplayName());
 
@@ -333,7 +333,7 @@ namespace FINE.Service.Service
                 #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
-                if (timeSlot == null || timeSlot.IsActive == false)
+                if (timeSlot is null || timeSlot.IsActive is false)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
@@ -360,7 +360,7 @@ namespace FINE.Service.Service
                 };
 
                 orderCard.Customer.IsAdmin = true;
-                orderCard.Customer.IsConfirm = false;
+                orderCard.Customer.IsConfirm = true;
 
                 if (request.OrderDetails != null)
                 {
@@ -518,93 +518,43 @@ namespace FINE.Service.Service
                 CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
+                orderCard.ItemQuantity = 0;
+                orderCard.TotalAmount = 0;
 
                 foreach (var requestOD in request.OrderDetails)
                 {
-                    if (requestOD.Quantity == 0)
+                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                        .Include(x => x.Menu)
+                        .Include(x => x.Product)
+                        .Where(x => x.ProductId == requestOD.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                        .FirstOrDefault();
+
+                    if (productInMenu is null)
+                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                           ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+
+                    if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                        throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+
+                    if (orderCard.OrderDetails is null)
                     {
-                        var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
-                        orderCard.OrderDetails.Remove(orderDetailCard);
+                        orderCard.OrderDetails = new List<CoOrderDetailResponse>();
 
-                        orderCard.ItemQuantity -= orderDetailCard.Quantity;
-                        orderCard.TotalAmount -= orderDetailCard.TotalAmount;
-                    }
-                    else
-                    {
-                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                            .Include(x => x.Menu)
-                            .Include(x => x.Product)
-                            .Where(x => x.ProductId == requestOD.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
-                            .FirstOrDefault();
-
-                        if (productInMenu == null)
+                        var product = new CoOrderDetailResponse()
                         {
-                            throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
-                               ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
-                        }
-                        else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
-                        {
-                            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
-                               MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
-                        }
-                        else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                        {
-                            throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                               ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
-                        }
+                            ProductInMenuId = productInMenu.Id,
+                            ProductId = productInMenu.ProductId,
+                            ProductName = productInMenu.Product.Name,
+                            UnitPrice = productInMenu.Product.Price,
+                            Quantity = requestOD.Quantity,
+                            TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
+                            Note = requestOD.Note
+                        };
 
-                        if (orderCard.OrderDetails == null)
-                        {
-                            orderCard.OrderDetails = new List<CoOrderDetailResponse>();
-
-                            var product = new CoOrderDetailResponse()
-                            {
-                                ProductInMenuId = productInMenu.Id,
-                                ProductId = productInMenu.ProductId,
-                                ProductName = productInMenu.Product.Name,
-                                UnitPrice = productInMenu.Product.Price,
-                                Quantity = requestOD.Quantity,
-                                TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
-                                Note = requestOD.Note
-                            };
-
-                            orderCard.OrderDetails.Add(product);
-                            orderCard.ItemQuantity += product.Quantity;
-                            orderCard.TotalAmount += product.TotalAmount;
-                        }
-                        else
-                        {
-                            var orderDetailCard = orderCard.OrderDetails.Find(x => x.ProductId == requestOD.ProductId);
-                            if (orderDetailCard != null)
-                            {
-                                var quantityAdding = requestOD.Quantity - orderDetailCard.Quantity;
-                                var amountAdding = (requestOD.Quantity * productInMenu.Product.Price) - orderDetailCard.TotalAmount;
-
-                                orderDetailCard.Quantity = requestOD.Quantity;
-                                orderDetailCard.TotalAmount = (requestOD.Quantity * productInMenu.Product.Price);
-
-                                orderCard.ItemQuantity += quantityAdding;
-                                orderCard.TotalAmount += amountAdding;
-                            }
-                            else
-                            {
-                                var product = new CoOrderDetailResponse()
-                                {
-                                    ProductInMenuId = productInMenu.Id,
-                                    ProductId = productInMenu.ProductId,
-                                    ProductName = productInMenu.Product.Name,
-                                    UnitPrice = productInMenu.Product.Price,
-                                    Quantity = requestOD.Quantity,
-                                    TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
-                                    Note = requestOD.Note
-                                };
-
-                                orderCard.OrderDetails.Add(product);
-                                orderCard.ItemQuantity += product.Quantity;
-                                orderCard.TotalAmount += product.TotalAmount;
-                            }
-
-                        }
+                        orderCard.OrderDetails.Add(product);
+                        orderCard.ItemQuantity += product.Quantity;
+                        orderCard.TotalAmount += product.TotalAmount;
                     }
                 }
 
