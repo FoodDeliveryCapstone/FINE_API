@@ -12,6 +12,8 @@ namespace FINE.Service.DTO.Response
 
         public Guid DestinationId { get; set; }
 
+        public TimeSpan CloseTime { get; set; }
+
         public TimeSpan ArriveTime { get; set; }
 
         public TimeSpan CheckoutTime { get; set; }
