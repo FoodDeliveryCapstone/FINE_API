@@ -41,7 +41,7 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     CustomerId = customerId,
-                    AccountCode = customerId + "_" + AccountTypeEnum.PointAccount.ToString(),
+                    AccountCode = customerId + "_" + AccountTypeEnum.PointAccount,
                     StartDate = DateTime.Now,
                     Balance = 0,
                     Type = (int)AccountTypeEnum.PointAccount,
@@ -54,7 +54,7 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     CustomerId = customerId,
-                    AccountCode = customerId + "_" + AccountTypeEnum.CreditAccount.ToString(),
+                    AccountCode = customerId + "_" + AccountTypeEnum.CreditAccount,
                     StartDate = DateTime.Now,
                     Balance = 10000,
                     Type = (int)AccountTypeEnum.CreditAccount,
