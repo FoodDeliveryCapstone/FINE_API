@@ -518,6 +518,7 @@ namespace FINE.Service.Service
                 CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
+                orderCard.OrderDetails.Clear();
                 orderCard.ItemQuantity = 0;
                 orderCard.TotalAmount = 0;
 
@@ -537,25 +538,20 @@ namespace FINE.Service.Service
                         throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
                            ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
 
-                    if (orderCard.OrderDetails is null)
+                    var product = new CoOrderDetailResponse()
                     {
-                        orderCard.OrderDetails = new List<CoOrderDetailResponse>();
+                        ProductInMenuId = productInMenu.Id,
+                        ProductId = productInMenu.ProductId,
+                        ProductName = productInMenu.Product.Name,
+                        UnitPrice = productInMenu.Product.Price,
+                        Quantity = requestOD.Quantity,
+                        TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
+                        Note = requestOD.Note
+                    };
 
-                        var product = new CoOrderDetailResponse()
-                        {
-                            ProductInMenuId = productInMenu.Id,
-                            ProductId = productInMenu.ProductId,
-                            ProductName = productInMenu.Product.Name,
-                            UnitPrice = productInMenu.Product.Price,
-                            Quantity = requestOD.Quantity,
-                            TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
-                            Note = requestOD.Note
-                        };
-
-                        orderCard.OrderDetails.Add(product);
-                        orderCard.ItemQuantity += product.Quantity;
-                        orderCard.TotalAmount += product.TotalAmount;
-                    }
+                    orderCard.OrderDetails.Add(product);
+                    orderCard.ItemQuantity += product.Quantity;
+                    orderCard.TotalAmount += product.TotalAmount;
                 }
 
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
