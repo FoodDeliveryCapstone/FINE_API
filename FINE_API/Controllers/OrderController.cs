@@ -240,7 +240,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Confirm CoOrder
         /// </summary>
-        [HttpPut("coOrder/confirmation")]
+        [HttpPut("coOrder/out")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder([FromRoute]string partyCode )
         {
             try
