@@ -20,11 +20,11 @@ namespace FINE.Service.Helpers
             config = Configuration;
         }
 
-        public static dynamic GetSetDataRedis(RedisSetUpType type ,string key, object value = null)
+        public static dynamic GetSetDataRedis(RedisSetUpType type, string key, object value = null)
         {
             try
             {
-                object rs = null; 
+                object rs = null;
                 string connectRedisString = config.GetSection("Endpoint:RedisEndpoint").Value + "," + config.GetSection("Endpoint:Password").Value;
                 // Tạo kết nối
                 ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
@@ -37,23 +37,27 @@ namespace FINE.Service.Helpers
                 {
                     throw new TimeoutException("Server Redis không hoạt động");
                 }
+                switch (type)
+                {
+                    case RedisSetUpType.GET:
+                        var redisValue = db.StringGet(key);
+                        rs = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                        break;
 
-                if(type.Equals(RedisSetUpType.GET))
-                {
-                    var redisValue = db.StringGet(key);
-                    rs = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-                }
-                else if(type.Equals(RedisSetUpType.SET))
-                {
-                    var redisNewValue = JsonConvert.SerializeObject(value);
-                    db.StringSet(key, redisNewValue);
+                    case RedisSetUpType.SET:
+                        var redisNewValue = JsonConvert.SerializeObject(value);
+                        db.StringSet(key, redisNewValue);
+                        break;
+
+                    case RedisSetUpType.DELETE:
+                        db.KeyDelete(key);
+                        break;
                 }
 
                 redis.Close();
-
                 return rs;
-
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }

@@ -116,7 +116,7 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
-        
+
         /// <summary>
         /// Open CoOrder
         /// </summary>
@@ -234,6 +234,30 @@ namespace FINE.API.Controllers
             catch (ErrorResponse ex)
             {
                 return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Confirm CoOrder
+        /// </summary>
+        [HttpPut("coOrder/confirmation")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder([FromRoute]string partyCode )
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var rs = await _orderService.DeletePartyOrder(customerId, partyCode);
+                return Ok(rs);
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
             }
         }
     }

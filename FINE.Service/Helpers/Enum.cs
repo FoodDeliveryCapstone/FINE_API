@@ -13,7 +13,8 @@ namespace FINE.Service.Helpers
         public enum RedisSetUpType
         {
             GET = 1,
-            SET = 2
+            SET = 2,
+            DELETE = 3
         }
 
         public enum SystemRoleTypeEnum

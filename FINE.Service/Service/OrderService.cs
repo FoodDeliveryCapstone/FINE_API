@@ -48,6 +48,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, string timeSlotId, string partyCode);
+        Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
@@ -766,7 +767,45 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode)
+        {
+            try
+            {
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                               .Where(x => x.PartyCode == partyCode)
+                                               .FirstOrDefaultAsync();
+                if (partyOrder == null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                if (coOrder is null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                var partyMem = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
+                if (partyMem.Customer.IsAdmin is true)
+                {
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
+                }
+                else
+                {
+                    coOrder.PartyOrder.Remove(partyMem);
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                }
+                return new BaseResponseViewModel<CoOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
 
