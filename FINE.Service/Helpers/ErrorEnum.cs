@@ -27,7 +27,9 @@ namespace FINE.Service.Helpers
             CANNOT_UPDATE_ORDER = 4004,
             //404 
             [Display(Name = "Not found this order!")]
-            NOT_FOUND_ID = 4041
+            NOT_FOUND = 4041,
+            [Display(Name = "Not found this coOrder!")]
+            NOT_FOUND_COORDER = 4042
         }
 
         public enum PartyErrorEnums

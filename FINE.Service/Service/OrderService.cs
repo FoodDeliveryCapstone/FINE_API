@@ -442,7 +442,6 @@ namespace FINE.Service.Service
         {
             try
             {
-
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode)
                                                 .FirstOrDefaultAsync();
@@ -450,6 +449,9 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
                 CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+
+                if (coOrder is null)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
 
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                                     .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
@@ -498,6 +500,11 @@ namespace FINE.Service.Service
         {
             try
             {
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+
+                if (coOrder is null)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
+
                 #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
 
@@ -515,8 +522,6 @@ namespace FINE.Service.Service
                                                 .FirstOrDefaultAsync();
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
-
-                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
                 orderCard.OrderDetails.Clear();
@@ -591,6 +596,9 @@ namespace FINE.Service.Service
 
                 CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
+                if (coOrder is null)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
+
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
                 orderCard.Customer.IsConfirm = true;
 
@@ -618,6 +626,9 @@ namespace FINE.Service.Service
             try
             {
                 CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+
+                if (coOrder is null)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
 
                 #region check timeslot
                 var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(timeSlotId));
@@ -736,6 +747,47 @@ namespace FINE.Service.Service
 
         }
 
+        public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode)
+        {
+            try
+            {
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                               .Where(x => x.PartyCode == partyCode)
+                                               .FirstOrDefaultAsync();
+                if (partyOrder is null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+
+                if (coOrder is null)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
+
+                var partyMem = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
+                if (partyMem.Customer.IsAdmin is true)
+                {
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
+                }
+                else
+                {
+                    coOrder.PartyOrder.Remove(partyMem);
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                }
+                return new BaseResponseViewModel<CoOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging)
         {
             try
@@ -766,46 +818,5 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
-        public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode)
-        {
-            try
-            {
-                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                               .Where(x => x.PartyCode == partyCode)
-                                               .FirstOrDefaultAsync();
-                if (partyOrder == null)
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
-
-                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
-                if (coOrder is null)
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
-
-                var partyMem = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
-                if (partyMem.Customer.IsAdmin is true)
-                {
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
-                }
-                else
-                {
-                    coOrder.PartyOrder.Remove(partyMem);
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
-                }
-                return new BaseResponseViewModel<CoOrderResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
     }
 }
-
