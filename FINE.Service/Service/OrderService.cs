@@ -524,9 +524,20 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
-                orderCard.OrderDetails.Clear();
-                orderCard.ItemQuantity = 0;
-                orderCard.TotalAmount = 0;
+                if (orderCard == null)
+                {
+                    orderCard = new CoOrderPartyCard()
+                    {
+                        OrderDetails = new List<CoOrderDetailResponse>()
+                    };
+
+                }
+                else
+                {
+                    orderCard.OrderDetails.Clear();
+                    orderCard.ItemQuantity = 0;
+                    orderCard.TotalAmount = 0;
+                }
 
                 foreach (var requestOD in request.OrderDetails)
                 {
