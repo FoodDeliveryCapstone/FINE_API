@@ -152,12 +152,7 @@ namespace FINE.API.Controllers
                 var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
-                return await _orderService.CreatePreCoOrder(customerId, timeSlot, partyCode);
+                return await _orderService.CreatePreCoOrder(customerId, orderType, partyCode);
             }
             catch (ErrorResponse ex)
             {
@@ -168,7 +163,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Join CoOrder
         /// </summary>
-        [HttpPost("coOrder/party")]
+        [HttpPut("coOrder/party")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string partyCode)
         {
             try
@@ -216,7 +211,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Confirm CoOrder
         /// </summary>
-        [HttpPost("coOrder/confirmation")]
+        [HttpPut("coOrder/confirmation")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderPartyCard>>> FinalConfirmCoOrder(string partyCode)
         {
             try

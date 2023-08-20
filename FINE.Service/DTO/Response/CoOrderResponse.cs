@@ -12,6 +12,8 @@ namespace FINE.Service.DTO.Response
 
         public string PartyCode { get; set; }
 
+        public int PartyType { get; set; }
+
         public TimeSlotOrderResponse TimeSlot { get; set; }
 
         public List<CoOrderPartyCard> PartyOrder { get; set; }

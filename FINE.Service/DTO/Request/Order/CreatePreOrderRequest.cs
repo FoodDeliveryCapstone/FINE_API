@@ -11,6 +11,8 @@ namespace FINE.Service.DTO.Request.Order
     {
         public int? OrderType { get; set; }
 
+        public int? PartyType { get; set; }
+
         public Guid? TimeSlotId { get; set; }
 
         public List<CreatePreOrderDetailRequest>? OrderDetails { get; set; }

@@ -47,7 +47,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
-        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, string timeSlotId, string partyCode);
+        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
@@ -362,7 +362,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (!Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -374,73 +374,83 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     PartyCode = Utils.GenerateRandomCode(),
-                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
-                    PartyOrder = new List<CoOrderPartyCard>()
+                    PartyType = (int)PartyOrderType.LinkedOrder,
+                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot)
                 };
-
-                var orderCard = new CoOrderPartyCard()
-                {
-                    Customer = _mapper.Map<CustomerCoOrderResponse>(customer),
-                    OrderDetails = new List<CoOrderDetailResponse>()
-                };
-
-                orderCard.Customer.IsAdmin = true;
-                orderCard.Customer.IsConfirm = true;
-
-                if (request.OrderDetails != null)
-                {
-                    foreach (var orderDetail in request.OrderDetails)
-                    {
-                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                            .Include(x => x.Menu)
-                            .Include(x => x.Product)
-                            .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
-                            .FirstOrDefault();
-
-                        if (productInMenu == null)
-                        {
-                            throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
-                               ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
-                        }
-                        else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
-                        {
-                            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
-                               MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
-                        }
-                        else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                        {
-                            throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                               ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
-                        }
-
-                        var product = new CoOrderDetailResponse()
-                        {
-                            ProductInMenuId = productInMenu.Id,
-                            ProductId = productInMenu.ProductId,
-                            ProductName = productInMenu.Product.Name,
-                            UnitPrice = productInMenu.Product.Price,
-                            Quantity = orderDetail.Quantity,
-                            TotalAmount = orderDetail.Quantity * productInMenu.Product.Price,
-                            Note = orderDetail.Note
-                        };
-                        orderCard.OrderDetails.Add(product);
-                        orderCard.ItemQuantity += product.Quantity;
-                        orderCard.TotalAmount += product.TotalAmount;
-                    }
-                }
-                coOrder.PartyOrder.Add(orderCard);
-
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, coOrder.PartyCode, coOrder);
 
                 var party = new Party()
                 {
                     Id = Guid.NewGuid(),
                     CustomerId = Guid.Parse(customerId),
                     PartyCode = coOrder.PartyCode,
+                    PartyType = (int)PartyOrderType.LinkedOrder,
                     Status = (int)PartyOrderStatus.NotConfirm,
                     IsActive = true,
                     CreateAt = DateTime.Now
                 };
+
+                if (request.PartyType is (int)PartyOrderType.CoOrder)
+                {
+                    party.PartyType = (int)PartyOrderType.CoOrder;
+                    coOrder.PartyType = (int)PartyOrderType.CoOrder;
+
+                    coOrder.PartyOrder = new List<CoOrderPartyCard>();  
+
+                    var orderCard = new CoOrderPartyCard()
+                    {
+                        Customer = _mapper.Map<CustomerCoOrderResponse>(customer),
+                        OrderDetails = new List<CoOrderDetailResponse>()
+                    };
+
+                    orderCard.Customer.IsAdmin = true;
+                    orderCard.Customer.IsConfirm = true;
+
+                    if (request.OrderDetails != null)
+                    {
+                        foreach (var orderDetail in request.OrderDetails)
+                        {
+                            var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                .Include(x => x.Menu)
+                                .Include(x => x.Product)
+                                .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                                .FirstOrDefault();
+
+                            if (productInMenu == null)
+                            {
+                                throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                                   ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+                            }
+                            else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+                            {
+                                throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+                                   MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+                            }
+                            else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                            {
+                                throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                                   ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+                            }
+
+                            var product = new CoOrderDetailResponse()
+                            {
+                                ProductInMenuId = productInMenu.Id,
+                                ProductId = productInMenu.ProductId,
+                                ProductName = productInMenu.Product.Name,
+                                UnitPrice = productInMenu.Product.Price,
+                                Quantity = orderDetail.Quantity,
+                                TotalAmount = orderDetail.Quantity * productInMenu.Product.Price,
+                                Note = orderDetail.Note
+                            };
+                            orderCard.OrderDetails.Add(product);
+                            orderCard.ItemQuantity += product.Quantity;
+                            orderCard.TotalAmount += product.TotalAmount;
+                        }
+                    }
+                    coOrder.PartyOrder.Add(orderCard);
+
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, coOrder.PartyCode, coOrder);
+                }
+
                 await _unitOfWork.Repository<Party>().InsertAsync(party);
                 await _unitOfWork.CommitAsync();
 
@@ -542,7 +552,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (!Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -666,7 +676,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, string timeSlotId, string partyCode)
+        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode)
         {
             try
             {
@@ -676,13 +686,13 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
 
                 #region check timeslot
-                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(timeSlotId));
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(coOrder.TimeSlot.Id));
 
                 if (timeSlot == null || timeSlot.IsActive == false)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (!Utils.CheckTimeSlot(timeSlot))
+                if (orderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
