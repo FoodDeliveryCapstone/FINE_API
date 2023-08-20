@@ -82,7 +82,15 @@ namespace FINE.Service.Helpers
         public enum PartyOrderStatus
         {
             NotConfirm = 1,
-            Confirm = 2
+            Confirm = 2,
+
+            CloseParty = 3
+        }
+
+        public enum PartyOrderType
+        {
+            CoOrder = 1,
+            LinkedOrder = 2
         }
 
         public enum PaymentTypeEnum

@@ -13,6 +13,8 @@ namespace FINE.Service.DTO.Request.Order
 
         public string OrderCode { get; set; }
 
+        public string? PartyCode { get; set; }
+
         public double TotalAmount { get; set; }
 
         public double FinalAmount { get; set; }
@@ -23,7 +25,7 @@ namespace FINE.Service.DTO.Request.Order
 
         public Guid TimeSlotId { get; set; }
 
-        public Guid StationId { get; set; }
+        public string StationId { get; set; }
 
         public int PaymentType { get; set; }
 
