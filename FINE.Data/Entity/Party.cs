@@ -13,6 +13,8 @@ public partial class Party
 
     public string PartyCode { get; set; } = null!;
 
+    public int PartyType { get; set; }
+
     public int Status { get; set; }
 
     public bool IsActive { get; set; }
