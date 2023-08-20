@@ -41,6 +41,8 @@ namespace FINE.Service.Helpers
             //404
             [Display(Name = "Party is closed")]
             PARTY_CLOSED = 4041,
+            [Display(Name = "Party is deleted")]
+            PARTY_DELETE = 4042,
         }
 
         public enum PaymentErrorsEnum
