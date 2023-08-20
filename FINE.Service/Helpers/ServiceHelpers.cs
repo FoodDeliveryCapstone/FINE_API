@@ -24,7 +24,7 @@ namespace FINE.Service.Helpers
         {
             try
             {
-                object rs = null;
+                CoOrderResponse rs = new CoOrderResponse();
                 string connectRedisString = config.GetSection("Endpoint:RedisEndpoint").Value + "," + config.GetSection("Endpoint:Password").Value;
                 // Tạo kết nối
                 ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
