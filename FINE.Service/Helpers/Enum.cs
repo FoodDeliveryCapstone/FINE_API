@@ -85,6 +85,12 @@ namespace FINE.Service.Helpers
             Confirm = 2
         }
 
+        public enum PartyOrderType
+        {
+            CoOrder = 1,
+            LinkedOrder = 2
+        }
+
         public enum PaymentTypeEnum
         {
             FineWallet = 1,

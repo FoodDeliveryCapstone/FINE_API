@@ -83,14 +83,14 @@ namespace FINE.Service.Service
 
                         if (accountType.Equals(AccountTypeEnum.PointAccount))
                         {
-                            account = accounts.FirstOrDefault(x => x.Type.Equals(AccountTypeEnum.PointAccount));
+                            account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.PointAccount);
                             account.Balance += amount;
                             account.UpdateAt = DateTime.Now;
                             await _unitOfWork.Repository<Account>().UpdateDetached(account);
                         }
                         else if (accountType.Equals(AccountTypeEnum.CreditAccount))
                         {
-                            account = accounts.FirstOrDefault(x => x.Type.Equals(AccountTypeEnum.CreditAccount));
+                            account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
                             account.Balance += amount;
                             account.UpdateAt = DateTime.Now;
                         }
@@ -120,7 +120,7 @@ namespace FINE.Service.Service
 
                     case TransactionTypeEnum.Payment:
 
-                        account = accounts.FirstOrDefault(x => x.Type.Equals(AccountTypeEnum.CreditAccount));
+                        account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
 
                         if (account.Balance < amount)
                             throw new ErrorResponse(400, (int)PaymentErrorsEnum.ERROR_BALANCE,

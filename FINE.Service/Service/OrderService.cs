@@ -241,14 +241,9 @@ namespace FINE.Service.Service
         {
             try
             {
-                #region Check data
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                if (timeSlot is null || timeSlot.IsActive is false)
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
-                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
-
-                if (!Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
@@ -260,13 +255,12 @@ namespace FINE.Service.Service
                                             CustomerErrorEnums.MISSING_PHONENUMBER.GetDisplayName());
 
                 var station = await _unitOfWork.Repository<Station>().GetAll()
-                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
-                #endregion
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StationId));       
 
                 var order = _mapper.Map<Data.Entity.Order>(request);
-                order.CustomerId = Guid.Parse(customerId);
-                order.CheckInDate = DateTime.Now;
-                order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
+                    order.CustomerId = Guid.Parse(customerId);
+                    order.CheckInDate = DateTime.Now;
+                    order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
                 await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();
@@ -274,12 +268,38 @@ namespace FINE.Service.Service
                 await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
 
                 order.OrderStatus = (int)OrderStatusEnum.Processing;
+
+                if (request.OrderCode is not null)
+                {
+                    var checkCode = await _unitOfWork.Repository<Party>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.PartyCode == request.PartyCode);
+                    if (checkCode != null)
+                    {
+                        var linkedOrder = new Party()
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderId = request.Id,
+                            CustomerId = Guid.Parse(customerId),
+                            PartyCode = request.PartyCode,
+                            PartyType = (int)PartyOrderType.LinkedOrder,
+                            Status = (int)PartyOrderStatus.Confirm,
+                            IsActive = true,
+                            CreateAt = DateTime.Now
+                        };
+
+                        await _unitOfWork.Repository<Party>().InsertAsync(linkedOrder);
+                    }
+                }
+
                 await _unitOfWork.Repository<Data.Entity.Order>().UpdateDetached(order);
                 await _unitOfWork.CommitAsync();
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
                 resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
-                resultOrder.StationOrder = _mapper.Map<StationOrderResponse>(station);
+                resultOrder.StationOrder = _unitOfWork.Repository<Station>().GetAll()
+                                                .Where(x => x.Id == Guid.Parse(request.StationId))
+                                                .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
+                                                .FirstOrDefault();
 
                 return new BaseResponseViewModel<OrderResponse>()
                 {
@@ -780,8 +800,7 @@ namespace FINE.Service.Service
 
                 var partyMem = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
                 if (partyMem.Customer.IsAdmin is true)
-                {
-                    
+                {                  
                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
                 }
                 else
