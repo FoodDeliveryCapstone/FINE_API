@@ -20,7 +20,7 @@ namespace FINE.Service.Helpers
             config = Configuration;
         }
 
-        public async static Task<dynamic> GetSetDataRedis(RedisSetUpType type, string key, object value = null)
+        public static dynamic GetSetDataRedis(RedisSetUpType type, string key, object value = null)
         {
             try
             {
