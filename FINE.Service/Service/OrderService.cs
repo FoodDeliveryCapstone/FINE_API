@@ -554,7 +554,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
-                if (orderCard == null)
+                if (orderCard == null || orderCard.OrderDetails == null)
                 {
                     var customer = await _unitOfWork.Repository<Customer>().GetAll()
                             .Where(x => x.Id == Guid.Parse(customerId))
