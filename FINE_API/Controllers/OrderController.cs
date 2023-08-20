@@ -145,7 +145,7 @@ namespace FINE.API.Controllers
         /// Prepare CoOrder
         /// </summary>
         [HttpPost("coOrder/preOrder")]
-        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreCoOrder(string timeSlot, string partyCode)
+        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreCoOrder(int orderType, string partyCode)
         {
             try
             {
