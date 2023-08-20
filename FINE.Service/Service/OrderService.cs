@@ -526,10 +526,15 @@ namespace FINE.Service.Service
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
                 if (orderCard == null)
                 {
+                    var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                            .Where(x => x.Id == Guid.Parse(customerId))
+                            .FirstOrDefaultAsync();
                     orderCard = new CoOrderPartyCard()
                     {
+                        Customer = _mapper.Map<CustomerCoOrderResponse>(customer),
                         OrderDetails = new List<CoOrderDetailResponse>()
                     };
+                    coOrder.PartyOrder.Add(orderCard);
 
                 }
                 else
