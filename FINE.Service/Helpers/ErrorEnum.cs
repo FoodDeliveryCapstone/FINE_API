@@ -37,6 +37,10 @@ namespace FINE.Service.Helpers
             //400 
             [Display(Name = "Invalid party code")]
             INVALID_CODE = 4001,
+
+            //404
+            [Display(Name = "Party is closed")]
+            PARTY_CLOSED = 4041,
         }
 
         public enum PaymentErrorsEnum
