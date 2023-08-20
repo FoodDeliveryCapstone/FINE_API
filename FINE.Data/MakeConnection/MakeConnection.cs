@@ -10,6 +10,7 @@ namespace FINE.Data.MakeConnection
     {
         public static IServiceCollection ConnectToConnectionString(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddDbContext<FineDevDbV2Context>(ServiceLifetime.Transient);
             services.AddDbContext<FineDevDbV2Context>(options =>
             {
                 options.UseLazyLoadingProxies();
