@@ -49,6 +49,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode);
+        Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
@@ -885,6 +886,42 @@ namespace FINE.Service.Service
             catch (ErrorResponse ex)
             {
                 throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request)
+        {
+            try
+            {
+                var order = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Id == Guid.Parse(orderId));
+                if(order == null)
+                {
+                    throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                                       OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                }
+
+                var updateOrderStatus = _mapper.Map<UpdateOrderStatusRequest, Data.Entity.Order>(request, order);
+
+                updateOrderStatus.UpdateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Data.Entity.Order>().UpdateDetached(updateOrderStatus);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<OrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0,
+                    },
+                    Data = _mapper.Map<OrderResponse>(updateOrderStatus)
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw;
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.DTO.Request.Order
 {
@@ -15,5 +16,9 @@ namespace FINE.Service.DTO.Request.Order
         public int RoomId { get; set; }
 
         public string? Note { get; set; }
+    }
+    public class UpdateOrderStatusRequest
+    {
+        public OrderStatusEnum OrderStatus { get; set; }
     }
 }
