@@ -1,4 +1,5 @@
-﻿using FINE.Service.DTO.Request;
+﻿using FINE.Data.Entity;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Staff;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -38,14 +39,26 @@ namespace FINE.API.Controllers.AdminStaffController
         //}
 
         /// <summary>
-        /// Get Staff By Id
+        /// Get Staff info by token
         /// </summary>
-        [Authorize(Roles = "SystemAdmin, StoreManager")]
-        [HttpGet("{staffId}")]
-        public async Task<ActionResult<BaseResponseViewModel<StaffResponse>>> GetStaffById
-            ([FromRoute] string staffId)
+        [HttpGet("authorization")]
+        public async Task<ActionResult<StaffResponse>> GetStaffByToken()
         {
-            return await _staffService.GetStaffById(staffId);
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                var result = await _staffService.GetStaffById(staffId);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
