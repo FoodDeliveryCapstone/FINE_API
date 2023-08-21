@@ -479,14 +479,22 @@ namespace FINE.Service.Service
         {
             try
             {
-                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode)
+                var checkJoin = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.CustomerId == Guid.Parse(customerId)&& x.Status != (int)PartyOrderStatus.CloseParty)
                                                 .FirstOrDefaultAsync();
+                var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.PartyCode == partyCode)
+                                                .ToListAsync();
+                var partyOrder = listpartyOrder.FirstOrDefault(x => x.Status != (int)PartyOrderStatus.CloseParty);
+
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                if (partyOrder.Status is (int)PartyOrderStatus.CloseParty)
-                    throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
+                if (listpartyOrder.FirstOrDefault().Status is (int)PartyOrderStatus.CloseParty)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
+
+                if(checkJoin is not null || listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId)))                
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_JOINED, PartyErrorEnums.PARTY_JOINED.GetDisplayName());
 
                 var newParty = new Party()
                 {
