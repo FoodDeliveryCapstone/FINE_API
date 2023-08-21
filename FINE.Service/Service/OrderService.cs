@@ -262,7 +262,7 @@ namespace FINE.Service.Service
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
-                if (request.OrderCode is not null)
+                if (request.PartyCode is not null)
                 {
                     var checkCode = await _unitOfWork.Repository<Party>().GetAll()
                                     .FirstOrDefaultAsync(x => x.PartyCode == request.PartyCode);
