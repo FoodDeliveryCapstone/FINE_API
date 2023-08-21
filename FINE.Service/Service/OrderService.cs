@@ -810,8 +810,8 @@ namespace FINE.Service.Service
             try
             {
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                               .Where(x => x.PartyCode == partyCode && x.CustomerId == Guid.Parse(customerId))
-                                               .FirstOrDefaultAsync();
+                                               .Where(x => x.PartyCode == partyCode)
+                                               .ToListAsync();
                 if (partyOrder is null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
@@ -824,15 +824,16 @@ namespace FINE.Service.Service
                 if (partyMem.Customer.IsAdmin is true)
                 {
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
+                    partyOrder.ForEach(x => x.IsActive = false);
                 }
                 else
                 {
+                    partyOrder.FirstOrDefault(x=> x.CustomerId == Guid.Parse(customerId)).IsActive = false;
+
                     coOrder.PartyOrder.Remove(partyMem);
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
                 }
-                partyOrder.IsActive = false;
-
-                await _unitOfWork.Repository<Party>().UpdateDetached(partyOrder);
+                await _unitOfWork.Repository<List<Party>>().UpdateDetached(partyOrder);
                 await _unitOfWork.CommitAsync();
 
                 return new BaseResponseViewModel<CoOrderResponse>()
