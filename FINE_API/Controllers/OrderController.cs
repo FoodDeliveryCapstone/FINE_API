@@ -116,7 +116,7 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
-        
+
         /// <summary>
         /// Open CoOrder
         /// </summary>
@@ -145,19 +145,14 @@ namespace FINE.API.Controllers
         /// Prepare CoOrder
         /// </summary>
         [HttpPost("coOrder/preOrder")]
-        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreCoOrder(string timeSlot, string partyCode)
+        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreCoOrder(int orderType, string partyCode)
         {
             try
             {
                 var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
-                return await _orderService.CreatePreCoOrder(customerId, timeSlot, partyCode);
+                return await _orderService.CreatePreCoOrder(customerId, orderType, partyCode);
             }
             catch (ErrorResponse ex)
             {
@@ -168,7 +163,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Join CoOrder
         /// </summary>
-        [HttpPost("coOrder/party")]
+        [HttpPut("coOrder/party")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string partyCode)
         {
             try
@@ -216,7 +211,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Confirm CoOrder
         /// </summary>
-        [HttpPost("coOrder/confirmation")]
+        [HttpPut("coOrder/confirmation")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderPartyCard>>> FinalConfirmCoOrder(string partyCode)
         {
             try
@@ -234,6 +229,30 @@ namespace FINE.API.Controllers
             catch (ErrorResponse ex)
             {
                 return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Delete CoOrder
+        /// </summary>
+        [HttpPut("coOrder/out")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(string partyCode )
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var rs = await _orderService.DeletePartyOrder(customerId, partyCode);
+                return Ok(rs);
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
             }
         }
     }

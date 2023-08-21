@@ -15,6 +15,8 @@ namespace FINE.Data.MakeConnection
                 options.UseLazyLoadingProxies();
                 options.UseSqlServer(configuration.GetConnectionString("SQLServerDatabase"), sql => sql.UseNetTopologySuite());
             });
+            services.AddDbContext<FineDevDbV2Context>(ServiceLifetime.Transient);
+
             return services;
         }
     }

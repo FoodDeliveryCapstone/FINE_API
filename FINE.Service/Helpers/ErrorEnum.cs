@@ -27,7 +27,9 @@ namespace FINE.Service.Helpers
             CANNOT_UPDATE_ORDER = 4004,
             //404 
             [Display(Name = "Not found this order!")]
-            NOT_FOUND_ID = 4041
+            NOT_FOUND = 4041,
+            [Display(Name = "Not found this coOrder!")]
+            NOT_FOUND_COORDER = 4042
         }
 
         public enum PartyErrorEnums
@@ -35,6 +37,12 @@ namespace FINE.Service.Helpers
             //400 
             [Display(Name = "Invalid party code")]
             INVALID_CODE = 4001,
+
+            //404
+            [Display(Name = "Party is closed")]
+            PARTY_CLOSED = 4041,
+            [Display(Name = "Party is deleted")]
+            PARTY_DELETE = 4042,
         }
 
         public enum PaymentErrorsEnum

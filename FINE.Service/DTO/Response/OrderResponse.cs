@@ -102,6 +102,8 @@ namespace FINE.Service.DTO.Response
     {
         public string? Id { get; set; }
 
+        public TimeSpan? CloseTime { get; set; }
+
         public TimeSpan? ArriveTime { get; set; }
 
         public TimeSpan? CheckoutTime { get; set; }

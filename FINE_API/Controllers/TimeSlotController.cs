@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using FINE.Service.Exceptions;
+using FINE.Service.Caches;
 
 namespace FINE.API.Controllers
 {
@@ -19,53 +20,22 @@ namespace FINE.API.Controllers
             _timeslotService = timeslotService;
         }
 
-        ///// <summary>
-        ///// Get List Timeslot    
-        ///// </summary>
-
-        //[HttpGet]
-        //public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslots
-        //    ([FromQuery] TimeslotResponse filter, [FromQuery] PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        return await _timeslotService.GetTimeSlots(filter, paging);
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        return BadRequest(ex.Error);
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Get Timeslot by Id  
-        ///// </summary>
-
-        //[HttpGet("{timeslotId}")]
-        //public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> GetTimeslotById
-        //    ([FromRoute] int timeslotId)
-        //{
-        //    try
-        //    {
-        //        return await _timeslotService.GetTimeSlotById(timeslotId);
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        return BadRequest(ex.Error);
-        //    }
-        //}
-
         /// <summary>
         /// Get Timeslot by DestinationId  
         /// </summary>
-
+        [Cache(18000)]
         [HttpGet("destination/{destinationId}")]
         public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslotsByDestination
             ([FromRoute] string destinationId, [FromQuery] PagingRequest paging)
         {
             try
             {
-                return await _timeslotService.GetTimeslotsByDestination(destinationId, paging);
+                var rs = await _timeslotService.GetTimeslotsByDestination(destinationId, paging);
+                if (rs == null)
+                {
+                    return NotFound();
+                }
+                return Ok(rs);
             }
             catch (ErrorResponse ex)
             {

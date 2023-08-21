@@ -106,6 +106,8 @@ namespace FINE.API
             services.ConnectToConnectionString(Configuration);
             services.ConfigureHangfireServices(Configuration);
 
+            ServiceHelpers.Initialize(Configuration);
+
             #region Firebase
             var pathToKey = Path.Combine(Directory.GetCurrentDirectory(), "Keys", "firebase.json");
             FirebaseApp.Create(new AppOptions

@@ -19,8 +19,8 @@ namespace FINE.Service.Service
 {
     public interface IAccountService
     {
-        Task<bool> CreateTransaction(int accountType, double amount, Guid customerId);
-        void CreateAccount(Guid customerId, int accountType);
+        Task CreateTransaction(TransactionTypeEnum transactionTypeEnum, AccountTypeEnum accountType, double amount, Guid customerId);
+        void CreateAccount(Guid customerId);
     }
 
     public class AccountService : IAccountService
@@ -33,84 +33,129 @@ namespace FINE.Service.Service
             _mapper = mapper;
         }
 
-        public async void CreateAccount(Guid customerId, int accountType)
+        public async void CreateAccount(Guid customerId)
         {
             try
             {
-                var newAccount = new Account()
+                var newPointAccount = new Account()
                 {
                     Id = Guid.NewGuid(),
                     CustomerId = customerId,
-                    AccountCode = customerId + "_" + accountType.ToString(),
+                    AccountCode = customerId + "_" + AccountTypeEnum.PointAccount,
                     StartDate = DateTime.Now,
                     Balance = 0,
-                    Type = accountType,
+                    Type = (int)AccountTypeEnum.PointAccount,
                     IsActive = true,
                     CreateAt = DateTime.Now
                 };
+                await _unitOfWork.Repository<Account>().InsertAsync(newPointAccount);
 
-                await _unitOfWork.Repository<Account>().InsertAsync(newAccount);
-                await _unitOfWork.CommitAsync();
-                
+                var newCreditAccount = new Account()
+                {
+                    Id = Guid.NewGuid(),
+                    CustomerId = customerId,
+                    AccountCode = customerId + "_" + AccountTypeEnum.CreditAccount,
+                    StartDate = DateTime.Now,
+                    Balance = 10000,
+                    Type = (int)AccountTypeEnum.CreditAccount,
+                    IsActive = true,
+                    CreateAt = DateTime.Now
+                };
+                await _unitOfWork.Repository<Account>().InsertAsync(newCreditAccount);
             }
             catch (Exception ex)
             {
+                throw ex;
             }
         }
 
-        public async Task<bool> CreateTransaction(int accountType, double amount, Guid customerId)
+        public async Task CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId)
         {
             try
             {
-                var account = await _unitOfWork.Repository<Account>().GetAll()
-                                .Where(x => x.CustomerId == customerId)
-                                .ToListAsync();
-
-                if (accountType == (int)AccountTypeEnum.CreditAccount)
+                var accounts = await _unitOfWork.Repository<Account>().GetAll()
+                                                .Where(x => x.CustomerId == customerId)
+                                                .ToListAsync();
+                Account account = null;
+                switch (transactionType)
                 {
-                    var creditAccount = account.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
-                    //check balance customer xem đủ ko 
-                    if (creditAccount.Balance < amount)
-                        throw new ErrorResponse(400, (int)PaymentErrorsEnum.ERROR_BALANCE,
-                            PaymentErrorsEnum.ERROR_BALANCE.GetDisplayName());
-                    creditAccount.Balance -= amount;
-                    creditAccount.UpdateAt = DateTime.Now;
+                    case TransactionTypeEnum.Recharge:
 
-                    try
-                    {
-                        var transaction = new Transaction()
+                        if (accountType.Equals(AccountTypeEnum.PointAccount))
                         {
-                            Id = Guid.NewGuid(),
-                            AccountId = creditAccount.Id,
-                            Amount = amount,
-                            IsIncrease = false,
-                            Status = (int)TransactionStatusEnum.Finish,
-                            Type = (int)TransactionTypeEnum.Payment,
-                            CreatedAt = DateTime.Now
-                        };
+                            account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.PointAccount);
+                            account.Balance += amount;
+                            account.UpdateAt = DateTime.Now;
+                            await _unitOfWork.Repository<Account>().UpdateDetached(account);
+                        }
+                        else if (accountType.Equals(AccountTypeEnum.CreditAccount))
+                        {
+                            account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
+                            account.Balance += amount;
+                            account.UpdateAt = DateTime.Now;
+                        }
 
-                        await _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
-                        await _unitOfWork.Repository<Account>().UpdateDetached(creditAccount);
-                    }
-                    catch (ErrorResponse ex)
-                    {
-                        throw new ErrorResponse(400, (int)TransactionErrorEnum.CREATE_TRANS_FAIL,
-                            TransactionErrorEnum.CREATE_TRANS_FAIL.GetDisplayName());
-                    }
-                }
-                else if (accountType == (int)AccountTypeEnum.PointAccount)
-                {
-                    var pointAccount = account.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.PointAccount);
-                    pointAccount.Balance += amount;
-                    pointAccount.UpdateAt = DateTime.Now;
-                    await _unitOfWork.Repository<Account>().UpdateDetached(pointAccount);
-                }
+                        try
+                        {
+                            var transaction = new Transaction()
+                            {
+                                Id = Guid.NewGuid(),
+                                AccountId = account.Id,
+                                Amount = amount,
+                                IsIncrease = true,
+                                Status = (int)TransactionStatusEnum.Finish,
+                                Type = (int)TransactionTypeEnum.Recharge,
+                                CreatedAt = DateTime.Now
+                            };
 
-                return true;
+                            await _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
+                            await _unitOfWork.Repository<Account>().UpdateDetached(account);
+                        }
+                        catch (ErrorResponse ex)
+                        {
+                            throw new ErrorResponse(400, (int)TransactionErrorEnum.CREATE_TRANS_FAIL,
+                                TransactionErrorEnum.CREATE_TRANS_FAIL.GetDisplayName());
+                        }
+                        break;
+
+                    case TransactionTypeEnum.Payment:
+
+                        account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
+
+                        if (account.Balance < amount)
+                            throw new ErrorResponse(400, (int)PaymentErrorsEnum.ERROR_BALANCE,
+                                PaymentErrorsEnum.ERROR_BALANCE.GetDisplayName());
+
+                        account.Balance -= amount;
+                        account.UpdateAt = DateTime.Now;
+
+                        try
+                        {
+                            var transaction = new Transaction()
+                            {
+                                Id = Guid.NewGuid(),
+                                AccountId = account.Id,
+                                Amount = amount,
+                                IsIncrease = false,
+                                Status = (int)TransactionStatusEnum.Finish,
+                                Type = (int)TransactionTypeEnum.Payment,
+                                CreatedAt = DateTime.Now
+                            };
+
+                            await _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
+                            await _unitOfWork.Repository<Account>().UpdateDetached(account);
+                        }
+                        catch (ErrorResponse ex)
+                        {
+                            throw new ErrorResponse(400, (int)TransactionErrorEnum.CREATE_TRANS_FAIL,
+                                TransactionErrorEnum.CREATE_TRANS_FAIL.GetDisplayName());
+                        }
+                        break;
+                }
             }
             catch (ErrorResponse ex)
             {
-                return false;
+                throw ex;
             }
         }
     }

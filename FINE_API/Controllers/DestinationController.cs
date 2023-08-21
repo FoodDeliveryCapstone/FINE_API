@@ -1,4 +1,5 @@
-﻿using FINE.Service.DTO.Request;
+﻿using FINE.Service.Caches;
+using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Destination;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -19,26 +20,10 @@ namespace FINE.API.Controllers
             _destinationService = destinationService;
         }
 
-        ///// <summary>
-        ///// Get List Destination
-        ///// </summary>
-        //[HttpGet]
-        //public async Task<ActionResult<BaseResponsePagingViewModel<DestinationResponse>>> GetListDestination([FromQuery] DestinationResponse request, [FromQuery] PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        return await _destinationService.GetListDestination(request, paging);
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
-
         /// <summary>
         /// Get Destination By Id
         /// </summary>
+        [Cache(18000)]
         [HttpGet("{id}")]
         public async Task<ActionResult<BaseResponseViewModel<DestinationResponse>>> GetDestinationById([FromRoute] string id)
         {
