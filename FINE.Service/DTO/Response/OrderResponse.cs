@@ -57,9 +57,9 @@ namespace FINE.Service.DTO.Response
 
         public Guid StoreId { get; set; }
 
-        public string ProductCode { get; set; } = null!;
+        public string? ProductCode { get; set; } = null!;
 
-        public string ProductName { get; set; } = null!;
+        public string? ProductName { get; set; } = null!;
 
         public double UnitPrice { get; set; }
 
