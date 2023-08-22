@@ -74,9 +74,19 @@ namespace FINE.Service.Helpers
             Processing = 4,
             ShipperAssigned = 7,
             Delivering = 9,
-            Finished = 10,
+            BoxStored = 10,
+            Finished = 11,
 
-            UserCancel = 11,
+            UserCancel = 12,
+        }
+
+        public enum OrderBoxStatusEnum
+        {
+            NotPicked =1,
+            Picked = 2,
+            AboutToExpire = 3,
+
+            StaffPicked = 4
         }
 
         public enum PartyOrderStatus

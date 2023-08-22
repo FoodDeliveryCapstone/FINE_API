@@ -134,6 +134,7 @@ namespace FINE.API
 
             builder.RegisterType<OrderService>().As<IOrderService>();
             builder.RegisterType<PaymentService>().As<IPaymentService>();
+            builder.RegisterType<QrCodeService>().As<IQrCodeService>();
 
             builder.RegisterType<AccountService>().As<IAccountService>();
             builder.RegisterType<CustomerService>().As<ICustomerService>();
