@@ -32,6 +32,15 @@ namespace FINE.Service.Helpers
             NOT_FOUND_COORDER = 4042
         }
 
+        public enum BoxErrorEnums
+        {
+            //400 
+            [Display(Name = "Order already taken!")]
+            ORDER_TAKEN = 4001,
+            [Display(Name = "Order already taken by staff!")]
+            STAFF_TAKEN = 4002,
+        }
+
         public enum PartyErrorEnums
         {
             //400 
@@ -155,7 +164,7 @@ namespace FINE.Service.Helpers
 
             //400
             [Display(Name = "This notify already exsist!")]
-            NOTIFY_EXSIST = 4001, 
+            NOTIFY_EXSIST = 4001,
             [Display(Name = "Data is null!")]
             DATA_NULL = 4002,
 
