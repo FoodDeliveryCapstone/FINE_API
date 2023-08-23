@@ -23,6 +23,12 @@ public partial class ProductAttribute
 
     public DateTime? UpdateAt { get; set; }
 
+    public double? Height { get; set; }
+
+    public double? Width { get; set; }
+
+    public double? Length { get; set; }
+
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<ProductInMenu> ProductInMenus { get; set; } = new List<ProductInMenu>();
