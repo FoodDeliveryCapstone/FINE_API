@@ -19,15 +19,17 @@ public partial class ProductAttribute
 
     public bool IsActive { get; set; }
 
+    public int RotationType { get; set; }
+
+    public double Height { get; set; }
+
+    public double Width { get; set; }
+
+    public double Length { get; set; }
+
     public DateTime CreateAt { get; set; }
 
     public DateTime? UpdateAt { get; set; }
-
-    public double? Height { get; set; }
-
-    public double? Width { get; set; }
-
-    public double? Length { get; set; }
 
     public virtual Product Product { get; set; } = null!;
 
