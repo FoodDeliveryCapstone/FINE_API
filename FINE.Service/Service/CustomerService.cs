@@ -24,12 +24,9 @@ namespace FINE.Service.Service
 {
     public interface ICustomerService
     {
-        //Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse request, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
-        //Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request);
-        //Task<BaseResponseViewModel<CustomerResponse>> GetCustomerByEmail(string email);
+        Task<BaseResponseViewModel<CustomerResponse>> FindCustomerByPhoneNumber(string phoneNumber);
         Task<BaseResponseViewModel<LoginResponse>> LoginByMail(ExternalAuthRequest data);
-        //Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
         Task Logout(string fcmToken);
     }
     public class CustomerService : ICustomerService
@@ -324,6 +321,11 @@ namespace FINE.Service.Service
             {
                 _customerFcmtokenService.RemoveFcmTokens(new List<string> { fcmToken });
             }
+        }
+
+        public Task<BaseResponseViewModel<CustomerResponse>> FindCustomerByPhoneNumber(string phoneNumber)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -37,21 +37,19 @@ namespace FINE.Service.Service
 {
     public interface IOrderService
     {
-        Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string id);
+        Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string orderId);
         Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging);
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
-        Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
+        Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
+        Task AddProductToCard(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
-        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode);
+        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode);
-
-        //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
-        //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
     }
     public class OrderService : IOrderService
     {
@@ -143,7 +141,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType == (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType == OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -243,7 +241,7 @@ namespace FINE.Service.Service
             {
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
@@ -365,7 +363,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -392,7 +390,7 @@ namespace FINE.Service.Service
                     CreateAt = DateTime.Now
                 };
 
-                if (request.PartyType is (int)PartyOrderType.CoOrder)
+                if (request.PartyType is PartyOrderType.CoOrder)
                 {
                     party.PartyType = (int)PartyOrderType.CoOrder;
                     coOrder.PartyType = (int)PartyOrderType.CoOrder;
@@ -547,6 +545,25 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task AddProductToCard(string customerId, CreatePreOrderRequest request)
+        {
+            try
+            {
+                var boxSize = await _unitOfWork.Repository<Box>().GetAll()
+                                //.Where()
+                                .FirstOrDefaultAsync();
+
+                foreach(var product in request.OrderDetails)
+                {
+
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request)
         {
             try
@@ -563,7 +580,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -687,7 +704,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode)
+        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode)
         {
             try
             {
@@ -703,7 +720,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (orderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (orderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
