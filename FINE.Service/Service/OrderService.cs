@@ -210,7 +210,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     Amount = 15000,
-                    AmountType = (int)OtherAmountTypeEnum.ShippingFee
+                    Type = (int)OtherAmountTypeEnum.ShippingFee
                 };
                 order.OtherAmounts = new List<OrderOtherAmount>();
                 order.OtherAmounts.Add(otherAmount);
@@ -804,7 +804,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     Amount = 15000,
-                    AmountType = (int)OtherAmountTypeEnum.ShippingFee
+                    Type = (int)OtherAmountTypeEnum.ShippingFee
                 };
                 order.OtherAmounts = new List<OrderOtherAmount>();
                 order.OtherAmounts.Add(otherAmount);
