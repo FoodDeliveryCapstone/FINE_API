@@ -95,7 +95,7 @@ namespace FINE.Service.DTO.Response
 
         public double Amount { get; set; }
 
-        public int AmountType { get; set; }
+        public int Type { get; set; }
     }
 
     public class TimeSlotOrderResponse
