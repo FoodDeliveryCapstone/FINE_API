@@ -45,7 +45,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
-        Task<AddProductToCardResponse> AddProductToCard(string customerId, CreatePreOrderRequest request);
+        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
@@ -543,7 +543,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<AddProductToCardResponse> AddProductToCard(string customerId, CreatePreOrderRequest request)
+        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(CreatePreOrderRequest request)
         {
             try
             {
@@ -609,7 +609,17 @@ namespace FINE.Service.Service
                                                    .Select(x => x.Product)
                                                    .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
                                                    .ToList();
-                return result;
+
+                return new BaseResponseViewModel<AddProductToCardResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
             }
             catch (Exception ex)
             {

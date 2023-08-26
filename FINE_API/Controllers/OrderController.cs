@@ -212,19 +212,19 @@ namespace FINE.API.Controllers
         /// Add product into card
         /// </summary>
         [HttpPost("card")]
-        public async Task<ActionResult<AddProductToCardResponse>> AddProductIntoCard([FromBody] CreatePreOrderRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard([FromBody] CreatePreOrderRequest request)
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (customerId == null)
-                //{
-                //    return Unauthorized();
-                //}
-                var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
-                return await _orderService.AddProductToCard(customerId, request);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+                return Ok(await _orderService.AddProductToCard(request));
             }
             catch (ErrorResponse ex)
             {
