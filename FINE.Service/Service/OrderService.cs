@@ -587,7 +587,6 @@ namespace FINE.Service.Service
                             productInCard.Status.Message = String.Format("Only {0} items can be added to the card", quantityCanAdd);
 
                         productInCard.Quantity = quantityCanAdd;
-                        result.Products.Add(productInCard);
                     }
                     else
                     {
@@ -598,6 +597,7 @@ namespace FINE.Service.Service
                             ErrorCode = (int)OrderErrorEnums.CANNOT_ADD_TO_CARD
                         };
                     }
+                    result.Products.Add(productInCard);
                 }
                 result.ProductsRecommend = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                                    .Include(x => x.Menu)
