@@ -25,6 +25,8 @@ namespace FINE.Service.Helpers
             CANNOT_FINISH_ORDER = 4003,
             [Display(Name = "Cannot update order right now")]
             CANNOT_UPDATE_ORDER = 4004,
+            [Display(Name = "This product cannot add into the box")]
+            CANNOT_ADD_TO_CARD = 4005,
             //404 
             [Display(Name = "Not found this order!")]
             NOT_FOUND = 4041,

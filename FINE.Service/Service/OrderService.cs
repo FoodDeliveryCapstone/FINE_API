@@ -45,7 +45,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
-        Task AddProductToCard(string customerId, CreatePreOrderRequest request);
+        Task<AddProductToCardResponse> AddProductToCard(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
@@ -330,7 +330,7 @@ namespace FINE.Service.Service
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                if(partyOrder.IsActive == false)
+                if (partyOrder.IsActive == false)
                     throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
 
                 CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
@@ -395,7 +395,7 @@ namespace FINE.Service.Service
                     party.PartyType = (int)PartyOrderType.CoOrder;
                     coOrder.PartyType = (int)PartyOrderType.CoOrder;
 
-                    coOrder.PartyOrder = new List<CoOrderPartyCard>();  
+                    coOrder.PartyOrder = new List<CoOrderPartyCard>();
 
                     var orderCard = new CoOrderPartyCard()
                     {
@@ -477,21 +477,19 @@ namespace FINE.Service.Service
         {
             try
             {
-                var checkJoin = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.CustomerId == Guid.Parse(customerId)&& x.Status != (int)PartyOrderStatus.CloseParty)
-                                                .FirstOrDefaultAsync();
                 var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode)
+                                                .Where(x => x.PartyCode == partyCode && x.IsActive == true)
                                                 .ToListAsync();
-                var partyOrder = listpartyOrder.FirstOrDefault(x => x.Status != (int)PartyOrderStatus.CloseParty);
 
-                if (partyOrder == null)
+                var partyOrder = listpartyOrder.Find(x => x.Status != (int)PartyOrderStatus.CloseParty);
+
+                if (listpartyOrder is null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                if (listpartyOrder.FirstOrDefault().Status is (int)PartyOrderStatus.CloseParty)
+                if (partyOrder is null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
 
-                if(checkJoin is not null || listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId)))                
+                if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId)))
                     throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_JOINED, PartyErrorEnums.PARTY_JOINED.GetDisplayName());
 
                 var newParty = new Party()
@@ -545,18 +543,73 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task AddProductToCard(string customerId, CreatePreOrderRequest request)
+        public async Task<AddProductToCardResponse> AddProductToCard(string customerId, CreatePreOrderRequest request)
         {
             try
             {
-                var boxSize = await _unitOfWork.Repository<Box>().GetAll()
-                                //.Where()
-                                .FirstOrDefaultAsync();
+                BoxModel remainingSpace = null;
 
-                foreach(var product in request.OrderDetails)
+                var result = new AddProductToCardResponse
                 {
+                    Products = new List<ProductInCard>(),
+                    ProductsRecommend = new List<ProductRecommend>()
+                };
 
+                var listProductRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                    .Include(x => x.Product)
+                    .Where(x => request.OrderDetails.Select(x => x.ProductId).Contains(x.ProductId) && x.Menu.TimeSlotId == request.TimeSlotId)
+                    .OrderBy(x => x.Product.RotationType == (int)ProductRotationTypeEnum.OnlyHorizontal
+                               || x.Product.RotationType == (int)ProductRotationTypeEnum.OnlyVertical)
+                    .GroupBy(x => x.Product)
+                    .Select(x => x.Key)
+                    .ToList();
+
+                foreach (var product in listProductRequest)
+                {
+                    var quantity = request.OrderDetails.Find(x => x.ProductId == product.Id).Quantity;
+
+                    var addToBoxResult = ServiceHelpers.FillTheBox(remainingSpace, product, quantity);
+                    remainingSpace = addToBoxResult.Box;
+
+                    var productInCard = _mapper.Map<ProductInCard>(product);
+                    productInCard.Quantity = quantity;
+                    var quantityCanAdd = addToBoxResult.listCheck.Where(x => x == true).Count();
+                    if (quantityCanAdd != 0)
+                    {
+                        productInCard.Status = new StatusViewModel
+                        {
+                            Success = true,
+                            Message = "Success",
+                            ErrorCode = 200
+                        };
+
+                        if (quantityCanAdd < quantity)
+                            productInCard.Status.Message = String.Format("Only {0} items can be added to the card", quantityCanAdd);
+
+                        productInCard.Quantity = quantityCanAdd;
+                        result.Products.Add(productInCard);
+                    }
+                    else
+                    {
+                        productInCard.Status = new StatusViewModel
+                        {
+                            Success = false,
+                            Message = OrderErrorEnums.CANNOT_ADD_TO_CARD.GetDisplayName(),
+                            ErrorCode = (int)OrderErrorEnums.CANNOT_ADD_TO_CARD
+                        };
+                    }
                 }
+                result.ProductsRecommend = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                   .Include(x => x.Menu)
+                                                   .Include(x => x.Product)
+                                                   .Where(x => x.Menu.TimeSlotId == request.TimeSlotId
+                                                            && x.Product.Height <= remainingSpace.Height
+                                                            && x.Product.Width <= remainingSpace.Width
+                                                            && x.Product.Length <= remainingSpace.Length)
+                                                   .Select(x => x.Product)
+                                                   .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                   .ToList();
+                return result;
             }
             catch (Exception ex)
             {
@@ -849,7 +902,7 @@ namespace FINE.Service.Service
                 if (partyMem.Customer.IsAdmin is true)
                 {
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
-                    foreach(var party in listParty)
+                    foreach (var party in listParty)
                     {
                         party.IsActive = false;
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);

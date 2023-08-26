@@ -188,7 +188,7 @@ namespace FINE.API.Controllers
         /// Add product into CoOrder
         /// </summary>
         [HttpPost("coOrder/card")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> AddProductIntoPartyCode(string partyCode, CreatePreOrderRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> AddProductIntoPartyCode(string partyCode, [FromBody] CreatePreOrderRequest request)
         {
             try
             {
@@ -201,6 +201,30 @@ namespace FINE.API.Controllers
                 }
                 //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.AddProductIntoPartyCode(customerId, partyCode, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Add product into card
+        /// </summary>
+        [HttpPost("card")]
+        public async Task<ActionResult<AddProductToCardResponse>> AddProductIntoCard([FromBody] CreatePreOrderRequest request)
+        {
+            try
+            {
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                //if (customerId == null)
+                //{
+                //    return Unauthorized();
+                //}
+                var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+                return await _orderService.AddProductToCard(customerId, request);
             }
             catch (ErrorResponse ex)
             {
@@ -236,7 +260,7 @@ namespace FINE.API.Controllers
         /// Delete CoOrder
         /// </summary>
         [HttpPut("coOrder/out")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(string partyCode )
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(string partyCode)
         {
             try
             {
@@ -250,7 +274,7 @@ namespace FINE.API.Controllers
                 var rs = await _orderService.DeletePartyOrder(customerId, partyCode);
                 return Ok(rs);
             }
-            catch(ErrorResponse ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }

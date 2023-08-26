@@ -57,6 +57,16 @@ namespace FINE.Service.Helpers
             UpdateDetails = 3
         }
 
+        public enum ProductRotationTypeEnum
+        {
+            //dung
+            OnlyVertical = 1,
+            //ngang
+            OnlyHorizontal = 2,
+
+            Both = 3
+        }
+
         public enum ProductInMenuStatusEnum
         {
             Wait = 1,

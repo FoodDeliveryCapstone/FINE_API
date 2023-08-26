@@ -26,7 +26,6 @@ namespace FINE.API.Mapper
             CreateMap<UpdateDestinationRequest, Destination>();
             #endregion
 
-
             #region TimeSlot
 
             CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
@@ -76,6 +75,8 @@ namespace FINE.API.Mapper
             #region Product In Menu
             CreateMap<ProductInMenu, ProductInMenuResponse>().ReverseMap();
             CreateMap<ProductAttribute, ProductInMenuResponse>().ReverseMap();
+            CreateMap<ProductAttribute, ProductInCard>();
+            CreateMap<ProductAttribute, ProductRecommend>();
 
             //CreateMap<AddProductToMenuRequest, ProductInMenu>();
             //CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
@@ -106,10 +107,6 @@ namespace FINE.API.Mapper
             //CreateMap<UpdateCustomerRequest, Customer>();
             #endregion
 
-
-
-
-
             #region Staff
 
             CreateMap<Staff, StaffResponse>().ReverseMap();
@@ -117,9 +114,6 @@ namespace FINE.API.Mapper
             //CreateMap<UpdateStaffRequest, Staff>();
 
             #endregion
-
-            //CreateMap<Store, ProductInMenuResponse>().ReverseMap();
-            //CreateMap<IGrouping<Menu, ProductInMenu>, MenuResponse>().ReverseMap();
         }
     }
 }
