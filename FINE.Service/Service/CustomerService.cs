@@ -26,6 +26,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
         Task<BaseResponseViewModel<LoginResponse>> LoginByMail(ExternalAuthRequest data);
+        Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
         Task Logout(string fcmToken);
     }
     public class CustomerService : ICustomerService
@@ -138,6 +139,33 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber)
+        {
+            try
+            {
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                            .Where(x => x.Phone.Contains(phoneNumber))
+                            .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
+                            .FirstOrDefaultAsync();
+
+                return new BaseResponseViewModel<CustomerResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = customer
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
         public async Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request)
         {
             try
@@ -178,6 +206,5 @@ namespace FINE.Service.Service
                 _customerFcmtokenService.RemoveFcmTokens(new List<string> { fcmToken });
             }
         }
-
     }
 }

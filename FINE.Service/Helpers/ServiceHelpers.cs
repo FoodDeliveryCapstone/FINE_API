@@ -63,70 +63,36 @@ namespace FINE.Service.Helpers
             }
         }
 
-        public static FillBoxListResult FillTheBox(BoxModel boxRemainingSize, ProductAttribute product, int quantity)
+        public static FillBoxResult FillTheBox(double volumeSpace, ProductAttribute product)
         {
             try
-            {
-                var newBoxRemainingSize = new BoxModel();
-                FillBoxListResult result = new FillBoxListResult()
+            {       
+                FillBoxResult result = new FillBoxResult()
                 {
-                    listCheck = new List<bool>()
+                    Success = true,
+                    VolumeRemainingSpace = volumeSpace,
                 };
-                for (int increaseUnit = 1; increaseUnit <= quantity; increaseUnit++)
+                if (volumeSpace == null)
                 {
-                    if (boxRemainingSize == null)
+                    var box = new 
                     {
-                        BoxModel box = new BoxModel()
-                        {
-                            Height = Double.Parse(config.GetSection("BoxSize:Height").Value.ToString()),
-                            Width = Double.Parse(config.GetSection("BoxSize:Width").Value.ToString()),
-                            Length = Double.Parse(config.GetSection("BoxSize:Length").Value.ToString())
-                        };
+                        Height = double.Parse(config.GetSection("BoxSize:Height").Value.ToString()),
+                        Width = double.Parse(config.GetSection("BoxSize:Width").Value.ToString()),
+                        Length = double.Parse(config.GetSection("BoxSize:Length").Value.ToString())
+                    };
 
-                        newBoxRemainingSize = new BoxModel()
-                        {
-                            Height = box.Height - product.Height,
-                            Width = box.Width - product.Width,
-                            Length = box.Length - product.Length
-                        };
-                    }
-                    else
-                    {
-                        if (product.RotationType is (int)ProductRotationTypeEnum.Both 
-                            &&(boxRemainingSize.Height < product.Height))
-                        {
-                            var temp = product.Height;
-                            product.Height = product.Width;
-                            product.Width = temp;
+                    var volumeBox = (box.Height * box.Width * box.Length) - 1000;
 
-                            if(product.Length < product.Width)
-                            {
-                                temp = product.Width;
-                                product.Width = product.Length;
-                                product.Length = temp;
-                            }
-                        }
-                        newBoxRemainingSize = new BoxModel()
-                        {
-                            Height = boxRemainingSize.Height - product.Height,
-                            Width = boxRemainingSize.Width - product.Width,
-                            Length = boxRemainingSize.Length - product.Length
-                        };
-                    }
-                    if (newBoxRemainingSize.Length < newBoxRemainingSize.Width)
-                    {
-                        newBoxRemainingSize.Temp = newBoxRemainingSize.Width;
-                        newBoxRemainingSize.Width = newBoxRemainingSize.Length;
-                        newBoxRemainingSize.Length = newBoxRemainingSize.Temp;
-                    }
-                    if (newBoxRemainingSize.Height < 0 || newBoxRemainingSize.Width < 0 || newBoxRemainingSize.Length < 0)
-                        result.listCheck.Add(false);
-                    else
-                        result.listCheck.Add(true);
-
-                    boxRemainingSize = newBoxRemainingSize;
+                    volumeSpace = volumeBox - (product.Height * product.Length * product.Width);                   
                 }
-                result.Box = newBoxRemainingSize;
+                else
+                {
+                    volumeSpace = volumeSpace - (product.Height * product.Length * product.Width);
+                }
+                if (volumeSpace < 0)
+                {
+                    result.Success = false;
+                }             
                 return result;
             }
             catch (Exception ex)

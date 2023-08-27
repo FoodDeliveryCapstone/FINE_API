@@ -64,6 +64,30 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// lấy thông tin khách hàng bằng token
+        /// </summary>
+        [HttpGet("find")]
+        public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> FindCustomerByPhone(string phoneNumber)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                var result = await _customerService.FindCustomer(phoneNumber);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Lấy tất cả order của user 
         /// </summary>
         /// <returns></returns>

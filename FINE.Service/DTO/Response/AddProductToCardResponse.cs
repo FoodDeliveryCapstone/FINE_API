@@ -8,7 +8,8 @@ namespace FINE.Service.DTO.Response
 {
     public class AddProductToCardResponse
     {
-        public List<ProductInCard> Products { get; set; }
+        public ProductInCard Product { get; set; }
+        public double VolumeRemainingSpace { get; set; }
         public List<ProductRecommend> ProductsRecommend { get; set; }
 
     }
@@ -26,8 +27,6 @@ namespace FINE.Service.DTO.Response
         public string? Size { get; set; }
 
         public double Price { get; set; }
-
-        public int Quantity { get; set; }
     }
 
     public class ProductRecommend
