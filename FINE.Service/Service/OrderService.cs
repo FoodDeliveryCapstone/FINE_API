@@ -548,56 +548,66 @@ namespace FINE.Service.Service
             try
             {
                 BoxModel remainingSpace = null;
-
                 var result = new AddProductToCardResponse
                 {
                     Products = new List<ProductInCard>(),
                     ProductsRecommend = new List<ProductRecommend>()
                 };
-
-                var listProductRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                    .Include(x => x.Product)
-                    .Where(x => request.OrderDetails.Select(x => x.ProductId).Contains(x.ProductId) && x.Menu.TimeSlotId == request.TimeSlotId)
-                    .OrderBy(x => x.Product.RotationType == (int)ProductRotationTypeEnum.OnlyHorizontal
-                               || x.Product.RotationType == (int)ProductRotationTypeEnum.OnlyVertical)
-                    .GroupBy(x => x.Product)
-                    .Select(x => x.Key)
-                    .ToList();
-
-                foreach (var product in listProductRequest)
+                if (request.OrderDetails.Count() > 0)
                 {
-                    var quantity = request.OrderDetails.Find(x => x.ProductId == product.Id).Quantity;
+                    var listProductRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                        .Include(x => x.Product)
+                        .Where(x => request.OrderDetails.Select(x => x.ProductId).Contains(x.ProductId) && x.Menu.TimeSlotId == request.TimeSlotId)
+                        .OrderBy(x => x.Product.RotationType == (int)ProductRotationTypeEnum.OnlyHorizontal
+                                   || x.Product.RotationType == (int)ProductRotationTypeEnum.OnlyVertical)
+                        .GroupBy(x => x.Product)
+                        .Select(x => x.Key)
+                        .ToList();
 
-                    var addToBoxResult = ServiceHelpers.FillTheBox(remainingSpace, product, quantity);
-                    remainingSpace = addToBoxResult.Box;
-
-                    var productInCard = _mapper.Map<ProductInCard>(product);
-                    productInCard.Quantity = quantity;
-                    var quantityCanAdd = addToBoxResult.listCheck.Where(x => x == true).Count();
-                    if (quantityCanAdd != 0)
+                    foreach (var product in listProductRequest)
                     {
-                        productInCard.Status = new StatusViewModel
+                        var quantity = request.OrderDetails.Find(x => x.ProductId == product.Id).Quantity;
+
+                        var addToBoxResult = ServiceHelpers.FillTheBox(remainingSpace, product, quantity);
+                        remainingSpace = addToBoxResult.Box;
+
+                        var productInCard = _mapper.Map<ProductInCard>(product);
+                        productInCard.Quantity = quantity;
+                        var quantityCanAdd = addToBoxResult.listCheck.Where(x => x == true).Count();
+                        if (quantityCanAdd != 0)
                         {
-                            Success = true,
-                            Message = "Success",
-                            ErrorCode = 200
-                        };
+                            productInCard.Status = new StatusViewModel
+                            {
+                                Success = true,
+                                Message = "Success",
+                                ErrorCode = 200
+                            };
 
-                        if (quantityCanAdd < quantity)
-                            productInCard.Status.Message = String.Format("Only {0} items can be added to the card", quantityCanAdd);
+                            if (quantityCanAdd < quantity)
+                                productInCard.Status.Message = String.Format("Only {0} items can be added to the card", quantityCanAdd);
 
-                        productInCard.Quantity = quantityCanAdd;
+                            productInCard.Quantity = quantityCanAdd;
+                        }
+                        else
+                        {
+                            productInCard.Status = new StatusViewModel
+                            {
+                                Success = false,
+                                Message = OrderErrorEnums.CANNOT_ADD_TO_CARD.GetDisplayName(),
+                                ErrorCode = (int)OrderErrorEnums.CANNOT_ADD_TO_CARD
+                            };
+                        }
+                        result.Products.Add(productInCard);
                     }
-                    else
+                }
+                else
+                {
+                    remainingSpace = new BoxModel()
                     {
-                        productInCard.Status = new StatusViewModel
-                        {
-                            Success = false,
-                            Message = OrderErrorEnums.CANNOT_ADD_TO_CARD.GetDisplayName(),
-                            ErrorCode = (int)OrderErrorEnums.CANNOT_ADD_TO_CARD
-                        };
-                    }
-                    result.Products.Add(productInCard);
+                        Height = Double.Parse(_configuration["BoxSize:Height"]),
+                        Width = Double.Parse(_configuration["BoxSize:Width"]),
+                        Length = Double.Parse(_configuration["BoxSize:Length"])
+                    };
                 }
                 result.ProductsRecommend = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                                    .Include(x => x.Menu)

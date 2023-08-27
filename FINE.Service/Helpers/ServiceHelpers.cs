@@ -92,11 +92,13 @@ namespace FINE.Service.Helpers
                     }
                     else
                     {
-                        if (boxRemainingSize.Height < product.Height)
+                        if (product.RotationType is (int)ProductRotationTypeEnum.Both 
+                            &&(boxRemainingSize.Height < product.Height))
                         {
                             var temp = product.Height;
                             product.Height = product.Width;
                             product.Width = temp;
+
                             if(product.Length < product.Width)
                             {
                                 temp = product.Width;
