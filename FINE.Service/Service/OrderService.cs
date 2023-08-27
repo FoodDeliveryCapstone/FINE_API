@@ -113,6 +113,12 @@ namespace FINE.Service.Service
                                         .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                         .FirstOrDefault();
 
+                var orderBox =  await _unitOfWork.Repository<OrderBox>().GetAll()
+                                    .Where(x => x.OrderId == order.Id)
+                                    .FirstOrDefaultAsync();
+                if (orderBox is not null)
+                    resultOrder.BoxId = orderBox.BoxId;
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
