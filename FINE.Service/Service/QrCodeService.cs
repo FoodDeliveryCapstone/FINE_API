@@ -1,22 +1,15 @@
 ﻿using AutoMapper;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
-using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
-using IronBarCode;
-using IronSoftware.Drawing;
 using Microsoft.EntityFrameworkCore;
-using NetTopologySuite.Index.HPRtree;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ZXing.QrCode;
+using ZXing;
 using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
-using static IronSoftware.Drawing.AnyBitmap;
+using ZXing.Windows.Compatibility;
+using System.Drawing;
 
 namespace FINE.Service.Service
 {
@@ -42,22 +35,34 @@ namespace FINE.Service.Service
             {
                 var box = await _unitOfWork.Repository<OrderBox>().GetAll()
                                 .Include(x => x.Order)
-                                .Where(x => x.BoxId == Guid.Parse(boxId) 
+                                .Where(x => x.BoxId == Guid.Parse(boxId)
                                     && x.Order.CustomerId == Guid.Parse(customerId))
                                 .FirstOrDefaultAsync();
 
                 if (box.Status == (int)OrderBoxStatusEnum.Picked)
-                     throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_TAKEN,
-                         BoxErrorEnums.ORDER_TAKEN.GetDisplayName());
+                    throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_TAKEN,
+                        BoxErrorEnums.ORDER_TAKEN.GetDisplayName());
 
                 else if (box.Status == (int)OrderBoxStatusEnum.StaffPicked)
                     throw new ErrorResponse(400, (int)BoxErrorEnums.STAFF_TAKEN,
                          BoxErrorEnums.STAFF_TAKEN.GetDisplayName());
 
-                GeneratedBarcode qrCode = IronBarCode.QRCodeWriter.CreateQrCode(boxId);
-                qrCode.AddAnnotationTextAboveBarcode("Scan me o((>ω< ))o");
-                qrCode.ToImage();
-                return qrCode;
+                QrCodeEncodingOptions options = new()
+                {
+                    DisableECI = true,
+                    CharacterSet = "UTF-8",
+                    Width = 500,
+                    Height = 500
+                };
+
+                BarcodeWriter writer = new()
+                {
+                    Format = BarcodeFormat.QR_CODE,
+                    Options = options
+                };
+                Bitmap qrCodeBitmap = writer.Write(box.BoxId.ToString());
+
+                return qrCodeBitmap;
             }
             catch (Exception ex)
             {

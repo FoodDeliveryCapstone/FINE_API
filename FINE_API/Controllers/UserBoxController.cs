@@ -1,9 +1,11 @@
 ﻿using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
-using IronSoftware.Drawing;
 using Microsoft.AspNetCore.Mvc;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Net;
+using System.Net.Http.Headers;
 
 namespace FINE.API.Controllers
 {
@@ -31,17 +33,16 @@ namespace FINE.API.Controllers
             {
                 return Unauthorized();
             }
-            //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+            //var customerId = "CD59782C-998C-4693-9920-F1FE4964C24A";
 
-            var qrCode = _qrCodeService.GenerateQrCode(customerId, boxId).Result;
-            byte[] qrCodeBytes;
-            using (MemoryStream memoryStream = new MemoryStream())
+            var qrCodeBitmap = _qrCodeService.GenerateQrCode(customerId, boxId).Result;
+            using (MemoryStream stream = new MemoryStream())
             {
-                qrCode.SaveAsPng(memoryStream.ToString());
-                qrCodeBytes = memoryStream.ToArray();
-            }
+                qrCodeBitmap.Save(stream, ImageFormat.Png);
+                byte[] imageBytes = stream.ToArray();
 
-            return File(qrCodeBytes, "image/png");
+                return File(imageBytes, "image/png");
+            }
         }
     }
 }
