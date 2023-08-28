@@ -39,6 +39,8 @@ namespace FINE.Service.Service
             {
                 var order = _unitOfWork.Repository<OrderDetail>().GetAll()
                                         .Where(x => x.StoreId == Guid.Parse(storeId))
+                                        .OrderBy(x => x.OrderId)
+                                        .ThenBy(x => x.Order.CheckInDate)
                                         .ProjectTo<OrderDetailResponse>(_mapper.ConfigurationProvider)
                                         .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
                                         Constants.DefaultPaging);

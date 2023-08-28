@@ -23,7 +23,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Get List Store
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
         public async Task<ActionResult<BaseResponsePagingViewModel<StoreResponse>>> GetStores
             ([FromQuery] StoreResponse request, [FromQuery] PagingRequest paging)
         {
@@ -41,7 +41,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Get Store By Id
         /// </summary>
         [HttpGet("{id}")]
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
         public async Task<ActionResult<BaseResponseViewModel<StoreResponse>>> GetStoreById
             ([FromRoute] string id)
         {
@@ -59,7 +59,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Create Store
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
         public async Task<ActionResult<BaseResponseViewModel<StoreResponse>>> CreateStore
             ([FromBody] CreateStoreRequest request)
         {
@@ -77,7 +77,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Update Store
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
         public async Task<ActionResult<BaseResponseViewModel<StoreResponse>>> UpdateStore
             ([FromRoute] string id, [FromBody] UpdateStoreRequest request)
         {
