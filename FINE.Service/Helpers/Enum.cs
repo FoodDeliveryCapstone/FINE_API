@@ -82,6 +82,8 @@ namespace FINE.Service.Helpers
 
             PaymentPending = 3,
             Processing = 4,
+            StaffConfirm = 5,
+            FinishPrepare = 6,
             ShipperAssigned = 7,
             Delivering = 9,
             BoxStored = 10,

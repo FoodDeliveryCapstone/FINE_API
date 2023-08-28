@@ -124,16 +124,23 @@ namespace FINE.Service.Service
         {
             try
             {
-                var orderStatus = await _unitOfWork.Repository<Order>().GetAll()
+                var order = _unitOfWork.Repository<Order>().GetAll()
                                         .Where(x => x.Id == Guid.Parse(orderId))
-                                        .Select(x => x.OrderStatus)
-                                        .FirstOrDefaultAsync();
-
-                var boxId = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                        .FirstOrDefault();
+                var result = new
+                {
+                    OrderStatus = order.OrderStatus,
+                    BoxId = _unitOfWork.Repository<OrderBox>().GetAll()
                                         .Where(x => x.OrderId == Guid.Parse(orderId))
                                         .Select(x => x.BoxId)
-                                        .FirstOrDefaultAsync();
+                                        .FirstOrDefaultAsync(),
 
+                    StationName = _unitOfWork.Repository<Station>().GetAll()
+                                        .Where(x => x.Id == order.StationId)
+                                        .Select(x => x.Name)
+                                        .FirstOrDefaultAsync(),
+                };
+                
                 return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
@@ -142,11 +149,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = new 
-                    { 
-                        OrderStatus = orderStatus,
-                        BoxId = boxId
-                    }
+                    Data = result
                 };
 
             }
@@ -175,7 +178,7 @@ namespace FINE.Service.Service
                 var order = new OrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode() + "-" + customerId,
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
@@ -400,7 +403,7 @@ namespace FINE.Service.Service
                 var coOrder = new CoOrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    PartyCode = Utils.GenerateRandomCode(),
+                    PartyCode = Utils.GenerateRandomCode(6),
                     PartyType = (int)PartyOrderType.LinkedOrder,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot)
                 };
@@ -814,7 +817,7 @@ namespace FINE.Service.Service
                 var order = new OrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode() + "-" + customerId,
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)OrderTypeEnum.OrderToday,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),

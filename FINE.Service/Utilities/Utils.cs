@@ -12,12 +12,11 @@ namespace FINE.Service.Utilities
 {
     public static class Utils
     {
-        public static string GenerateRandomCode()
+        public static string GenerateRandomCode(int length)
         {
             var randomCode = new Random();
 
             string chars = "0123456789zxcvbnmasdfghjklqwertyuiop";
-            int length = 5;
             return new string(Enumerable.Repeat(chars, length)
             .Select(s => s[randomCode.Next(s.Length)]).ToArray());
         }
