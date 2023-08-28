@@ -44,6 +44,27 @@ namespace FINE.API.Controllers
             }
         }
 
+        [HttpGet("status/{orderId}")]
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> GetOrderStatusByOrderId(string orderId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                return await _orderService.GetOrderStatus(orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
         /// <summary>
         /// Get CoOrder
         /// </summary>

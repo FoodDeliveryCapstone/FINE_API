@@ -20,8 +20,10 @@ namespace FINE.Service.Service
     public interface IOrderService
     {
         Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string orderId);
+
         Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging);
+        Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
@@ -113,6 +115,42 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId)
+        {
+            try
+            {
+                var orderStatus = await _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.Id == Guid.Parse(orderId))
+                                        .Select(x => x.OrderStatus)
+                                        .FirstOrDefaultAsync();
+
+                var boxId = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                        .Where(x => x.OrderId == Guid.Parse(orderId))
+                                        .Select(x => x.BoxId)
+                                        .FirstOrDefaultAsync();
+
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = new 
+                    { 
+                        OrderStatus = orderStatus,
+                        BoxId = boxId
+                    }
+                };
+
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }
