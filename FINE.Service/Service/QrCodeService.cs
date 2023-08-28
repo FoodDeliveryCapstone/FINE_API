@@ -54,13 +54,14 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
+                string content = Utils.GenerateRandomCode(10) + "." + boxId;
 
                 BarcodeWriter writer = new()
                 {
                     Format = BarcodeFormat.QR_CODE,
                     Options = options
                 };
-                Bitmap qrCodeBitmap = writer.Write(box.BoxId.ToString());
+                Bitmap qrCodeBitmap = writer.Write(content);
 
                 return qrCodeBitmap;
             }
