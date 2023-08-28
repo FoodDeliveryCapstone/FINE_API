@@ -124,18 +124,18 @@ namespace FINE.Service.Service
         {
             try
             {
-                var order = _unitOfWork.Repository<Order>().GetAll()
+                var order = await _unitOfWork.Repository<Order>().GetAll()
                                         .Where(x => x.Id == Guid.Parse(orderId))
-                                        .FirstOrDefault();
+                                        .FirstOrDefaultAsync();
                 var result = new
                 {
                     OrderStatus = order.OrderStatus,
-                    BoxId = _unitOfWork.Repository<OrderBox>().GetAll()
+                    BoxId = await _unitOfWork.Repository<OrderBox>().GetAll()
                                         .Where(x => x.OrderId == Guid.Parse(orderId))
                                         .Select(x => x.BoxId)
                                         .FirstOrDefaultAsync(),
 
-                    StationName = _unitOfWork.Repository<Station>().GetAll()
+                    StationName = await _unitOfWork.Repository<Station>().GetAll()
                                         .Where(x => x.Id == order.StationId)
                                         .Select(x => x.Name)
                                         .FirstOrDefaultAsync(),
