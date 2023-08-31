@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.DTO.Request.Order
 {
@@ -21,13 +22,13 @@ namespace FINE.Service.DTO.Request.Order
 
         public double TotalOtherAmount { get; set; }
 
-        public int OrderType { get; set; }
+        public OrderTypeEnum OrderType { get; set; }
 
         public Guid TimeSlotId { get; set; }
 
         public string StationId { get; set; }
 
-        public int PaymentType { get; set; }
+        public PaymentTypeEnum PaymentType { get; set; }
 
         public bool IsPartyMode { get; set; }
 

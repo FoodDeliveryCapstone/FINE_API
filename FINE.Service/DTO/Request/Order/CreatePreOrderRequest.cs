@@ -4,14 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.DTO.Request.Order
 {
     public class CreatePreOrderRequest
     {
-        public int? OrderType { get; set; }
+        public OrderTypeEnum? OrderType { get; set; }
 
-        public int? PartyType { get; set; }
+        public PartyOrderType? PartyType { get; set; }
 
         public Guid? TimeSlotId { get; set; }
 

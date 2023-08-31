@@ -42,6 +42,8 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
 
+        public Guid BoxId { get; set; }
+
         public List<OrderDetailResponse> OrderDetails { get; set; }
 
     }
@@ -95,7 +97,7 @@ namespace FINE.Service.DTO.Response
 
         public double Amount { get; set; }
 
-        public int AmountType { get; set; }
+        public int Type { get; set; }
     }
 
     public class TimeSlotOrderResponse

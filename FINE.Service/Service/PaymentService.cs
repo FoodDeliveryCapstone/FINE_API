@@ -19,7 +19,7 @@ namespace FINE.Service.Service
 {
     public interface IPaymentService
     {
-        Task CreatePayment(Order orderId, int point, int type);
+        Task CreatePayment(Order orderId, int point, PaymentTypeEnum type);
     }
     public class PaymentService : IPaymentService
     {
@@ -35,7 +35,7 @@ namespace FINE.Service.Service
             _accountService = accountService;
         }
 
-        public async Task CreatePayment(Order order, int point, int paymentType)
+        public async Task CreatePayment(Order order, int point, PaymentTypeEnum paymentType)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     Amount = order.FinalAmount,
-                    PaymentType = paymentType,
+                    PaymentType = (int)paymentType,
                     Status = (int)PaymentStatusEnum.Finish,
                     CreateAt = DateTime.Now
                 };

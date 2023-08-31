@@ -8,52 +8,35 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Net.NetworkInformation;
-using System.Text;
-using System.Threading.Tasks;
 using static FINE.Service.Helpers.ErrorEnum;
 using static FINE.Service.Helpers.Enum;
-using Castle.Core.Resource;
-using System.Net.Mail;
-using IronBarCode;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Hangfire.Server;
 using Microsoft.Extensions.Configuration;
-using Hangfire;
 using FINE.Service.Attributes;
-using StackExchange.Redis;
-using Newtonsoft.Json;
-using ServiceStack.Redis;
-using Azure.Core;
-using ServiceStack.Web;
-using Microsoft.AspNetCore.Mvc;
 using FINE.Service.Helpers;
 
 namespace FINE.Service.Service
 {
     public interface IOrderService
     {
-        Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string id);
+        Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string orderId);
+
         Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string id, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging);
+        Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
-        Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string id, CreateOrderRequest request);
+        Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
+        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string? productId, double? volumeSpace, string timeSlotId);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
-        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode);
+        Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
 
-        //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
-        //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
     }
     public class OrderService : IOrderService
     {
@@ -117,6 +100,12 @@ namespace FINE.Service.Service
                                         .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                         .FirstOrDefault();
 
+                var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                    .Where(x => x.OrderId == order.Id)
+                                    .FirstOrDefaultAsync();
+                if (orderBox is not null)
+                    resultOrder.BoxId = orderBox.BoxId;
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -134,6 +123,45 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId)
+        {
+            try
+            {
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.Id == Guid.Parse(orderId))
+                                        .FirstOrDefaultAsync();
+                var result = new
+                {
+                    OrderStatus = order.OrderStatus,
+                    BoxId = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                        .Where(x => x.OrderId == Guid.Parse(orderId))
+                                        .Select(x => x.BoxId)
+                                        .FirstOrDefaultAsync(),
+
+                    StationName = await _unitOfWork.Repository<Station>().GetAll()
+                                        .Where(x => x.Id == order.StationId)
+                                        .Select(x => x.Name)
+                                        .FirstOrDefaultAsync(),
+                };
+                
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request)
         {
             try
@@ -145,7 +173,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType == (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType == OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -153,7 +181,7 @@ namespace FINE.Service.Service
                 var order = new OrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode() + "-" + customerId,
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
@@ -214,7 +242,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     Amount = 15000,
-                    AmountType = (int)OtherAmountTypeEnum.ShippingFee
+                    Type = (int)OtherAmountTypeEnum.ShippingFee
                 };
                 order.OtherAmounts = new List<OrderOtherAmount>();
                 order.OtherAmounts.Add(otherAmount);
@@ -245,7 +273,7 @@ namespace FINE.Service.Service
             {
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
@@ -334,7 +362,7 @@ namespace FINE.Service.Service
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                if(partyOrder.IsActive == false)
+                if (partyOrder.IsActive == false)
                     throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
 
                 CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
@@ -367,7 +395,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -378,7 +406,7 @@ namespace FINE.Service.Service
                 var coOrder = new CoOrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    PartyCode = Utils.GenerateRandomCode(),
+                    PartyCode = Utils.GenerateRandomCode(6),
                     PartyType = (int)PartyOrderType.LinkedOrder,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot)
                 };
@@ -394,12 +422,12 @@ namespace FINE.Service.Service
                     CreateAt = DateTime.Now
                 };
 
-                if (request.PartyType is (int)PartyOrderType.CoOrder)
+                if (request.PartyType is PartyOrderType.CoOrder)
                 {
                     party.PartyType = (int)PartyOrderType.CoOrder;
                     coOrder.PartyType = (int)PartyOrderType.CoOrder;
 
-                    coOrder.PartyOrder = new List<CoOrderPartyCard>();  
+                    coOrder.PartyOrder = new List<CoOrderPartyCard>();
 
                     var orderCard = new CoOrderPartyCard()
                     {
@@ -481,14 +509,20 @@ namespace FINE.Service.Service
         {
             try
             {
-                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode)
-                                                .FirstOrDefaultAsync();
-                if (partyOrder == null)
+                var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.PartyCode == partyCode && x.IsActive == true)
+                                                .ToListAsync();
+
+                var partyOrder = listpartyOrder.Find(x => x.Status != (int)PartyOrderStatus.CloseParty);
+
+                if (listpartyOrder is null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                if (partyOrder.Status is (int)PartyOrderStatus.CloseParty)
-                    throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
+                if (partyOrder is null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
+
+                if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId)))
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_JOINED, PartyErrorEnums.PARTY_JOINED.GetDisplayName());
 
                 var newParty = new Party()
                 {
@@ -541,6 +575,87 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string? productId, double? volumeSpace ,string timeSlotId)
+        {
+            try
+            {
+                var result = new AddProductToCardResponse
+                {
+                    Product = new ProductInCard(),
+                    ProductsRecommend = new List<ProductRecommend>()
+                };
+
+                if (productId is not null)
+                {
+                    var productRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                        .Include(x => x.Product)
+                                        .Where(x => x.ProductId == Guid.Parse(productId)
+                                            && x.Menu.TimeSlotId == Guid.Parse(timeSlotId))
+                                        .GroupBy(x => x.Product)
+                                        .Select(x => x.Key)
+                                        .FirstOrDefault();
+
+                    var addToBoxResult = ServiceHelpers.FillTheBox((double)volumeSpace, productRequest);
+                    result.VolumeRemainingSpace = addToBoxResult.VolumeRemainingSpace;
+
+                    result.Product = _mapper.Map<ProductInCard>(productRequest);
+
+                    if (addToBoxResult.Success is true)
+                    {
+                        result.Product.Status = new StatusViewModel
+                        {
+                            Success = true,
+                            Message = "Success",
+                            ErrorCode = 200
+                        };
+                    }
+                    else
+                    {
+                        result.Product.Status = new StatusViewModel
+                        {
+                            Success = false,
+                            Message = OrderErrorEnums.CANNOT_ADD_TO_CARD.GetDisplayName(),
+                            ErrorCode = (int)OrderErrorEnums.CANNOT_ADD_TO_CARD
+                        };
+                    }
+                }
+                else
+                {
+                    var boxSize = new
+                    {
+                        Height = Double.Parse(_configuration["BoxSize:Height"]),
+                        Width = Double.Parse(_configuration["BoxSize:Width"]),
+                        Length = Double.Parse(_configuration["BoxSize:Length"])
+                    };
+                    result.VolumeRemainingSpace = boxSize.Height * boxSize.Width * boxSize.Length;
+                }
+
+                result.ProductsRecommend = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                   .Include(x => x.Menu)
+                                                   .Include(x => x.Product)
+                                                   .Where(x => x.Menu.TimeSlotId == Guid.Parse(timeSlotId)
+                                                      && (x.Product.Height * x.Product.Width * x.Product.Length) <= result.VolumeRemainingSpace)
+                                                   .Select(x => x.Product)
+                                                   .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                   .ToList();
+
+                return new BaseResponseViewModel<AddProductToCardResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request)
         {
             try
@@ -557,7 +672,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -681,7 +796,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode)
+        public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode)
         {
             try
             {
@@ -697,7 +812,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (orderType is (int)OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                if (orderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -705,7 +820,7 @@ namespace FINE.Service.Service
                 var order = new OrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode() + "-" + customerId,
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + customerId,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)OrderTypeEnum.OrderToday,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
@@ -781,7 +896,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     Amount = 15000,
-                    AmountType = (int)OtherAmountTypeEnum.ShippingFee
+                    Type = (int)OtherAmountTypeEnum.ShippingFee
                 };
                 order.OtherAmounts = new List<OrderOtherAmount>();
                 order.OtherAmounts.Add(otherAmount);
@@ -826,7 +941,7 @@ namespace FINE.Service.Service
                 if (partyMem.Customer.IsAdmin is true)
                 {
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
-                    foreach(var party in listParty)
+                    foreach (var party in listParty)
                     {
                         party.IsActive = false;
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);

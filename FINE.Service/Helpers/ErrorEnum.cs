@@ -25,6 +25,8 @@ namespace FINE.Service.Helpers
             CANNOT_FINISH_ORDER = 4003,
             [Display(Name = "Cannot update order right now")]
             CANNOT_UPDATE_ORDER = 4004,
+            [Display(Name = "This product cannot add into the box")]
+            CANNOT_ADD_TO_CARD = 4005,
             //404 
             [Display(Name = "Not found this order!")]
             NOT_FOUND = 4041,
@@ -32,17 +34,28 @@ namespace FINE.Service.Helpers
             NOT_FOUND_COORDER = 4042
         }
 
+        public enum BoxErrorEnums
+        {
+            //400 
+            [Display(Name = "Order already taken!")]
+            ORDER_TAKEN = 4001,
+            [Display(Name = "Order already taken by staff!")]
+            STAFF_TAKEN = 4002,
+        }
+
         public enum PartyErrorEnums
         {
             //400 
             [Display(Name = "Invalid party code")]
             INVALID_CODE = 4001,
+            [Display(Name = "Party is closed")]
+            PARTY_CLOSED = 4002,
+            [Display(Name = "You already in party")]
+            PARTY_JOINED = 4003,
 
             //404
-            [Display(Name = "Party is closed")]
-            PARTY_CLOSED = 4041,
             [Display(Name = "Party is deleted")]
-            PARTY_DELETE = 4042,
+            PARTY_DELETE = 4041,
         }
 
         public enum PaymentErrorsEnum
@@ -153,7 +166,7 @@ namespace FINE.Service.Helpers
 
             //400
             [Display(Name = "This notify already exsist!")]
-            NOTIFY_EXSIST = 4001, 
+            NOTIFY_EXSIST = 4001,
             [Display(Name = "Data is null!")]
             DATA_NULL = 4002,
 

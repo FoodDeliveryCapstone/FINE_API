@@ -65,6 +65,16 @@ namespace FINE.Service.Helpers
             UpdateDetails = 3
         }
 
+        public enum ProductRotationTypeEnum
+        {
+            //dung
+            OnlyVertical = 1,
+            //ngang
+            OnlyHorizontal = 2,
+
+            Both = 3
+        }
+
         public enum ProductInMenuStatusEnum
         {
             Wait = 1,
@@ -80,11 +90,23 @@ namespace FINE.Service.Helpers
 
             PaymentPending = 3,
             Processing = 4,
+            StaffConfirm = 5,
+            FinishPrepare = 6,
             ShipperAssigned = 7,
             Delivering = 9,
-            Finished = 10,
+            BoxStored = 10,
+            Finished = 11,
 
-            UserCancel = 11,
+            UserCancel = 12,
+        }
+
+        public enum OrderBoxStatusEnum
+        {
+            NotPicked =1,
+            Picked = 2,
+            AboutToExpire = 3,
+
+            StaffPicked = 4
         }
 
         public enum PartyOrderStatus

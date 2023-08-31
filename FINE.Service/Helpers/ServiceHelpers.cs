@@ -62,5 +62,43 @@ namespace FINE.Service.Helpers
                 throw ex;
             }
         }
+
+        public static FillBoxResult FillTheBox(double volumeSpace, ProductAttribute product)
+        {
+            try
+            {       
+                FillBoxResult result = new FillBoxResult()
+                {
+                    Success = true,
+                    VolumeRemainingSpace = volumeSpace,
+                };
+                if (volumeSpace == null)
+                {
+                    var box = new 
+                    {
+                        Height = double.Parse(config.GetSection("BoxSize:Height").Value.ToString()),
+                        Width = double.Parse(config.GetSection("BoxSize:Width").Value.ToString()),
+                        Length = double.Parse(config.GetSection("BoxSize:Length").Value.ToString())
+                    };
+
+                    var volumeBox = (box.Height * box.Width * box.Length) - 1000;
+
+                    volumeSpace = volumeBox - (product.Height * product.Length * product.Width);                   
+                }
+                else
+                {
+                    volumeSpace = volumeSpace - (product.Height * product.Length * product.Width);
+                }
+                if (volumeSpace < 0)
+                {
+                    result.Success = false;
+                }             
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

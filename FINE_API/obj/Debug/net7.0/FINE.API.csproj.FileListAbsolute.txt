@@ -301,3 +301,9 @@ D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.xml
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.pdb
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\FINE.API.genruntimeconfig.cache
 D:\RepoCode\FINE Repo\FINE_Product_API\FINE_API\obj\Debug\net7.0\ref\FINE.API.dll
+D:\RepoCode\FINE Repo\FINE_Product_API_Main\FINE_API\obj\Debug\net7.0\FINE.API.csproj.AssemblyReference.cache
+D:\RepoCode\FINE Repo\FINE_Product_API_Main\FINE_API\obj\Debug\net7.0\FINE.API.GeneratedMSBuildEditorConfig.editorconfig
+D:\RepoCode\FINE Repo\FINE_Product_API_Main\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfoInputs.cache
+D:\RepoCode\FINE Repo\FINE_Product_API_Main\FINE_API\obj\Debug\net7.0\FINE.API.AssemblyInfo.cs
+D:\RepoCode\FINE Repo\FINE_Product_API_Main\FINE_API\obj\Debug\net7.0\FINE.API.csproj.CoreCompileInputs.cache
+D:\RepoCode\FINE Repo\FINE_Product_API_Main\FINE_API\obj\Debug\net7.0\FINE.API.MvcApplicationPartsAssemblyInfo.cache
