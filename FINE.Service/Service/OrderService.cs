@@ -1100,7 +1100,7 @@ namespace FINE.Service.Service
 
                                     var payload = new CreatePreOrderRequest
                                     {
-                                        OrderType = (int)OrderTypeEnum.OrderToday,
+                                        OrderType = OrderTypeEnum.OrderToday,
                                         TimeSlotId = Guid.Parse(request.TimeSlotId),
                                     };
 
@@ -1129,10 +1129,10 @@ namespace FINE.Service.Service
                                             TotalAmount = rs.TotalAmount,
                                             FinalAmount = rs.FinalAmount,
                                             TotalOtherAmount = rs.TotalOtherAmount,
-                                            OrderType = rs.OrderType,
+                                            OrderType = (OrderTypeEnum)rs.OrderType,
                                             TimeSlotId = Guid.Parse(request.TimeSlotId),
                                             StationId = stationId.ToString(),
-                                            PaymentType = 1,
+                                            PaymentType = PaymentTypeEnum.FineWallet,
                                             IsPartyMode = false,
                                             ItemQuantity = rs.ItemQuantity,
                                             Point = rs.Point,
@@ -1246,7 +1246,7 @@ namespace FINE.Service.Service
                             {
                                 var payload = new CreatePreOrderRequest
                                 {
-                                    OrderType = (int)OrderTypeEnum.OrderToday,
+                                    OrderType = OrderTypeEnum.OrderToday,
                                     TimeSlotId = Guid.Parse(request.TimeSlotId),
                                 };
 
@@ -1277,10 +1277,10 @@ namespace FINE.Service.Service
                                         TotalAmount = rs.TotalAmount,
                                         FinalAmount = rs.FinalAmount,
                                         TotalOtherAmount = rs.TotalOtherAmount,
-                                        OrderType = rs.OrderType,
+                                        OrderType = (OrderTypeEnum)rs.OrderType,
                                         TimeSlotId = Guid.Parse(request.TimeSlotId),
                                         StationId = stationId.ToString(),
-                                        PaymentType = 1,
+                                        PaymentType = PaymentTypeEnum.FineWallet,
                                         IsPartyMode = false,
                                         ItemQuantity = rs.ItemQuantity,
                                         Point = rs.Point,
@@ -1414,9 +1414,9 @@ namespace FINE.Service.Service
                             {
                                 var payloadPreOrder = new CreatePreOrderRequest
                                 {
-                                    OrderType = (int)OrderTypeEnum.OrderToday,
+                                    OrderType = OrderTypeEnum.OrderToday,
                                     TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                    PartyType = (int)PartyOrderType.CoOrder
+                                    PartyType = PartyOrderType.CoOrder
                                 };
 
                                 payloadPreOrder.OrderDetails = productInMenu
@@ -1438,9 +1438,9 @@ namespace FINE.Service.Service
                                         var joinCoOrder = JoinPartyOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
                                         var cusPayloadPreOrder = new CreatePreOrderRequest
                                         {
-                                            OrderType = (int)OrderTypeEnum.OrderToday,
+                                            OrderType = OrderTypeEnum.OrderToday,
                                             TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                            PartyType = (int)PartyOrderType.CoOrder
+                                            PartyType = PartyOrderType.CoOrder
                                         };
 
                                         cusPayloadPreOrder.OrderDetails = productInMenu
@@ -1457,7 +1457,7 @@ namespace FINE.Service.Service
                                     }
                                 
                                 
-                                    var preCoOrder = CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (int)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;                                  
+                                    var preCoOrder = CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (OrderTypeEnum)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;                                  
                
                                     var stationId = station
                                                         .OrderBy(x => rand.Next())
@@ -1472,10 +1472,10 @@ namespace FINE.Service.Service
                                         TotalAmount = preCoOrder.TotalAmount,
                                         FinalAmount = preCoOrder.FinalAmount,
                                         TotalOtherAmount = preCoOrder.TotalOtherAmount,
-                                        OrderType = preCoOrder.OrderType,
+                                        OrderType = (OrderTypeEnum)preCoOrder.OrderType,
                                         TimeSlotId = Guid.Parse(request.TimeSlotId),
                                         StationId = stationId.ToString(),
-                                        PaymentType = 1,
+                                        PaymentType = PaymentTypeEnum.FineWallet,
                                         IsPartyMode = true,
                                         ItemQuantity = preCoOrder.ItemQuantity,
                                         Point = preCoOrder.Point,
@@ -1605,9 +1605,9 @@ namespace FINE.Service.Service
 
                             var payloadPreOrder = new CreatePreOrderRequest
                             {
-                                OrderType = (int)OrderTypeEnum.OrderToday,
+                                OrderType = OrderTypeEnum.OrderToday,
                                 TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                PartyType = (int)PartyOrderType.CoOrder
+                                PartyType = PartyOrderType.CoOrder
                             };
 
                             payloadPreOrder.OrderDetails = productInMenu
@@ -1629,9 +1629,9 @@ namespace FINE.Service.Service
                                     var joinCoOrder = JoinPartyOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
                                     var cusPayloadPreOrder = new CreatePreOrderRequest
                                     {
-                                        OrderType = (int)OrderTypeEnum.OrderToday,
+                                        OrderType = OrderTypeEnum.OrderToday,
                                         TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                        PartyType = (int)PartyOrderType.CoOrder
+                                        PartyType = PartyOrderType.CoOrder
                                     };
 
                                     cusPayloadPreOrder.OrderDetails = productInMenu
@@ -1648,7 +1648,7 @@ namespace FINE.Service.Service
                                 }
                             
                             
-                                var preCoOrder = CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (int)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;
+                                var preCoOrder = CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (OrderTypeEnum)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;
 
                                 var stationId = station
                                                     .OrderBy(x => rand.Next())
@@ -1663,10 +1663,10 @@ namespace FINE.Service.Service
                                     TotalAmount = preCoOrder.TotalAmount,
                                     FinalAmount = preCoOrder.FinalAmount,
                                     TotalOtherAmount = preCoOrder.TotalOtherAmount,
-                                    OrderType = preCoOrder.OrderType,
+                                    OrderType = (OrderTypeEnum)preCoOrder.OrderType,
                                     TimeSlotId = Guid.Parse(request.TimeSlotId),
                                     StationId = stationId.ToString(),
-                                    PaymentType = 1,
+                                    PaymentType = PaymentTypeEnum.FineWallet,
                                     IsPartyMode = true,
                                     ItemQuantity = preCoOrder.ItemQuantity,
                                     Point = preCoOrder.Point,

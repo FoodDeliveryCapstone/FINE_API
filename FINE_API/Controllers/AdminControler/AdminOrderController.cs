@@ -6,7 +6,7 @@ using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.API.Controllers.AdminControler
 {
@@ -163,7 +163,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpPost("coOrder/preOrder")]
-        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreCoOrder([FromQuery] string customerId, int orderType, string partyCode)
+        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreatePreCoOrder([FromQuery] string customerId, OrderTypeEnum orderType, string partyCode)
         {
             try
             {

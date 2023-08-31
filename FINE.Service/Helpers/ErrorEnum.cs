@@ -213,13 +213,5 @@ namespace FINE.Service.Helpers
             [Display(Name = "This product is not avaliable!")]
             PRODUCT_NOT_AVALIABLE = 4002
         }
-
-        public enum BoxErrorEnums
-        {
-            //404
-            [Display(Name = "Not found this code!")]
-            NOT_FOUND = 4041,
-
-        }
     }
 }

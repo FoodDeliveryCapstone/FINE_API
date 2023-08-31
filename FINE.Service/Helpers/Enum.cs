@@ -175,12 +175,5 @@ namespace FINE.Service.Helpers
             ForOrder = 1,
             ForGift = 2,
         }
-
-        public enum ProductRotationTypeEnum
-        {
-            Vertical = 1,
-            Horizontal = 2,
-            Both = 3
-        }
     }
 }
