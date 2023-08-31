@@ -3,6 +3,7 @@
 namespace FINE.Service.Helpers
 {
     public class Enum
+
     {
         public enum FcmTokenType
         {
@@ -15,6 +16,13 @@ namespace FINE.Service.Helpers
             GET = 1,
             SET = 2,
             DELETE = 3
+        }
+
+        public enum SimulateOrderFailedType
+        {
+            Payment = 1,
+            OutTimeslot = 2,
+            OutOfProduct =3,
         }
 
         public enum SystemRoleTypeEnum
