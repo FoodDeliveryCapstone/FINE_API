@@ -191,6 +191,25 @@ namespace FINE.API.Controllers.AdminControler
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Simulate Order
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [HttpPost("simulate/order")]
+        public async Task<ActionResult<BaseResponseViewModel<SimulateResponse>>> SimulateOrder([FromQuery] SimulateRequest request)
+        {
+            try
+            {
+                return await _orderService.SimulateOrder(request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+
     }
 }
 

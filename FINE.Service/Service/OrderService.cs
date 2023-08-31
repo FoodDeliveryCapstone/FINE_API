@@ -50,6 +50,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, int orderType, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
+        Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
 
         //Task<BaseResponseViewModel<OrderResponse>> ConfirmCoOrder(string customerId, CreatePreOrderRequest request);
         //Task<BaseResponseViewModel<dynamic>> UpdateOrder(string id, UpdateOrderTypeEnum orderStatus, UpdateOrderRequest request);
@@ -922,6 +923,776 @@ namespace FINE.Service.Service
             catch(ErrorResponse ex)
             {
                 throw;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request)
+        {
+            try
+            {
+                var rand = new Random();
+                int errorCount = 0;
+                var timeslot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == Guid.Parse(request.TimeSlotId));
+                var timeslotResponse = new TimeSlotOrderResponse()
+                {
+                    Id = timeslot.Id.ToString(),
+                    CloseTime = timeslot.CloseTime,
+                    ArriveTime = timeslot.ArriveTime,
+                    CheckoutTime = timeslot.CheckoutTime,
+                };
+
+                SimulateResponse response = new SimulateResponse()
+                {
+                    Timeslot = timeslotResponse,
+                    SingleOrderResult = new SimulateSingleOrderResponse()
+                    {
+                        OrderSuccess = new List<OrderSuccess>(),
+                        OrderFailed = new List<OrderFailed>()
+                    },
+                    CoOrderOrderResult = new SimulateCoOrderResponse()
+                    {
+                        OrderSuccess = new List<OrderSuccess>(),
+                        OrderFailed = new List<OrderFailed>()
+                    }
+                };
+
+                var productInMenu = await _unitOfWork.Repository<ProductInMenu>().GetAll()
+                            .Include(x => x.Menu)
+                            .Include(x => x.Product)
+                            .Where(x => x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                            .GroupBy(x => x.Product)
+                            .Select(x => x.Key)
+                            .ToListAsync();
+                var station = await _unitOfWork.Repository<Station>().GetAll().ToListAsync();
+                var getAllCustomer = await _unitOfWork.Repository<Customer>().GetAll().ToListAsync();
+
+                if (request.SingleOrder is not null)
+                {                   
+                    var listCustomer = getAllCustomer
+                                            .OrderBy(x => rand.Next())
+                                            .Take((int)request.SingleOrder.TotalCustomer)
+                                            .ToList();
+                   
+                    foreach (var customer in listCustomer)
+                    {
+                        for (int quantity = 1; quantity <= request.SingleOrder.OrderPerPerson; quantity++)
+                        {
+                            var totalSingleOrderSuccess = request.SingleOrder.TotalOrderSuccess;
+                            var totalSingleOrderFailed = request.SingleOrder.OrderPerPerson - request.SingleOrder.TotalOrderSuccess;
+                            if (totalSingleOrderSuccess > 0 && totalSingleOrderFailed > 0) {
+                                if(rand.Next() % 2 == 0) 
+                                { 
+
+                                    var payload = new CreatePreOrderRequest
+                                    {
+                                        OrderType = (int)OrderTypeEnum.OrderToday,
+                                        TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                    };
+
+                                    payload.OrderDetails = productInMenu
+                                        .OrderBy(x => rand.Next())
+                                        .Take(3)
+                                        .Select(x => new CreatePreOrderDetailRequest
+                                        {
+                                            ProductId = x.Id,
+                                            Quantity = 2
+                                        })
+                                        .ToList();
+                                    try
+                                    {
+                                        var rs = CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
+                                        var stationId = station
+                                                         .OrderBy(x => rand.Next())
+                                                         .Select(x => x.Id)
+                                                         .FirstOrDefault();
+
+                                        var payloadCreateOrder = new CreateOrderRequest()
+                                        {
+                                            Id = rs.Id,
+                                            OrderCode = rs.OrderCode,
+                                            PartyCode = null,
+                                            TotalAmount = rs.TotalAmount,
+                                            FinalAmount = rs.FinalAmount,
+                                            TotalOtherAmount = rs.TotalOtherAmount,
+                                            OrderType = rs.OrderType,
+                                            TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                            StationId = stationId.ToString(),
+                                            PaymentType = 1,
+                                            IsPartyMode = false,
+                                            ItemQuantity = rs.ItemQuantity,
+                                            Point = rs.Point,
+                                            OrderDetails = rs.OrderDetails.Select(detail => new CreateOrderDetail()
+                                            {
+                                                Id = detail.Id,
+                                                OrderId = detail.Id,
+                                                ProductInMenuId = detail.ProductInMenuId,
+                                                StoreId = detail.StoreId,
+                                                ProductCode = detail.ProductCode,
+                                                ProductName = detail.ProductName,
+                                                UnitPrice = detail.UnitPrice,
+                                                Quantity = detail.Quantity,
+                                                TotalAmount = detail.TotalAmount,
+                                                FinalAmount = detail.FinalAmount,
+                                                Note = detail.Note
+
+                                            }).ToList(),
+                                            OtherAmounts = rs.OtherAmounts
+                                        };
+
+                                        try
+                                        {
+                                            var result = CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+
+                                            var orderSuccess = new OrderSuccess
+                                            {
+                                                Id = result.Id,
+                                                OrderCode = result.OrderCode,
+                                                Customer = result.Customer,
+                                            };
+                                            response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                            var orderFail = new OrderFailed
+                                            {
+                                                Status = new StatusViewModel
+                                                {
+                                                    Message = err.Error.Message,
+                                                    Success = false,
+                                                    ErrorCode = err.Error.ErrorCode,
+                                                }
+                                            };
+                                            response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = err.Error.Message,
+                                                Success = false,
+                                                ErrorCode = err.Error.ErrorCode,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    totalSingleOrderSuccess--;
+                                }
+                                else
+                                {
+                                    int randomError = rand.Next(1, 3);
+                                    if(randomError == (int)SimulateOrderFailedType.Payment)
+                                    {
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = "Balance is not enough",
+                                                Success = false,
+                                                ErrorCode = 400,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
+                                    {
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = "Out of Time Slot!",
+                                                Success = false,
+                                                ErrorCode = 400,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                                    {
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = "This product is not avaliable!",
+                                                Success = false,
+                                                ErrorCode = 400,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    totalSingleOrderFailed--;
+                                }
+                            }
+                            else if(totalSingleOrderSuccess > 0)
+                            {
+                                var payload = new CreatePreOrderRequest
+                                {
+                                    OrderType = (int)OrderTypeEnum.OrderToday,
+                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                };
+
+
+                                payload.OrderDetails = productInMenu
+                                    .OrderBy(x => rand.Next())
+                                    .Take(3)
+                                    .Select(x => new CreatePreOrderDetailRequest
+                                    {
+                                        ProductId = x.Id,
+                                        Quantity = 2
+                                    })
+                                    .ToList();
+                                try
+                                {
+                                    var rs = CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
+
+                                    var stationId = station
+                                                     .OrderBy(x => rand.Next())
+                                                     .Select(x => x.Id)
+                                                     .FirstOrDefault();
+
+                                    var payloadCreateOrder = new CreateOrderRequest()
+                                    {
+                                        Id = rs.Id,
+                                        OrderCode = rs.OrderCode,
+                                        PartyCode = null,
+                                        TotalAmount = rs.TotalAmount,
+                                        FinalAmount = rs.FinalAmount,
+                                        TotalOtherAmount = rs.TotalOtherAmount,
+                                        OrderType = rs.OrderType,
+                                        TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                        StationId = stationId.ToString(),
+                                        PaymentType = 1,
+                                        IsPartyMode = false,
+                                        ItemQuantity = rs.ItemQuantity,
+                                        Point = rs.Point,
+                                        OrderDetails = rs.OrderDetails.Select(detail => new CreateOrderDetail()
+                                        {
+                                            Id = detail.Id,
+                                            OrderId = detail.Id,
+                                            ProductInMenuId = detail.ProductInMenuId,
+                                            StoreId = detail.StoreId,
+                                            ProductCode = detail.ProductCode,
+                                            ProductName = detail.ProductName,
+                                            UnitPrice = detail.UnitPrice,
+                                            Quantity = detail.Quantity,
+                                            TotalAmount = detail.TotalAmount,
+                                            FinalAmount = detail.FinalAmount,
+                                            Note = detail.Note
+
+                                        }).ToList(),
+                                        OtherAmounts = rs.OtherAmounts
+                                    };
+
+                                    try
+                                    {
+                                        var result = CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+                                        var orderSuccess = new OrderSuccess
+                                        {
+                                            Id = result.Id,
+                                            OrderCode = result.OrderCode,
+                                            Customer = result.Customer,
+                                        };
+                                        response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        errorCount++;
+                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = err.Error.Message,
+                                                Success = false,
+                                                ErrorCode = err.Error.ErrorCode,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    errorCount++;
+                                    ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = err.Error.Message,
+                                            Success = false,
+                                            ErrorCode = err.Error.ErrorCode,
+                                        }
+                                    };
+                                    response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                totalSingleOrderSuccess--;
+                            }
+                            else if(totalSingleOrderFailed > 0)
+                            {
+                                int randomError = rand.Next(1, 3);
+                                if (randomError == (int)SimulateOrderFailedType.Payment)
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "Balance is not enough",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "Out of Time Slot!",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "This product is not avaliable!",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                totalSingleOrderFailed--;
+
+                            }
+                        }
+                    }
+                }
+                if (request.CoOrderOrder is not null)
+                {
+                    var listCustomer = getAllCustomer
+                                           .OrderBy(x => rand.Next())
+                                           .Take((int)request.CoOrderOrder.CustomerEach)
+                                           .ToList();
+                    var openCoOrderCustomer = listCustomer.OrderBy(x => rand.Next()).Take(1).FirstOrDefault();
+                    var restCustomers = listCustomer.Skip(1).ToList();
+                    
+                    var totalCoOrderSuccess = request.CoOrderOrder.TotalOrderSuccess;
+                    var totalCoOrderFailed = request.CoOrderOrder.TotalOrder - request.CoOrderOrder.TotalOrderSuccess;
+
+                    for (int quantity = 1; quantity <= request.CoOrderOrder.TotalOrder; quantity++)
+                    {
+                        if (totalCoOrderSuccess > 0 && totalCoOrderFailed > 0)
+                        {
+                            if (rand.Next() % 2 == 0)
+                            {
+                                var payloadPreOrder = new CreatePreOrderRequest
+                                {
+                                    OrderType = (int)OrderTypeEnum.OrderToday,
+                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                    PartyType = (int)PartyOrderType.CoOrder
+                                };
+
+                                payloadPreOrder.OrderDetails = productInMenu
+                                    .OrderBy(x => rand.Next())
+                                    .Take(2)
+                                    .Select(x => new CreatePreOrderDetailRequest
+                                    {
+                                        ProductId = x.Id,
+                                        Quantity = 1
+                                    })
+                                    .ToList();
+
+                                var openCoOrder = OpenCoOrder(openCoOrderCustomer.Id.ToString(), payloadPreOrder);
+
+                                try 
+                                { 
+                                    foreach (var cus in restCustomers)
+                                    {
+                                        var joinCoOrder = JoinPartyOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
+                                        var cusPayloadPreOrder = new CreatePreOrderRequest
+                                        {
+                                            OrderType = (int)OrderTypeEnum.OrderToday,
+                                            TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                            PartyType = (int)PartyOrderType.CoOrder
+                                        };
+
+                                        cusPayloadPreOrder.OrderDetails = productInMenu
+                                            .OrderBy(x => rand.Next())
+                                            .Take(1)
+                                            .Select(x => new CreatePreOrderDetailRequest
+                                            {
+                                                ProductId = x.Id,
+                                                Quantity = 1
+                                            })
+                                            .ToList();
+                                        var addProduct = AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode, cusPayloadPreOrder);
+                                        var confirmCoOrder = FinalConfirmCoOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
+                                    }
+                                
+                                
+                                    var preCoOrder = CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (int)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;                                  
+               
+                                    var stationId = station
+                                                        .OrderBy(x => rand.Next())
+                                                        .Select(x => x.Id)
+                                                        .FirstOrDefault();
+
+                                    var payloadCreateOrder = new CreateOrderRequest()
+                                    {
+                                        Id = preCoOrder.Id,
+                                        OrderCode = preCoOrder.OrderCode,
+                                        PartyCode = openCoOrder.Result.Data.PartyCode,
+                                        TotalAmount = preCoOrder.TotalAmount,
+                                        FinalAmount = preCoOrder.FinalAmount,
+                                        TotalOtherAmount = preCoOrder.TotalOtherAmount,
+                                        OrderType = preCoOrder.OrderType,
+                                        TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                        StationId = stationId.ToString(),
+                                        PaymentType = 1,
+                                        IsPartyMode = true,
+                                        ItemQuantity = preCoOrder.ItemQuantity,
+                                        Point = preCoOrder.Point,
+                                        OrderDetails = preCoOrder.OrderDetails.Select(detail => new CreateOrderDetail()
+                                        {
+                                            Id = detail.Id,
+                                            OrderId = detail.Id,
+                                            ProductInMenuId = detail.ProductInMenuId,
+                                            StoreId = detail.StoreId,
+                                            ProductCode = detail.ProductCode,
+                                            ProductName = detail.ProductName,
+                                            UnitPrice = detail.UnitPrice,
+                                            Quantity = detail.Quantity,
+                                            TotalAmount = detail.TotalAmount,
+                                            FinalAmount = detail.FinalAmount,
+                                            Note = detail.Note
+
+                                        }).ToList(),
+                                        OtherAmounts = preCoOrder.OtherAmounts
+                                    };
+                                    try
+                                    {
+                                        var result = CreateOrder(openCoOrderCustomer.Id.ToString(), payloadCreateOrder).Result.Data;
+
+                                        var orderSuccess = new OrderSuccess
+                                        {
+                                            Id = result.Id,
+                                            OrderCode = result.OrderCode,
+                                            Customer = result.Customer,
+                                        };
+                                        response.CoOrderOrderResult.OrderSuccess.Add(orderSuccess);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = err.Error.Message,
+                                                Success = false,
+                                                ErrorCode = err.Error.ErrorCode,
+                                            }
+                                        };
+                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    if (ex is ErrorResponse errorResponse)
+                                    {
+                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = err.Error.Message,
+                                                Success = false,
+                                                ErrorCode = err.Error.ErrorCode,
+                                            }
+                                        };
+                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    else
+                                    {
+                                        var orderFail = new OrderFailed
+                                        {
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = ex.Message,
+                                                Success = false,
+                                                ErrorCode = 400
+                                            }
+                                        };
+                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                }
+                                totalCoOrderSuccess--;
+                            }
+                            else
+                            {
+                                int randomError = rand.Next(1, 3);
+                                if (randomError == (int)SimulateOrderFailedType.Payment)
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "Balance is not enough",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "Out of Time Slot!",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "This product is not avaliable!",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                totalCoOrderFailed--;
+                            }                        
+                        }
+                        else if(totalCoOrderSuccess>0)
+                        {
+
+                            var payloadPreOrder = new CreatePreOrderRequest
+                            {
+                                OrderType = (int)OrderTypeEnum.OrderToday,
+                                TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                PartyType = (int)PartyOrderType.CoOrder
+                            };
+
+                            payloadPreOrder.OrderDetails = productInMenu
+                                .OrderBy(x => rand.Next())
+                                .Take(2)
+                                .Select(x => new CreatePreOrderDetailRequest
+                                {
+                                    ProductId = x.Id,
+                                    Quantity = 1
+                                })
+                                .ToList();
+
+                            var openCoOrder = OpenCoOrder(openCoOrderCustomer.Id.ToString(), payloadPreOrder);
+
+                            try 
+                            { 
+                                foreach (var cus in restCustomers)
+                                {
+                                    var joinCoOrder = JoinPartyOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
+                                    var cusPayloadPreOrder = new CreatePreOrderRequest
+                                    {
+                                        OrderType = (int)OrderTypeEnum.OrderToday,
+                                        TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                        PartyType = (int)PartyOrderType.CoOrder
+                                    };
+
+                                    cusPayloadPreOrder.OrderDetails = productInMenu
+                                        .OrderBy(x => rand.Next())
+                                        .Take(1)
+                                        .Select(x => new CreatePreOrderDetailRequest
+                                        {
+                                            ProductId = x.Id,
+                                            Quantity = 1
+                                        })
+                                        .ToList();
+                                    var addProduct = AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode, cusPayloadPreOrder);
+                                    var confirmCoOrder = FinalConfirmCoOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
+                                }
+                            
+                            
+                                var preCoOrder = CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (int)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;
+
+                                var stationId = station
+                                                    .OrderBy(x => rand.Next())
+                                                    .Select(x => x.Id)
+                                                    .FirstOrDefault();
+
+                                var payloadCreateOrder = new CreateOrderRequest()
+                                {
+                                    Id = preCoOrder.Id,
+                                    OrderCode = preCoOrder.OrderCode,
+                                    PartyCode = openCoOrder.Result.Data.PartyCode,
+                                    TotalAmount = preCoOrder.TotalAmount,
+                                    FinalAmount = preCoOrder.FinalAmount,
+                                    TotalOtherAmount = preCoOrder.TotalOtherAmount,
+                                    OrderType = preCoOrder.OrderType,
+                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                    StationId = stationId.ToString(),
+                                    PaymentType = 1,
+                                    IsPartyMode = true,
+                                    ItemQuantity = preCoOrder.ItemQuantity,
+                                    Point = preCoOrder.Point,
+                                    OrderDetails = preCoOrder.OrderDetails.Select(detail => new CreateOrderDetail()
+                                    {
+                                        Id = detail.Id,
+                                        OrderId = detail.Id,
+                                        ProductInMenuId = detail.ProductInMenuId,
+                                        StoreId = detail.StoreId,
+                                        ProductCode = detail.ProductCode,
+                                        ProductName = detail.ProductName,
+                                        UnitPrice = detail.UnitPrice,
+                                        Quantity = detail.Quantity,
+                                        TotalAmount = detail.TotalAmount,
+                                        FinalAmount = detail.FinalAmount,
+                                        Note = detail.Note
+
+                                    }).ToList(),
+                                    OtherAmounts = preCoOrder.OtherAmounts
+                                };
+                                try
+                                {
+                                    var result = CreateOrder(openCoOrderCustomer.Id.ToString(), payloadCreateOrder).Result.Data;                                   
+
+                                    var orderSuccess = new OrderSuccess
+                                    {
+                                        Id = result.Id,
+                                        OrderCode = result.OrderCode,
+                                        Customer = result.Customer,
+                                    };
+                                    response.CoOrderOrderResult.OrderSuccess.Add(orderSuccess);
+                                }
+                                catch (Exception ex)
+                                {
+                                    ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = err.Error.Message,
+                                            Success = false,
+                                            ErrorCode = err.Error.ErrorCode,
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                if (ex is ErrorResponse errorResponse)
+                                {
+                                    ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = err.Error.Message,
+                                            Success = false,
+                                            ErrorCode = err.Error.ErrorCode,
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                else 
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = ex.Message,
+                                            Success = false,
+                                            ErrorCode = 400 
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
+                            }
+                            totalCoOrderSuccess--;
+                        }
+                        else if (totalCoOrderFailed > 0)
+                        {
+                            int randomError = rand.Next(1, 3);
+                            if (randomError == (int)SimulateOrderFailedType.Payment)
+                            {
+                                var orderFail = new OrderFailed
+                                {
+                                    Status = new StatusViewModel
+                                    {
+                                        Message = "Balance is not enough",
+                                        Success = false,
+                                        ErrorCode = 400,
+                                    }
+                                };
+                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                            }
+                            else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
+                            {
+                                var orderFail = new OrderFailed
+                                {
+                                    Status = new StatusViewModel
+                                    {
+                                        Message = "Out of Time Slot!",
+                                        Success = false,
+                                        ErrorCode = 400,
+                                    }
+                                };
+                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                            }
+                            else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                            {
+                                var orderFail = new OrderFailed
+                                {
+                                    Status = new StatusViewModel
+                                    {
+                                        Message = "This product is not avaliable!",
+                                        Success = false,
+                                        ErrorCode = 400,
+                                    }
+                                };
+                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                            }
+                            totalCoOrderFailed--;
+                        }
+                    }
+                }
+                    
+                return new BaseResponseViewModel<SimulateResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0,
+                    },
+                    Data = response
+                };
+
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
             }
         }
     }
