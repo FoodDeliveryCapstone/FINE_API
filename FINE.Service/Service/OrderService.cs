@@ -29,7 +29,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
-        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string? productId, double? volumeSpace, string timeSlotId);
+        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(AddProductToCardRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
@@ -140,7 +140,7 @@ namespace FINE.Service.Service
                                         .Select(x => x.Name)
                                         .FirstOrDefaultAsync(),
                 };
-                
+
                 return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
@@ -572,69 +572,108 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string? productId, double? volumeSpace ,string timeSlotId)
+        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(AddProductToCardRequest request)
         {
             try
             {
-                var result = new AddProductToCardResponse
-                {
-                    Product = new ProductInCard(),
-                    ProductsRecommend = new List<ProductRecommend>()
-                };
-
-                if (productId is not null)
-                {
-                    var productRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                var productRequest = await _unitOfWork.Repository<ProductInMenu>().GetAll()
                                         .Include(x => x.Product)
-                                        .Where(x => x.ProductId == Guid.Parse(productId)
-                                            && x.Menu.TimeSlotId == Guid.Parse(timeSlotId))
+                                        .Where(x => x.ProductId == Guid.Parse(request.ProductId)
+                                            && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
                                         .GroupBy(x => x.Product)
                                         .Select(x => x.Key)
-                                        .FirstOrDefault();
+                                        .FirstOrDefaultAsync();
 
-                    var addToBoxResult = ServiceHelpers.FillTheBox((double)volumeSpace, productRequest);
-                    result.VolumeRemainingSpace = addToBoxResult.VolumeRemainingSpace;
+                var result = new AddProductToCardResponse
+                {
+                    Product = _mapper.Map<ProductInCardresponse>(productRequest),
+                    ProductsRecommend = new List<ProductRecommend>()
+                };
+                result.Product.Quantity = request.Quantity;
 
-                    result.Product = _mapper.Map<ProductInCard>(productRequest);
-
-                    if (addToBoxResult.Success is true)
+                List<FillBoxRequest> listProductInCard = new List<FillBoxRequest>();
+                if (request.Card is not null)
+                {
+                    foreach (var product in request.Card)
                     {
-                        result.Product.Status = new StatusViewModel
-                        {
-                            Success = true,
-                            Message = "Success",
-                            ErrorCode = 200
-                        };
+                        var productAttInCard = await _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                        .Include(x => x.Product)
+                                                        .Where(x => x.ProductId == Guid.Parse(product.ProductId)
+                                                            && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                        .GroupBy(x => x.Product)
+                                                        .Select(x => new FillBoxRequest()
+                                                        {
+                                                            Product = x.Key,
+                                                            Quantity = product.Quantity
+                                                        })
+                                                        .FirstOrDefaultAsync();
+
+                        listProductInCard.Add(productAttInCard);
                     }
-                    else
+                }
+
+                var addToBoxResult = ServiceHelpers.FillTheBox(productRequest, request.Quantity, listProductInCard);
+
+                if (addToBoxResult.Success.Count(x => x == true) == request.Quantity)
+                {
+                    result.Product.Status = new StatusViewModel()
                     {
-                        result.Product.Status = new StatusViewModel
-                        {
-                            Success = false,
-                            Message = OrderErrorEnums.CANNOT_ADD_TO_CARD.GetDisplayName(),
-                            ErrorCode = (int)OrderErrorEnums.CANNOT_ADD_TO_CARD
-                        };
-                    }
+                        Success = true,
+                        Message = "Success",
+                        ErrorCode = 200
+                    };
+                }
+                else if (addToBoxResult.Success.Count(x => x == true) < request.Quantity)
+                {
+                    var quantityCanAdd = request.Quantity - addToBoxResult.Success.Count(x => x == true);
+                    result.Product.Status = new StatusViewModel()
+                    {
+                        Success = true,
+                        Message = String.Format("Only {0} items can be added to the card", quantityCanAdd),
+                        ErrorCode = 200
+                    };
+                }
+
+                var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                   .Include(x => x.Menu)
+                                                   .Include(x => x.Product)
+                                                   .Where(x => x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                   .Select(x => x.Product)
+                                                   .AsQueryable();
+
+                if (addToBoxResult.RemainingSpaceBox is not null)
+                {
+                    result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingSpaceBox.Height
+                                                 && x.Width <= addToBoxResult.RemainingSpaceBox.Width
+                                                 && x.Length <= addToBoxResult.RemainingSpaceBox.Length)
+                                                .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                .ToListAsync();
                 }
                 else
                 {
-                    var boxSize = new
+                    result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingLengthSpace.Height
+                                                 && x.Width <= addToBoxResult.RemainingLengthSpace.Width
+                                                 && x.Length <= addToBoxResult.RemainingLengthSpace.Length)
+                                                .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                .ToListAsync();
+                    if (result.ProductsRecommend == null)
                     {
-                        Height = Double.Parse(_configuration["BoxSize:Height"]),
-                        Width = Double.Parse(_configuration["BoxSize:Width"]),
-                        Length = Double.Parse(_configuration["BoxSize:Length"])
-                    };
-                    result.VolumeRemainingSpace = boxSize.Height * boxSize.Width * boxSize.Length;
+                        result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
+                                                                     && x.Width <= addToBoxResult.RemainingWidthSpace.Width
+                                                                     && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
+                                                                    .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                                    .ToListAsync();
+                    }
+                    else
+                    {
+                        var listRecommendWidth = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
+                                                                     && x.Width <= addToBoxResult.RemainingWidthSpace.Width
+                                                                     && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
+                                                                    .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                                    .ToListAsync();
+                        result.ProductsRecommend.AddRange(listRecommendWidth);
+                    }
                 }
-
-                result.ProductsRecommend = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                                                   .Include(x => x.Menu)
-                                                   .Include(x => x.Product)
-                                                   .Where(x => x.Menu.TimeSlotId == Guid.Parse(timeSlotId)
-                                                      && (x.Product.Height * x.Product.Width * x.Product.Length) <= result.VolumeRemainingSpace)
-                                                   .Select(x => x.Product)
-                                                   .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
-                                                   .ToList();
 
                 return new BaseResponseViewModel<AddProductToCardResponse>()
                 {

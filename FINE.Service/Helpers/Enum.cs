@@ -59,11 +59,8 @@ namespace FINE.Service.Helpers
 
         public enum ProductRotationTypeEnum
         {
-            //dung
-            OnlyVertical = 1,
-            //ngang
-            OnlyHorizontal = 2,
-
+            Vertical = 1,
+            Horizontal = 2,
             Both = 3
         }
 
