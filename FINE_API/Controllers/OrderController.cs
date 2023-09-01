@@ -233,7 +233,7 @@ namespace FINE.API.Controllers
         /// Add product into card
         /// </summary>
         [HttpPost("card")]
-        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard(string? productId, double? volumeSpace, string timeSlotId)
+        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard([FromBody]AddProductToCardRequest request)
         {
             try
             {
