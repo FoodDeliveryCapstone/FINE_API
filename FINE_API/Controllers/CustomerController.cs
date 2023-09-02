@@ -22,11 +22,11 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Google Login
+        /// Login
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        [HttpPost("loginByMail")]
+        [HttpPost("login")]
         public async Task<ActionResult<CustomerResponse>> LoginByMail([FromBody] ExternalAuthRequest data)
         {
             try
