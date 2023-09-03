@@ -7,9 +7,9 @@ public partial class Customer
 {
     public Guid Id { get; set; }
 
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; }
 
-    public string CustomerCode { get; set; } = null!;
+    public string? CustomerCode { get; set; }
 
     public string? Email { get; set; }
 
@@ -17,7 +17,7 @@ public partial class Customer
 
     public DateTime? DateOfBirth { get; set; }
 
-    public string ImageUrl { get; set; } = null!;
+    public string? ImageUrl { get; set; }
 
     public DateTime CreateAt { get; set; }
 
