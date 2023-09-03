@@ -5,11 +5,13 @@ using FINE.Data.UnitOfWork;
 using FINE.Service.Attributes;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Box;
+using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore.Metadata;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +26,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetail(string storeId);
+        Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(string storeId, string orderId, UpdateOrderDetailStatusRequest request);
 
     }
 
@@ -72,7 +75,7 @@ namespace FINE.Service.Service
             try
             {
                 // Get from Redis
-                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, storeId);
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
                 orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
                                              .OrderByDescending(x => x.CheckInDate)
                                              .ToList(); 
@@ -91,6 +94,31 @@ namespace FINE.Service.Service
             {
                 throw ex;
             }
+        }
+
+        public async Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(string storeId, string orderId, UpdateOrderDetailStatusRequest request)
+        {
+
+            List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, orderId);
+            orderResponse = orderResponse.OrderByDescending(x => x.CheckInDate)
+                                             .ToList();
+            var order = orderResponse.FirstOrDefault(x => x.OrderId == Guid.Parse(orderId) && x.StoreId == Guid.Parse(storeId));
+            order.OrderDetailStoreStatus = request.OrderDetailStoreStatus;
+            
+            ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.OrderId.ToString(), orderResponse);
+
+            return new BaseResponseViewModel<OrderByStoreResponse>()
+            {
+                Status = new StatusViewModel()
+                {
+                    Message = "Success",
+                    Success = true,
+                    ErrorCode = 0
+                },
+                //Data =
+            };
+
+
         }
     }
 }

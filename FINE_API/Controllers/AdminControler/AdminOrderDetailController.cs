@@ -54,5 +54,22 @@ namespace FINE.API.Controllers.AdminControler
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Update Order by Store Status
+        /// </summary>    
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpPut("status/{storeId}/{orderId}")]
+        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> UpdateOrderStatus(string storeId, string orderId, [FromBody] UpdateOrderDetailStatusRequest request)
+        {
+            try
+            {
+                return await _orderDetailService.UpdateOrderByStoreStatus(storeId, orderId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }

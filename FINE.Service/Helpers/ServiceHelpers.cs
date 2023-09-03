@@ -101,7 +101,7 @@ namespace FINE.Service.Helpers
             }
         }
 
-        public async static Task<dynamic> GetSetDataRedisOrder(RedisSetUpType type, string key, object value = null)
+        public async static Task<dynamic> GetSetDataRedisOrder(RedisSetUpType type, string key = null, object value = null)
         {
             try
             {
@@ -122,11 +122,25 @@ namespace FINE.Service.Helpers
                 switch (type)
                 {   
                     case RedisSetUpType.GET:
-                        foreach (var eachKey in allKeys)
+                        if (key == null)
                         {
-                            RedisValue redisValue = db.StringGet(eachKey);
+                            foreach (var eachKey in allKeys)
+                            {
+                                RedisValue redisValue = db.StringGet(eachKey);
+                                if (redisValue.HasValue)
+                                {
+
+                                    List<OrderByStoreResponse> orderResponses = JsonConvert.DeserializeObject<List<OrderByStoreResponse>>(redisValue);
+                                    rs.AddRange(orderResponses);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            RedisValue redisValue = db.StringGet(key);
                             if (redisValue.HasValue)
                             {
+
                                 List<OrderByStoreResponse> orderResponses = JsonConvert.DeserializeObject<List<OrderByStoreResponse>>(redisValue);
                                 rs.AddRange(orderResponses);
                             }
