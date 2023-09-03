@@ -59,9 +59,22 @@ namespace FINE.Service.Service
                     Balance = 10000,
                     Type = (int)AccountTypeEnum.CreditAccount,
                     IsActive = true,
-                    CreateAt = DateTime.Now
+                    CreateAt = DateTime.Now,
+                    Transactions = new List<Transaction>()
                 };
-                await _unitOfWork.Repository<Account>().InsertAsync(newCreditAccount);
+
+                var transaction = new Transaction()
+                {
+                    Id = Guid.NewGuid(),
+                    AccountId = newCreditAccount.Id,
+                    Amount = 10000,
+                    IsIncrease = true,
+                    Status = (int)TransactionStatusEnum.Finish,
+                    Type = (int)TransactionTypeEnum.Recharge,
+                    Notes = "chào đón khách hàng mới",
+                    CreatedAt = DateTime.Now
+                };
+                newCreditAccount.Transactions.Add(transaction);
             }
             catch (Exception ex)
             {
