@@ -4,7 +4,7 @@ namespace FINE.Service.DTO.Request.Customer
 {
     public class UpdateCustomerRequest
     {
-        public string? Name { get; set; } = null!;
+        public string? Name { get; set; }
 
         public string? Email { get; set; }
 
@@ -12,6 +12,6 @@ namespace FINE.Service.DTO.Request.Customer
 
         public DateTime? DateOfBirth { get; set; }
 
-        public string? ImageUrl { get; set; } = null!;
+        public string? ImageUrl { get; set; }
     }
 }

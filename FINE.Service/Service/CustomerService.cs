@@ -147,14 +147,17 @@ namespace FINE.Service.Service
         {
             try
             {
-                Customer customer = null;
-                customer = _unitOfWork.Repository<Customer>()
-                                        .Find(c => c.Id == Guid.Parse(customerId));
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                        .FirstOrDefaultAsync(c => c.Id == Guid.Parse(customerId));
                 if (request.Phone is not null)
                 {
-                    var checkPhone = Utils.CheckVNPhone(request.Phone);
+                    if (request.Phone.Contains("+84"))
+                    {
+                        request.Phone = request.Phone.Replace("+84", "0");
+                    }
+                    var check = Utils.CheckVNPhone(request.Phone);
 
-                    if (checkPhone == false)
+                    if (check == false)
                         throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,
                                             CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName());
                 }
