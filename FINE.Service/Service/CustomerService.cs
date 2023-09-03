@@ -150,12 +150,14 @@ namespace FINE.Service.Service
                 Customer customer = null;
                 customer = _unitOfWork.Repository<Customer>()
                                         .Find(c => c.Id == Guid.Parse(customerId));
+                if (request.Phone is not null)
+                {
+                    var checkPhone = Utils.CheckVNPhone(request.Phone);
 
-                var checkPhone = Utils.CheckVNPhone(request.Phone);
-
-                if (checkPhone == false)
-                    throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,
-                                        CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName());
+                    if (checkPhone == false)
+                        throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,
+                                            CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName());
+                }
 
                 customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
 
