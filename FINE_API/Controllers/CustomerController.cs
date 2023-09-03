@@ -31,7 +31,7 @@ namespace FINE.API.Controllers
         {
             try
             {
-                var result = await _customerService.LoginByMail(data);
+                var result = await _customerService.Login(data);
                 return Ok(result);
             }
             catch (ErrorResponse ex)
@@ -55,6 +55,31 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
                 var result = await _customerService.GetCustomerById(customerId);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Update thông tin khách hàng
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        [HttpPut]
+        public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> UpdateCustomer([FromBody] UpdateCustomerRequest data)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var result = await _customerService.UpdateCustomer(customerId, data);
                 return Ok(result);
             }
             catch (ErrorResponse ex)

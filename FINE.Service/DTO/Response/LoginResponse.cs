@@ -8,7 +8,9 @@ namespace FINE.Service.DTO.Response
 {
     public class LoginResponse
     {
-        public string access_token { get; set; }
-        public CustomerResponse customer { get; set; }
+        public string Access_token { get; set; }
+
+        public bool IsFirstLogin { get; set; }
+        public CustomerResponse Customer { get; set; }
     }
 }
