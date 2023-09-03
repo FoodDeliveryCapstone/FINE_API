@@ -75,6 +75,7 @@ namespace FINE.Service.Service
                     CreatedAt = DateTime.Now
                 };
                 newCreditAccount.Transactions.Add(transaction);
+                await _unitOfWork.Repository<Account>().InsertAsync(newCreditAccount);
             }
             catch (Exception ex)
             {
