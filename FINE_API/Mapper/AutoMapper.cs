@@ -13,6 +13,7 @@ using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Request.Menu;
 using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.API.Controllers;
+using FINE.Service.Helpers;
 
 namespace FINE.API.Mapper
 {
@@ -104,7 +105,7 @@ namespace FINE.API.Mapper
             #region Customer
             CreateMap<Customer, CustomerResponse>().ReverseMap();
             CreateMap<CreateCustomerRequest, Customer>();
-            //CreateMap<UpdateCustomerRequest, Customer>();
+            CreateMap<UpdateCustomerRequest, Customer>();
             #endregion
 
             #region Staff
