@@ -37,5 +37,22 @@ namespace FINE.API.Controllers.AdminControler
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Get staff orders detail by store
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpGet("/api/staff/orderDetail/{storeId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderByStoreResponse>>> GetStaffOrderDetail(string storeId)
+        {
+            try
+            {
+                return await _orderDetailService.GetStaffOrderDetail(storeId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }

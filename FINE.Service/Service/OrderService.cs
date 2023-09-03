@@ -334,6 +334,23 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
+                #region split order detail by store
+                var orderDetailsByStore = resultOrder.OrderDetails
+                  .GroupBy(x => x.StoreId)
+                  .Select(group => new OrderByStoreResponse
+                  {
+                      OrderId = resultOrder.Id,
+                      StoreId = group.Key,
+                      CustomerName = resultOrder.Customer.Name,
+                      TimeSlot = resultOrder.TimeSlot,
+                      StationName = resultOrder.StationOrder.Name,
+                      CheckInDate = order.CheckInDate,
+                      OrderType = resultOrder.OrderType,
+                      OrderDetailStoreStatus = false,
+                      OrderDetails = resultOrder.OrderDetails.Where(x => x.StoreId == group.Key).ToList(),
+                  }).ToList();
+                ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, resultOrder.Id.ToString(), orderDetailsByStore);
+                #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
                 {

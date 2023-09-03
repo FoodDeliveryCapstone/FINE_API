@@ -66,7 +66,7 @@ namespace FINE.Service.Helpers
         public static FillBoxResult FillTheBox(double volumeSpace, ProductAttribute product)
         {
             try
-            {       
+            {
                 FillBoxResult result = new FillBoxResult()
                 {
                     Success = true,
@@ -74,7 +74,7 @@ namespace FINE.Service.Helpers
                 };
                 if (volumeSpace == null)
                 {
-                    var box = new 
+                    var box = new
                     {
                         Height = double.Parse(config.GetSection("BoxSize:Height").Value.ToString()),
                         Width = double.Parse(config.GetSection("BoxSize:Width").Value.ToString()),
@@ -83,7 +83,7 @@ namespace FINE.Service.Helpers
 
                     var volumeBox = (box.Height * box.Width * box.Length) - 1000;
 
-                    volumeSpace = volumeBox - (product.Height * product.Length * product.Width);                   
+                    volumeSpace = volumeBox - (product.Height * product.Length * product.Width);
                 }
                 else
                 {
@@ -92,11 +92,64 @@ namespace FINE.Service.Helpers
                 if (volumeSpace < 0)
                 {
                     result.Success = false;
-                }             
+                }
                 return result;
             }
             catch (Exception ex)
             {
+                throw ex;
+            }
+        }
+
+        public async static Task<dynamic> GetSetDataRedisOrder(RedisSetUpType type, string key, object value = null)
+        {
+            try
+            {
+                List<OrderByStoreResponse> rs = new List<OrderByStoreResponse>();
+                string connectRedisString = config.GetSection("Endpoint:RedisEndpoint").Value + "," + config.GetSection("Endpoint:Password").Value;
+                // Tạo kết nối
+                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
+
+                // Lấy DB
+                IDatabase db = redis.GetDatabase(2);
+                var allKeys = redis.GetServer("localhost", 6379).Keys(database: 2);
+
+                // Ping thử
+                if (db.Ping().TotalSeconds > 5)
+                {
+                    throw new TimeoutException("Server Redis không hoạt động");
+                }
+                switch (type)
+                {   
+                    case RedisSetUpType.GET:
+                        foreach (var eachKey in allKeys)
+                        {
+                            RedisValue redisValue = db.StringGet(eachKey);
+                            if (redisValue.HasValue)
+                            {
+                                List<OrderByStoreResponse> orderResponses = JsonConvert.DeserializeObject<List<OrderByStoreResponse>>(redisValue);
+                                rs.AddRange(orderResponses);
+                            }
+                        }
+                        //rs = JsonConvert.DeserializeObject<OrderByStoreResponse>(redisValue);
+                        break;
+
+                    case RedisSetUpType.SET:
+                        var redisNewValue = JsonConvert.SerializeObject(value);
+                        db.StringSet(key, redisNewValue);
+                        break;
+
+                    case RedisSetUpType.DELETE:
+                        db.KeyDelete(key);
+                        break;
+                }
+
+                redis.Close();
+                return rs;
+            }
+            catch (Exception ex)
+            {
+
                 throw ex;
             }
         }

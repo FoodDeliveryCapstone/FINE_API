@@ -1,6 +1,7 @@
 ﻿using FINE.Data.Entity;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -149,6 +150,21 @@ namespace FINE.Service.DTO.Response
 
         public string? Note { get; set; }
 
+        public List<OrderDetailResponse>? OrderDetails { get; set; }
+
+    }  
+
+    public class OrderByStoreResponse
+    {
+        public Guid OrderId { get; set; }
+        public Guid StoreId { get; set; }
+        public string? CustomerName { get; set; }
+        public TimeSlotOrderResponse TimeSlot { get; set; }
+        public string? StationName { get; set; }
+        public DateTime? CheckInDate { get; set; }
+        public int? OrderType { get; set; }
+        [NotMapped]
+        public bool OrderDetailStoreStatus { get; set; }
         public List<OrderDetailResponse>? OrderDetails { get; set; }
 
     }

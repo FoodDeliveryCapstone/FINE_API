@@ -7,12 +7,15 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Box;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Helpers;
 using FINE.Service.Utilities;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -20,6 +23,7 @@ namespace FINE.Service.Service
     public interface IOrderDetailService
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetail(string storeId);
 
     }
 
@@ -55,6 +59,32 @@ namespace FINE.Service.Service
                     },
                     Data = order.Item2.ToList()
 
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetail(string storeId)
+        {
+            try
+            {
+                // Get from Redis
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, storeId);
+                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
+                                             .OrderByDescending(x => x.CheckInDate)
+                                             .ToList(); 
+
+
+                return new BaseResponsePagingViewModel<OrderByStoreResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {                     
+                        Total = orderResponse.Count()
+                    },
+                    Data = orderResponse
                 };
             }
             catch (ErrorResponse ex)
