@@ -69,7 +69,7 @@ namespace FINE.Service.Service
 
                 //check exist customer 
                 var customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
+                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email) || x.Phone.Contains(userRecord.PhoneNumber));
 
                 //new customer => add fcm map with Id
                 if (customer is null)
