@@ -105,7 +105,8 @@ namespace FINE.API.Mapper
             #region Customer
             CreateMap<Customer, CustomerResponse>().ReverseMap();
             CreateMap<CreateCustomerRequest, Customer>();
-            CreateMap<UpdateCustomerRequest, Customer>();
+            CreateMap<UpdateCustomerRequest, Customer>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember !=null));
             #endregion
 
             #region Staff
