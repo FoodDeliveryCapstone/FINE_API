@@ -21,8 +21,7 @@ namespace FINE.Service.Helpers
         public enum SimulateOrderFailedType
         {
             Payment = 1,
-            OutTimeslot = 2,
-            OutOfProduct =3,
+            OutOfProduct =2,
         }
 
         public enum SystemRoleTypeEnum

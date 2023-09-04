@@ -328,27 +328,220 @@ namespace FINE.Service.Service
 
                         if (totalSingleOrderSuccess > 0 && totalSingleOrderFailed > 0)
                             {
-                                if (rand.Next() % 2 == 0)
+                            if (rand.Next() % 2 == 0)
+                            {
+                                var payload = new CreatePreOrderRequest
                                 {
-                                    var payload = new CreatePreOrderRequest
+                                    OrderType = OrderTypeEnum.OrderToday,
+                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                };
+
+                                payload.OrderDetails = productInMenu
+                                    .OrderBy(x => rand.Next())
+                                    .Take(3)
+                                    .Select(x => new CreatePreOrderDetailRequest
                                     {
-                                        OrderType = OrderTypeEnum.OrderToday,
+                                        ProductId = x.Id,
+                                        Quantity = 1
+                                    })
+                                    .ToList();
+                                try {
+                                    var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
+                                    //var rs = _orderService.CreatePreOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payload).Result.Data;
+                                    var stationId = station
+                                                            .OrderBy(x => rand.Next())
+                                                            .Select(x => x.Id)
+                                                            .FirstOrDefault();
+
+                                    var payloadCreateOrder = new CreateOrderRequest()
+                                    {
+                                        Id = rs.Id,
+                                        OrderCode = rs.OrderCode,
+                                        PartyCode = null,
+                                        TotalAmount = rs.TotalAmount,
+                                        FinalAmount = rs.FinalAmount,
+                                        TotalOtherAmount = rs.TotalOtherAmount,
+                                        OrderType = (OrderTypeEnum)rs.OrderType,
                                         TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                        StationId = stationId.ToString(),
+                                        PaymentType = PaymentTypeEnum.FineWallet,
+                                        IsPartyMode = false,
+                                        ItemQuantity = rs.ItemQuantity,
+                                        Point = rs.Point,
+                                        OrderDetails = rs.OrderDetails.Select(detail => new CreateOrderDetail()
+                                        {
+                                            Id = detail.Id,
+                                            OrderId = detail.Id,
+                                            ProductInMenuId = detail.ProductInMenuId,
+                                            StoreId = detail.StoreId,
+                                            ProductCode = detail.ProductCode,
+                                            ProductName = detail.ProductName,
+                                            UnitPrice = detail.UnitPrice,
+                                            Quantity = detail.Quantity,
+                                            TotalAmount = detail.TotalAmount,
+                                            FinalAmount = detail.FinalAmount,
+                                            Note = detail.Note
+
+                                        }).ToList(),
+                                        OtherAmounts = rs.OtherAmounts
                                     };
 
-                                    payload.OrderDetails = productInMenu
-                                        .OrderBy(x => rand.Next())
-                                        .Take(3)
-                                        .Select(x => new CreatePreOrderDetailRequest
-                                        {
-                                            ProductId = x.Id,
-                                            Quantity = 1
-                                        })
-                                        .ToList();
+                                    try
+                                    {
+                                        var result = _orderService.CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+                                        //var result = _orderService.CreateOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payloadCreateOrder).Result.Data;
 
-                                var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
-                                //var rs = _orderService.CreatePreOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payload).Result.Data;
-                                var stationId = station
+                                        var orderSuccess = new OrderSuccess
+                                        {
+                                            Id = result.Id,
+                                            OrderCode = result.OrderCode,
+                                            Customer = result.Customer,
+                                        };
+                                        response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                        var orderFail = new OrderFailed
+                                        {
+                                            OrderCode = rs.OrderCode,
+                                            Customer = rs.Customer,
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = err.Error.Message,
+                                                Success = false,
+                                                ErrorCode = err.Error.ErrorCode,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    totalSingleOrderSuccess--;
+                                }
+                                catch (Exception ex)
+                                {
+                                    var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
+
+                                    ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                    var orderFail = new OrderFailed
+                                    {
+                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                        Customer = new CustomerOrderResponse
+                                        {
+                                            Id = randomCustomer.Id,
+                                            CustomerCode = randomCustomer.Name,
+                                            Email = randomCustomer.Email,
+                                            Name = randomCustomer.Name,
+                                            Phone = randomCustomer.Phone,
+                                        },
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = err.Error.Message,
+                                            Success = false,
+                                            ErrorCode = err.Error.ErrorCode,
+                                        }
+                                    };
+                                    response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                }
+
+                            }
+                            else
+                            {
+                                var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
+                                if (!Utils.CheckTimeSlot(timeslot))
+                                {
+                                    var orderFail = new OrderFailed
+                                    {
+                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                        Customer = new CustomerOrderResponse
+                                        {
+                                            Id = randomCustomer.Id,
+                                            CustomerCode = randomCustomer.Name,
+                                            Email = randomCustomer.Email,
+                                            Name = randomCustomer.Name,
+                                            Phone = randomCustomer.Phone,
+                                        },
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "Out of Time Slot!",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                else
+                                {
+                                    int randomError = rand.Next(1, 2);
+                                    if (randomError == (int)SimulateOrderFailedType.Payment)
+                                    {
+                                        var orderFail = new OrderFailed
+                                        {
+                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
+                                            Customer = new CustomerOrderResponse
+                                            {
+                                                Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
+                                                CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
+                                                Email = "",
+                                                Name = "Di Na Cuteeeee",
+                                                Phone = "+84838073755",
+                                            },
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = "Balance is not enough",
+                                                Success = false,
+                                                ErrorCode = 400,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                                    {
+                                        var orderFail = new OrderFailed
+                                        {
+                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                            Customer = new CustomerOrderResponse
+                                            {
+                                                Id = randomCustomer.Id,
+                                                CustomerCode = randomCustomer.Name,
+                                                Email = randomCustomer.Email,
+                                                Name = randomCustomer.Name,
+                                                Phone = randomCustomer.Phone,
+                                            },
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = "This product is not avaliable!",
+                                                Success = false,
+                                                ErrorCode = 400,
+                                            }
+                                        };
+                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                }
+                                totalSingleOrderFailed--;
+                            }
+                            }
+                            else if (totalSingleOrderSuccess > 0)
+                            {
+                                var payload = new CreatePreOrderRequest
+                                {
+                                    OrderType = OrderTypeEnum.OrderToday,
+                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                };
+
+
+                                payload.OrderDetails = productInMenu
+                                    .Take(3)
+                                    .Select(x => new CreatePreOrderDetailRequest
+                                    {
+                                        ProductId = x.Id,
+                                        Quantity = 1
+                                    })
+                                    .ToList();
+                                try
+                                {
+                                    var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
+                                    //var rs = _orderService.CreatePreOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payload).Result.Data;
+                                    var stationId = station
                                                         .OrderBy(x => rand.Next())
                                                         .Select(x => x.Id)
                                                         .FirstOrDefault();
@@ -388,10 +581,9 @@ namespace FINE.Service.Service
 
                                     try
                                     {
-                                    var result = _orderService.CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
-                                    //var result = _orderService.CreateOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payloadCreateOrder).Result.Data;
-
-                                    var orderSuccess = new OrderSuccess
+                                        var result = _orderService.CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+                                        //var result = _orderService.CreateOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payloadCreateOrder).Result.Data;
+                                        var orderSuccess = new OrderSuccess
                                         {
                                             Id = result.Id,
                                             OrderCode = result.OrderCode,
@@ -417,156 +609,21 @@ namespace FINE.Service.Service
                                     }
                                     totalSingleOrderSuccess--;
                                 }
-                                else
+                                catch(Exception ex)
                                 {
-                                    int randomError = rand.Next(1, 3);
                                     var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                                    if (randomError == (int)SimulateOrderFailedType.Payment)
-                                    {
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
-                                            Customer = new CustomerOrderResponse
-                                            {
-                                                Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
-                                                CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
-                                                Email = "",
-                                                Name = "Di Na Cuteeeee",
-                                                Phone = "+84838073755",
-                                            },
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = "Balance is not enough",
-                                                Success = false,
-                                                ErrorCode = 400,
-                                            }
-                                        };
-                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                    else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
-                                    {
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                            Customer = new CustomerOrderResponse
-                                            {
-                                                Id = randomCustomer.Id,
-                                                CustomerCode = randomCustomer.Name,
-                                                Email = randomCustomer.Email,
-                                                Name = randomCustomer.Name,
-                                                Phone = randomCustomer.Phone,
-                                            },
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = "Out of Time Slot!",
-                                                Success = false,
-                                                ErrorCode = 400,
-                                            }
-                                        };
-                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                    else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
-                                    {
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                            Customer = new CustomerOrderResponse
-                                            {
-                                                Id = randomCustomer.Id,
-                                                CustomerCode = randomCustomer.Name,
-                                                Email = randomCustomer.Email,
-                                                Name = randomCustomer.Name,
-                                                Phone = randomCustomer.Phone,
-                                            },
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = "This product is not avaliable!",
-                                                Success = false,
-                                                ErrorCode = 400,
-                                            }
-                                        };
-                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                    totalSingleOrderFailed--;
-                                }
-                            }
-                            else if (totalSingleOrderSuccess > 0)
-                            {
-                                var payload = new CreatePreOrderRequest
-                                {
-                                    OrderType = OrderTypeEnum.OrderToday,
-                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                };
-
-
-                                payload.OrderDetails = productInMenu
-                                    .Take(3)
-                                    .Select(x => new CreatePreOrderDetailRequest
-                                    {
-                                        ProductId = x.Id,
-                                        Quantity = 1
-                                    })
-                                    .ToList();
-
-                                var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
-                                //var rs = _orderService.CreatePreOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payload).Result.Data;
-                                var stationId = station
-                                                    .OrderBy(x => rand.Next())
-                                                    .Select(x => x.Id)
-                                                    .FirstOrDefault();
-
-                                var payloadCreateOrder = new CreateOrderRequest()
-                                {
-                                    Id = rs.Id,
-                                    OrderCode = rs.OrderCode,
-                                    PartyCode = null,
-                                    TotalAmount = rs.TotalAmount,
-                                    FinalAmount = rs.FinalAmount,
-                                    TotalOtherAmount = rs.TotalOtherAmount,
-                                    OrderType = (OrderTypeEnum)rs.OrderType,
-                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                    StationId = stationId.ToString(),
-                                    PaymentType = PaymentTypeEnum.FineWallet,
-                                    IsPartyMode = false,
-                                    ItemQuantity = rs.ItemQuantity,
-                                    Point = rs.Point,
-                                    OrderDetails = rs.OrderDetails.Select(detail => new CreateOrderDetail()
-                                    {
-                                        Id = detail.Id,
-                                        OrderId = detail.Id,
-                                        ProductInMenuId = detail.ProductInMenuId,
-                                        StoreId = detail.StoreId,
-                                        ProductCode = detail.ProductCode,
-                                        ProductName = detail.ProductName,
-                                        UnitPrice = detail.UnitPrice,
-                                        Quantity = detail.Quantity,
-                                        TotalAmount = detail.TotalAmount,
-                                        FinalAmount = detail.FinalAmount,
-                                        Note = detail.Note
-
-                                    }).ToList(),
-                                    OtherAmounts = rs.OtherAmounts
-                                };
-
-                                try
-                                {
-                                    var result = _orderService.CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
-                                    //var result = _orderService.CreateOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payloadCreateOrder).Result.Data;
-                                    var orderSuccess = new OrderSuccess
-                                    {
-                                        Id = result.Id,
-                                        OrderCode = result.OrderCode,
-                                        Customer = result.Customer,
-                                    };
-                                    response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
-                                }
-                                catch (Exception ex)
-                                {
                                     ErrorResponse err = (ErrorResponse)ex.InnerException;
                                     var orderFail = new OrderFailed
                                     {
-                                        OrderCode = rs.OrderCode,
-                                        Customer = rs.Customer,
+                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                        Customer = new CustomerOrderResponse
+                                        {
+                                            Id = randomCustomer.Id,
+                                            CustomerCode = randomCustomer.Name,
+                                            Email = randomCustomer.Email,
+                                            Name = randomCustomer.Name,
+                                            Phone = randomCustomer.Phone,
+                                        },
                                         Status = new StatusViewModel
                                         {
                                             Message = err.Error.Message,
@@ -575,13 +632,37 @@ namespace FINE.Service.Service
                                         }
                                     };
                                     response.SingleOrderResult.OrderFailed.Add(orderFail);
-                                }                           
-                                totalSingleOrderSuccess--;
+                                }
                             }
                             else if (totalSingleOrderFailed > 0)
                             {
-                                int randomError = rand.Next(1, 3);
                                 var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
+                            if (!Utils.CheckTimeSlot(timeslot))
+                            {
+                                var orderFail = new OrderFailed
+                                {
+                                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                    Customer = new CustomerOrderResponse
+                                    {
+                                        Id = randomCustomer.Id,
+                                        CustomerCode = randomCustomer.Name,
+                                        Email = randomCustomer.Email,
+                                        Name = randomCustomer.Name,
+                                        Phone = randomCustomer.Phone,
+                                    },
+                                    Status = new StatusViewModel
+                                    {
+                                        Message = "Out of Time Slot!",
+                                        Success = false,
+                                        ErrorCode = 400,
+                                    }
+                                };
+                                response.SingleOrderResult.OrderFailed.Add(orderFail);
+                            }
+                            else
+                            {
+                                int randomError = rand.Next(1, 2);
+
                                 if (randomError == (int)SimulateOrderFailedType.Payment)
                                 {
                                     var orderFail = new OrderFailed
@@ -598,28 +679,6 @@ namespace FINE.Service.Service
                                         Status = new StatusViewModel
                                         {
                                             Message = "Balance is not enough",
-                                            Success = false,
-                                            ErrorCode = 400,
-                                        }
-                                    };
-                                    response.SingleOrderResult.OrderFailed.Add(orderFail);
-                                }
-                                else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
-                                {
-                                    var orderFail = new OrderFailed
-                                    {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = randomCustomer.Id,
-                                            CustomerCode = randomCustomer.Name,
-                                            Email = randomCustomer.Email,
-                                            Name = randomCustomer.Name,
-                                            Phone = randomCustomer.Phone,
-                                        },
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = "Out of Time Slot!",
                                             Success = false,
                                             ErrorCode = 400,
                                         }
@@ -648,6 +707,7 @@ namespace FINE.Service.Service
                                     };
                                     response.SingleOrderResult.OrderFailed.Add(orderFail);
                                 }
+                            }
                                 totalSingleOrderFailed--;
 
                             }
@@ -841,31 +901,8 @@ namespace FINE.Service.Service
                             }
                             else
                             {
-                                int randomError = rand.Next(1, 3);
                                 var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                                if (randomError == (int)SimulateOrderFailedType.Payment)
-                                {
-                                    var orderFail = new OrderFailed
-                                    {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
-                                            CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
-                                            Email = "",
-                                            Name = "Di Na Cuteeeee",
-                                            Phone = "+84838073755",
-                                        },
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = "Balance is not enough",
-                                            Success = false,
-                                            ErrorCode = 400,
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                }
-                                else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
+                                if (!Utils.CheckTimeSlot(timeslot))
                                 {
                                     var orderFail = new OrderFailed
                                     {
@@ -887,27 +924,53 @@ namespace FINE.Service.Service
                                     };
                                     response.CoOrderOrderResult.OrderFailed.Add(orderFail);
                                 }
-                                else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                                else
                                 {
-                                    var orderFail = new OrderFailed
+                                    int randomError = rand.Next(1, 2);
+                                    if (randomError == (int)SimulateOrderFailedType.Payment)
                                     {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                        Customer = new CustomerOrderResponse
+                                        var orderFail = new OrderFailed
                                         {
-                                            Id = randomCustomer.Id,
-                                            CustomerCode = randomCustomer.Name,
-                                            Email = randomCustomer.Email,
-                                            Name = randomCustomer.Name,
-                                            Phone = randomCustomer.Phone,
-                                        },
-                                        Status = new StatusViewModel
+                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
+                                            Customer = new CustomerOrderResponse
+                                            {
+                                                Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
+                                                CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
+                                                Email = "",
+                                                Name = "Di Na Cuteeeee",
+                                                Phone = "+84838073755",
+                                            },
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = "Balance is not enough",
+                                                Success = false,
+                                                ErrorCode = 400,
+                                            }
+                                        };
+                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                    }
+                                    else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                                    {
+                                        var orderFail = new OrderFailed
                                         {
-                                            Message = "This product is not avaliable!",
-                                            Success = false,
-                                            ErrorCode = 400,
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                            Customer = new CustomerOrderResponse
+                                            {
+                                                Id = randomCustomer.Id,
+                                                CustomerCode = randomCustomer.Name,
+                                                Email = randomCustomer.Email,
+                                                Name = randomCustomer.Name,
+                                                Phone = randomCustomer.Phone,
+                                            },
+                                            Status = new StatusViewModel
+                                            {
+                                                Message = "This product is not avaliable!",
+                                                Success = false,
+                                                ErrorCode = 400,
+                                            }
+                                        };
+                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                    }
                                 }
                                 totalCoOrderFailed--;
                             }
@@ -1081,31 +1144,8 @@ namespace FINE.Service.Service
                         }
                         else if (totalCoOrderFailed > 0)
                         {
-                            int randomError = rand.Next(1, 3);
                             var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                            if (randomError == (int)SimulateOrderFailedType.Payment)
-                            {
-                                var orderFail = new OrderFailed
-                                {
-                                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
-                                    Customer = new CustomerOrderResponse
-                                    {
-                                        Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
-                                        CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
-                                        Email = "",
-                                        Name = "Di Na Cuteeeee",
-                                        Phone = "+84838073755",
-                                    },
-                                    Status = new StatusViewModel
-                                    {
-                                        Message = "Balance is not enough",
-                                        Success = false,
-                                        ErrorCode = 400,
-                                    }
-                                };
-                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                            }
-                            else if (randomError == (int)SimulateOrderFailedType.OutTimeslot)
+                            if (!Utils.CheckTimeSlot(timeslot))
                             {
                                 var orderFail = new OrderFailed
                                 {
@@ -1127,27 +1167,53 @@ namespace FINE.Service.Service
                                 };
                                 response.CoOrderOrderResult.OrderFailed.Add(orderFail);
                             }
-                            else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                            else
                             {
-                                var orderFail = new OrderFailed
+                                int randomError = rand.Next(1, 2);
+                                if (randomError == (int)SimulateOrderFailedType.Payment)
                                 {
-                                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                    Customer = new CustomerOrderResponse
+                                    var orderFail = new OrderFailed
                                     {
-                                        Id = randomCustomer.Id,
-                                        CustomerCode = randomCustomer.Name,
-                                        Email = randomCustomer.Email,
-                                        Name = randomCustomer.Name,
-                                        Phone = randomCustomer.Phone,
-                                    },
-                                    Status = new StatusViewModel
+                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
+                                        Customer = new CustomerOrderResponse
+                                        {
+                                            Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
+                                            CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
+                                            Email = "",
+                                            Name = "Di Na Cuteeeee",
+                                            Phone = "+84838073755",
+                                        },
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "Balance is not enough",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
+                                else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
+                                {
+                                    var orderFail = new OrderFailed
                                     {
-                                        Message = "This product is not avaliable!",
-                                        Success = false,
-                                        ErrorCode = 400,
-                                    }
-                                };
-                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                        Customer = new CustomerOrderResponse
+                                        {
+                                            Id = randomCustomer.Id,
+                                            CustomerCode = randomCustomer.Name,
+                                            Email = randomCustomer.Email,
+                                            Name = randomCustomer.Name,
+                                            Phone = randomCustomer.Phone,
+                                        },
+                                        Status = new StatusViewModel
+                                        {
+                                            Message = "This product is not avaliable!",
+                                            Success = false,
+                                            ErrorCode = 400,
+                                        }
+                                    };
+                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
+                                }
                             }
                             totalCoOrderFailed--;
                         }
