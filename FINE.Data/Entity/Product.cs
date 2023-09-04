@@ -17,6 +17,8 @@ public partial class Product
 
     public int ProductType { get; set; }
 
+    public bool? IsStackable { get; set; }
+
     public string ImageUrl { get; set; } = null!;
 
     public bool IsActive { get; set; }

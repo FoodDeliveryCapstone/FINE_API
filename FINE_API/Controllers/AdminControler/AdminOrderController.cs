@@ -15,10 +15,12 @@ namespace FINE.API.Controllers.AdminControler
     public class AdminOrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IStaffService _staffService;
 
-        public AdminOrderController(IOrderService orderService)
+        public AdminOrderController(IOrderService orderService, IStaffService staffService)
         {
             _orderService = orderService;
+            _staffService = staffService;
         }
 
         /// <summary>
@@ -184,7 +186,7 @@ namespace FINE.API.Controllers.AdminControler
         {
             try
             {
-                return await _orderService.UpdateOrderStatus(orderId, request);
+                return await _staffService.UpdateOrderStatus(orderId, request);
             }
             catch (ErrorResponse ex)
             {
@@ -197,19 +199,17 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpPost("simulate/order")]
-        public async Task<ActionResult<BaseResponseViewModel<SimulateResponse>>> SimulateOrder([FromQuery] SimulateRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<SimulateResponse>>> SimulateOrder([FromBody] SimulateRequest request)
         {
             try
             {
-                return await _orderService.SimulateOrder(request);
+                return await _staffService.SimulateOrder(request);
             }
             catch (ErrorResponse ex)
             {
                 return BadRequest(ex.Error);
             }
         }
-
-
     }
 }
 

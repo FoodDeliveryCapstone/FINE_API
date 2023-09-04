@@ -11,12 +11,12 @@ namespace FINE.Service.DTO.Request.Order
     {
         public string TimeSlotId { get; set; }
         public SimulateSingleOrderRequest? SingleOrder { get; set; }
-        public SimulateCoOrderOrderRequest? CoOrderOrder { get; set; }
+        public SimulateCoOrderOrderRequest? CoOrder { get; set; }
     }
 
     public class SimulateSingleOrderRequest
     {
-        public int? OrderPerPerson { get; set; }
+        public int? TotalOrder { get; set; }
         public int? TotalCustomer { get; set; }
         public int? TotalOrderSuccess { get; set; }       
     }

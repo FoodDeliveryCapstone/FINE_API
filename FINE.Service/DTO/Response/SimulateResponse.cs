@@ -21,6 +21,8 @@ namespace FINE.Service.DTO.Response
     }
     public class OrderFailed
     {
+        public string OrderCode { get; set; }
+        public CustomerOrderResponse Customer { get; set; }
         public StatusViewModel Status { get; set; }
     }
     public class OrderSuccess
