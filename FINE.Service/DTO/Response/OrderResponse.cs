@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.DTO.Response
 {
@@ -164,7 +165,7 @@ namespace FINE.Service.DTO.Response
         public DateTime? CheckInDate { get; set; }
         public int? OrderType { get; set; }
         [NotMapped]
-        public bool OrderDetailStoreStatus { get; set; }
+        public OrderStatusEnum OrderDetailStoreStatus { get; set; }
         public List<OrderDetailResponse>? OrderDetails { get; set; }
 
     }

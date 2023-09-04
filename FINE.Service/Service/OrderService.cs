@@ -344,7 +344,7 @@ namespace FINE.Service.Service
                       StationName = resultOrder.StationOrder.Name,
                       CheckInDate = order.CheckInDate,
                       OrderType = resultOrder.OrderType,
-                      OrderDetailStoreStatus = false,
+                      OrderDetailStoreStatus = OrderStatusEnum.Processing,
                       OrderDetails = resultOrder.OrderDetails.Where(x => x.StoreId == group.Key).ToList(),
                   }).ToList();
                 ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, resultOrder.Id.ToString(), orderDetailsByStore);
