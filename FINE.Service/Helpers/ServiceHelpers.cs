@@ -1,4 +1,5 @@
-﻿using FINE.Data.Entity;
+﻿using Azure;
+using FINE.Data.Entity;
 using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
 using Microsoft.Extensions.Configuration;
@@ -11,12 +12,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static FINE.Service.Helpers.Enum;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FINE.Service.Helpers
 {
     public class ServiceHelpers
     {
         public static IConfiguration config;
+
         public static void Initialize(IConfiguration Configuration)
         {
             config = Configuration;
@@ -70,10 +73,9 @@ namespace FINE.Service.Helpers
             {
                 FillBoxResponse fillBoxResponse = new FillBoxResponse()
                 {
-                    Success = new List<bool>()
+                    QuantitySuccess = quantity
                 };
-
-                var rsFillBoxWithCard = new PutIntoBoxModel()
+                var spaceInBox = new PutIntoBoxRequest()
                 {
                     RemainingSpaceBox = new CubeModel()
                     {
@@ -85,7 +87,7 @@ namespace FINE.Service.Helpers
                     {
                         Height = 0,
                         Width = 0,
-                        Length = 0,
+                        Length = 0
                     }
                 };
 
@@ -93,17 +95,102 @@ namespace FINE.Service.Helpers
                 {
                     foreach (var item in card)
                     {
-                        rsFillBoxWithCard = PutProductIntoBox(rsFillBoxWithCard, item.Product, item.Quantity);
+                        var limitTurn1 = item.Quantity;
+                        var failedTurn1 = 0;
+                        for (int turn = 1; turn <= limitTurn1; turn++)
+                        {
+                            var rsIncard = PutProductIntoBox(spaceInBox, item.Product, item.Quantity);
+
+                            if (rsIncard.Success is true)
+                            {
+                                spaceInBox = new PutIntoBoxRequest
+                                {
+                                    RemainingSpaceBox = rsIncard.RemainingSpace,
+                                    VolumeOccupied = rsIncard.VolumeOccupiedN,
+                                    RemainingLengthSpace = rsIncard.RemainingLengthSpaceN,
+                                    VolumeLengthOccupied = rsIncard.VolumeLengthOccupiedN,
+                                    RemainingWidthSpace = rsIncard.RemainingWidthSpaceN,
+                                    VolumeWidthOccupied = rsIncard.VolumeWidthOccupiedN,
+                                };
+                                break;
+                            }
+                            else
+                            {
+                                item.Quantity--;
+                                failedTurn1++;
+                            }
+                        }
+
+                        if (failedTurn1 > 0)
+                        {
+                            for (int turn2 = 1; turn2 <= failedTurn1; turn2++)
+                            {
+                                var rs2 = PutProductIntoBox(spaceInBox, product, turn2);
+
+                                if ((bool)rs2.Success is false)
+                                {
+                                    spaceInBox = new PutIntoBoxRequest
+                                    {
+                                        RemainingSpaceBox = rs2.RemainingSpace,
+                                        VolumeOccupied = rs2.VolumeOccupiedN,
+                                        RemainingLengthSpace = rs2.RemainingLengthSpaceN,
+                                        VolumeLengthOccupied = rs2.VolumeLengthOccupiedN,
+                                        RemainingWidthSpace = rs2.RemainingWidthSpaceN,
+                                        VolumeWidthOccupied = rs2.VolumeWidthOccupiedN,
+                                    };
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
-                for (int turn = 1; turn <= quantity; turn++)
+                var limitTurn = quantity;
+                var failedTurn = 0;
+                for (int turn = 1; turn <= limitTurn; turn++)
                 {
-                    rsFillBoxWithCard = PutProductIntoBox(rsFillBoxWithCard, product, 1);
-                    fillBoxResponse.Success.Add(rsFillBoxWithCard.Success);
+                    var rs = PutProductIntoBox(spaceInBox, product, quantity);
+
+                    if (rs.Success is true)
+                    {
+                        spaceInBox = new PutIntoBoxRequest
+                        {
+                            RemainingSpaceBox = rs.RemainingSpace,
+                            VolumeOccupied = rs.VolumeOccupiedN,
+                            RemainingLengthSpace = rs.RemainingLengthSpaceN,
+                            VolumeLengthOccupied = rs.VolumeLengthOccupiedN,
+                            RemainingWidthSpace = rs.RemainingWidthSpaceN,
+                            VolumeWidthOccupied = rs.VolumeWidthOccupiedN,
+                        };
+                        break;
+                    }
+                    else
+                    {
+                        quantity--;
+                        failedTurn++;
+                        fillBoxResponse.QuantitySuccess -= 1;
+                    }
                 }
-                fillBoxResponse.RemainingSpaceBox = rsFillBoxWithCard.RemainingSpaceBox;
-                fillBoxResponse.RemainingWidthSpace = rsFillBoxWithCard.RemainingWidthSpace;
-                fillBoxResponse.RemainingLengthSpace = rsFillBoxWithCard.RemainingLengthSpace;
+
+                if (failedTurn > 0)
+                {
+                    for (int turn2 = 1; turn2 <= failedTurn; turn2++)
+                    {
+                        var rs2 = PutProductIntoBox(spaceInBox, product, turn2);
+
+                        if ((bool)rs2.Success)
+                        {
+                            fillBoxResponse.QuantitySuccess += 1;
+                        }
+                        else
+                        {
+                            fillBoxResponse.RemainingWidthSpace = rs2.RemainingWidthSpaceN;
+                            fillBoxResponse.RemainingLengthSpace = rs2.RemainingLengthSpaceN;
+                            break;
+                        }
+                    }
+                }
+                fillBoxResponse.RemainingWidthSpace = spaceInBox.RemainingWidthSpace;
+                fillBoxResponse.RemainingLengthSpace = spaceInBox.RemainingLengthSpace;
 
                 return fillBoxResponse;
             }
@@ -112,15 +199,10 @@ namespace FINE.Service.Helpers
                 throw ex;
             }
         }
-        public static PutIntoBoxModel PutProductIntoBox(PutIntoBoxModel space, ProductAttribute product, int quantity)
+        public static PutIntoBoxResponse PutProductIntoBox(PutIntoBoxRequest space, ProductAttribute product, int quantity)
         {
             try
             {
-                PutIntoBoxModel response = new PutIntoBoxModel()
-                {
-                    Success = true
-                };
-
                 var box = new CubeModel()
                 {
                     Height = double.Parse(config.GetSection("BoxSize:Height").Value.ToString()),
@@ -128,16 +210,31 @@ namespace FINE.Service.Helpers
                     Length = double.Parse(config.GetSection("BoxSize:Length").Value.ToString())
                 };
 
-                var productSize = new CubeModel();
+                var response = new PutIntoBoxResponse()
+                {
+                    Success = true,
+                    RemainingSpace = space.RemainingSpaceBox,
+                    RemainingLengthSpaceN = new CubeModel(),
+                    RemainingWidthSpaceN = new CubeModel(),
+                    VolumeOccupiedN = new CubeModel()
+                };
+
+                var productSizeAfterEdit = new CubeModel()
+                {
+                    Height = product.Height,
+                    Width = product.Width,
+                    Length = product.Length
+                };
                 var volumeProductOccupied = new CubeModel();
 
                 //xoay + ghep
                 switch (product.RotationType)
                 {
+                    // nếu product có thể xoay => ưu tiên dựng product nằm dọc => volume occpied: h = p.h; w,l = p.w,l * quantity 
                     case (int)ProductRotationTypeEnum.Both:
                         if (product.Width < product.Height && product.Height < product.Length)
                         {
-                            productSize = new CubeModel
+                            productSizeAfterEdit = new CubeModel
                             {
                                 Height = product.Length,
                                 Width = product.Height,
@@ -146,7 +243,7 @@ namespace FINE.Service.Helpers
                         }
                         else if (product.Width > product.Height)
                         {
-                            productSize = new CubeModel
+                            productSizeAfterEdit = new CubeModel
                             {
                                 Height = product.Length,
                                 Width = product.Width,
@@ -155,92 +252,128 @@ namespace FINE.Service.Helpers
                         }
                         volumeProductOccupied = new CubeModel()
                         {
-                            Height = productSize.Height,
-                            Width = productSize.Width * quantity,
-                            Length = productSize.Length * quantity
+                            Height = productSizeAfterEdit.Height,
+                            Width = productSizeAfterEdit.Width * quantity,
+                            Length = productSizeAfterEdit.Length * quantity
                         };
                         break;
-
+                    // nếu product mặc định nằm ngang => product nằm chồng lên nhau => volume occpied: h = q.h * quantity; w,l = p.w,l
                     case (int)ProductRotationTypeEnum.Horizontal:
                         volumeProductOccupied = new CubeModel()
                         {
-                            Height = productSize.Height * quantity,
-                            Width = productSize.Width,
-                            Length = productSize.Length
+                            Height = productSizeAfterEdit.Height * quantity,
+                            Width = productSizeAfterEdit.Width,
+                            Length = productSizeAfterEdit.Length
+                        };
+                        break;
+                    case (int)ProductRotationTypeEnum.Vertical:
+                        volumeProductOccupied = new CubeModel()
+                        {
+                            Height = productSizeAfterEdit.Height,
+                            Width = productSizeAfterEdit.Width,
+                            Length = productSizeAfterEdit.Length * quantity
                         };
                         break;
                 }
 
-                //chiếm
-                if (space.VolumeOccupied.Height < volumeProductOccupied.Height)
-                    space.VolumeOccupied.Height = volumeProductOccupied.Height;
-
-                if (volumeProductOccupied.Length + space.VolumeOccupied.Length > box.Length
-                    && volumeProductOccupied.Width + space.VolumeOccupied.Width > box.Width)
+                if (volumeProductOccupied.Height <= box.Height
+                    && volumeProductOccupied.Length <= box.Length
+                    && volumeProductOccupied.Width <= box.Width)
                 {
-                    response.Success = false;
-                }
-                else if (volumeProductOccupied.Length + space.VolumeOccupied.Length > box.Length
-                    && volumeProductOccupied.Width + space.VolumeOccupied.Width < box.Width)
-                {
-                    space.RemainingSpaceBox = null;
-                    if (space.RemainingWidthSpace == null)
+                    //chiếm
+                    // trường hợp 1: chưa có bất kì phần chia box nào
+                    if (space.RemainingSpaceBox is not null)
                     {
-                        space.RemainingWidthSpace = new CubeModel()
+                        //trường hợp 1: ghép với thể tích đã có mà vượt qua giới hạn box
+                        if (volumeProductOccupied.Length + space.VolumeOccupied.Length > space.RemainingSpaceBox.Length
+                            && volumeProductOccupied.Width + space.VolumeOccupied.Width > space.RemainingSpaceBox.Width)
                         {
-                            Height = box.Height,
-                            Width = box.Width - space.VolumeOccupied.Width,
-                            Length = box.Length
-                        };
-                        space.VolumeWidthOccupied = new CubeModel()
+                            response.Success = false;
+                        }
+                        //trường hợp 2: ghép với thể tích đã có bên chiều dài mà vượt qua giới hạn box,
+                        //nhưng ghép bên chiều rộng vẫn có thể => cắt box làm 2 phần và bắt đầu ghép bên phần mới cắt
+                        else if (volumeProductOccupied.Length + space.VolumeOccupied.Length > space.RemainingSpaceBox.Length
+                            && volumeProductOccupied.Width + space.VolumeOccupied.Width <= space.RemainingSpaceBox.Width)
                         {
-                            Height = volumeProductOccupied.Height,
-                            Width = volumeProductOccupied.Width,
-                            Length = volumeProductOccupied.Length
-                        };
-                        space.RemainingLengthSpace = new CubeModel()
+                            //chia box
+                            response.RemainingWidthSpaceN = new CubeModel()
+                            {
+                                Height = box.Height,
+                                Width = space.RemainingSpaceBox.Width - space.VolumeOccupied.Width,
+                                Length = space.RemainingSpaceBox.Length
+                            };
+                            response.VolumeWidthOccupiedN = new CubeModel()
+                            {
+                                Height = box.Height,
+                                Width = volumeProductOccupied.Width,
+                                Length = volumeProductOccupied.Length
+                            };
+                            response.RemainingLengthSpaceN = new CubeModel()
+                            {
+                                Height = box.Height,
+                                Width = space.VolumeOccupied.Width,
+                                Length = space.RemainingSpaceBox.Length
+                            };
+                            response.VolumeLengthOccupiedN = space.VolumeOccupied;
+
+                            //disable thể tích box
+                            response.VolumeOccupiedN = null;
+                            response.RemainingSpace = null;
+                        }
+                        //Trường hợp 3: ghép tiếp vào thể tích đã có bên chiều dài
+                        else if (volumeProductOccupied.Length + space.VolumeOccupied.Length <= space.RemainingSpaceBox.Length)
                         {
-                            Height = box.Height,
-                            Width = space.VolumeOccupied.Width,
-                            Length = box.Length - space.VolumeOccupied.Length
-                        };
+                            if (space.VolumeOccupied.Height == 0)
+                            {
+                                response.VolumeOccupiedN = new CubeModel()
+                                {
+                                    Height = box.Height,
+                                    Width = volumeProductOccupied.Width,
+                                    Length = volumeProductOccupied.Length
+                                };
+                            }
+                            else
+                            {
+                                response.VolumeOccupiedN.Length = space.VolumeOccupied.Length + volumeProductOccupied.Length;
+                            }
+
+                            //vẫn cần phát sinh RemainingWidthSpace and RemainingWidthSpace để recommend
+                            response.RemainingWidthSpaceN = new CubeModel()
+                            {
+                                Height = box.Height,
+                                Width = space.RemainingSpaceBox.Width - response.VolumeOccupiedN.Width,
+                                Length = space.RemainingSpaceBox.Length
+                            };
+                            response.RemainingLengthSpaceN = new CubeModel()
+                            {
+                                Height = box.Height,
+                                Width = space.VolumeOccupied.Width,
+                                Length = space.RemainingSpaceBox.Length
+                            };
+                        }
                     }
                     else
                     {
-                        if (space.VolumeWidthOccupied.Height < volumeProductOccupied.Height)
-                            space.VolumeWidthOccupied.Height = volumeProductOccupied.Height;
-
                         if (volumeProductOccupied.Length + space.VolumeWidthOccupied.Length > space.RemainingWidthSpace.Length)
                         {
                             response.Success = false;
                         }
                         else
                         {
-                            space.VolumeWidthOccupied = new CubeModel()
+                            response.VolumeWidthOccupiedN = new CubeModel()
                             {
-                                Height = space.VolumeWidthOccupied.Height,
+                                Height = box.Height,
                                 Width = space.VolumeWidthOccupied.Width,
                                 Length = volumeProductOccupied.Length + space.VolumeWidthOccupied.Length
                             };
                         }
                     }
                 }
-                else if (volumeProductOccupied.Length + space.VolumeOccupied.Length < box.Length)
+                else
                 {
-                    response.RemainingSpaceBox = new CubeModel()
-                    {
-                        Height = box.Height,
-                        Width = box.Width - space.VolumeOccupied.Width,
-                        Length = box.Length - space.VolumeOccupied.Length
-                    };
-                    space.VolumeOccupied = new CubeModel()
-                    {
-                        Height = space.VolumeOccupied.Height,
-                        Width = space.VolumeOccupied.Width,
-                        Length = volumeProductOccupied.Length + space.VolumeOccupied.Length,
-                    };
+                    response.Success = false;
                 }
-                response.VolumeOccupied = space.VolumeOccupied;
+
                 return response;
             }
             catch (Exception ex)

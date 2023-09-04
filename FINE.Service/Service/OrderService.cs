@@ -20,7 +20,6 @@ namespace FINE.Service.Service
     public interface IOrderService
     {
         Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string orderId);
-
         Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging);
         Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
@@ -576,6 +575,13 @@ namespace FINE.Service.Service
         {
             try
             {
+                var existInCard = request.Card.Find(x => x.ProductId == request.ProductId);
+                if (existInCard is not null)
+                {
+                    request.Quantity += existInCard.Quantity;
+                    request.Card.Remove(existInCard);
+                }
+
                 var productRequest = await _unitOfWork.Repository<ProductInMenu>().GetAll()
                                         .Include(x => x.Product)
                                         .Where(x => x.ProductId == Guid.Parse(request.ProductId)
@@ -586,7 +592,8 @@ namespace FINE.Service.Service
 
                 var result = new AddProductToCardResponse
                 {
-                    Product = _mapper.Map<ProductInCardresponse>(productRequest),
+                    Product = _mapper.Map<ProductInCardResponse>(productRequest),
+                    Card = new List<ProductInCardResponse>(),
                     ProductsRecommend = new List<ProductRecommend>()
                 };
                 result.Product.Quantity = request.Quantity;
@@ -596,41 +603,60 @@ namespace FINE.Service.Service
                 {
                     foreach (var product in request.Card)
                     {
-                        var productAttInCard = await _unitOfWork.Repository<ProductInMenu>().GetAll()
+                        var productAttInCard = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                                         .Include(x => x.Product)
                                                         .Where(x => x.ProductId == Guid.Parse(product.ProductId)
                                                             && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
                                                         .GroupBy(x => x.Product)
-                                                        .Select(x => new FillBoxRequest()
-                                                        {
-                                                            Product = x.Key,
-                                                            Quantity = product.Quantity
-                                                        })
-                                                        .FirstOrDefaultAsync();
+                                                        .AsQueryable();
 
-                        listProductInCard.Add(productAttInCard);
+                        var responseProduct = productAttInCard.Select(x => x.Key).ProjectTo<ProductInCardResponse>(_mapper.ConfigurationProvider).FirstOrDefaultAsync().Result;
+                        responseProduct.Quantity = product.Quantity;
+                        result.Card.Add(responseProduct);   
+
+                        FillBoxRequest productRequestFill = productAttInCard.Select(x => new FillBoxRequest()
+                                                                                {
+                                                                                    Product = x.Key,
+                                                                                    Quantity = product.Quantity
+                                                                                })
+                                                                            .FirstOrDefaultAsync().Result;
+
+                        listProductInCard.Add(productRequestFill);
                     }
                 }
 
                 var addToBoxResult = ServiceHelpers.FillTheBox(productRequest, request.Quantity, listProductInCard);
 
-                if (addToBoxResult.Success.Count(x => x == true) == request.Quantity)
+                if (addToBoxResult.QuantitySuccess == request.Quantity)
                 {
-                    result.Product.Status = new StatusViewModel()
+                    result.Status = new StatusViewModel()
                     {
                         Success = true,
                         Message = "Success",
                         ErrorCode = 200
                     };
+
+                    result.Card.Add(result.Product);
                 }
-                else if (addToBoxResult.Success.Count(x => x == true) < request.Quantity)
+                else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess !=0)
                 {
-                    var quantityCanAdd = request.Quantity - addToBoxResult.Success.Count(x => x == true);
-                    result.Product.Status = new StatusViewModel()
+                    var quantityCanAdd = addToBoxResult.QuantitySuccess;
+                    result.Status = new StatusViewModel()
                     {
                         Success = true,
                         Message = String.Format("Only {0} items can be added to the card", quantityCanAdd),
                         ErrorCode = 200
+                    };
+                    result.Product.Quantity = quantityCanAdd;
+                    result.Card.Add(result.Product);
+                }
+                else
+                {
+                    result.Status = new StatusViewModel()
+                    {
+                        Success = false,
+                        Message = String.Format("Error"),
+                        ErrorCode = 400
                     };
                 }
 
@@ -641,39 +667,19 @@ namespace FINE.Service.Service
                                                    .Select(x => x.Product)
                                                    .AsQueryable();
 
-                if (addToBoxResult.RemainingSpaceBox is not null)
-                {
-                    result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingSpaceBox.Height
-                                                 && x.Width <= addToBoxResult.RemainingSpaceBox.Width
-                                                 && x.Length <= addToBoxResult.RemainingSpaceBox.Length)
-                                                .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
-                                                .ToListAsync();
-                }
-                else
-                {
-                    result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingLengthSpace.Height
-                                                 && x.Width <= addToBoxResult.RemainingLengthSpace.Width
-                                                 && x.Length <= addToBoxResult.RemainingLengthSpace.Length)
-                                                .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
-                                                .ToListAsync();
-                    if (result.ProductsRecommend == null)
-                    {
-                        result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
-                                                                     && x.Width <= addToBoxResult.RemainingWidthSpace.Width
-                                                                     && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
-                                                                    .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
-                                                                    .ToListAsync();
-                    }
-                    else
-                    {
-                        var listRecommendWidth = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
-                                                                     && x.Width <= addToBoxResult.RemainingWidthSpace.Width
-                                                                     && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
-                                                                    .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
-                                                                    .ToListAsync();
-                        result.ProductsRecommend.AddRange(listRecommendWidth);
-                    }
-                }
+                result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
+                                                             && x.Width <= addToBoxResult.RemainingWidthSpace.Width
+                                                             && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
+                                                            .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                            .ToListAsync();
+
+                var listRecommendWidth = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
+                                                             && x.Width <= addToBoxResult.RemainingWidthSpace.Width
+                                                             && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
+                                                            .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                            .ToListAsync();
+
+                result.ProductsRecommend.AddRange(listRecommendWidth);
 
                 return new BaseResponseViewModel<AddProductToCardResponse>()
                 {

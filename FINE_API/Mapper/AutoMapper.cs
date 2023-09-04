@@ -76,7 +76,7 @@ namespace FINE.API.Mapper
             #region Product In Menu
             CreateMap<ProductInMenu, ProductInMenuResponse>().ReverseMap();
             CreateMap<ProductAttribute, ProductInMenuResponse>().ReverseMap();
-            CreateMap<ProductAttribute, ProductInCardresponse>();
+            CreateMap<ProductAttribute, ProductInCardResponse>();
             CreateMap<ProductAttribute, ProductRecommend>();
 
             //CreateMap<AddProductToMenuRequest, ProductInMenu>();

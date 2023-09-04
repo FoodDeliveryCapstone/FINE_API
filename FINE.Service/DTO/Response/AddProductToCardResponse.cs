@@ -8,15 +8,17 @@ namespace FINE.Service.DTO.Response
 {
     public class AddProductToCardResponse
     {
-        public ProductInCardresponse Product { get; set; }
+        public StatusViewModel Status { get; set; }
+        public ProductInCardResponse Product { get; set; }
+
+        public List<ProductInCardResponse> Card { get; set; }
+
         public List<ProductRecommend> ProductsRecommend { get; set; }
 
     }
 
-    public class ProductInCardresponse
+    public class ProductInCardResponse
     {
-        public StatusViewModel Status { get; set; }
-
         public Guid Id { get; set; }
 
         public string Name { get; set; } = null!;
