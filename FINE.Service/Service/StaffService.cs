@@ -268,8 +268,16 @@ namespace FINE.Service.Service
             try
             {
                 var rand = new Random();
-                int errorCount = 0;
+                if (!Guid.TryParse(request.TimeSlotId, out Guid checkGuid))
+                {
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                      TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+                }
                 var timeslot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == Guid.Parse(request.TimeSlotId));
+                if (timeslot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                       TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+
                 var timeslotResponse = new TimeSlotOrderResponse()
                 {
                     Id = timeslot.Id.ToString(),
