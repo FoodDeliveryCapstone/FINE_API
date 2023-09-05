@@ -645,7 +645,7 @@ namespace FINE.Service.Service
                     {
                         Success = true,
                         Message = String.Format("Only {0} items can be added to the card", quantityCanAdd),
-                        ErrorCode = 200
+                        ErrorCode = 2001
                     };
                     result.Product.Quantity = quantityCanAdd;
                     result.Card.Add(result.Product);
