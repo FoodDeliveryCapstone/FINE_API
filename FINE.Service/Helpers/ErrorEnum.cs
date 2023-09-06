@@ -41,6 +41,12 @@ namespace FINE.Service.Helpers
             ORDER_TAKEN = 4001,
             [Display(Name = "Order already taken by staff!")]
             STAFF_TAKEN = 4002,
+            [Display(Name = "Box is not available!")]
+            BOX_NOT_AVAILABLE = 4003,
+
+            //404
+            [Display(Name = "Not found this box!")]
+            NOT_FOUND = 4041,
         }
 
         public enum PartyErrorEnums

@@ -21,7 +21,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get Station by Id
         /// </summary>
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpGet("{stationId}")]
         public async Task<ActionResult<BaseResponseViewModel<StationResponse>>> GetStationById([FromRoute] string stationId)
         {
@@ -39,7 +39,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Get Stations
         /// </summary>
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<StationResponse>>> GetStations([FromQuery] StationResponse filter, [FromQuery] PagingRequest paging)
         {

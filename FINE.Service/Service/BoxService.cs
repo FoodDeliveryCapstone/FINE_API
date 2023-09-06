@@ -1,61 +1,125 @@
-﻿//using AutoMapper;
-//using FINE.Data.Entity;
-//using FINE.Data.UnitOfWork;
-//using FINE.Service.DTO.Request;
-//using FINE.Service.DTO.Request.Box;
-//using FINE.Service.DTO.Response;
-//using FINE.Service.Exceptions;
-//using FINE.Service.Utilities;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Threading.Tasks;
-//using static FINE.Service.Helpers.ErrorEnum;
+﻿using AutoMapper;
+using FINE.Data.Entity;
+using FINE.Data.UnitOfWork;
+using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Box;
+using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
+using FINE.Service.Helpers;
+using FINE.Service.Utilities;
+using System.Drawing;
+using ZXing.QrCode;
+using ZXing;
+using static FINE.Service.Helpers.Enum;
+using static FINE.Service.Helpers.ErrorEnum;
+using ZXing.Windows.Compatibility;
+using AutoMapper.QueryableExtensions;
+using FINE.Service.Attributes;
 
-//namespace FINE.Service.Service
-//{
-//    public interface IBoxService
-//    {
-//        Task<BaseResponseViewModel<BoxResponse>> CheckBoxCode(CheckBoxCodeRequest request);
+namespace FINE.Service.Service
+{
+    public interface IBoxService
+    {
+        Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(List<AddOrderToBoxRequest> request);
+        Task<BaseResponsePagingViewModel<BoxResponse>> GetBoxByStation(string stationId, BoxResponse filter, PagingRequest paging);
 
-//    }
+    }
 
-//    public class BoxService : IBoxService
-//    {
-//        private readonly IUnitOfWork _unitOfWork;
-//        private readonly IMapper _mapper;
-//        public BoxService(IUnitOfWork unitOfWork, IMapper mapper)
-//        {
-//            _mapper = mapper;
-//            _unitOfWork = unitOfWork;
-//        }
+    public class BoxService : IBoxService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        public BoxService(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _mapper = mapper;
+            _unitOfWork = unitOfWork;
+        }
 
-//        public async Task<BaseResponseViewModel<BoxResponse>> CheckBoxCode(CheckBoxCodeRequest request)
-//        {
-//            try
-//            {
-//                var box = _unitOfWork.Repository<Box>().GetAll()
-//                                .FirstOrDefault(x => x.Code == request.Code);
-//                if (box == null)
-//                    throw new ErrorResponse(404, (int)BoxErrorEnums.NOT_FOUND,
-//                       BoxErrorEnums.NOT_FOUND.GetDisplayName());
+        public async Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(List<AddOrderToBoxRequest> request)
+        {
+            try
+            {
+                var key = Utils.GenerateRandomCode(10);
+                foreach (var item in request)
+                {
+                    var box = _unitOfWork.Repository<Box>().GetAll()
+                                .FirstOrDefault(x => x.Id == item.BoxId);
+                    if (box == null)
+                        throw new ErrorResponse(404, (int)BoxErrorEnums.NOT_FOUND,
+                           BoxErrorEnums.NOT_FOUND.GetDisplayName());
+                    if (box.IsActive == false)
+                        throw new ErrorResponse(404, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
+                           BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());
 
-//                return new BaseResponseViewModel<BoxResponse>()
-//                {
-//                    Status = new StatusViewModel()
-//                    {
-//                        Message = "Success",
-//                        Success = true,
-//                        ErrorCode = 0
-//                    },
-//                    Data = _mapper.Map<BoxResponse>(box)
-//                };
-//            }
-//            catch (ErrorResponse ex)
-//            {
-//                throw ex;
-//            }
-//        }
-//    }
-//}
+                    var order = _unitOfWork.Repository<Order>().GetAll()
+                                    .FirstOrDefault(x => x.Id == item.OrderId);                   
+                    if (order == null)
+                        throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                            OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                    if (order.OrderStatus != (int)OrderStatusEnum.Delivering)
+                        throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
+                            OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
+
+                    var orderBox = new OrderBox()
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = item.OrderId,
+                        BoxId = item.BoxId,
+                        Key = key,
+                        Status = (int)OrderBoxStatusEnum.NotPicked,
+                        CreateAt = DateTime.Now,
+                    };
+                    await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
+                    await _unitOfWork.CommitAsync();
+                }
+
+                return new BaseResponseViewModel<OrderBoxResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<BoxResponse>> GetBoxByStation(string stationId, BoxResponse filter, PagingRequest paging)
+        {
+            try 
+            { 
+                var station = _unitOfWork.Repository<Station>().GetAll()
+                    .FirstOrDefault(x => x.Id == Guid.Parse(stationId));
+                if (station == null)
+                    throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
+                        StationErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var box = _unitOfWork.Repository<Box>().GetAll()
+                    .Where(x => x.StationId == Guid.Parse(stationId))
+                    .ProjectTo<BoxResponse>(_mapper.ConfigurationProvider)
+                    .DynamicFilter(filter)
+                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<BoxResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = box.Item1
+                    },
+                    Data = box.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+    }
+}

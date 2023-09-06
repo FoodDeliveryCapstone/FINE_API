@@ -50,7 +50,7 @@ namespace FINE.API.Mapper
             #endregion
 
             #region Box
-
+            CreateMap<Box, BoxResponse>().ReverseMap();
             #endregion
 
             #region Store

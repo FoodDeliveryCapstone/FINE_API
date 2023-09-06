@@ -23,7 +23,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Get List Store
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         public async Task<ActionResult<BaseResponsePagingViewModel<StoreResponse>>> GetStores
             ([FromQuery] StoreResponse request, [FromQuery] PagingRequest paging)
         {
@@ -41,7 +41,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Get Store By Id
         /// </summary>
         [HttpGet("{id}")]
-        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         public async Task<ActionResult<BaseResponseViewModel<StoreResponse>>> GetStoreById
             ([FromRoute] string id)
         {
