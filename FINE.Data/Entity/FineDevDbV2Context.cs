@@ -201,10 +201,6 @@ public partial class FineDevDbV2Context : DbContext
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
-
-            entity.HasOne(d => d.Customer).WithMany(p => p.Fcmtokens)
-                .HasForeignKey(d => d.CustomerId)
-                .HasConstraintName("FK_FCMToken_Customer");
         });
 
         modelBuilder.Entity<Feedback>(entity =>
@@ -349,19 +345,19 @@ public partial class FineDevDbV2Context : DbContext
 
         modelBuilder.Entity<OrderBox>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("OrderBox");
+            entity.ToTable("OrderBox");
 
+            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
+            entity.Property(e => e.Key).HasMaxLength(10);
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.Box).WithMany()
+            entity.HasOne(d => d.Box).WithMany(p => p.OrderBoxes)
                 .HasForeignKey(d => d.BoxId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_OrderBox_Box");
 
-            entity.HasOne(d => d.Order).WithMany()
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderBoxes)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_OrderBox_Order");

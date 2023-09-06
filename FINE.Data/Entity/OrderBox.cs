@@ -5,9 +5,13 @@ namespace FINE.Data.Entity;
 
 public partial class OrderBox
 {
+    public Guid Id { get; set; }
+
     public Guid OrderId { get; set; }
 
     public Guid BoxId { get; set; }
+
+    public string Key { get; set; } = null!;
 
     public int Status { get; set; }
 

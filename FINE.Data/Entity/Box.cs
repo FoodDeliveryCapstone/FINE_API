@@ -19,6 +19,8 @@ public partial class Box
 
     public DateTime? UpdateAt { get; set; }
 
+    public virtual ICollection<OrderBox> OrderBoxes { get; set; } = new List<OrderBox>();
+
     public virtual Station Station { get; set; } = null!;
 
     public virtual ICollection<StationReport> StationReports { get; set; } = new List<StationReport>();

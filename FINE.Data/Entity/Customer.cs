@@ -25,8 +25,6 @@ public partial class Customer
 
     public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
 
-    public virtual ICollection<Fcmtoken> Fcmtokens { get; set; } = new List<Fcmtoken>();
-
     public virtual ICollection<Notify> Notifies { get; set; } = new List<Notify>();
 
     public virtual ICollection<Party> Parties { get; set; } = new List<Party>();
