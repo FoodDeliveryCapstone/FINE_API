@@ -201,10 +201,6 @@ public partial class FineDevDbV2Context : DbContext
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
-
-            entity.HasOne(d => d.Customer).WithMany(p => p.Fcmtokens)
-                .HasForeignKey(d => d.CustomerId)
-                .HasConstraintName("FK_FCMToken_Customer");
         });
 
         modelBuilder.Entity<Feedback>(entity =>
@@ -354,6 +350,7 @@ public partial class FineDevDbV2Context : DbContext
                 .ToTable("OrderBox");
 
             entity.Property(e => e.CreateAt).HasColumnType("datetime");
+            entity.Property(e => e.Key).HasMaxLength(10);
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Box).WithMany()

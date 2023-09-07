@@ -44,7 +44,7 @@ namespace FINE.Service.Service
             try
             {
                 var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
-                    .FirstOrDefault(x =>x.CustomerId == customerId);
+                    .FirstOrDefault(x =>x.UserId == customerId);
 
                 if (fcm == null)
                 {
@@ -53,7 +53,7 @@ namespace FINE.Service.Service
                     {
                         Id = Guid.NewGuid(),
                         Token = fcmToken,
-                        CustomerId = customerId,
+                        UserId = customerId,
                         CreateAt = DateTime.UtcNow
                     };
                     _unitOfWork.Repository<Fcmtoken>().Insert(newtoken);
@@ -121,7 +121,7 @@ namespace FINE.Service.Service
                 if (tokens == null)
                     return 0;
 
-                var cusTokens = tokens.Where(x => x.CustomerId != null).Select(x => x.Token).ToList();
+                var cusTokens = tokens.Where(x => x.UserId != null).Select(x => x.Token).ToList();
                 if (cusTokens != null && cusTokens.Count > 0)
                     _fmService.Unsubcribe(cusTokens, Constants.NOTIFICATION_TOPIC);
 
@@ -140,7 +140,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.CustomerId.Equals(customerId));
+                var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.UserId.Equals(customerId));
                 if (tokensMapping != null)
                 {
                     var tokens = tokensMapping.Select(x => x.Token).ToList();
@@ -157,7 +157,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.CustomerId.Equals(customerId));
+                var tokensMapping = _unitOfWork.Repository<Fcmtoken>().GetAll().Where(x => x.UserId.Equals(customerId));
                 if (tokensMapping != null)
                 {
                     var tokens = tokensMapping.Select(x => x.Token).ToList();

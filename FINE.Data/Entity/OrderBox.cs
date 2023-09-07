@@ -9,6 +9,8 @@ public partial class OrderBox
 
     public Guid BoxId { get; set; }
 
+    public string Key { get; set; } = null!;
+
     public int Status { get; set; }
 
     public DateTime CreateAt { get; set; }

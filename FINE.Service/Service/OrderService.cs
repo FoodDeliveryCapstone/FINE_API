@@ -598,7 +598,7 @@ namespace FINE.Service.Service
                 };
                 result.Product.Quantity = request.Quantity;
 
-                List<FillBoxRequest> listProductInCard = new List<FillBoxRequest>();
+                List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
                 if (request.Card is not null)
                 {
                     foreach (var product in request.Card)
@@ -614,7 +614,7 @@ namespace FINE.Service.Service
                         responseProduct.Quantity = product.Quantity;
                         result.Card.Add(responseProduct);   
 
-                        FillBoxRequest productRequestFill = productAttInCard.Select(x => new FillBoxRequest()
+                        CheckFixBoxRequest productRequestFill = productAttInCard.Select(x => new CheckFixBoxRequest()
                                                                                 {
                                                                                     Product = x.Key,
                                                                                     Quantity = product.Quantity
@@ -625,7 +625,7 @@ namespace FINE.Service.Service
                     }
                 }
 
-                var addToBoxResult = ServiceHelpers.FillTheBox(productRequest, request.Quantity, listProductInCard);
+                var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(productRequest, request.Quantity, listProductInCard);
 
                 if (addToBoxResult.QuantitySuccess == request.Quantity)
                 {
@@ -667,9 +667,9 @@ namespace FINE.Service.Service
                                                    .Select(x => x.Product)
                                                    .AsQueryable();
 
-                result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
-                                                             && x.Width <= addToBoxResult.RemainingWidthSpace.Width
-                                                             && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
+                result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingLengthSpace.Height
+                                                             && x.Width <= addToBoxResult.RemainingLengthSpace.Width
+                                                             && x.Length <= addToBoxResult.RemainingLengthSpace.Length)
                                                             .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
                                                             .ToListAsync();
 
