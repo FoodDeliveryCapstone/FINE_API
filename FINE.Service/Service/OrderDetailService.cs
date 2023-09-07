@@ -26,7 +26,8 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetail(string storeId);
-        Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(string storeId, string orderId, UpdateOrderDetailStatusRequest request);
+        Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request);
+        Task<BaseResponseViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
 
     }
 
@@ -78,13 +79,12 @@ namespace FINE.Service.Service
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
                 orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
                                              .OrderByDescending(x => x.CheckInDate)
-                                             .ToList(); 
-
+                                             .ToList();
 
                 return new BaseResponsePagingViewModel<OrderByStoreResponse>()
                 {
                     Metadata = new PagingsMetadata()
-                    {                     
+                    {
                         Total = orderResponse.Count()
                     },
                     Data = orderResponse
@@ -96,17 +96,43 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(string storeId, string orderId, UpdateOrderDetailStatusRequest request)
+        public async Task<BaseResponseViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId)
         {
+            try
+            {
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, orderId);
+                var order = orderResponse.FirstOrDefault(x => x.OrderId == Guid.Parse(orderId));
 
-            List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, orderId);
-            orderResponse = orderResponse.OrderByDescending(x => x.CheckInDate)
-                                             .ToList();
-            var order = orderResponse.FirstOrDefault(x => x.OrderId == Guid.Parse(orderId) && x.StoreId == Guid.Parse(storeId));
-            order.OrderDetailStoreStatus = request.OrderDetailStoreStatus;
-            
-            ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.OrderId.ToString(), orderResponse);
+                return new BaseResponseViewModel<OrderByStoreResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0,
+                    },
+                    Data = order
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
 
+        }
+
+        public async Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request)
+        {
+            foreach (var item in request)
+            {
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
+                orderResponse = orderResponse.OrderByDescending(x => x.CheckInDate)
+                                                 .ToList();
+                var order = orderResponse.FirstOrDefault(x => x.OrderId == item.OrderId && x.StoreId == item.StoreId);
+                order.OrderDetailStoreStatus = item.OrderDetailStoreStatus;
+
+                ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.OrderId.ToString(), orderResponse);
+            }
             return new BaseResponseViewModel<OrderByStoreResponse>()
             {
                 Status = new StatusViewModel()

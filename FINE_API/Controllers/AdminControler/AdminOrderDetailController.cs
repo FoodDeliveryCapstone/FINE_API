@@ -59,12 +59,29 @@ namespace FINE.API.Controllers.AdminControler
         /// Update Order by Store Status
         /// </summary>    
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpPut("status/{storeId}/{orderId}")]
-        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> UpdateOrderStatus(string storeId, string orderId, [FromBody] UpdateOrderDetailStatusRequest request)
+        [HttpPut("status/storeId/orderId")]
+        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> UpdateOrderStatus([FromBody] List<UpdateOrderDetailStatusRequest> request)
         {
             try
             {
-                return await _orderDetailService.UpdateOrderByStoreStatus(storeId, orderId, request);
+                return await _orderDetailService.UpdateOrderByStoreStatus(request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Get staff orders detail by order
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpGet("/api/staff/orderDetail/{orderId}")]
+        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> GetStaffOrderDetailByOrderId(string orderId)
+        {
+            try
+            {
+                return await _orderDetailService.GetStaffOrderDetailByOrderId(orderId);
             }
             catch (ErrorResponse ex)
             {
