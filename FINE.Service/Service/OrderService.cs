@@ -336,7 +336,7 @@ namespace FINE.Service.Service
                 var messaging = FirebaseMessaging.DefaultInstance;
                 var response = await messaging.SendAsync(new Message
                 {
-                    Token = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).ToString(),
+                    Token = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token,
                     Notification = new FirebaseAdmin.Messaging.Notification
                     {
                         Title = $"Đơn hàng {order.OrderCode} đã đặt thành công!",
