@@ -25,7 +25,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Get orders detail by store
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpGet("{storeId}")]
+        [HttpGet("all/{storeId}")]
         public async Task<ActionResult<BaseResponsePagingViewModel<OrderDetailResponse>>> GetOrderDetailByStoreId(string storeId, [FromQuery] PagingRequest paging)
         {
             try
@@ -42,7 +42,7 @@ namespace FINE.API.Controllers.AdminControler
         /// Get staff orders detail by store
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpGet("/api/staff/orderDetail/{storeId}")]
+        [HttpGet("staff/{storeId}")]
         public async Task<ActionResult<BaseResponsePagingViewModel<OrderByStoreResponse>>> GetStaffOrderDetail(string storeId)
         {
             try
@@ -73,11 +73,11 @@ namespace FINE.API.Controllers.AdminControler
         }
 
         /// <summary>
-        /// Get staff orders detail by order
+        /// Get order details by order
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpGet("/api/staff/orderDetail/{orderId}")]
-        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> GetStaffOrderDetailByOrderId(string orderId)
+        [HttpGet("{orderId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderByStoreResponse>>> GetOrderDetailByOrderId(string orderId)
         {
             try
             {

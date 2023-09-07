@@ -27,7 +27,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetail(string storeId);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request);
-        Task<BaseResponseViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
+        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
 
     }
 
@@ -96,22 +96,20 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId)
+        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId)
         {
             try
             {
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, orderId);
-                var order = orderResponse.FirstOrDefault(x => x.OrderId == Guid.Parse(orderId));
+                var order = orderResponse.Where(x => x.OrderId == Guid.Parse(orderId));
 
-                return new BaseResponseViewModel<OrderByStoreResponse>()
+                return new BaseResponsePagingViewModel<OrderByStoreResponse>()
                 {
-                    Status = new StatusViewModel()
+                    Metadata = new PagingsMetadata()
                     {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0,
+                        Total = orderResponse.Count()
                     },
-                    Data = order
+                    Data = order.ToList()
                 };
             }
             catch (ErrorResponse ex)
