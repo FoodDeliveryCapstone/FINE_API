@@ -1,11 +1,13 @@
 ﻿using FINE.Data.Entity;
 using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Box;
 using FINE.Service.DTO.Request.Staff;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Drawing.Imaging;
 
 namespace FINE.API.Controllers.AdminStaffController
 {
@@ -15,9 +17,11 @@ namespace FINE.API.Controllers.AdminStaffController
     public class AdminStaffController : Controller
     {
         private readonly IStaffService _staffService;
-        public AdminStaffController(IStaffService staffService)
+        private readonly IQrCodeService _qrCodeService;
+        public AdminStaffController(IStaffService staffService, IQrCodeService qrCodeService)
         {
             _staffService = staffService;
+            _qrCodeService = qrCodeService;
         }
 
         ///// <summary>
@@ -74,6 +78,29 @@ namespace FINE.API.Controllers.AdminStaffController
             }
             catch (ErrorResponse ex) { 
                 return BadRequest(ex.Error); 
+            }
+        }
+
+        /// <summary>
+        /// Get QR for shipper by boxId
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpPost("qrCode")]
+        public async Task<ActionResult> GetQRCode([FromBody] BoxRequest request)
+        {
+            try
+            {
+                var qrCodeBitmap = await _qrCodeService.GenerateShipperQrCode(request);
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    qrCodeBitmap.Save(stream, ImageFormat.Png);
+                    byte[] imageBytes = stream.ToArray();
+
+                    return File(imageBytes, "image/png");
+                }
+            } catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
             }
         }
 
