@@ -110,6 +110,10 @@ namespace FINE.API.Mapper
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember !=null));
             #endregion
 
+            #region Notify
+            CreateMap<Notify, NotifyResponse>().ReverseMap();
+            #endregion
+
             #region Staff
 
             CreateMap<Staff, StaffResponse>().ReverseMap();

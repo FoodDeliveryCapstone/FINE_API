@@ -42,13 +42,15 @@ namespace FINE.Service.Service
         private readonly IMapper _mapper;
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
+        private readonly INotifyService _notifyService;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
             _paymentService = paymentService;
+            _notifyService = notifyService;
         }
 
         public async Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging)
@@ -334,13 +336,21 @@ namespace FINE.Service.Service
                                                 .FirstOrDefault();
                 #region Background Job
                 var messaging = FirebaseMessaging.DefaultInstance;
+                NotifyRequestModel notifyRequest = new NotifyRequestModel
+                {
+                    OrderCode = order.OrderCode,
+                    CustomerId = customer.Id,
+                    OrderStatus = (OrderStatusEnum?)order.OrderStatus,
+                    Type = NotifyTypeEnum.ForOrder
+                };
+                var notify =  _notifyService.CreateOrderNotify(notifyRequest).Result;
                 var response = await messaging.SendAsync(new Message
                 {
                     Token = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token,
                     Notification = new FirebaseAdmin.Messaging.Notification
                     {
-                        Title = $"Đơn hàng {order.OrderCode} đã đặt thành công!",
-                        Body = $"Đơn hàng {order.OrderCode} đã đặt thành công!",
+                        Title = notify.Title,
+                        Body = notify.Description,
                     }
                 });
                 #endregion
