@@ -40,7 +40,9 @@ namespace FINE.Service.DTO.Response
 
         public string Code { get; set; } = null!;
 
-        public string? Size { get; set; }
+        public string? Size { get; set; }    
+        
+        public string ImageUrl { get; set; } = null!;
 
         public double Price { get; set; }
     }

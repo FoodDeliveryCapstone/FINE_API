@@ -99,7 +99,7 @@ namespace FINE.Service.Helpers
                     {
                         // ghép product lên cho vừa họp dựa trên quantity yêu cầu
                         var pairingCardResult = ProductPairing(item.Quantity, item.Product, boxSize);
-                        var turnCard = (int)Math.Ceiling((decimal)(quantity / pairingCardResult.QuantityCanAdd));
+                        var turnCard = (int)Math.Ceiling((decimal)(item.Quantity / pairingCardResult.QuantityCanAdd));
 
                         for (var successCase = 1; successCase <= turnCard; successCase++)
                         {

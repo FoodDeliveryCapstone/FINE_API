@@ -77,7 +77,8 @@ namespace FINE.API.Mapper
             CreateMap<ProductInMenu, ProductInMenuResponse>().ReverseMap();
             CreateMap<ProductAttribute, ProductInMenuResponse>().ReverseMap();
             CreateMap<ProductAttribute, ProductInCardResponse>();
-            CreateMap<ProductAttribute, ProductRecommend>();
+            CreateMap<ProductAttribute, ProductRecommend>()
+                .ForMember(x => x.ImageUrl, opt => opt.MapFrom(dst => dst.Product.ImageUrl));
 
             //CreateMap<AddProductToMenuRequest, ProductInMenu>();
             //CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
