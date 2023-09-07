@@ -14,6 +14,8 @@ using static FINE.Service.Helpers.Enum;
 using Microsoft.Extensions.Configuration;
 using FINE.Service.Attributes;
 using FINE.Service.Helpers;
+using Hangfire;
+using FirebaseAdmin.Messaging;
 
 namespace FINE.Service.Service
 {
@@ -177,7 +179,7 @@ namespace FINE.Service.Service
                 var order = new OrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + customerId,
+                    OrderCode = DateTime.Now.ToString("ddMM_HHmm") + "-" + Utils.GenerateRandomCode(4),
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
@@ -330,7 +332,18 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
-
+                #region Background Job
+                var messaging = FirebaseMessaging.DefaultInstance;
+                var response = await messaging.SendAsync(new Message
+                {
+                    Token = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).ToString(),
+                    Notification = new FirebaseAdmin.Messaging.Notification
+                    {
+                        Title = $"Đơn hàng {order.OrderCode} đã đặt thành công!",
+                        Body = $"Đơn hàng {order.OrderCode} đã đặt thành công!",
+                    }
+                });
+                #endregion
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -644,7 +657,7 @@ namespace FINE.Service.Service
                     result.Status = new StatusViewModel()
                     {
                         Success = true,
-                        Message = String.Format("Only {0} items can be added to the card", quantityCanAdd),
+                        Message = String.Format($"Only {quantityCanAdd} items can be added to the card"),
                         ErrorCode = 2001
                     };
                     result.Product.Quantity = quantityCanAdd;
