@@ -142,7 +142,7 @@ namespace FINE.API
             builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
 
             builder.RegisterType<StaffService>().As<IStaffService>();
-            //builder.RegisterType<NotifyService>().As<INotifyService>();       
+            builder.RegisterType<NotifyService>().As<INotifyService>();       
             //builder.RegisterType<RoomService>().As<IRoomService>();
             //builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();
             //builder.RegisterType<RevenueService>().As<IRevenueService>();
