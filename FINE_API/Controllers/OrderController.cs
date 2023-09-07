@@ -233,7 +233,7 @@ namespace FINE.API.Controllers
         /// Add product into card
         /// </summary>
         [HttpPost("card")]
-        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard(string? productId, double? volumeSpace, string timeSlotId)
+        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard([FromBody]AddProductToCardRequest request)
         {
             try
             {
@@ -244,8 +244,8 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
-                return Ok(await _orderService.AddProductToCard(productId, volumeSpace, timeSlotId));
+                //var customerId = "CD59782C-998C-4693-9920-F1FE4964C24A";
+                return Ok(await _orderService.AddProductToCard(request));
             }
             catch (ErrorResponse ex)
             {

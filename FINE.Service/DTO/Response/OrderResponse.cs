@@ -16,6 +16,8 @@ namespace FINE.Service.DTO.Response
 
         public CustomerOrderResponse Customer { get; set; }
 
+        public DateTime CheckInDate { get; set; }
+
         public double TotalAmount { get; set; }
 
         public double FinalAmount { get; set; }

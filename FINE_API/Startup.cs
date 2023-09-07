@@ -145,6 +145,7 @@ namespace FINE.API
             builder.RegisterType<BoxService>().As<IBoxService>();
             builder.RegisterType<OrderDetailService>().As<IOrderDetailService>();
             //builder.RegisterType<NotifyService>().As<INotifyService>();       
+            builder.RegisterType<NotifyService>().As<INotifyService>();       
             //builder.RegisterType<RoomService>().As<IRoomService>();
             //builder.RegisterType<ProductInMenuService>().As<IProductInMenuService>();
             //builder.RegisterType<RevenueService>().As<IRevenueService>();

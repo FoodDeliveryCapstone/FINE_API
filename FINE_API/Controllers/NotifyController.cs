@@ -1,66 +1,94 @@
-﻿//using FINE.Service.DTO.Request;
-//using FINE.Service.DTO.Request.Area;
-//using FINE.Service.DTO.Request.Noti;
-//using FINE.Service.DTO.Response;
-//using FINE.Service.Service;
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Mvc;
+﻿using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Area;
+using FINE.Service.DTO.Request.Noti;
+using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
+using FINE.Service.Service;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
-//namespace FINE.API.Controllers
-//{
-//    [Route(Helpers.SettingVersionApi.ApiVersion)]
-//    [ApiController]
-//    public class NotifyController : ControllerBase
-//    {
-//        private readonly INotifyService _notifyService;
+namespace FINE.API.Controllers
+{
+    [Route(Helpers.SettingVersionApi.ApiVersion)]
+    [ApiController]
+    public class NotifyController : ControllerBase
+    {
+        private readonly INotifyService _notifyService;
 
-//        public NotifyController(INotifyService notifyService)
-//        {
-//            _notifyService = notifyService;
-//        }
+        public NotifyController(INotifyService notifyService)
+        {
+            _notifyService = notifyService;
+        }
 
-//        /// <summary>
-//        /// Get List notifys    
-//        /// </summary>
-//        /// 
-//        [HttpGet]
-//        public async Task<ActionResult<BaseResponsePagingViewModel<NotifyResponse>>> GetNotifys
-//            ([FromQuery] NotifyResponse request, [FromQuery] PagingRequest paging)
-//        {
-//            return await _notifyService.GetNotifys(request, paging);
-//        }
+        ///<summary>
+        ///Cập nhật các notification đã/chưa đọc
+        /// </summary>
+        [HttpPut]
+        public async Task<ActionResult> UpdateIsReadForNotify([FromQuery] string notifyId, [FromQuery] bool isRead)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-//        /// <summary>
-//        /// Get Notify By Id
-//        /// </summary>
-//        /// 
-//        [HttpGet("{notifyId}")]
-//        public async Task<ActionResult<BaseResponseViewModel<NotifyResponse>>> GetNotifyById
-//            ([FromRoute] int notifyId)
-//        {
-//            return await _notifyService.GetNotifyById(notifyId);
-//        }
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                return Ok(await _notifyService.UpdateIsReadForNotify(notifyId, isRead));
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
 
-//        /// <summary>
-//        /// Create NOtify                        
-//        /// </summary>
-//        /// 
-//        [HttpPost]
-//        public async Task<ActionResult<bool>> CreateNotify
-//            ([FromBody] NotifyRequestModel request)
-//        {
-//            return await _notifyService.CreateOrderNotify(request);
-//        }
+        ///<summary>
+        ///Lấy tất cả notification
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetAllNotify()
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-//        /// <summary>
-//        /// Update Notify
-//        /// </summary>
-//        /// 
-//        [HttpPut("{notifyId}")]
-//        public async Task<ActionResult<BaseResponseViewModel<NotifyResponse>>> UpdateNotify
-//            ([FromRoute] int notifyId, [FromBody] UpdateNotifyRequest request)
-//        {
-//            return await _notifyService.UpdateNotify(notifyId, request);
-//        }
-//    }
-//}
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var result = _notifyService.GetAllNotifyForUser(customerId);
+
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        ///<summary>
+        ///Lấy notification cho user theo ID của notify
+        /// </summary>
+        [HttpGet("{notifyId}")]
+        public async Task<ActionResult> GetNotifyForUserById(string notifyId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                return Ok(_notifyService.GetNotifyForUserById(notifyId));
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+    }
+}

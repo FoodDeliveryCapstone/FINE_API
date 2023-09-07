@@ -22,16 +22,16 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Google Login
+        /// Login
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        [HttpPost("loginByMail")]
-        public async Task<ActionResult<CustomerResponse>> LoginByMail([FromBody] ExternalAuthRequest data)
+        [HttpPost("login")]
+        public async Task<ActionResult<CustomerResponse>> Login([FromBody] ExternalAuthRequest data)
         {
             try
             {
-                var result = await _customerService.LoginByMail(data);
+                var result = await _customerService.Login(data);
                 return Ok(result);
             }
             catch (ErrorResponse ex)
@@ -55,6 +55,32 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
                 var result = await _customerService.GetCustomerById(customerId);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Update thông tin khách hàng
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        [HttpPut]
+        public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> UpdateCustomer([FromQuery] UpdateCustomerRequest request)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "4D8420A7-E159-4975-88DD-F80BCEA9AC04";
+                var result = await _customerService.UpdateCustomer(customerId, request);
                 return Ok(result);
             }
             catch (ErrorResponse ex)
@@ -103,31 +129,6 @@ namespace FINE.API.Controllers
             var result = await _orderService.GetOrderByCustomerId(customerId, paging);
             return Ok(result);
         }
-
-        ///// <summary>
-        ///// Update thông tin khách hàng
-        ///// </summary>
-        ///// <param name="data"></param>
-        ///// <returns></returns>
-        //[HttpPut("customerId")]
-        //public async Task<ActionResult<CustomerResponse>> UpdateCustomer([FromBody] UpdateCustomerRequest data)
-        //{
-        //    try
-        //    {
-        //        var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-        //        var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
-        //        if (customerId == null)
-        //        {
-        //            return Unauthorized();
-        //        }
-        //        var result = await _customerService.UpdateCustomer(customerId, data);
-        //        return Ok(result);
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        return BadRequest(ex.Error);
-        //    }
-        //}
 
         /// <summary>
         ///  Logout

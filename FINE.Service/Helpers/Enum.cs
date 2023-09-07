@@ -66,11 +66,8 @@ namespace FINE.Service.Helpers
 
         public enum ProductRotationTypeEnum
         {
-            //dung
-            OnlyVertical = 1,
-            //ngang
-            OnlyHorizontal = 2,
-
+            Vertical = 1,
+            Horizontal = 2,
             Both = 3
         }
 
@@ -172,7 +169,7 @@ namespace FINE.Service.Helpers
         public enum NotifyTypeEnum
         {
             ForOrder = 1,
-            ForGift = 2,
+            ForInvitation = 2,
         }
     }
 }

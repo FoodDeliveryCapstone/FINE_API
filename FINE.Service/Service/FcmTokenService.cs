@@ -44,7 +44,7 @@ namespace FINE.Service.Service
             try
             {
                 var fcm = _unitOfWork.Repository<Fcmtoken>().GetAll()
-                    .FirstOrDefault(x => x.UserId == customerId);
+                    .FirstOrDefault(x =>x.UserId == customerId);
 
                 if (fcm == null)
                 {

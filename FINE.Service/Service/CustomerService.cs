@@ -26,7 +26,8 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
-        Task<BaseResponseViewModel<LoginResponse>> LoginByMail(ExternalAuthRequest data);
+        Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
+        Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
         Task Logout(string fcmToken);
     }
@@ -48,11 +49,12 @@ namespace FINE.Service.Service
             _accountService = accountService;
         }
 
-        public async Task<BaseResponseViewModel<LoginResponse>> LoginByMail(ExternalAuthRequest data)
+        public async Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data)
         {
             try
             {
                 string newAccessToken = null;
+                bool isFirstLogin = false;
 
                 if (data.FcmToken != null && data.FcmToken.Trim().Length > 0)
                 {
@@ -68,7 +70,7 @@ namespace FINE.Service.Service
 
                 //check exist customer 
                 var customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email));
+                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email) || x.Phone.Contains(userRecord.PhoneNumber));
 
                 //new customer => add fcm map with Id
                 if (customer is null)
@@ -84,6 +86,7 @@ namespace FINE.Service.Service
                     //create customer
                     var customerResult = CreateCustomer(newCustomer).Result.Data;
                     customer = _mapper.Map<Customer>(customerResult);
+                    isFirstLogin = true;
                 }
 
                 _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
@@ -99,8 +102,9 @@ namespace FINE.Service.Service
                     },
                     Data = new LoginResponse()
                     {
-                        access_token = newAccessToken,
-                        customer = _mapper.Map<CustomerResponse>(customer)
+                        Access_token = newAccessToken,
+                        IsFirstLogin = isFirstLogin,
+                        Customer = _mapper.Map<CustomerResponse>(customer)
                     }
                 };
             }
@@ -137,6 +141,47 @@ namespace FINE.Service.Service
             catch (ErrorResponse ex)
             {
                 throw;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request)
+        {
+            try
+            {
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                        .FirstOrDefaultAsync(c => c.Id == Guid.Parse(customerId));
+                if (request.Phone is not null)
+                {
+                    if (request.Phone.Contains("+84"))
+                    {
+                        request.Phone = request.Phone.Replace("+84", "0");
+                    }
+                    var check = Utils.CheckVNPhone(request.Phone);
+
+                    if (check == false)
+                        throw new ErrorResponse(404, (int)CustomerErrorEnums.INVALID_PHONENUMBER,
+                                            CustomerErrorEnums.INVALID_PHONENUMBER.GetDisplayName());
+                }
+
+                customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
+
+                await _unitOfWork.Repository<Customer>().UpdateDetached(customer);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<CustomerResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<CustomerResponse>(customer)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
             }
         }
 
@@ -236,5 +281,6 @@ namespace FINE.Service.Service
                 _customerFcmtokenService.RemoveFcmTokens(new List<string> { fcmToken });
             }
         }
+
     }
 }

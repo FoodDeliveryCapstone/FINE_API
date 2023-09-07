@@ -167,8 +167,8 @@ namespace FINE.Service.Helpers
         public enum NotifyErrorEnum
         {
             //404
-            [Display(Name = "Not found this notify Id!")]
-            NOT_FOUND_ID = 4041,
+            [Display(Name = "Not found this notify!")]
+            NOT_FOUND = 4041,
 
             //400
             [Display(Name = "This notify already exsist!")]

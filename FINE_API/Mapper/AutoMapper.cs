@@ -13,6 +13,7 @@ using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Request.Menu;
 using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.API.Controllers;
+using FINE.Service.Helpers;
 
 namespace FINE.API.Mapper
 {
@@ -75,8 +76,9 @@ namespace FINE.API.Mapper
             #region Product In Menu
             CreateMap<ProductInMenu, ProductInMenuResponse>().ReverseMap();
             CreateMap<ProductAttribute, ProductInMenuResponse>().ReverseMap();
-            CreateMap<ProductAttribute, ProductInCard>();
-            CreateMap<ProductAttribute, ProductRecommend>();
+            CreateMap<ProductAttribute, ProductInCardResponse>();
+            CreateMap<ProductAttribute, ProductRecommend>()
+                .ForMember(x => x.ImageUrl, opt => opt.MapFrom(dst => dst.Product.ImageUrl));
 
             //CreateMap<AddProductToMenuRequest, ProductInMenu>();
             //CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
@@ -105,7 +107,12 @@ namespace FINE.API.Mapper
             #region Customer
             CreateMap<Customer, CustomerResponse>().ReverseMap();
             CreateMap<CreateCustomerRequest, Customer>();
-            //CreateMap<UpdateCustomerRequest, Customer>();
+            CreateMap<UpdateCustomerRequest, Customer>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember !=null));
+            #endregion
+
+            #region Notify
+            CreateMap<Notify, NotifyResponse>().ReverseMap();
             #endregion
 
             #region Staff
