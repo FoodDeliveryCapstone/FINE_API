@@ -36,9 +36,12 @@ namespace FINE.Service.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         public OrderDetailService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IStaffService _staffService;
+        public OrderDetailService(IUnitOfWork unitOfWork, IMapper mapper, IStaffService staffService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _staffService = staffService;
         }
 
         public async Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging)
@@ -128,8 +131,44 @@ namespace FINE.Service.Service
                                                  .ToList();
                 var order = orderResponse.FirstOrDefault(x => x.OrderId == item.OrderId && x.StoreId == item.StoreId);
                 order.OrderDetailStoreStatus = item.OrderDetailStoreStatus;
-
                 ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.OrderId.ToString(), orderResponse);
+
+                #region check Order status and update
+                List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
+                if( !checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.StaffConfirm))
+                {
+                    //no d co sai, t moi chay cho m coi y
+                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    { 
+                        OrderStatus = OrderStatusEnum.StaffConfirm
+                    };
+                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                }
+                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.FinishPrepare))
+                {
+                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    {
+                        OrderStatus = OrderStatusEnum.FinishPrepare
+                    };
+                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                }
+                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.ShipperAssigned))
+                {
+                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    {
+                        OrderStatus = OrderStatusEnum.ShipperAssigned
+                    };
+                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                }
+                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.Delivering))
+                {
+                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    {
+                        OrderStatus = OrderStatusEnum.Delivering
+                    };
+                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                }
+                #endregion
             }
             return new BaseResponseViewModel<OrderByStoreResponse>()
             {
