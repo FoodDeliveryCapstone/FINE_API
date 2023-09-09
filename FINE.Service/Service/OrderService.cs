@@ -16,6 +16,7 @@ using FINE.Service.Attributes;
 using FINE.Service.Helpers;
 using Hangfire;
 using FirebaseAdmin.Messaging;
+using Azure;
 
 namespace FINE.Service.Service
 {
@@ -43,26 +44,52 @@ namespace FINE.Service.Service
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
         private readonly INotifyService _notifyService;
+        private readonly IFirebaseMessagingService _firebaseMessagingService;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService, IFirebaseMessagingService firebaseMessagingService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
             _paymentService = paymentService;
             _notifyService = notifyService;
+            _firebaseMessagingService = firebaseMessagingService;
         }
 
         public async Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging)
         {
             try
             {
+                var customer = _unitOfWork.Repository<Customer>().GetAll()
+                                            .Where(y => y.Id == Guid.Parse(customerId))
+                                            .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider).FirstOrDefault();
+
                 var order = _unitOfWork.Repository<Data.Entity.Order>().GetAll()
                                         .Where(x => x.CustomerId == Guid.Parse(customerId))
                                         .OrderByDescending(x => x.CheckInDate)
-                                        .ProjectTo<OrderResponse>(_mapper.ConfigurationProvider)
-                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                        Constants.DefaultPaging);
+                                        .ToList()
+                                        .Select(x => new OrderResponse
+                                        {
+                                            Id = x.Id,
+                                            OrderCode = x.OrderCode,
+                                            Customer = _mapper.Map<CustomerOrderResponse>(customer),
+                                            CheckInDate = x.CheckInDate,
+                                            TotalAmount = x.TotalAmount,
+                                            FinalAmount = x.FinalAmount,
+                                            TotalOtherAmount = x.TotalOtherAmount,
+                                            OtherAmounts = _mapper.Map<List<OrderOtherAmount>>(x.OtherAmounts),
+                                            OrderStatus = x.OrderStatus,
+                                            OrderType = x.OrderType,
+                                            TimeSlot = _mapper.Map<TimeSlotOrderResponse>(x.TimeSlot),
+                                            StationOrder = _unitOfWork.Repository<Station>().GetAll().Where(y => y.Id == x.StationId).ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider).FirstOrDefault(),
+                                            IsConfirm = x.IsConfirm,
+                                            IsPartyMode = x.IsPartyMode,
+                                            ItemQuantity = x.ItemQuantity,
+                                            BoxId = (x.OrderBoxes.Count() == 0 ? Guid.Empty : x.OrderBoxes.FirstOrDefault().BoxId),
+                                            OrderDetails = _mapper.Map<List<OrderDetailResponse>>(x.OrderDetails)
+                                        }).AsQueryable();
+
+                var response = order.PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<OrderResponse>()
                 {
@@ -70,9 +97,9 @@ namespace FINE.Service.Service
                     {
                         Page = paging.Page,
                         Size = paging.PageSize,
-                        Total = order.Item1
+                        Total = response.Item1
                     },
-                    Data = order.Item2.ToList()
+                    Data = response.Item2.ToList()
                 };
             }
             catch (Exception ex)
@@ -273,9 +300,9 @@ namespace FINE.Service.Service
             {
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
-                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                //if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
@@ -315,7 +342,6 @@ namespace FINE.Service.Service
                         CreateAt = DateTime.Now
                     };
                     order.Parties.Add(linkedOrder);
-
                 }
 
                 await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);
@@ -334,16 +360,16 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
+
                 #region Background Job
                 var messaging = FirebaseMessaging.DefaultInstance;
-                NotifyRequestModel notifyRequest = new NotifyRequestModel
+                NotifyOrderRequestModel notifyRequest = new NotifyOrderRequestModel
                 {
                     OrderCode = order.OrderCode,
                     CustomerId = customer.Id,
-                    OrderStatus = (OrderStatusEnum?)order.OrderStatus,
-                    Type = NotifyTypeEnum.ForOrder
+                    OrderStatus = (OrderStatusEnum?)order.OrderStatus
                 };
-                var notify =  _notifyService.CreateOrderNotify(notifyRequest).Result;
+                var notify = _notifyService.CreateOrderNotify(notifyRequest).Result;
                 var response = await messaging.SendAsync(new Message
                 {
                     Token = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token,
@@ -351,9 +377,14 @@ namespace FINE.Service.Service
                     {
                         Title = notify.Title,
                         Body = notify.Description,
-                    }
+                    },
+                    Data = new Dictionary<string, string>()
+                    {
+                        { "key", "tests" }
+                    },
                 });
                 #endregion
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -635,13 +666,13 @@ namespace FINE.Service.Service
 
                         var responseProduct = productAttInCard.Select(x => x.Key).ProjectTo<ProductInCardResponse>(_mapper.ConfigurationProvider).FirstOrDefaultAsync().Result;
                         responseProduct.Quantity = product.Quantity;
-                        result.Card.Add(responseProduct);   
+                        result.Card.Add(responseProduct);
 
                         CheckFixBoxRequest productRequestFill = productAttInCard.Select(x => new CheckFixBoxRequest()
-                                                                                {
-                                                                                    Product = x.Key,
-                                                                                    Quantity = product.Quantity
-                                                                                })
+                        {
+                            Product = x.Key,
+                            Quantity = product.Quantity
+                        })
                                                                             .FirstOrDefaultAsync().Result;
 
                         listProductInCard.Add(productRequestFill);
@@ -661,7 +692,7 @@ namespace FINE.Service.Service
 
                     result.Card.Add(result.Product);
                 }
-                else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess !=0)
+                else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess != 0)
                 {
                     var quantityCanAdd = addToBoxResult.QuantitySuccess;
                     result.Status = new StatusViewModel()
