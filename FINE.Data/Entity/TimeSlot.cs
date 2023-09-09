@@ -21,8 +21,6 @@ public partial class TimeSlot
 
     public DateTime? UpdateAt { get; set; }
 
-    public string? Description { get; set; }
-
     public virtual Destination Destination { get; set; } = null!;
 
     public virtual ICollection<Menu> Menus { get; set; } = new List<Menu>();

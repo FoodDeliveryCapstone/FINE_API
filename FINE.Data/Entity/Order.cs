@@ -37,6 +37,8 @@ public partial class Order
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 
+    public virtual ICollection<OrderBox> OrderBoxes { get; set; } = new List<OrderBox>();
+
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual ICollection<OtherAmount> OtherAmounts { get; set; } = new List<OtherAmount>();
