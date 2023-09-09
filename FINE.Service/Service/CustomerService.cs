@@ -236,37 +236,20 @@ namespace FINE.Service.Service
                                                     .Select(x => x.Token)
                                                     .FirstOrDefaultAsync();
 
-                var messaging = FirebaseMessaging.DefaultInstance;
-                var response = await messaging.SendAsync(new Message
+                Notification notification = new Notification
                 {
-                    Token = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token,
-                    Notification = new FirebaseAdmin.Messaging.Notification
-                    {
-                        Title = Constants.NOTIFICATION_INVITATION_TITLE,
-                        Body = String.Format("Bạn {0} gửi đến bạn lời mời gia nhập party được giao vào lúc {1}"
-                                        , admin.Customer.Name, coOrder.TimeSlot.ArriveTime),
-                    },
-                    Data = new Dictionary<string, string>()
+                    Title = Constants.NOTIFICATION_INVITATION_TITLE,
+                    Body = String.Format("Bạn {0} gửi đến bạn lời mời gia nhập party được giao vào lúc {1}"
+                                        , admin.Customer.Name, coOrder.TimeSlot.ArriveTime)
+                };
+
+                var data = new Dictionary<string, string>()
                     {
                         { "key", partyCode },
                         { "type", NotifyTypeEnum.ForInvitation.ToString()}
-                    },
-                });
+                    };
 
-                //Notification notification = new Notification
-                //{
-                //    Title = Constants.NOTIFICATION_INVITATION_TITLE,
-                //    Body = String.Format("Bạn {0} gửi đến bạn lời mời gia nhập party được giao vào lúc {1}"
-                //                        , admin.Customer.Name, coOrder.TimeSlot.ArriveTime)
-                //};
-
-                //var data = new Dictionary<string, string>()
-                //    {
-                //        { "key", partyCode },
-                //        { "type", NotifyTypeEnum.ForInvitation.ToString()}
-                //    };
-
-                //_fm.SendToToken(customerToken, notification, data);            
+                _fm.SendToToken(customerToken, notification, data);
             }
             catch (Exception ex)
             {

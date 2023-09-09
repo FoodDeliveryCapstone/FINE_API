@@ -44,16 +44,16 @@ namespace FINE.Service.Service
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
         private readonly INotifyService _notifyService;
-        private readonly IFirebaseMessagingService _firebaseMessagingService;
+        private readonly IFirebaseMessagingService _fm;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService, IFirebaseMessagingService firebaseMessagingService)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService, IFirebaseMessagingService fm)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
             _paymentService = paymentService;
             _notifyService = notifyService;
-            _firebaseMessagingService = firebaseMessagingService;
+            _fm = fm;
         }
 
         public async Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging)
@@ -362,27 +362,29 @@ namespace FINE.Service.Service
                                                 .FirstOrDefault();
 
                 #region Background Job
-                var messaging = FirebaseMessaging.DefaultInstance;
                 NotifyOrderRequestModel notifyRequest = new NotifyOrderRequestModel
                 {
                     OrderCode = order.OrderCode,
                     CustomerId = customer.Id,
                     OrderStatus = (OrderStatusEnum?)order.OrderStatus
                 };
+
                 var notify = _notifyService.CreateOrderNotify(notifyRequest).Result;
-                var response = await messaging.SendAsync(new Message
+
+                var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token;
+
+                Notification notification = new Notification
                 {
-                    Token = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token,
-                    Notification = new FirebaseAdmin.Messaging.Notification
+                    Title = Constants.SUC_ORDER_CREATED,
+                    Body = String.Format("Đơn hàng của bạn đã được đặt thành công !!!")
+                };
+
+                var data = new Dictionary<string, string>()
                     {
-                        Title = notify.Title,
-                        Body = notify.Description,
-                    },
-                    Data = new Dictionary<string, string>()
-                    {
-                        { "type", NotifyTypeEnum.ForInvitation.ToString()}
-                    },
-                });
+                        { "type", NotifyTypeEnum.ForUsual.ToString()}
+                    };
+
+                BackgroundJob.Enqueue(() =>  _fm.SendToToken(customerToken, notification, data));
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
