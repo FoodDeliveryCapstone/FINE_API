@@ -300,9 +300,9 @@ namespace FINE.Service.Service
             {
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                //if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
-                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
@@ -380,7 +380,7 @@ namespace FINE.Service.Service
                     },
                     Data = new Dictionary<string, string>()
                     {
-                        { "key", "tests" }
+                        { "type", NotifyTypeEnum.ForInvitation.ToString()}
                     },
                 });
                 #endregion
