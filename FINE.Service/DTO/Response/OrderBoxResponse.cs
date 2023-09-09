@@ -9,10 +9,10 @@ namespace FINE.Service.DTO.Response
 {
     public class OrderBoxResponse
     {
-        public Guid OrderId { get; set; }
-        public Guid BoxId { get; set; }
-        public OrderBoxStatusEnum Status { get; set; }
-        public DateTime CreateAt { get; set; }
+        public Guid? OrderId { get; set; }
+        public Guid? BoxId { get; set; }
+        public OrderBoxStatusEnum? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
     }
 }

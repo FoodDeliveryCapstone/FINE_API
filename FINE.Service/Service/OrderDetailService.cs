@@ -35,7 +35,6 @@ namespace FINE.Service.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public OrderDetailService(IUnitOfWork unitOfWork, IMapper mapper)
         private readonly IStaffService _staffService;
         public OrderDetailService(IUnitOfWork unitOfWork, IMapper mapper, IStaffService staffService)
         {
@@ -137,7 +136,6 @@ namespace FINE.Service.Service
                 List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
                 if( !checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.StaffConfirm))
                 {
-                    //no d co sai, t moi chay cho m coi y
                     var updateOrderStatusRequest = new UpdateOrderStatusRequest()
                     { 
                         OrderStatus = OrderStatusEnum.StaffConfirm

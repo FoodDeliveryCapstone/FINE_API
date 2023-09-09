@@ -15,6 +15,7 @@ using static FINE.Service.Helpers.ErrorEnum;
 using ZXing.Windows.Compatibility;
 using AutoMapper.QueryableExtensions;
 using FINE.Service.Attributes;
+using FINE.Service.DTO.Request.Order;
 
 namespace FINE.Service.Service
 {
@@ -29,10 +30,12 @@ namespace FINE.Service.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public BoxService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IStaffService _staffService;
+        public BoxService(IUnitOfWork unitOfWork, IMapper mapper, IStaffService staffService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _staffService = staffService;
         }
 
         public async Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(List<AddOrderToBoxRequest> request)
@@ -56,7 +59,7 @@ namespace FINE.Service.Service
                     if (order == null)
                         throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
                             OrderErrorEnums.NOT_FOUND.GetDisplayName());
-                    if (order.OrderStatus != (int)OrderStatusEnum.Delivering)
+                    if (order.OrderStatus != (int)OrderStatusEnum.ShipperAssigned)
                         throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
                             OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
 
@@ -71,6 +74,12 @@ namespace FINE.Service.Service
                     };
                     await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
                     await _unitOfWork.CommitAsync();
+
+                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    {
+                        OrderStatus = OrderStatusEnum.Delivering
+                    };
+                    var updateOrder = await _staffService.UpdateOrderStatus(item.OrderId.ToString(), updateOrderStatusRequest);
                 }
 
                 return new BaseResponseViewModel<OrderBoxResponse>()
