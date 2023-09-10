@@ -168,7 +168,7 @@ namespace FINE.Service.Helpers
         }
         public enum NotifyTypeEnum
         {
-            ForOrder = 1,
+            ForUsual = 1,
             ForInvitation = 2,
         }
     }

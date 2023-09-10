@@ -11,12 +11,15 @@ using FINE.Service.Exceptions;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using FirebaseAdmin.Auth;
+using FirebaseAdmin.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
 using NetTopologySuite.Mathematics;
+using StackExchange.Redis;
 using System;
 using System.Linq.Dynamic.Core;
+using System.Runtime.CompilerServices;
 using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -29,6 +32,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
+        Task SendInvitation(string customerId, string partyCode);
         Task Logout(string fcmToken);
     }
     public class CustomerService : ICustomerService
@@ -38,15 +42,20 @@ namespace FINE.Service.Service
         private readonly IConfiguration _configuration;
         private readonly IFcmTokenService _customerFcmtokenService;
         private readonly IAccountService _accountService;
+        private readonly IFirebaseMessagingService _fm;
+        private readonly INotifyService _notifyService;
+
 
         public CustomerService(IUnitOfWork unitOfWork, IMapper mapper, IFcmTokenService customerFcmtokenService,
-                                IConfiguration configuration, IAccountService accountService)
+                                IConfiguration configuration, IAccountService accountService, INotifyService notifyService, IFirebaseMessagingService fm)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _configuration = configuration;
             _customerFcmtokenService = customerFcmtokenService;
             _accountService = accountService;
+            _notifyService = notifyService;
+            _fm = fm;
         }
 
         public async Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data)
@@ -190,7 +199,7 @@ namespace FINE.Service.Service
             try
             {
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
-                            .Where(x => x.Phone.Contains(phoneNumber))
+                            .Where(x => x.Phone.Equals(phoneNumber))
                             .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
                             .FirstOrDefaultAsync();
 
@@ -212,6 +221,43 @@ namespace FINE.Service.Service
 
         }
 
+        public async Task SendInvitation(string customerId, string partyCode)
+        {
+            try
+            {
+                var party = await _unitOfWork.Repository<Party>().GetAll()
+                                                    .FirstOrDefaultAsync(x => x.PartyCode == partyCode);
+
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+
+                var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(customerId)).FirstOrDefault();
+
+                var customerToken = await _unitOfWork.Repository<Fcmtoken>().GetAll()
+                                                    .Where(x => x.UserId == Guid.Parse(customerId))
+                                                    .Select(x => x.Token)
+                                                    .FirstOrDefaultAsync();
+
+                Notification notification = new Notification
+                {
+                    Title = Constants.NOTIFICATION_INVITATION_TITLE,
+                    Body = String.Format("Bạn {0} gửi đến bạn lời mời gia nhập party được giao vào lúc {1}"
+                                        , admin.Customer.Name, coOrder.TimeSlot.ArriveTime)
+                };
+
+                var data = new Dictionary<string, string>()
+                    {
+                        { "key", partyCode },
+                        { "type", NotifyTypeEnum.ForInvitation.ToString()}
+                    };
+
+                _fm.SendToToken(customerToken, notification, data);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request)
         {
             try
@@ -221,6 +267,14 @@ namespace FINE.Service.Service
                 newCustomer.Id = Guid.NewGuid();
                 newCustomer.CustomerCode = newCustomer.Id.ToString() + '_' + DateTime.Now.Date.ToString("ddMMyyyy");
                 newCustomer.CreateAt = DateTime.Now;
+
+                if(newCustomer.Phone is not null)
+                {
+                    if (newCustomer.Phone.Contains("+84"))
+                    {
+                        newCustomer.Phone = newCustomer.Phone.Replace("+84", "0");
+                    }
+                }
 
                 await _unitOfWork.Repository<Customer>().InsertAsync(newCustomer);
 

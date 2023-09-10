@@ -22,7 +22,8 @@ namespace FINE.Service.Service
 {
     public interface INotifyService
     {
-        Task<Notify> CreateOrderNotify(NotifyRequestModel request);
+        Task<Notify> CreateOrderNotify(NotifyOrderRequestModel request);
+        Task<Notify> CreateNotify(NotifyRequestModel request);
         Task<BaseResponseViewModel<dynamic>> UpdateIsReadForNotify(string? notifyId, bool? isRead);
         Task<BaseResponseViewModel<List<NotifyResponse>>> GetAllNotifyForUser(string customerId);
         Task<BaseResponseViewModel<NotifyResponse>> GetNotifyForUserById(string notifyId);
@@ -39,7 +40,7 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Notify> CreateOrderNotify(NotifyRequestModel request)
+        public async Task<Notify> CreateOrderNotify(NotifyOrderRequestModel request)
         {
             try
             {
@@ -50,26 +51,53 @@ namespace FINE.Service.Service
                     IsRead = false,
                     IsActive = true,
                     CreateAt = DateTime.Now,
+                    Title = "Trạng thái đơn hàng"
                 };
 
-                if (request.Type == NotifyTypeEnum.ForOrder)
+                switch (request.OrderStatus)
                 {
-                    switch (request.OrderStatus)
-                    {
-                        case OrderStatusEnum.Processing:
-                            newNotify.Title = "Trạng thái đơn hàng";
-                            newNotify.Description = $"Đơn hàng mới {request.OrderCode} ";
-                            break;
-                        case OrderStatusEnum.Finished:
-                            newNotify.Title = "Trạng thái đơn hàng";
-                            newNotify.Description = $"Đơn hàng {request.OrderCode} hoàn thành";
-                            break;
-                        case OrderStatusEnum.UserCancel:
-                            newNotify.Title = "Trạng thái đơn hàng";
-                            newNotify.Description = $"Đơn hàng {request.OrderCode} đã hủy";
-                            break;
-                    }
+                    case OrderStatusEnum.Processing:
+                        newNotify.Description = $"Đơn hàng mới {request.OrderCode}.";
+                        break;
+                    case OrderStatusEnum.StaffConfirm:
+                        newNotify.Description = $"Đơn hàng {request.OrderCode} đang được chuẩn bị tại cửa hàng.";
+                        break;
+                    case OrderStatusEnum.Delivering:
+                        newNotify.Description = $"Đơn hàng {request.OrderCode} đang đến station.";
+                        break;
+                    case OrderStatusEnum.Finished:
+                        newNotify.Description = $"Đơn hàng {request.OrderCode} đã đến.";
+                        break;
+                    case OrderStatusEnum.UserCancel:
+                        newNotify.Description = $"Đơn hàng {request.OrderCode} đã hủy";
+                        break;
                 }
+
+                await _unitOfWork.Repository<Notify>().InsertAsync(newNotify);
+                await _unitOfWork.CommitAsync();
+
+                return newNotify;
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<Notify> CreateNotify(NotifyRequestModel request)
+        {
+            try
+            {
+                var newNotify = new Notify
+                {
+                    Id = Guid.NewGuid(),
+                    CustomerId = request.CustomerId,
+                    IsRead = false,
+                    IsActive = true,
+                    CreateAt = DateTime.Now,
+                    Title = request.Title
+                };
+
                 await _unitOfWork.Repository<Notify>().InsertAsync(newNotify);
                 await _unitOfWork.CommitAsync();
 

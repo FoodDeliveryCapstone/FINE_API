@@ -142,5 +142,30 @@ namespace FINE.API.Controllers
             return Ok();
         }
 
+        /// <summary>
+        ///  Invitation
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        [HttpPost("invitation")]
+        public async Task SendInvitation(string customerId, string partyCode)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customer = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customer == null)
+                {
+                    Unauthorized();
+                }
+                //var customerId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
+                await _customerService.SendInvitation(customerId, partyCode);
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
     }
 }
