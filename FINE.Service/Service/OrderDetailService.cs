@@ -29,7 +29,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
-        Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string stationId = null);
+        Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, string stationId = null);
 
     }
 
@@ -183,7 +183,7 @@ namespace FINE.Service.Service
 
 
         }
-        public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string stationId = null)
+        public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId,string stationId = null)
         {
             try
             {
@@ -194,6 +194,10 @@ namespace FINE.Service.Service
                     orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
                                              .OrderByDescending(x => x.CheckInDate)
                                              .ToList();
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId))
+                                            .OrderByDescending(x => x.CheckInDate)
+                                            .ToList();
                     foreach (var order in orderResponse)
                     {
                         productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
