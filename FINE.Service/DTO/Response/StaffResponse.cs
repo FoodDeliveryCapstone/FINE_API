@@ -24,4 +24,11 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
     }
+
+    public class SplitOrderResponse
+    {
+        public string? ProductName { get; set; } = null!;
+        public int Quantity { get; set; }
+        public Guid TimeSlotId { get; set; }
+    }
 }

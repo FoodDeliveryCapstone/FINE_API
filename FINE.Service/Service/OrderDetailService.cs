@@ -10,6 +10,7 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Metadata;
 using StackExchange.Redis;
 using System;
@@ -25,9 +26,10 @@ namespace FINE.Service.Service
     public interface IOrderDetailService
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetail(string storeId);
+        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
+        Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string stationId = null);
 
     }
 
@@ -73,15 +75,15 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetail(string storeId)
+        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId)
         {
             try
             {
                 // Get from Redis
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
-                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
+                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) && x.StationId == Guid.Parse(stationId))
                                              .OrderByDescending(x => x.CheckInDate)
-                                             .ToList();
+                                             .ToList();            
 
                 return new BaseResponsePagingViewModel<OrderByStoreResponse>()
                 {
@@ -180,6 +182,83 @@ namespace FINE.Service.Service
             };
 
 
+        }
+        public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string stationId = null)
+        {
+            try
+            {
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);                
+                var productInMenuList = new List<SplitOrderResponse>();
+                if (stationId == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
+                                             .OrderByDescending(x => x.CheckInDate)
+                                             .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                           .ToList()); ;
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) && x.StationId == Guid.Parse(stationId))
+                                             .OrderByDescending(x => x.CheckInDate)
+                                             .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList()); ;
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+
+                return new BaseResponsePagingViewModel<SplitOrderResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Total = productInMenuList.Count()
+                    },
+                    Data = productInMenuList
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
         }
     }
 }

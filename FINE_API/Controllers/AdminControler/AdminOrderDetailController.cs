@@ -39,15 +39,15 @@ namespace FINE.API.Controllers.AdminControler
         }
 
         /// <summary>
-        /// Get staff orders detail by store
+        /// Get split orders detail by store and station
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpGet("staff/{storeId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<OrderByStoreResponse>>> GetStaffOrderDetail(string storeId)
+        [HttpGet("staff/{storeId}/{stationId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderByStoreResponse>>> GetSplitOrderDetail(string storeId, string stationId)
         {
             try
             {
-                return await _orderDetailService.GetStaffOrderDetail(storeId);
+                return await _orderDetailService.GetSplitOrderDetail(storeId, stationId);
             }
             catch (ErrorResponse ex)
             {
@@ -82,6 +82,24 @@ namespace FINE.API.Controllers.AdminControler
             try
             {
                 return await _orderDetailService.GetStaffOrderDetailByOrderId(orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+
+        /// <summary>
+        /// Get split orders by store 
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpGet("splitOrder/{storeId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<SplitOrderResponse>>> GetSplitOrder(string storeId, string? stationId)
+        {
+            try
+            {
+                return await _orderDetailService.GetSplitOrder(storeId, stationId);
             }
             catch (ErrorResponse ex)
             {

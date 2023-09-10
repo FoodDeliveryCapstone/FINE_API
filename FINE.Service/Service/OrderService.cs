@@ -344,6 +344,7 @@ namespace FINE.Service.Service
                       StoreId = group.Key,
                       CustomerName = resultOrder.Customer.Name,
                       TimeSlot = resultOrder.TimeSlot,
+                      StationId = resultOrder.StationOrder.Id,
                       StationName = resultOrder.StationOrder.Name,
                       CheckInDate = order.CheckInDate,
                       OrderType = resultOrder.OrderType,

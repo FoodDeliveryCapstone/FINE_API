@@ -163,12 +163,12 @@ namespace FINE.Service.DTO.Response
         public Guid StoreId { get; set; }
         public string? CustomerName { get; set; }
         public TimeSlotOrderResponse TimeSlot { get; set; }
+        public Guid StationId { get; set; }
         public string? StationName { get; set; }
         public DateTime? CheckInDate { get; set; }
         public int? OrderType { get; set; }
         [NotMapped]
         public OrderStatusEnum OrderDetailStoreStatus { get; set; }
         public List<OrderDetailResponse>? OrderDetails { get; set; }
-
     }
 }
