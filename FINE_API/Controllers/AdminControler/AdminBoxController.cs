@@ -20,22 +20,22 @@ namespace FINE.API.Controllers
             _boxService = boxService;
         }
 
-        /// <summary>
-        /// Add Order to Box
-        /// </summary>
-        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<OrderBoxResponse>>> AddOrderToBox([FromBody] List<AddOrderToBoxRequest> request)
-        {
-            try
-            {
-                return await _boxService.AddOrderToBox(request);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
+        ///// <summary>
+        ///// Add Order to Box
+        ///// </summary>
+        //[Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        //[HttpPost]
+        //public async Task<ActionResult<BaseResponseViewModel<OrderBoxResponse>>> AddOrderToBox([FromBody] List<AddOrderToBoxRequest> request)
+        //{
+        //    try
+        //    {
+        //        return await _boxService.AddOrderToBox(request);
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        return BadRequest(ex.Error);
+        //    }
+        //}
 
         /// <summary>
         /// Get All Box by Station Id

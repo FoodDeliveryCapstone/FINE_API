@@ -16,12 +16,13 @@ using ZXing.Windows.Compatibility;
 using AutoMapper.QueryableExtensions;
 using FINE.Service.Attributes;
 using FINE.Service.DTO.Request.Order;
+using Microsoft.EntityFrameworkCore;
 
 namespace FINE.Service.Service
 {
     public interface IBoxService
     {
-        Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(List<AddOrderToBoxRequest> request);
+        Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, AddOrderToBoxRequest request);
         Task<BaseResponsePagingViewModel<BoxResponse>> GetBoxByStation(string stationId, BoxResponse filter, PagingRequest paging);
 
     }
@@ -38,49 +39,44 @@ namespace FINE.Service.Service
             _staffService = staffService;
         }
 
-        public async Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(List<AddOrderToBoxRequest> request)
+        public async Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, AddOrderToBoxRequest request)
         {
             try
             {
                 var key = Utils.GenerateRandomCode(10);
-                foreach (var item in request)
+                var activeBox = await _unitOfWork.Repository<Box>().GetAll()
+                    .Where(x => x.IsActive == true && x.StationId == Guid.Parse(stationId))
+                    .ToListAsync();
+                if (activeBox == null)
+                    throw new ErrorResponse(404, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
+                       BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());
+
+                var box = activeBox.FirstOrDefault();
+
+                var order = _unitOfWork.Repository<Order>().GetAll()
+                                .FirstOrDefault(x => x.Id == request.OrderId);                   
+                if (order == null)
+                    throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                        OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                if (order.OrderStatus != (int)OrderStatusEnum.FinishPrepare)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
+                        OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
+
+                var orderBox = new OrderBox()
                 {
-                    var box = _unitOfWork.Repository<Box>().GetAll()
-                                .FirstOrDefault(x => x.Id == item.BoxId);
-                    if (box == null)
-                        throw new ErrorResponse(404, (int)BoxErrorEnums.NOT_FOUND,
-                           BoxErrorEnums.NOT_FOUND.GetDisplayName());
-                    if (box.IsActive == false)
-                        throw new ErrorResponse(404, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
-                           BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());
+                    Id = Guid.NewGuid(),
+                    OrderId = request.OrderId,
+                    BoxId = box.Id,
+                    Key = key,
+                    Status = (int)OrderBoxStatusEnum.NotPicked,
+                    CreateAt = DateTime.Now,
+                };
+                await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
+                await _unitOfWork.CommitAsync();
 
-                    var order = _unitOfWork.Repository<Order>().GetAll()
-                                    .FirstOrDefault(x => x.Id == item.OrderId);                   
-                    if (order == null)
-                        throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
-                            OrderErrorEnums.NOT_FOUND.GetDisplayName());
-                    if (order.OrderStatus != (int)OrderStatusEnum.ShipperAssigned)
-                        throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
-                            OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
-
-                    var orderBox = new OrderBox()
-                    {
-                        Id = Guid.NewGuid(),
-                        OrderId = item.OrderId,
-                        BoxId = item.BoxId,
-                        Key = key,
-                        Status = (int)OrderBoxStatusEnum.NotPicked,
-                        CreateAt = DateTime.Now,
-                    };
-                    await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
-                    await _unitOfWork.CommitAsync();
-
-                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
-                    {
-                        OrderStatus = OrderStatusEnum.Delivering
-                    };
-                    var updateOrder = await _staffService.UpdateOrderStatus(item.OrderId.ToString(), updateOrderStatusRequest);
-                }
+                box.IsActive = false;
+                await _unitOfWork.Repository<Box>().UpdateDetached(box);
+                await _unitOfWork.CommitAsync();
 
                 return new BaseResponseViewModel<OrderBoxResponse>()
                 {

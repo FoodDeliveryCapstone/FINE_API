@@ -29,7 +29,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
-        Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, string stationId = null);
+        Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
 
     }
 
@@ -38,11 +38,13 @@ namespace FINE.Service.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IStaffService _staffService;
-        public OrderDetailService(IUnitOfWork unitOfWork, IMapper mapper, IStaffService staffService)
+        private readonly IBoxService _boxService;
+        public OrderDetailService(IUnitOfWork unitOfWork, IMapper mapper, IStaffService staffService, IBoxService boxService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _staffService = staffService;
+            _boxService = boxService;
         }
 
         public async Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging)
@@ -136,13 +138,14 @@ namespace FINE.Service.Service
 
                 #region check Order status and update
                 List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
-                if( !checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.StaffConfirm))
+                if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.StaffConfirm))
                 {
                     var updateOrderStatusRequest = new UpdateOrderStatusRequest()
-                    { 
+                    {
                         OrderStatus = OrderStatusEnum.StaffConfirm
                     };
                     var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+
                 }
                 else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.FinishPrepare))
                 {
@@ -151,6 +154,12 @@ namespace FINE.Service.Service
                         OrderStatus = OrderStatusEnum.FinishPrepare
                     };
                     var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+
+                    var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                    { 
+                        OrderId = order.OrderId
+                    };
+                    var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), addOrderToBoxRequest);
                 }
                 else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.ShipperAssigned))
                 {
@@ -165,6 +174,14 @@ namespace FINE.Service.Service
                     var updateOrderStatusRequest = new UpdateOrderStatusRequest()
                     {
                         OrderStatus = OrderStatusEnum.Delivering
+                    };
+                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                }
+                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.BoxStored))
+                {
+                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    {
+                        OrderStatus = OrderStatusEnum.BoxStored
                     };
                     var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
                 }
@@ -183,7 +200,7 @@ namespace FINE.Service.Service
 
 
         }
-        public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId,string stationId = null)
+        public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status, string stationId = null)
         {
             try
             {
@@ -191,11 +208,9 @@ namespace FINE.Service.Service
                 var productInMenuList = new List<SplitOrderResponse>();
                 if (stationId == null)
                 {
-                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
-                                             .OrderByDescending(x => x.CheckInDate)
-                                             .ToList();
                     orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
-                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId))
+                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                            && (int)x.OrderDetailStoreStatus == status)
                                             .OrderByDescending(x => x.CheckInDate)
                                             .ToList();
                     foreach (var order in orderResponse)
@@ -206,7 +221,7 @@ namespace FINE.Service.Service
                             Quantity = x.Quantity,
                             TimeSlotId = Guid.Parse(order.TimeSlot.Id),
                         })
-                           .ToList()); ;
+                        .ToList()); 
                     }
                     productInMenuList = productInMenuList
                         .GroupBy(x => new {
@@ -223,7 +238,10 @@ namespace FINE.Service.Service
                 }
                 else
                 {
-                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) && x.StationId == Guid.Parse(stationId))
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) 
+                                             && x.StationId == Guid.Parse(stationId)
+                                             && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                             && (int)x.OrderDetailStoreStatus == status)
                                              .OrderByDescending(x => x.CheckInDate)
                                              .ToList();
                     foreach (var order in orderResponse)
@@ -234,7 +252,7 @@ namespace FINE.Service.Service
                             Quantity = x.Quantity,
                             TimeSlotId = Guid.Parse(order.TimeSlot.Id),
                         })
-                        .ToList()); ;
+                        .ToList());
                     }
                     productInMenuList = productInMenuList
                         .GroupBy(x => new {

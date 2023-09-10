@@ -10,7 +10,6 @@ namespace FINE.Service.DTO.Request.Box
     public class AddOrderToBoxRequest
     {
         public Guid OrderId { get; set; }
-        public Guid BoxId { get; set; }
     }
 
     public class BoxRequest
