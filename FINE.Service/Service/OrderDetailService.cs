@@ -148,15 +148,7 @@ namespace FINE.Service.Service
                     #region check Order status and update
                     List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
                     //check if every order detail in a order have change status then change order status
-                    if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.StaffConfirm))
-                    {
-                        var updateOrderStatusRequest = new UpdateOrderStatusRequest()
-                        {
-                            OrderStatus = OrderStatusEnum.StaffConfirm
-                        };
-                        var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
-                    }
-                    else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.FinishPrepare))
+                    if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.FinishPrepare))
                     {
                         var updateOrderStatusRequest = new UpdateOrderStatusRequest()
                         {
@@ -170,7 +162,7 @@ namespace FINE.Service.Service
                         };
                         var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), addOrderToBoxRequest);
                     }
-                    else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.ShipperAssigned))
+                    else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.Delivering))
                     {
                         var updateOrderStatusRequest = new UpdateOrderStatusRequest()
                         {
