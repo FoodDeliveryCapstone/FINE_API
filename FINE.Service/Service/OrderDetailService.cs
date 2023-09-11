@@ -26,7 +26,7 @@ namespace FINE.Service.Service
     public interface IOrderDetailService
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, string timeslot = null);
+        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, int status, string timeslot = null);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
         Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
@@ -78,7 +78,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, string timeslotId = null)
+        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, int status, string timeslotId = null)
         {
             try
             {
@@ -86,7 +86,9 @@ namespace FINE.Service.Service
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
                 if (timeslotId == null)
                 {
-                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) && x.StationId == Guid.Parse(stationId))
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) 
+                                             && x.StationId == Guid.Parse(stationId)
+                                             && (int)x.OrderDetailStoreStatus == status)
                                              .OrderByDescending(x => x.CheckInDate)
                                              .ToList();
                 }
@@ -94,6 +96,7 @@ namespace FINE.Service.Service
                 {
                     orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) 
                                              && x.StationId == Guid.Parse(stationId)
+                                             && (int)x.OrderDetailStoreStatus == status
                                              && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId))
                                              .OrderByDescending(x => x.CheckInDate)
                                              .ToList();
@@ -188,6 +191,7 @@ namespace FINE.Service.Service
                             OrderStatus = OrderStatusEnum.BoxStored
                         };
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                        ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.DELETE, order.OrderId.ToString());
                     }
                     #endregion
                 }
