@@ -32,7 +32,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
-        Task SendInvitation(string customerId, string partyCode);
+        Task SendInvitation(string customerId, string adminId, string partyCode);
         Task Logout(string fcmToken);
     }
     public class CustomerService : ICustomerService
@@ -221,7 +221,7 @@ namespace FINE.Service.Service
 
         }
 
-        public async Task SendInvitation(string customerId, string partyCode)
+        public async Task SendInvitation(string customerId,string adminId, string partyCode)
         {
             try
             {
@@ -230,7 +230,7 @@ namespace FINE.Service.Service
 
                 CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
-                var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(customerId)).FirstOrDefault();
+                var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(adminId)).FirstOrDefault();
 
                 var customerToken = await _unitOfWork.Repository<Fcmtoken>().GetAll()
                                                     .Where(x => x.UserId == Guid.Parse(customerId))
