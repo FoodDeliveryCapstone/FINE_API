@@ -47,7 +47,7 @@ namespace FINE.Service.Service
                     OrderId = order.Id,
                     Amount = order.FinalAmount,
                     PaymentType = (int)paymentType,
-                    Status = (int)PaymentStatusEnum.Finish,
+                    //Status = (int)PaymentStatusEnum.Finish,
                     CreateAt = DateTime.Now
                 };
 

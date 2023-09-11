@@ -69,7 +69,7 @@ namespace FINE.Service.Service
                     AccountId = newCreditAccount.Id,
                     Amount = 10000,
                     IsIncrease = true,
-                    Status = (int)TransactionStatusEnum.Finish,
+                    //Status = (int)TransactionStatusEnum.Finish,
                     Type = (int)TransactionTypeEnum.Recharge,
                     Notes = "chào đón khách hàng mới",
                     CreatedAt = DateTime.Now
@@ -117,7 +117,7 @@ namespace FINE.Service.Service
                                 AccountId = account.Id,
                                 Amount = amount,
                                 IsIncrease = true,
-                                Status = (int)TransactionStatusEnum.Finish,
+                                //Status = (int)TransactionStatusEnum.Finish,
                                 Type = (int)TransactionTypeEnum.Recharge,
                                 CreatedAt = DateTime.Now
                             };
@@ -151,7 +151,7 @@ namespace FINE.Service.Service
                                 AccountId = account.Id,
                                 Amount = amount,
                                 IsIncrease = false,
-                                Status = (int)TransactionStatusEnum.Finish,
+                                //Status = (int)TransactionStatusEnum.Finish,
                                 Type = (int)TransactionTypeEnum.Payment,
                                 CreatedAt = DateTime.Now
                             };
