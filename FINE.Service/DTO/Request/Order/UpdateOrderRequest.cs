@@ -24,8 +24,13 @@ namespace FINE.Service.DTO.Request.Order
     
     public class UpdateOrderDetailStatusRequest
     {
+        public OrderStatusEnum OrderDetailStoreStatus { get; set; }
+        public List<ListOrderStoreRequest> ListStoreAndOrder { get; set; }
+    }
+
+    public class ListOrderStoreRequest
+    {
         public Guid OrderId { get; set; }
         public Guid StoreId { get; set; }
-        public OrderStatusEnum OrderDetailStoreStatus { get; set; }
     }
 }

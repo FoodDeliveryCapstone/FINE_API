@@ -27,9 +27,10 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId);
-        Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request);
+        Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
         Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
+
 
     }
 
@@ -125,80 +126,83 @@ namespace FINE.Service.Service
 
         }
 
-        public async Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(List<UpdateOrderDetailStatusRequest> request)
+        public async Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request)
         {
-            foreach (var item in request)
+            try
             {
-                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
-                orderResponse = orderResponse.OrderByDescending(x => x.CheckInDate)
-                                                 .ToList();
-                var order = orderResponse.FirstOrDefault(x => x.OrderId == item.OrderId && x.StoreId == item.StoreId);
-                order.OrderDetailStoreStatus = item.OrderDetailStoreStatus;
-                ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.OrderId.ToString(), orderResponse);
+                foreach (var item in request.ListStoreAndOrder)
+                {
+                    List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
+                    orderResponse = orderResponse.OrderByDescending(x => x.CheckInDate)
+                                                     .ToList();
+                    var order = orderResponse.FirstOrDefault(x => x.OrderId == item.OrderId && x.StoreId == item.StoreId);
+                    //cannot update to previous status 
+                    if((int)order.OrderDetailStoreStatus > (int)request.OrderDetailStoreStatus)
+                        throw new ErrorResponse(404, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
+                           OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
 
-                #region check Order status and update
-                List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
-                if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.StaffConfirm))
-                {
-                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
-                    {
-                        OrderStatus = OrderStatusEnum.StaffConfirm
-                    };
-                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                    order.OrderDetailStoreStatus = request.OrderDetailStoreStatus;
+                    
+                    ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.OrderId.ToString(), orderResponse);
 
-                }
-                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.FinishPrepare))
-                {
-                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    #region check Order status and update
+                    List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
+                    //check if every order detail in a order have change status then change order status
+                    if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.StaffConfirm))
                     {
-                        OrderStatus = OrderStatusEnum.FinishPrepare
-                    };
-                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                        var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                        {
+                            OrderStatus = OrderStatusEnum.StaffConfirm
+                        };
+                        var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                    }
+                    else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.FinishPrepare))
+                    {
+                        var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                        {
+                            OrderStatus = OrderStatusEnum.FinishPrepare
+                        };
+                        var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
 
-                    var addOrderToBoxRequest = new AddOrderToBoxRequest()
-                    { 
-                        OrderId = order.OrderId
-                    };
-                    var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), addOrderToBoxRequest);
-                }
-                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.ShipperAssigned))
-                {
-                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                        var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                        {
+                            OrderId = order.OrderId
+                        };
+                        var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), addOrderToBoxRequest);
+                    }
+                    else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.ShipperAssigned))
                     {
-                        OrderStatus = OrderStatusEnum.ShipperAssigned
-                    };
-                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
-                }
-                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.Delivering))
-                {
-                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                        var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                        {
+                            OrderStatus = OrderStatusEnum.Delivering
+                        };
+                        var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                    }
+                    else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.BoxStored))
                     {
-                        OrderStatus = OrderStatusEnum.Delivering
-                    };
-                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                        var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                        {
+                            OrderStatus = OrderStatusEnum.BoxStored
+                        };
+                        var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+                    }
+                    #endregion
                 }
-                else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.BoxStored))
+                return new BaseResponseViewModel<OrderByStoreResponse>()
                 {
-                    var updateOrderStatusRequest = new UpdateOrderStatusRequest()
+                    Status = new StatusViewModel()
                     {
-                        OrderStatus = OrderStatusEnum.BoxStored
-                    };
-                    var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
-                }
-                #endregion
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    //Data =
+                };
             }
-            return new BaseResponseViewModel<OrderByStoreResponse>()
+            catch(ErrorResponse ex)
             {
-                Status = new StatusViewModel()
-                {
-                    Message = "Success",
-                    Success = true,
-                    ErrorCode = 0
-                },
-                //Data =
-            };
-
-
+                throw ex;
+            }
         }
         public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status, string stationId = null)
         {
@@ -282,5 +286,7 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
+       
     }
 }

@@ -60,7 +60,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>    
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpPut("status/storeId/orderId")]
-        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> UpdateOrderStatus([FromBody] List<UpdateOrderDetailStatusRequest> request)
+        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> UpdateOrderStatus([FromBody] UpdateOrderDetailStatusRequest request)
         {
             try
             {
