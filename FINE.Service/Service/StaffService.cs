@@ -259,7 +259,7 @@ namespace FINE.Service.Service
             }
             catch (ErrorResponse ex)
             {
-                throw;
+                throw ex;
             }
         }
 
@@ -327,7 +327,7 @@ namespace FINE.Service.Service
                         var customer = listCustomer.ElementAt(customerIndex);
 
                         if (totalSingleOrderSuccess > 0 && totalSingleOrderFailed > 0)
-                            {
+                        {
                             if (rand.Next() % 2 == 0)
                             {
                                 var payload = new CreatePreOrderRequest
@@ -345,7 +345,8 @@ namespace FINE.Service.Service
                                         Quantity = 1
                                     })
                                     .ToList();
-                                try {
+                                try
+                                {
                                     var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
                                     //var rs = _orderService.CreatePreOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payload).Result.Data;
                                     var stationId = station
@@ -519,111 +520,85 @@ namespace FINE.Service.Service
                                 }
                                 totalSingleOrderFailed--;
                             }
-                            }
-                            else if (totalSingleOrderSuccess > 0)
+                        }
+                        else if (totalSingleOrderSuccess > 0)
+                        {
+                            var payload = new CreatePreOrderRequest
                             {
-                                var payload = new CreatePreOrderRequest
+                                OrderType = OrderTypeEnum.OrderToday,
+                                TimeSlotId = Guid.Parse(request.TimeSlotId),
+                            };
+
+
+                            payload.OrderDetails = productInMenu
+                                .Take(3)
+                                .Select(x => new CreatePreOrderDetailRequest
                                 {
-                                    OrderType = OrderTypeEnum.OrderToday,
+                                    ProductId = x.Id,
+                                    Quantity = 1
+                                })
+                                .ToList();
+                            try
+                            {
+                                var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
+                                //var rs = _orderService.CreatePreOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payload).Result.Data;
+                                var stationId = station
+                                                    .OrderBy(x => rand.Next())
+                                                    .Select(x => x.Id)
+                                                    .FirstOrDefault();
+
+                                var payloadCreateOrder = new CreateOrderRequest()
+                                {
+                                    Id = rs.Id,
+                                    OrderCode = rs.OrderCode,
+                                    PartyCode = null,
+                                    TotalAmount = rs.TotalAmount,
+                                    FinalAmount = rs.FinalAmount,
+                                    TotalOtherAmount = rs.TotalOtherAmount,
+                                    OrderType = (OrderTypeEnum)rs.OrderType,
                                     TimeSlotId = Guid.Parse(request.TimeSlotId),
+                                    StationId = stationId.ToString(),
+                                    PaymentType = PaymentTypeEnum.FineWallet,
+                                    IsPartyMode = false,
+                                    ItemQuantity = rs.ItemQuantity,
+                                    Point = rs.Point,
+                                    OrderDetails = rs.OrderDetails.Select(detail => new CreateOrderDetail()
+                                    {
+                                        Id = detail.Id,
+                                        OrderId = detail.Id,
+                                        ProductInMenuId = detail.ProductInMenuId,
+                                        StoreId = detail.StoreId,
+                                        ProductCode = detail.ProductCode,
+                                        ProductName = detail.ProductName,
+                                        UnitPrice = detail.UnitPrice,
+                                        Quantity = detail.Quantity,
+                                        TotalAmount = detail.TotalAmount,
+                                        FinalAmount = detail.FinalAmount,
+                                        Note = detail.Note
+
+                                    }).ToList(),
+                                    OtherAmounts = rs.OtherAmounts
                                 };
 
-
-                                payload.OrderDetails = productInMenu
-                                    .Take(3)
-                                    .Select(x => new CreatePreOrderDetailRequest
-                                    {
-                                        ProductId = x.Id,
-                                        Quantity = 1
-                                    })
-                                    .ToList();
                                 try
                                 {
-                                    var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
-                                    //var rs = _orderService.CreatePreOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payload).Result.Data;
-                                    var stationId = station
-                                                        .OrderBy(x => rand.Next())
-                                                        .Select(x => x.Id)
-                                                        .FirstOrDefault();
-
-                                    var payloadCreateOrder = new CreateOrderRequest()
+                                    var result = _orderService.CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+                                    //var result = _orderService.CreateOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payloadCreateOrder).Result.Data;
+                                    var orderSuccess = new OrderSuccess
                                     {
-                                        Id = rs.Id,
-                                        OrderCode = rs.OrderCode,
-                                        PartyCode = null,
-                                        TotalAmount = rs.TotalAmount,
-                                        FinalAmount = rs.FinalAmount,
-                                        TotalOtherAmount = rs.TotalOtherAmount,
-                                        OrderType = (OrderTypeEnum)rs.OrderType,
-                                        TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                        StationId = stationId.ToString(),
-                                        PaymentType = PaymentTypeEnum.FineWallet,
-                                        IsPartyMode = false,
-                                        ItemQuantity = rs.ItemQuantity,
-                                        Point = rs.Point,
-                                        OrderDetails = rs.OrderDetails.Select(detail => new CreateOrderDetail()
-                                        {
-                                            Id = detail.Id,
-                                            OrderId = detail.Id,
-                                            ProductInMenuId = detail.ProductInMenuId,
-                                            StoreId = detail.StoreId,
-                                            ProductCode = detail.ProductCode,
-                                            ProductName = detail.ProductName,
-                                            UnitPrice = detail.UnitPrice,
-                                            Quantity = detail.Quantity,
-                                            TotalAmount = detail.TotalAmount,
-                                            FinalAmount = detail.FinalAmount,
-                                            Note = detail.Note
-
-                                        }).ToList(),
-                                        OtherAmounts = rs.OtherAmounts
+                                        Id = result.Id,
+                                        OrderCode = result.OrderCode,
+                                        Customer = result.Customer,
                                     };
-
-                                    try
-                                    {
-                                        var result = _orderService.CreateOrder(customer.Id.ToString(), payloadCreateOrder).Result.Data;
-                                        //var result = _orderService.CreateOrder("DBC730A2-5563-40A4-B86F-D0074D289109", payloadCreateOrder).Result.Data;
-                                        var orderSuccess = new OrderSuccess
-                                        {
-                                            Id = result.Id,
-                                            OrderCode = result.OrderCode,
-                                            Customer = result.Customer,
-                                        };
-                                        response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = rs.OrderCode,
-                                            Customer = rs.Customer,
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = err.Error.Message,
-                                                Success = false,
-                                                ErrorCode = err.Error.ErrorCode,
-                                            }
-                                        };
-                                        response.SingleOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                    totalSingleOrderSuccess--;
+                                    response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
                                 }
-                                catch(Exception ex)
+                                catch (Exception ex)
                                 {
-                                    var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
                                     ErrorResponse err = (ErrorResponse)ex.InnerException;
                                     var orderFail = new OrderFailed
                                     {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = randomCustomer.Id,
-                                            CustomerCode = randomCustomer.Name,
-                                            Email = randomCustomer.Email,
-                                            Name = randomCustomer.Name,
-                                            Phone = randomCustomer.Phone,
-                                        },
+                                        OrderCode = rs.OrderCode,
+                                        Customer = rs.Customer,
                                         Status = new StatusViewModel
                                         {
                                             Message = err.Error.Message,
@@ -633,10 +608,36 @@ namespace FINE.Service.Service
                                     };
                                     response.SingleOrderResult.OrderFailed.Add(orderFail);
                                 }
+                                totalSingleOrderSuccess--;
                             }
-                            else if (totalSingleOrderFailed > 0)
+                            catch (Exception ex)
                             {
                                 var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
+                                ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                var orderFail = new OrderFailed
+                                {
+                                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
+                                    Customer = new CustomerOrderResponse
+                                    {
+                                        Id = randomCustomer.Id,
+                                        CustomerCode = randomCustomer.Name,
+                                        Email = randomCustomer.Email,
+                                        Name = randomCustomer.Name,
+                                        Phone = randomCustomer.Phone,
+                                    },
+                                    Status = new StatusViewModel
+                                    {
+                                        Message = err.Error.Message,
+                                        Success = false,
+                                        ErrorCode = err.Error.ErrorCode,
+                                    }
+                                };
+                                response.SingleOrderResult.OrderFailed.Add(orderFail);
+                            }
+                        }
+                        else if (totalSingleOrderFailed > 0)
+                        {
+                            var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
                             if (!Utils.CheckTimeSlot(timeslot))
                             {
                                 var orderFail = new OrderFailed
@@ -708,10 +709,10 @@ namespace FINE.Service.Service
                                     response.SingleOrderResult.OrderFailed.Add(orderFail);
                                 }
                             }
-                                totalSingleOrderFailed--;
+                            totalSingleOrderFailed--;
 
-                            }
-                        
+                        }
+
                     }
                 }
                 #endregion
@@ -1237,5 +1238,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
     }
 }
