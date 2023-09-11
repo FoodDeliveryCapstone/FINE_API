@@ -26,11 +26,11 @@ namespace FINE.Service.Service
     public interface IOrderDetailService
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId);
+        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, string timeslot = null);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
         Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
-
+        Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId);
 
     }
 
@@ -78,15 +78,26 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId)
+        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, string timeslotId = null)
         {
             try
             {
                 // Get from Redis
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
-                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) && x.StationId == Guid.Parse(stationId))
+                if (timeslotId == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) && x.StationId == Guid.Parse(stationId))
                                              .OrderByDescending(x => x.CheckInDate)
-                                             .ToList();            
+                                             .ToList();
+                }
+                else
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) 
+                                             && x.StationId == Guid.Parse(stationId)
+                                             && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId))
+                                             .OrderByDescending(x => x.CheckInDate)
+                                             .ToList();
+                }
 
                 return new BaseResponsePagingViewModel<OrderByStoreResponse>()
                 {
@@ -279,6 +290,57 @@ namespace FINE.Service.Service
             }
         }
 
-       
+        public async Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId)
+        {
+            try
+            {
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
+                var productInMenuList = new List<ShipperSplitOrderResponse>();
+                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
+                                            .OrderByDescending(x => x.CheckInDate)
+                                            .ToList();
+                if (orderResponse == null)
+                    throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                           OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                foreach (var order in orderResponse)
+                {
+                    productInMenuList.AddRange(order.OrderDetails.Select(x => new ShipperSplitOrderResponse
+                    {
+                        TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        StationId = order.StationId,
+                        ProductName = x.ProductName,
+                        Quantity = x.Quantity,
+                    })
+                    .ToList());
+                }
+                productInMenuList = productInMenuList
+                    .GroupBy(x => new {
+                        x.ProductName,
+                        x.TimeSlotId,
+                        x.StationId
+                    })
+                    .Select(x => new ShipperSplitOrderResponse
+                    {
+                        ProductName = x.Key.ProductName,
+                        Quantity = x.Sum(x => x.Quantity),
+                        TimeSlotId = x.Key.TimeSlotId,
+                        StationId = x.Key.StationId
+                    })
+                    .ToList();
+
+                return new BaseResponsePagingViewModel<ShipperSplitOrderResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Total = productInMenuList.Count()
+                    },
+                    Data = productInMenuList
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
