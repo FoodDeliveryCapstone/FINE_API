@@ -112,11 +112,11 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpGet("shipper/splitOrder/{storeId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<ShipperSplitOrderResponse>>> GetSplitOrder(string storeId)
+        public async Task<ActionResult<BaseResponsePagingViewModel<ShipperSplitOrderResponse>>> GetShipperSplitOrder(string storeId, int status)
         {
             try
             {
-                return await _orderDetailService.GetShipperSplitOrder(storeId);
+                return await _orderDetailService.GetShipperSplitOrder(storeId, status);
             }
             catch (ErrorResponse ex)
             {

@@ -30,7 +30,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
         Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
-        Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId);
+        Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId, int status);
 
     }
 
@@ -294,13 +294,14 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId)
+        public async Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId, int status)
         {
             try
             {
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
                 var productInMenuList = new List<ShipperSplitOrderResponse>();
-                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId))
+                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                             && (int)x.OrderDetailStoreStatus == status)
                                             .OrderByDescending(x => x.CheckInDate)
                                             .ToList();
                 if (orderResponse == null)
