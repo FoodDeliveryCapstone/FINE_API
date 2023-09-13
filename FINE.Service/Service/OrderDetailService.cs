@@ -11,6 +11,7 @@ using FINE.Service.Exceptions;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using StackExchange.Redis;
 using System;
@@ -30,7 +31,8 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
         Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
-        Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId, int status);
+        Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string timeslotId, string stationId, string? storeId, int? status);
+        Task<BaseResponsePagingViewModel<ShipperOrderBoxResponse>> GetShipperOrderBox(string stationId, string timeslotId);
 
     }
 
@@ -294,44 +296,162 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string storeId, int status)
+        public async Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string timeslotId, string stationId, string? storeId, int? status)
         {
             try
             {
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
                 var productInMenuList = new List<ShipperSplitOrderResponse>();
-                orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
-                                             && (int)x.OrderDetailStoreStatus == status)
-                                            .OrderByDescending(x => x.CheckInDate)
-                                            .ToList();
-                if (orderResponse == null)
-                    throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
-                           OrderErrorEnums.NOT_FOUND.GetDisplayName());
-                foreach (var order in orderResponse)
+
+                if (status == null && storeId == null)
                 {
-                    productInMenuList.AddRange(order.OrderDetails.Select(x => new ShipperSplitOrderResponse
+                    orderResponse = orderResponse.Where(x => Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                                 && x.StationId == Guid.Parse(stationId))
+                                                .OrderByDescending(x => x.CheckInDate)
+                                                .ToList();
+                    if (orderResponse == null)
+                        throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                               OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                    foreach (var order in orderResponse)
                     {
-                        TimeSlotId = Guid.Parse(order.TimeSlot.Id),
-                        StationId = order.StationId,
-                        ProductName = x.ProductName,
-                        Quantity = x.Quantity,
-                    })
-                    .ToList());
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new ShipperSplitOrderResponse
+                        {
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                            StationId = order.StationId,
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new
+                        {
+                            x.ProductName,
+                            x.TimeSlotId,
+                            x.StationId
+                        })
+                        .Select(x => new ShipperSplitOrderResponse
+                        {
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId,
+                            StationId = x.Key.StationId
+                        })
+                        .ToList();
                 }
-                productInMenuList = productInMenuList
-                    .GroupBy(x => new {
-                        x.ProductName,
-                        x.TimeSlotId,
-                        x.StationId
-                    })
-                    .Select(x => new ShipperSplitOrderResponse
+                else if (storeId == null)
+                {
+                    orderResponse = orderResponse.Where(x => Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                                 && x.StationId == Guid.Parse(stationId)
+                                                 && (int)x.OrderDetailStoreStatus == status)
+                                                .OrderByDescending(x => x.CheckInDate)
+                                                .ToList();
+                    if (orderResponse == null)
+                        throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                               OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                    foreach (var order in orderResponse)
                     {
-                        ProductName = x.Key.ProductName,
-                        Quantity = x.Sum(x => x.Quantity),
-                        TimeSlotId = x.Key.TimeSlotId,
-                        StationId = x.Key.StationId
-                    })
-                    .ToList();
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new ShipperSplitOrderResponse
+                        {
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                            StationId = order.StationId,
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new
+                        {
+                            x.ProductName,
+                            x.TimeSlotId,
+                            x.StationId
+                        })
+                        .Select(x => new ShipperSplitOrderResponse
+                        {
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId,
+                            StationId = x.Key.StationId
+                        })
+                        .ToList();
+                }
+                else if(status == null)
+                {
+                    orderResponse = orderResponse.Where(x => Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                                 && x.StationId == Guid.Parse(stationId)
+                                                 && x.StoreId == Guid.Parse(storeId))
+                                                .OrderByDescending(x => x.CheckInDate)
+                                                .ToList();
+                    if (orderResponse == null)
+                        throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                               OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new ShipperSplitOrderResponse
+                        {
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                            StationId = order.StationId,
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new
+                        {
+                            x.ProductName,
+                            x.TimeSlotId,
+                            x.StationId
+                        })
+                        .Select(x => new ShipperSplitOrderResponse
+                        {
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId,
+                            StationId = x.Key.StationId
+                        })
+                        .ToList();
+                }
+                
+                else
+                {
+                    orderResponse = orderResponse.Where(x => Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                                 && x.StationId == Guid.Parse(stationId)
+                                                 && x.StoreId == Guid.Parse(storeId)
+                                                 && (int)x.OrderDetailStoreStatus == status)
+                                                .OrderByDescending(x => x.CheckInDate)
+                                                .ToList();
+                    if (orderResponse == null)
+                        throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
+                               OrderErrorEnums.NOT_FOUND.GetDisplayName());
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new ShipperSplitOrderResponse
+                        {
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                            StationId = order.StationId,
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new
+                        {
+                            x.ProductName,
+                            x.TimeSlotId,
+                            x.StationId
+                        })
+                        .Select(x => new ShipperSplitOrderResponse
+                        {
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId,
+                            StationId = x.Key.StationId
+                        })
+                        .ToList();
+                }
 
                 return new BaseResponsePagingViewModel<ShipperSplitOrderResponse>()
                 {
@@ -343,6 +463,70 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<ShipperOrderBoxResponse>> GetShipperOrderBox(string stationId, string timeslotId)
+        {
+            try
+            {
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
+                orderResponse = orderResponse.Where(x => x.StationId == Guid.Parse(stationId)
+                                              && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                              && (int)x.OrderDetailStoreStatus == (int)OrderStatusEnum.Delivering)
+                                             .ToList();
+                var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
+                var orderBoxList = new List<ShipperOrderBoxResponse>();
+                var prevBoxId = orderBox.FirstOrDefault().BoxId;
+                var splitOrder = new List<OrderByStoreResponse>();
+
+                foreach(var order in orderResponse)
+                {
+                    var box = orderBox.FirstOrDefault(x => x.OrderId == order.OrderId);    
+                    //check box id truoc
+                    if (prevBoxId != box.BoxId)
+                    {
+                        //khac thi tao lai list roi add theo box id moi
+                        splitOrder = new List<OrderByStoreResponse>();
+                        splitOrder.Add(order);
+                        orderBoxList.Add(new ShipperOrderBoxResponse
+                        {
+                            BoxId = box.BoxId,
+                            SplitOrder = splitOrder
+                        });
+                    }
+                    else
+                    {
+                        //khong khac thi add roi them vao lai split order
+                        splitOrder.Add(order);
+                        orderBoxList.FirstOrDefault(x => x.BoxId == prevBoxId).SplitOrder = splitOrder;
+                    }
+
+                    prevBoxId = box.BoxId;
+                }
+
+                orderBoxList = orderBoxList.GroupBy(x => new
+                {
+                    x.BoxId,
+                    x.SplitOrder
+                }).Select(x => new ShipperOrderBoxResponse
+                {
+                    BoxId = x.Key.BoxId,
+                    SplitOrder = x.Key.SplitOrder
+                }).ToList();
+
+                return new BaseResponsePagingViewModel<ShipperOrderBoxResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Total = orderBoxList.Count()
+                    },
+                    Data = orderBoxList
+                };
+            }
+            catch(ErrorResponse ex)
             {
                 throw ex;
             }

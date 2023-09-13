@@ -108,15 +108,32 @@ namespace FINE.API.Controllers.AdminControler
         }
 
         /// <summary>
-        /// Get shipper split orders by store 
+        /// Get shipper split orders
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpGet("shipper/splitOrder/{storeId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<ShipperSplitOrderResponse>>> GetShipperSplitOrder(string storeId, int status)
+        [HttpGet("shipper/splitOrder/{timeslotId}/{stationId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<ShipperSplitOrderResponse>>> GetShipperSplitOrder(string timeslotId, string stationId, string? storeId, int? status)
         {
             try
             {
-                return await _orderDetailService.GetShipperSplitOrder(storeId, status);
+                return await _orderDetailService.GetShipperSplitOrder(timeslotId, stationId, storeId, status);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Get shipper order box
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpGet("orderBox/{timeslotId}/{stationId}")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<ShipperOrderBoxResponse>>> GetShipperOrderBox(string stationId, string timeslotId)
+        {
+            try
+            {
+                return await _orderDetailService.GetShipperOrderBox(stationId, timeslotId);
             }
             catch (ErrorResponse ex)
             {

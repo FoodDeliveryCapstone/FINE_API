@@ -39,4 +39,10 @@ namespace FINE.Service.DTO.Response
         public string? ProductName { get; set; } = null!;
         public int Quantity { get; set; }
     }
+
+    public class ShipperOrderBoxResponse
+    {
+        public Guid BoxId { get; set; }
+        public List<OrderByStoreResponse> SplitOrder { get; set; }
+    }
 }
