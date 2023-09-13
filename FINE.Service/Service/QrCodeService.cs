@@ -83,12 +83,12 @@ namespace FINE.Service.Service
 
                 var key = listBox.FirstOrDefault().Key;
                 
-                foreach (var item in listBox)
-                {
-                    if(item.Key != key)                  
-                        throw new ErrorResponse(400, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
-                            BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());                 
-                }
+                //foreach (var item in listBox)
+                //{
+                //    if(item.Key != key)                  
+                //        throw new ErrorResponse(400, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
+                //            BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());                 
+                //}
 
                 foreach (var orderBox in listBox)
                 {
@@ -109,7 +109,7 @@ namespace FINE.Service.Service
                     Height = 500
                 };
                 //string content = Utils.GenerateRandomCode(10) + ".";
-                string content = key.ToUpper() + "." + Utils.GenerateRandomCode(10) + ".";
+                string content = "DRIVER" + "." +key.ToUpper() + "." + Utils.GenerateRandomCode(10) + ".";
 
                 foreach (var boxId in request.ListBoxId)
                 {

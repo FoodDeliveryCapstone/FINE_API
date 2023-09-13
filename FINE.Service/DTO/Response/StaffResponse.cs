@@ -36,6 +36,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid TimeSlotId { get; set; }
         public Guid StationId { get; set; }
+        public Guid StoreId { get; set; }
         public string? ProductName { get; set; } = null!;
         public int Quantity { get; set; }
     }

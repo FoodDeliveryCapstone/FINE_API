@@ -318,6 +318,7 @@ namespace FINE.Service.Service
                         {
                             TimeSlotId = Guid.Parse(order.TimeSlot.Id),
                             StationId = order.StationId,
+                            StoreId = x.StoreId,
                             ProductName = x.ProductName,
                             Quantity = x.Quantity,
                         })
@@ -328,12 +329,14 @@ namespace FINE.Service.Service
                         {
                             x.ProductName,
                             x.TimeSlotId,
-                            x.StationId
+                            x.StationId,
+                            x.StoreId,
                         })
                         .Select(x => new ShipperSplitOrderResponse
                         {
                             ProductName = x.Key.ProductName,
                             Quantity = x.Sum(x => x.Quantity),
+                            StoreId = x.Key.StoreId,
                             TimeSlotId = x.Key.TimeSlotId,
                             StationId = x.Key.StationId
                         })
@@ -355,6 +358,7 @@ namespace FINE.Service.Service
                         {
                             TimeSlotId = Guid.Parse(order.TimeSlot.Id),
                             StationId = order.StationId,
+                            StoreId = x.StoreId,
                             ProductName = x.ProductName,
                             Quantity = x.Quantity,
                         })
@@ -365,12 +369,14 @@ namespace FINE.Service.Service
                         {
                             x.ProductName,
                             x.TimeSlotId,
-                            x.StationId
+                            x.StationId,
+                            x.StoreId,
                         })
                         .Select(x => new ShipperSplitOrderResponse
                         {
                             ProductName = x.Key.ProductName,
                             Quantity = x.Sum(x => x.Quantity),
+                            StoreId = x.Key.StoreId,
                             TimeSlotId = x.Key.TimeSlotId,
                             StationId = x.Key.StationId
                         })
@@ -392,6 +398,7 @@ namespace FINE.Service.Service
                         {
                             TimeSlotId = Guid.Parse(order.TimeSlot.Id),
                             StationId = order.StationId,
+                            StoreId = x.StoreId,
                             ProductName = x.ProductName,
                             Quantity = x.Quantity,
                         })
@@ -402,12 +409,14 @@ namespace FINE.Service.Service
                         {
                             x.ProductName,
                             x.TimeSlotId,
-                            x.StationId
+                            x.StationId,
+                            x.StoreId,
                         })
                         .Select(x => new ShipperSplitOrderResponse
                         {
                             ProductName = x.Key.ProductName,
                             Quantity = x.Sum(x => x.Quantity),
+                            StoreId = x.Key.StoreId,
                             TimeSlotId = x.Key.TimeSlotId,
                             StationId = x.Key.StationId
                         })
@@ -431,6 +440,7 @@ namespace FINE.Service.Service
                         {
                             TimeSlotId = Guid.Parse(order.TimeSlot.Id),
                             StationId = order.StationId,
+                            StoreId = x.StoreId,
                             ProductName = x.ProductName,
                             Quantity = x.Quantity,
                         })
@@ -441,12 +451,14 @@ namespace FINE.Service.Service
                         {
                             x.ProductName,
                             x.TimeSlotId,
-                            x.StationId
+                            x.StationId,
+                            x.StoreId,
                         })
                         .Select(x => new ShipperSplitOrderResponse
                         {
                             ProductName = x.Key.ProductName,
                             Quantity = x.Sum(x => x.Quantity),
+                            StoreId = x.Key.StoreId,
                             TimeSlotId = x.Key.TimeSlotId,
                             StationId = x.Key.StationId
                         })
