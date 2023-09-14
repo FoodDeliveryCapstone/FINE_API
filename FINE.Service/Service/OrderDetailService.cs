@@ -493,7 +493,7 @@ namespace FINE.Service.Service
                 var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
                 var orderBoxList = new List<ShipperOrderBoxResponse>();
                 var prevBoxId = orderBox.FirstOrDefault().BoxId;
-                var splitOrder = new List<OrderByStoreResponse>();
+                var orderDetail = new List<OrderDetailResponse>();
 
                 foreach(var order in orderResponse)
                 {
@@ -502,19 +502,19 @@ namespace FINE.Service.Service
                     if (prevBoxId != box.BoxId)
                     {
                         //khac thi tao lai list roi add theo box id moi
-                        splitOrder = new List<OrderByStoreResponse>();
-                        splitOrder.Add(order);
+                        orderDetail = new List<OrderDetailResponse>();
+                        orderDetail.AddRange(order.OrderDetails);
                         orderBoxList.Add(new ShipperOrderBoxResponse
                         {
                             BoxId = box.BoxId,
-                            SplitOrder = splitOrder
+                            OrderDetails = orderDetail
                         });
                     }
                     else
                     {
                         //khong khac thi add roi them vao lai split order
-                        splitOrder.Add(order);
-                        orderBoxList.FirstOrDefault(x => x.BoxId == prevBoxId).SplitOrder = splitOrder;
+                        orderDetail.AddRange(order.OrderDetails);
+                        orderBoxList.FirstOrDefault(x => x.BoxId == prevBoxId).OrderDetails = orderDetail;
                     }
 
                     prevBoxId = box.BoxId;
@@ -523,11 +523,11 @@ namespace FINE.Service.Service
                 orderBoxList = orderBoxList.GroupBy(x => new
                 {
                     x.BoxId,
-                    x.SplitOrder
+                    x.OrderDetails
                 }).Select(x => new ShipperOrderBoxResponse
                 {
                     BoxId = x.Key.BoxId,
-                    SplitOrder = x.Key.SplitOrder
+                    OrderDetails = x.Key.OrderDetails
                 }).ToList();
 
                 return new BaseResponsePagingViewModel<ShipperOrderBoxResponse>()

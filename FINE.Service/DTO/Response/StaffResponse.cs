@@ -44,6 +44,6 @@ namespace FINE.Service.DTO.Response
     public class ShipperOrderBoxResponse
     {
         public Guid BoxId { get; set; }
-        public List<OrderByStoreResponse> SplitOrder { get; set; }
+        public List<OrderDetailResponse> OrderDetails { get; set; }
     }
 }
