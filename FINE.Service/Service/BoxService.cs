@@ -58,7 +58,7 @@ namespace FINE.Service.Service
                 if (order == null)
                     throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
                         OrderErrorEnums.NOT_FOUND.GetDisplayName());
-                if (order.OrderStatus != (int)OrderStatusEnum.FinishPrepare)
+                if (order.OrderStatus != (int)OrderStatusEnum.Delivering)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
                         OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
 
