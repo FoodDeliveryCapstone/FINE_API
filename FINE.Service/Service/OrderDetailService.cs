@@ -146,6 +146,7 @@ namespace FINE.Service.Service
         {
             try
             {
+                var key = Utils.GenerateRandomCode(10);
                 foreach (var item in request.ListStoreAndOrder)
                 {
                     List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
@@ -176,7 +177,7 @@ namespace FINE.Service.Service
                         {
                             OrderId = order.OrderId
                         };
-                        var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), addOrderToBoxRequest);
+                        var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
                     }
                     else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.Delivering))
                     {

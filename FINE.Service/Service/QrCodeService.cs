@@ -18,7 +18,7 @@ namespace FINE.Service.Service
     public interface IQrCodeService
     {
         Task<dynamic> GenerateQrCode(string customerId, string boxId);
-        Task<dynamic> GenerateShipperQrCode(BoxRequest request);
+        Task<dynamic> GenerateShipperQrCode(List<BoxRequest> request);
     }
 
     public class QrCodeService : IQrCodeService
@@ -74,29 +74,33 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<dynamic> GenerateShipperQrCode(BoxRequest request)
+        public async Task<dynamic> GenerateShipperQrCode(List<BoxRequest> request)
         {
             try
             {
-                var listBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
-                listBox = listBox.Where(x => request.ListBoxId.Contains(x.BoxId)).ToList();
+                var listOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
 
-                var key = listBox.FirstOrDefault().Key;
-                
-                //foreach (var item in listBox)
-                //{
-                //    if(item.Key != key)                  
-                //        throw new ErrorResponse(400, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
-                //            BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());                 
-                //}
+                var key = listOrderBox.FirstOrDefault().Key;
+                var newListOrderBox = new List<OrderBox>();
 
-                foreach (var orderBox in listBox)
+                foreach (var item in listOrderBox)
                 {
+                    if(request.FirstOrDefault(x => x.BoxId == item.BoxId && x.OrderId == item.OrderId) != null)
+                    {
+                        newListOrderBox.Add(item);
+                        key = item.Key;
+                    }                  
+                }
+
+                foreach (var orderBox in newListOrderBox)
+                {
+                    if (orderBox.Key != key)
+                        throw new ErrorResponse(400, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
+                            BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());
                     if (orderBox.Status == (int)OrderBoxStatusEnum.Picked)
                         throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_TAKEN,
                             BoxErrorEnums.ORDER_TAKEN.GetDisplayName());
-
-                    else if (orderBox.Status == (int)OrderBoxStatusEnum.StaffPicked)
+                    if (orderBox.Status == (int)OrderBoxStatusEnum.StaffPicked)
                         throw new ErrorResponse(400, (int)BoxErrorEnums.STAFF_TAKEN,
                              BoxErrorEnums.STAFF_TAKEN.GetDisplayName());
                    
@@ -109,17 +113,17 @@ namespace FINE.Service.Service
                     Height = 500
                 };
                 //string content = Utils.GenerateRandomCode(10) + ".";
-                string content = "DRIVER" + "." +key.ToUpper() + "." + Utils.GenerateRandomCode(10) + ".";
+                string content = "DRIVER" + "." + key.ToUpper() + "." + Utils.GenerateRandomCode(10) + ".";
 
-                foreach (var boxId in request.ListBoxId)
+                foreach (var item in newListOrderBox)
                 {
-                    if(boxId == request.ListBoxId.LastOrDefault())
+                    if(item == newListOrderBox.LastOrDefault())
                     {
-                        content += boxId.ToString().ToUpper();
+                        content += item.BoxId.ToString().ToUpper();
                     }
                     else 
                     {
-                        content += boxId.ToString().ToUpper() + ","; 
+                        content += item.BoxId.ToString().ToUpper() + ","; 
                     }
                 };
 

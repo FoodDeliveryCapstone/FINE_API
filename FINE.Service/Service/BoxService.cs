@@ -22,7 +22,7 @@ namespace FINE.Service.Service
 {
     public interface IBoxService
     {
-        Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, AddOrderToBoxRequest request);
+        Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, string key, AddOrderToBoxRequest request);
         Task<BaseResponsePagingViewModel<BoxResponse>> GetBoxByStation(string stationId, BoxResponse filter, PagingRequest paging);
 
     }
@@ -39,11 +39,11 @@ namespace FINE.Service.Service
             _staffService = staffService;
         }
 
-        public async Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, AddOrderToBoxRequest request)
+        public async Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, string key, AddOrderToBoxRequest request)
         {
             try
             {
-                var key = Utils.GenerateRandomCode(10);
+                //var key = Utils.GenerateRandomCode(10);
                 var activeBox = await _unitOfWork.Repository<Box>().GetAll()
                     .Where(x => x.IsActive == true && x.StationId == Guid.Parse(stationId))
                     .ToListAsync();

@@ -14,6 +14,7 @@ namespace FINE.Service.DTO.Request.Box
 
     public class BoxRequest
     {
-        public List<Guid> ListBoxId { get; set; }
+        public Guid BoxId { get; set; }
+        public Guid OrderId { get; set; }
     }
 }

@@ -86,7 +86,7 @@ namespace FINE.API.Controllers.AdminStaffController
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpPost("qrCode")]
-        public async Task<ActionResult> GetQRCode([FromBody] BoxRequest request)
+        public async Task<ActionResult> GetQRCode([FromBody] List<BoxRequest> request)
         {
             try
             {
