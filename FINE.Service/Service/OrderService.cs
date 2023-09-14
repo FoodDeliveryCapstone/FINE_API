@@ -24,7 +24,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string orderId);
         Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging);
         Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
@@ -56,50 +56,31 @@ namespace FINE.Service.Service
             _fm = fm;
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderResponse>> GetOrderByCustomerId(string customerId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter ,PagingRequest paging)
         {
             try
             {
-                var customer = _unitOfWork.Repository<Customer>().GetAll()
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
                                             .Where(y => y.Id == Guid.Parse(customerId))
-                                            .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider).FirstOrDefault();
+                                            .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
 
                 var order = _unitOfWork.Repository<Data.Entity.Order>().GetAll()
                                         .Where(x => x.CustomerId == Guid.Parse(customerId))
                                         .OrderByDescending(x => x.CheckInDate)
-                                        .ToList()
-                                        .Select(x => new OrderResponse
-                                        {
-                                            Id = x.Id,
-                                            OrderCode = x.OrderCode,
-                                            Customer = _mapper.Map<CustomerOrderResponse>(customer),
-                                            CheckInDate = x.CheckInDate,
-                                            TotalAmount = x.TotalAmount,
-                                            FinalAmount = x.FinalAmount,
-                                            TotalOtherAmount = x.TotalOtherAmount,
-                                            OtherAmounts = _mapper.Map<List<OrderOtherAmount>>(x.OtherAmounts),
-                                            OrderStatus = x.OrderStatus,
-                                            OrderType = x.OrderType,
-                                            TimeSlot = _mapper.Map<TimeSlotOrderResponse>(x.TimeSlot),
-                                            StationOrder = _unitOfWork.Repository<Station>().GetAll().Where(y => y.Id == x.StationId).ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider).FirstOrDefault(),
-                                            IsConfirm = x.IsConfirm,
-                                            IsPartyMode = x.IsPartyMode,
-                                            ItemQuantity = x.ItemQuantity,
-                                            BoxId = (x.OrderBoxes.Count() == 0 ? Guid.Empty : x.OrderBoxes.FirstOrDefault().BoxId),
-                                            OrderDetails = _mapper.Map<List<OrderDetailResponse>>(x.OrderDetails)
-                                        }).AsQueryable();
+                                        .ProjectTo<OrderResponseForCustomer>(_mapper.ConfigurationProvider)
+                                        .DynamicFilter(filter)
+                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-                var response = order.PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-                return new BaseResponsePagingViewModel<OrderResponse>()
+                return new BaseResponsePagingViewModel<OrderResponseForCustomer>()
                 {
                     Metadata = new PagingsMetadata()
                     {
                         Page = paging.Page,
                         Size = paging.PageSize,
-                        Total = response.Item1
+                        Total = order.Item1
                     },
-                    Data = response.Item2.ToList()
+                    Data = order.Item2.ToList()
                 };
             }
             catch (Exception ex)
@@ -249,7 +230,7 @@ namespace FINE.Service.Service
                     var detail = new OrderDetailResponse()
                     {
                         Id = Guid.NewGuid(),
-                        OrderId = order.Id,
+                        OrderId = (Guid)order.Id,
                         ProductId = productInMenu.ProductId,
                         ProductInMenuId = productInMenu.Id,
                         StoreId = productInMenu.Product.Product.StoreId,
@@ -267,7 +248,7 @@ namespace FINE.Service.Service
                 var otherAmount = new OrderOtherAmount()
                 {
                     Id = Guid.NewGuid(),
-                    OrderId = order.Id,
+                    OrderId = (Guid)order.Id,
                     Amount = 15000,
                     Type = (int)OtherAmountTypeEnum.ShippingFee
                 };
@@ -675,7 +656,7 @@ namespace FINE.Service.Service
                             Product = x.Key,
                             Quantity = product.Quantity
                         })
-                                                                            .FirstOrDefaultAsync().Result;
+                        .FirstOrDefaultAsync().Result;
 
                         listProductInCard.Add(productRequestFill);
                     }
@@ -964,7 +945,7 @@ namespace FINE.Service.Service
                             var detail = new OrderDetailResponse()
                             {
                                 Id = Guid.NewGuid(),
-                                OrderId = order.Id,
+                                OrderId = (Guid)order.Id,
                                 ProductId = productInMenu.ProductId,
                                 ProductInMenuId = productInMenu.Id,
                                 StoreId = productInMenu.Product.Product.StoreId,
@@ -992,7 +973,7 @@ namespace FINE.Service.Service
                 var otherAmount = new OrderOtherAmount()
                 {
                     Id = Guid.NewGuid(),
-                    OrderId = order.Id,
+                    OrderId = (Guid)order.Id,
                     Amount = 15000,
                     Type = (int)OtherAmountTypeEnum.ShippingFee
                 };

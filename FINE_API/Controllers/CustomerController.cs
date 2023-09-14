@@ -118,7 +118,7 @@ namespace FINE.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("orders")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<OrderResponse>>> GetOrderByCustomerId([FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderResponseForCustomer>>> GetOrderByCustomerId([FromQuery] OrderResponseForCustomer filter,[FromQuery] PagingRequest paging)
         {
             var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
@@ -126,7 +126,8 @@ namespace FINE.API.Controllers
             {
                 return Unauthorized();
             }
-            var result = await _orderService.GetOrderByCustomerId(customerId, paging);
+            //var customerId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
+            var result = await _orderService.GetOrderByCustomerId(customerId, filter, paging);
             return Ok(result);
         }
 
