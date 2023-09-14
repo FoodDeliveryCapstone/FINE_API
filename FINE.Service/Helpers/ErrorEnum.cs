@@ -47,6 +47,8 @@ namespace FINE.Service.Helpers
             //404
             [Display(Name = "Not found this box!")]
             NOT_FOUND = 4041,
+            [Display(Name = "Not found order in this box!")]
+            NOT_FOUND_ORDERBOX = 4042,
         }
 
         public enum PartyErrorEnums

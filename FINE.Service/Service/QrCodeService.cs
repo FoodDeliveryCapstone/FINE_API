@@ -112,8 +112,8 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                //string content = Utils.GenerateRandomCode(10) + ".";
-                string content = "DRIVER" + "." + key.ToUpper() + "." + Utils.GenerateRandomCode(10) + ".";
+                //Driver là 2, customer là 1
+                string content = "2" + "." + key.ToUpper() + "." + Utils.GenerateRandomCode(10) + ".";
 
                 foreach (var item in newListOrderBox)
                 {

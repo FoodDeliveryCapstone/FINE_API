@@ -172,12 +172,7 @@ namespace FINE.Service.Service
                             OrderStatus = OrderStatusEnum.FinishPrepare
                         };
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
-
-                        var addOrderToBoxRequest = new AddOrderToBoxRequest()
-                        {
-                            OrderId = order.OrderId
-                        };
-                        var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
+                       
                     }
                     else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.Delivering))
                     {
@@ -186,6 +181,12 @@ namespace FINE.Service.Service
                             OrderStatus = OrderStatusEnum.Delivering
                         };
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
+
+                        var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                        {
+                            OrderId = order.OrderId
+                        };
+                        var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
                     }
                     else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.BoxStored))
                     {
@@ -497,7 +498,10 @@ namespace FINE.Service.Service
 
                 foreach(var order in orderResponse)
                 {
-                    var box = orderBox.FirstOrDefault(x => x.OrderId == order.OrderId);    
+                    var box = orderBox.FirstOrDefault(x => x.OrderId == order.OrderId);   
+                    if (box == null)
+                        throw new ErrorResponse(404, (int)BoxErrorEnums.NOT_FOUND_ORDERBOX,
+                           BoxErrorEnums.NOT_FOUND_ORDERBOX.GetDisplayName());
                     //check box id truoc
                     if (prevBoxId != box.BoxId)
                     {
@@ -512,7 +516,7 @@ namespace FINE.Service.Service
                     }
                     else
                     {
-                        //khong khac thi add roi them vao lai split order
+                        //khong khac thi add roi them vao lai order detail
                         orderDetail.AddRange(order.OrderDetails);
                         orderBoxList.FirstOrDefault(x => x.BoxId == prevBoxId).OrderDetails = orderDetail;
                     }
