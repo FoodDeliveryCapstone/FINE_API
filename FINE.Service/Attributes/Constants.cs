@@ -9,6 +9,7 @@
         public const string NOTIFICATION_INVITATION_TITLE = "Bạn có lời mời gia nhập tổ đội ăn sập sàn";
 
         public const string SUC_ORDER_CREATED = "Chòi oi đặt thành công rồi nè !!!";
-
+        public const string VNPAY_PAYMENT_FAIL = "Thanh toán VnPay không thành công";
+        public const string VNPAY_PAYMENT_SUCC = "Thanh toán VnPay thành công";
     }
 }

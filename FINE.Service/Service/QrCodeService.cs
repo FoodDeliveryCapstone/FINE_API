@@ -54,7 +54,7 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                string content = box.Key + "." + Utils.GenerateRandomCode(10) + "." + boxId;
+                string content = "1" + box.Key + "." + Utils.GenerateRandomCode(10) + "." + boxId;
 
                 BarcodeWriter writer = new()
                 {

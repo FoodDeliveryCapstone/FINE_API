@@ -14,6 +14,7 @@ namespace FINE.API.Controllers
     {
         private readonly ICustomerService _customerService;
         private readonly IOrderService _orderService;
+        private readonly IPaymentService _paymentService;
 
         public CustomerController(ICustomerService customerService, IOrderService orderService)
         {
@@ -90,7 +91,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// lấy thông tin khách hàng bằng token
+        /// tìm khách hàng bằng số điện thoại
         /// </summary>
         [HttpGet("find")]
         public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> FindCustomerByPhone(string phoneNumber)
@@ -129,6 +130,30 @@ namespace FINE.API.Controllers
             //var customerId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
             var result = await _orderService.GetOrderByCustomerId(customerId, filter, paging);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// lấy url VnPay
+        /// </summary>
+        [HttpGet("topupUrl")]
+        public async Task<ActionResult<BaseResponseViewModel<string>>> TopUpWalletRequest(double amount)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                var result = await _paymentService.TopUpWalletRequest(customerId, amount);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>

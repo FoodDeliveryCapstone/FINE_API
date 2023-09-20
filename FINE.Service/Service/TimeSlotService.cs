@@ -46,7 +46,7 @@ namespace FINE.Service.Service
                         DestinationErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
-                                         .Where(x => x.DestinationId == destination.Id)
+                                         .Where(x => x.DestinationId == destination.Id && x.IsActive == true)
                                          .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
                                          .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 

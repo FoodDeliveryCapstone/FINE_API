@@ -197,7 +197,7 @@ namespace FINE.Service.Service
                         TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var listMenu = _unitOfWork.Repository<Menu>().GetAll()
-                                    .Where(x => x.TimeSlotId == Guid.Parse(timeslotId))
+                                    .Where(x => x.TimeSlotId == Guid.Parse(timeslotId) && x.IsActive == true)
                                     .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
                                     .ToList();
                 foreach(var menu in listMenu)
@@ -205,7 +205,9 @@ namespace FINE.Service.Service
                     menu.Products = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                             .Include(x => x.Product)
                                             .ThenInclude(x => x.Product)
-                                            .Where(x => x.MenuId == menu.Id && x.Status == (int)ProductInMenuStatusEnum.Avaliable)
+                                            .Where(x => x.MenuId == menu.Id 
+                                            && x.IsActive == true
+                                            && x.Status == (int)ProductInMenuStatusEnum.Avaliable)
                                             .GroupBy(x => x.Product.Product)
                                             .Select(x => _mapper.Map<ProductResponse>(x.Key))
                                             .ToList();
