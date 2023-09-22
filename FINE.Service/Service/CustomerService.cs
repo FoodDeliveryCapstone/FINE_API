@@ -131,6 +131,10 @@ namespace FINE.Service.Service
                     .Where(x => x.Id == customerId)
                     .FirstOrDefaultAsync();
 
+                var result = _mapper.Map<CustomerResponse>(customer);
+                result.Balance = customer.Accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount).Balance;
+                result.Point = customer.Accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.PointAccount).Balance;
+
                 if (customer == null)
                     throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND,
                         CustomerErrorEnums.NOT_FOUND.GetDisplayName());
