@@ -83,7 +83,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null )
+        public async Task CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null)
         {
             try
             {
@@ -152,8 +152,8 @@ namespace FINE.Service.Service
                                 AccountId = account.Id,
                                 Amount = amount,
                                 IsIncrease = false,
-                                Notes=note,
-                                Status = (int)TransactionStatusEnum.Finish,
+                                Notes = note,
+                                Status = (int)TransactionStatusEnum.Processing,
                                 Type = (int)TransactionTypeEnum.Payment,
                                 CreatedAt = DateTime.Now
                             };
@@ -168,6 +168,7 @@ namespace FINE.Service.Service
                         }
                         break;
                 }
+                await _unitOfWork.CommitAsync();
             }
             catch (ErrorResponse ex)
             {

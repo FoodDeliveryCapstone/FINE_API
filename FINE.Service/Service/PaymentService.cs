@@ -81,13 +81,12 @@ namespace FINE.Service.Service
                 var account = await _unitOfWork.Repository<Account>().GetAll()
                     .FirstOrDefaultAsync(x => x.Customer.Id == Guid.Parse(customerId)
                                         && x.Type == (int)AccountTypeEnum.CreditAccount);
-                var orderInfo = $"Nạp {amount} vào tài khoản {account.Id} hệ thống FINE";
+                var orderInfo = $"Nap {amount} vao tai khoan he thong FINE";
                 await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, amount, Guid.Parse(customerId), TransactionStatusEnum.Processing, orderInfo);
-                await _unitOfWork.CommitAsync();
 
                 var transactionId = Guid.NewGuid();
                 var pay = new VnPayLibrary();
-                var urlCallBack = _configuration["PaymentCallBack:ReturnUrl"];
+                var urlCallBack = _configuration["VnPayment:ReturnUrl"];
 
                 pay.AddRequestData("vnp_Version", _configuration["VnPayment:Version"]);
                 pay.AddRequestData("vnp_Command", _configuration["VnPayment:Command"]);
@@ -97,12 +96,12 @@ namespace FINE.Service.Service
                 pay.AddRequestData("vnp_CurrCode", _configuration["VnPayment:CurrCode"]);
                 pay.AddRequestData("vnp_IpAddr", "52.221.192.64");
                 pay.AddRequestData("vnp_Locale", _configuration["VnPayment:Locale"]);
-                pay.AddRequestData("vnp_OrderInfo", orderInfo);
+                pay.AddRequestData("vnp_OrderInfo", orderInfo.ToString());
                 pay.AddRequestData("vnp_OrderType", _configuration["VnPayment:OrderType"]);
                 pay.AddRequestData("vnp_ReturnUrl", urlCallBack);
                 pay.AddRequestData("vnp_TxnRef", transactionId.ToString());
 
-                var paymentUrl = pay.CreateRequestUrl(_configuration["Vnpay:BaseUrl"], _configuration["VnPayment:SecureHash"]);
+                var paymentUrl = pay.CreateRequestUrl(_configuration["VnPayment:BaseUrl"], _configuration["VnPayment:SecureHash"]);
 
                 return new BaseResponseViewModel<string>()
                 {

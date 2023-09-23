@@ -16,10 +16,11 @@ namespace FINE.API.Controllers
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
 
-        public CustomerController(ICustomerService customerService, IOrderService orderService)
+        public CustomerController(ICustomerService customerService, IOrderService orderService, IPaymentService paymentService)
         {
             _orderService = orderService;
             _customerService = customerService;
+            _paymentService = paymentService;
         }
 
         /// <summary>

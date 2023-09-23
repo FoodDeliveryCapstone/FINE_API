@@ -165,5 +165,12 @@ namespace FINE.Service.Helpers
             ForInvitation = 2,
             ForPayment = 3
         }
+
+        public enum VnPayTypeEnum
+        {
+            VNPAYQR = 1,
+            VNBANK = 2,
+            INTCARD = 3
+        }
     }
 }
