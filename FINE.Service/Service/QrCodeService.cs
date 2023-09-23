@@ -18,7 +18,7 @@ namespace FINE.Service.Service
     public interface IQrCodeService
     {
         Task<dynamic> GenerateQrCode(string customerId, string boxId);
-        Task<dynamic> GenerateShipperQrCode(List<BoxRequest> request);
+        Task<dynamic> GenerateShipperQrCode(List<AddOrderToBoxRequest> request);
     }
 
     public class QrCodeService : IQrCodeService
@@ -74,7 +74,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<dynamic> GenerateShipperQrCode(List<BoxRequest> request)
+        public async Task<dynamic> GenerateShipperQrCode(List<AddOrderToBoxRequest> request)
         {
             try
             {

@@ -50,8 +50,9 @@ namespace FINE.Service.Service
                 if (activeBox == null)
                     throw new ErrorResponse(404, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
                        BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());
+                //var checkOrderBox = _unitOfWork.Repository<OrderBox>().GetAll().FirstOrDefault(x => x.BoxId);
 
-                var box = activeBox.FirstOrDefault();
+                //var box = activeBox.FirstOrDefault();
 
                 var order = _unitOfWork.Repository<Order>().GetAll()
                                 .FirstOrDefault(x => x.Id == request.OrderId);                   
@@ -66,16 +67,12 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     OrderId = request.OrderId,
-                    BoxId = box.Id,
+                    BoxId = request.BoxId,
                     Key = key,
                     Status = (int)OrderBoxStatusEnum.NotPicked,
                     CreateAt = DateTime.Now,
                 };
                 await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
-                await _unitOfWork.CommitAsync();
-
-                box.IsActive = false;
-                await _unitOfWork.Repository<Box>().UpdateDetached(box);
                 await _unitOfWork.CommitAsync();
 
                 return new BaseResponseViewModel<OrderBoxResponse>()

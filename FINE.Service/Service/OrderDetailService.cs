@@ -147,6 +147,8 @@ namespace FINE.Service.Service
             try
             {
                 var key = Utils.GenerateRandomCode(10);
+                var box = await _unitOfWork.Repository<Box>().GetAll().ToListAsync();
+                Guid preBoxId = Guid.Empty;
                 foreach (var item in request.ListStoreAndOrder)
                 {
                     List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
@@ -161,7 +163,7 @@ namespace FINE.Service.Service
                     order.OrderDetailStoreStatus = request.OrderDetailStoreStatus;
                     
                     ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.OrderId.ToString(), orderResponse);
-
+             
                     #region check Order status and update
                     List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
                     //check if every order detail in a order have change status then change order status
@@ -172,7 +174,7 @@ namespace FINE.Service.Service
                             OrderStatus = OrderStatusEnum.FinishPrepare
                         };
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
-                       
+
                     }
                     else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.Delivering))
                     {
@@ -182,11 +184,17 @@ namespace FINE.Service.Service
                         };
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
 
-                        var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                        var boxId = box.FirstOrDefault(x => x.StationId == order.StationId && x.Id != preBoxId);
+                        if (boxId != null)
                         {
-                            OrderId = order.OrderId
-                        };
-                        var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
+                            var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                            {
+                                BoxId = boxId.Id,
+                                OrderId = order.OrderId
+                            };
+                            var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
+                        }
+                        preBoxId = boxId.Id;
                     }
                     else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.BoxStored))
                     {
