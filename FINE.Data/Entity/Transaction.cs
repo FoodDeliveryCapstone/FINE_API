@@ -15,9 +15,9 @@ public partial class Transaction
 
     public bool IsIncrease { get; set; }
 
-    public int Status { get; set; }
-
     public int Type { get; set; }
+
+    public int? Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
