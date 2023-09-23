@@ -493,7 +493,8 @@ namespace FINE.Service.Service
         public async Task<BaseResponsePagingViewModel<ShipperOrderBoxResponse>> GetShipperOrderBox(string stationId, string timeslotId)
         {
             try
-            {
+            { 
+
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
                 orderResponse = orderResponse.Where(x => x.StationId == Guid.Parse(stationId)
                                               && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
