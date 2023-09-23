@@ -501,7 +501,7 @@ namespace FINE.Service.Service
                                              .ToList();
                 var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
                 var orderBoxList = new List<ShipperOrderBoxResponse>();
-                var prevBoxId = orderBox.FirstOrDefault().BoxId;
+                Guid prevBoxId = Guid.Empty;
                 var orderDetail = new List<OrderDetailResponse>();
 
                 foreach(var order in orderResponse)
