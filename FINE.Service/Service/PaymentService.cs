@@ -132,7 +132,7 @@ namespace FINE.Service.Service
                 Notification notification = null;
                 var data = new Dictionary<string, string>()
                 {
-                    { "type", NotifyTypeEnum.ForPayment.ToString()}
+                    { "type", NotifyTypeEnum.ForPopup.ToString()}
                 };
 
                 if (response.Success == false)

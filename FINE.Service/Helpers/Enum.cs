@@ -163,7 +163,7 @@ namespace FINE.Service.Helpers
         {
             ForUsual = 1,
             ForInvitation = 2,
-            ForPayment = 3
+            ForPopup = 3
         }
 
         public enum VnPayTypeEnum

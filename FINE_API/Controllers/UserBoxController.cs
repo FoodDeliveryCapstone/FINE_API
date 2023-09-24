@@ -44,5 +44,21 @@ namespace FINE.API.Controllers
                 return File(imageBytes, "image/png");
             }
         }
+
+        /// <summary>
+        /// Receive Box Result
+        /// </summary>
+        [HttpPost("return")]
+        public IActionResult ReceiveBoxResult(string boxId, string key)
+        {
+            try
+            {
+                return Ok(_qrCodeService.ReceiveBoxResult(boxId, key).Status);
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

@@ -41,6 +41,8 @@ namespace FINE.Service.Helpers
             ORDER_TAKEN = 4001,
             [Display(Name = "Order already taken by staff!")]
             STAFF_TAKEN = 4002,
+            [Display(Name = "Error!")]
+            ORDER_BOX_ERROR = 4003,
         }
 
         public enum PartyErrorEnums
