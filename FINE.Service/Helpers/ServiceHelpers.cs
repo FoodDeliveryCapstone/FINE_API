@@ -419,7 +419,7 @@ namespace FINE.Service.Helpers
                     };
 
                     //ưu tiên đặt phần remainingLength trước
-                    
+
                     if (space.VolumeLengthOccupied is not null && (space.VolumeLengthOccupied.Width + productOccupied.Width <= response.RemainingLengthSpace.Width))
                     {
                         response.VolumeLengthOccupied = new CubeModel()
@@ -518,7 +518,7 @@ namespace FINE.Service.Helpers
                     throw new TimeoutException("Server Redis không hoạt động");
                 }
                 switch (type)
-                {   
+                {
                     case RedisSetUpType.GET:
                         if (key == null)
                         {
@@ -541,6 +541,72 @@ namespace FINE.Service.Helpers
 
                                 List<OrderByStoreResponse> orderResponses = JsonConvert.DeserializeObject<List<OrderByStoreResponse>>(redisValue);
                                 rs.AddRange(orderResponses);
+                            }
+                        }
+                        //rs = JsonConvert.DeserializeObject<OrderByStoreResponse>(redisValue);
+                        break;
+
+                    case RedisSetUpType.SET:
+                        var redisNewValue = JsonConvert.SerializeObject(value);
+                        db.StringSet(key, redisNewValue);
+                        break;
+
+                    case RedisSetUpType.DELETE:
+                        db.KeyDelete(key);
+                        break;
+                }
+
+                redis.Close();
+                return rs;
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+        public async static Task<dynamic> GetSetDataRedisReportMissingProduct(RedisSetUpType type, string key = null, object value = null)
+        {
+            try
+            {
+                List<ReportMissingProductResponse> rs = new List<ReportMissingProductResponse>();
+                string connectRedisString = config.GetSection("Endpoint:RedisEndpoint").Value + "," + config.GetSection("Endpoint:Password").Value;
+                // Tạo kết nối
+                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
+
+                // Lấy DB
+                IDatabase db = redis.GetDatabase(3);
+                var allKeys = redis.GetServer("localhost", 6379).Keys(database: 3);
+
+                // Ping thử
+                if (db.Ping().TotalSeconds > 5)
+                {
+                    throw new TimeoutException("Server Redis không hoạt động");
+                }
+                switch (type)
+                {
+                    case RedisSetUpType.GET:
+                        if (key == null)
+                        {
+                            foreach (var eachKey in allKeys)
+                            {
+                                RedisValue redisValue = db.StringGet(eachKey);
+                                if (redisValue.HasValue)
+                                {
+
+                                    List<ReportMissingProductResponse> reportResponse = JsonConvert.DeserializeObject<List<ReportMissingProductResponse>>(redisValue);
+                                    rs.AddRange(reportResponse);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            RedisValue redisValue = db.StringGet(key);
+                            if (redisValue.HasValue)
+                            {
+
+                                List<ReportMissingProductResponse> reportResponse = JsonConvert.DeserializeObject<List<ReportMissingProductResponse>>(redisValue);
+                                rs.AddRange(reportResponse);
                             }
                         }
                         //rs = JsonConvert.DeserializeObject<OrderByStoreResponse>(redisValue);
