@@ -105,7 +105,6 @@ namespace FINE.Service.Service
                         else if (accountType.Equals(AccountTypeEnum.CreditAccount))
                         {
                             account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
-                            account.Balance += amount;
                             account.UpdateAt = DateTime.Now;
                         }
 
@@ -118,7 +117,7 @@ namespace FINE.Service.Service
                                 Amount = amount,
                                 IsIncrease = true,
                                 Notes = note,
-                                Status = (int)TransactionStatusEnum.Finish,
+                                Status = (int)status,
                                 Type = (int)TransactionTypeEnum.Recharge,
                                 CreatedAt = DateTime.Now
                             };
@@ -153,7 +152,7 @@ namespace FINE.Service.Service
                                 Amount = amount,
                                 IsIncrease = false,
                                 Notes = note,
-                                Status = (int)TransactionStatusEnum.Processing,
+                                Status = (int)status,
                                 Type = (int)TransactionTypeEnum.Payment,
                                 CreatedAt = DateTime.Now
                             };

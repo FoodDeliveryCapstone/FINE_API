@@ -29,7 +29,7 @@ namespace FINE.Service.Service
     {
         Task CreatePayment(Order orderId, int point, PaymentTypeEnum type);
         Task<BaseResponseViewModel<string>> TopUpWalletRequest(string customerId, double amount);
-        Task PaymentExecute(IQueryCollection collections);
+        Task<bool> PaymentExecute(IQueryCollection collections);
     }
     public class PaymentService : IPaymentService
     {
@@ -119,54 +119,30 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task PaymentExecute(IQueryCollection collections)
+        public async Task<bool> PaymentExecute(IQueryCollection collections)
         {
             try
             {
+                bool isSuccess;
                 var pay = new VnPayLibrary();
                 var response = pay.GetFullResponseData(collections, _configuration["VnPayment:SecureHash"]);
                 var transaction = await _unitOfWork.Repository<Transaction>().GetAll()
                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(response.TransactionId));
 
-                var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == transaction.Account.Customer.Id).Token;
-                Notification notification = null;
-                var data = new Dictionary<string, string>()
-                {
-                    { "type", NotifyTypeEnum.ForPopup.ToString()}
-                };
-
-                if (response.Success == false)
-                {
-                    notification = new Notification
-                    {
-                        Title = Constants.VNPAY_PAYMENT_FAIL,
-                        Body = Constants.VNPAY_PAYMENT_FAIL
-                    };
-                }
-                else if (response.VnPayResponseCode == "00")
+                if(response.Success is true && response.VnPayResponseCode.Equals("00"))
                 {
                     transaction.Status = (int)TransactionStatusEnum.Finish;
-                    transaction.UpdatedAt = DateTime.Now;
-
-                    await _unitOfWork.Repository<Transaction>().UpdateDetached(transaction);
-                    await _unitOfWork.CommitAsync();
-
-                    notification = new Notification
-                    {
-                        Title = Constants.VNPAY_PAYMENT_SUCC,
-                        Body = Constants.VNPAY_PAYMENT_SUCC
-                    };
+                    transaction.Account.Balance += transaction.Amount;
+                    isSuccess = true;
                 }
                 else
                 {
-                    notification = new Notification
-                    {
-                        Title = Constants.VNPAY_PAYMENT_FAIL,
-                        Body = Constants.VNPAY_PAYMENT_FAIL
-                    };
+                    transaction.Status = (int)TransactionStatusEnum.Fail;
+                    isSuccess =  false;
                 }
-
-                BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+                await _unitOfWork.Repository<Transaction>().UpdateDetached(transaction);
+                await _unitOfWork.CommitAsync();
+                return isSuccess;
             }
             catch (Exception ex)
             {

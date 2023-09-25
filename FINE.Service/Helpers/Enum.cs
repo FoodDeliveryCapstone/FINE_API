@@ -128,7 +128,8 @@ namespace FINE.Service.Helpers
         public enum TransactionStatusEnum
         {
             Processing = 1,
-            Finish = 2
+            Finish = 2,
+            Fail = 3
         }
 
         public enum TransactionTypeEnum
