@@ -1,6 +1,8 @@
 ﻿using FINE.Data.Entity;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Box;
+using FINE.Service.DTO.Request.Order;
+using FINE.Service.DTO.Request.Shipper;
 using FINE.Service.DTO.Request.Staff;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -99,6 +101,39 @@ namespace FINE.API.Controllers.AdminStaffController
                     return File(imageBytes, "image/png");
                 }
             } catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+        /// <summary>
+        /// Get report missing product
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpGet("report")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<ReportMissingProductResponse>>> GetReportMissingProduct(string storeId, string timeslotId)
+        {
+            try
+            {
+                return await _staffService.GetReportMissingProduct(storeId, timeslotId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Update report missing product
+        /// </summary>    
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpPut("report")]
+        public async Task<ActionResult<BaseResponseViewModel<ShipperResponse>>> UpdateMissingProduct([FromBody] List<UpdateMissingProductRequest> request)
+        {
+            try
+            {
+                return await _staffService.UpdateMissingProduct(request);
+            }
+            catch (ErrorResponse ex)
             {
                 return BadRequest(ex.Error);
             }

@@ -569,7 +569,8 @@ namespace FINE.Service.Helpers
         {
             try
             {
-                List<ReportMissingProductResponse> rs = new List<ReportMissingProductResponse>();
+                ReportMissingProductResponse rs = new ReportMissingProductResponse();
+                List<ReportMissingProductResponse> rsList = new List<ReportMissingProductResponse>();
                 string connectRedisString = config.GetSection("Endpoint:RedisEndpoint").Value + "," + config.GetSection("Endpoint:Password").Value;
                 // Tạo kết nối
                 ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
@@ -593,9 +594,10 @@ namespace FINE.Service.Helpers
                                 RedisValue redisValue = db.StringGet(eachKey);
                                 if (redisValue.HasValue)
                                 {
-
-                                    List<ReportMissingProductResponse> reportResponse = JsonConvert.DeserializeObject<List<ReportMissingProductResponse>>(redisValue);
-                                    rs.AddRange(reportResponse);
+                                    //List<ReportMissingProductResponse> reportResponse = JsonConvert.DeserializeObject<List<ReportMissingProductResponse>>(redisValue);
+                                    //rs.AddRange(reportResponse);
+                                    ReportMissingProductResponse reportResponse = JsonConvert.DeserializeObject<ReportMissingProductResponse>(redisValue);
+                                    rsList.Add(reportResponse);
                                 }
                             }
                         }
@@ -605,8 +607,10 @@ namespace FINE.Service.Helpers
                             if (redisValue.HasValue)
                             {
 
-                                List<ReportMissingProductResponse> reportResponse = JsonConvert.DeserializeObject<List<ReportMissingProductResponse>>(redisValue);
-                                rs.AddRange(reportResponse);
+                                //List<ReportMissingProductResponse> reportResponse = JsonConvert.DeserializeObject<List<ReportMissingProductResponse>>(redisValue);
+                                //rs.AddRange(reportResponse);
+                                ReportMissingProductResponse reportResponse = JsonConvert.DeserializeObject<ReportMissingProductResponse>(redisValue);
+                                rsList.Add(reportResponse);
                             }
                         }
                         //rs = JsonConvert.DeserializeObject<OrderByStoreResponse>(redisValue);
@@ -623,7 +627,7 @@ namespace FINE.Service.Helpers
                 }
 
                 redis.Close();
-                return rs;
+                return rsList;
             }
             catch (Exception ex)
             {

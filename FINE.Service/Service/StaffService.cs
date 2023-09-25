@@ -6,14 +6,17 @@ using FINE.Data.UnitOfWork;
 using FINE.Service.Attributes;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Order;
+using FINE.Service.DTO.Request.Shipper;
 using FINE.Service.DTO.Request.Staff;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
+using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using NetTopologySuite.Algorithm;
+using StackExchange.Redis;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -38,6 +41,9 @@ namespace FINE.Service.Service
         //Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request);
         Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
+        Task<BaseResponsePagingViewModel<ReportMissingProductResponse>> GetReportMissingProduct(string storeId, string timeslotId);
+        Task<BaseResponseViewModel<ShipperResponse>> UpdateMissingProduct(List<UpdateMissingProductRequest> request);
+
     }
 
     public class StaffService : IStaffService
@@ -258,6 +264,53 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<BaseResponsePagingViewModel<ReportMissingProductResponse>> GetReportMissingProduct(string storeId, string timeslotId)
+        {
+            try 
+            {
+                List<ReportMissingProductResponse> reportResponse = await ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.GET);
+                var reportByStore = reportResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                                  && x.TimeSlotId == Guid.Parse(timeslotId));
+
+                return new BaseResponsePagingViewModel<ReportMissingProductResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Total = reportByStore.Count()
+                    },
+                    Data = reportByStore.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<ShipperResponse>> UpdateMissingProduct(List<UpdateMissingProductRequest> request)
+        {
+            try 
+            {
+                foreach (var item in request)
+                {
+                    ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.DELETE, item.ReportId.ToString());
+                }
+
+                return new BaseResponseViewModel<ShipperResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                };
+            }
+            catch(ErrorResponse ex)
             {
                 throw ex;
             }
