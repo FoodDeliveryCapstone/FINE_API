@@ -161,6 +161,8 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? CheckInDate { get; set; }
 
+        public string? OrderCode { get; set; } 
+
         public double? FinalAmount { get; set; }
 
         public int? OrderStatus { get; set; }
