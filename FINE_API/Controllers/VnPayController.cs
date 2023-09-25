@@ -18,7 +18,7 @@ namespace FINE.API.Controllers
         ///<summary>
         ///lấy kết quả trả về từ VnPay
         /// </summary>
-        [HttpPost("ReturnUrl")]
+        [HttpGet("ReturnUrl")]
         public async Task<IActionResult> PaymentExecute([FromQuery] string? Vnp_Amount, [FromQuery] string? Vnp_BankCode,
             [FromQuery] string? Vnp_BankTranNo, [FromQuery] string? Vnp_CardType, [FromQuery] string? Vnp_OrderInfo, [FromQuery] string? Vnp_PayDate,
             [FromQuery] string? Vnp_ResponseCode, [FromQuery] string? Vnp_TmnCode, [FromQuery] string? Vnp_TransactionNo, [FromQuery] string? Vnp_TxnRef,
