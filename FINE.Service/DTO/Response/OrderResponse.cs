@@ -9,44 +9,44 @@ namespace FINE.Service.DTO.Response
 {
     public class OrderResponse
     {
-        public Guid? Id { get; set; }
-        public string? OrderCode { get; set; } = null!;
+        public Guid Id { get; set; }
+        public string OrderCode { get; set; } = null!;
 
-        public CustomerOrderResponse? Customer { get; set; }
+        public CustomerOrderResponse Customer { get; set; }
 
-        public DateTime? CheckInDate { get; set; }
+        public DateTime CheckInDate { get; set; }
 
-        public double? TotalAmount { get; set; }
+        public double TotalAmount { get; set; }
 
-        public double? FinalAmount { get; set; }
+        public double FinalAmount { get; set; }
 
-        public double? TotalOtherAmount { get; set; }
+        public double TotalOtherAmount { get; set; }
 
-        public List<OrderOtherAmount>? OtherAmounts { get; set; }
+        public List<OrderOtherAmount> OtherAmounts { get; set; }
 
-        public int? OrderStatus { get; set; }
+        public int OrderStatus { get; set; }
 
-        public int? OrderType { get; set; }
+        public int OrderType { get; set; }
 
-        public TimeSlotOrderResponse? TimeSlot { get; set; }
+        public TimeSlotOrderResponse TimeSlot { get; set; }
 
-        public StationOrderResponse? StationOrder { get; set; }
+        public StationOrderResponse StationOrder { get; set; }
 
-        public int? Point { get; set; }
+        public int Point { get; set; }
 
-        public bool? IsConfirm { get; set; }
+        public bool IsConfirm { get; set; }
 
-        public bool? IsPartyMode { get; set; }
+        public bool IsPartyMode { get; set; }
 
-        public int? ItemQuantity { get; set; }
+        public int ItemQuantity { get; set; }
 
         public string? Note { get; set; }
 
         public DateTime? UpdateAt { get; set; }
 
-        public Guid? BoxId { get; set; }
+        public Guid BoxId { get; set; }
 
-        public List<OrderDetailResponse>? OrderDetails { get; set; }
+        public List<OrderDetailResponse> OrderDetails { get; set; }
 
     }
     public class OrderDetailResponse
