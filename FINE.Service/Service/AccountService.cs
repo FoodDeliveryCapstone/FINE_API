@@ -19,7 +19,7 @@ namespace FINE.Service.Service
 {
     public interface IAccountService
     {
-        Task CreateTransaction(TransactionTypeEnum transactionTypeEnum, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null);
+        Task<Transaction> CreateTransaction(TransactionTypeEnum transactionTypeEnum, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null);
         void CreateAccount(Guid customerId);
     }
 
@@ -83,10 +83,11 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null)
+        public async Task<Transaction> CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null)
         {
             try
             {
+                var transaction = new Transaction();
                 var accounts = await _unitOfWork.Repository<Account>().GetAll()
                                                 .Where(x => x.CustomerId == customerId)
                                                 .ToListAsync();
@@ -110,7 +111,7 @@ namespace FINE.Service.Service
 
                         try
                         {
-                            var transaction = new Transaction()
+                            transaction = new Transaction()
                             {
                                 Id = Guid.NewGuid(),
                                 AccountId = account.Id,
@@ -145,7 +146,7 @@ namespace FINE.Service.Service
 
                         try
                         {
-                            var transaction = new Transaction()
+                            transaction = new Transaction()
                             {
                                 Id = Guid.NewGuid(),
                                 AccountId = account.Id,
@@ -168,6 +169,7 @@ namespace FINE.Service.Service
                         break;
                 }
                 await _unitOfWork.CommitAsync();
+                return transaction;
             }
             catch (ErrorResponse ex)
             {

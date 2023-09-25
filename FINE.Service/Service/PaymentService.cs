@@ -82,9 +82,8 @@ namespace FINE.Service.Service
                     .FirstOrDefaultAsync(x => x.Customer.Id == Guid.Parse(customerId)
                                         && x.Type == (int)AccountTypeEnum.CreditAccount);
                 var orderInfo = $"Nap {amount} vao tai khoan he thong FINE";
-                await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, amount, Guid.Parse(customerId), TransactionStatusEnum.Processing, orderInfo);
+                var transaction =  await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, amount, Guid.Parse(customerId), TransactionStatusEnum.Processing, orderInfo);
 
-                var transactionId = Guid.NewGuid();
                 var pay = new VnPayLibrary();
                 var urlCallBack = _configuration["VnPayment:ReturnUrl"];
 
@@ -99,7 +98,7 @@ namespace FINE.Service.Service
                 pay.AddRequestData("vnp_OrderInfo", orderInfo.ToString());
                 pay.AddRequestData("vnp_OrderType", _configuration["VnPayment:OrderType"]);
                 pay.AddRequestData("vnp_ReturnUrl", urlCallBack);
-                pay.AddRequestData("vnp_TxnRef", transactionId.ToString());
+                pay.AddRequestData("vnp_TxnRef", transaction.Id.ToString());
 
                 var paymentUrl = pay.CreateRequestUrl(_configuration["VnPayment:BaseUrl"], _configuration["VnPayment:SecureHash"]);
 
