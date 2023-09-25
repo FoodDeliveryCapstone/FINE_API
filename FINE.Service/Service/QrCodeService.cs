@@ -70,7 +70,7 @@ namespace FINE.Service.Service
 
                 return qrCodeBitmap;
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
