@@ -147,7 +147,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<CustomerResponse>(customer)
+                    Data = result
                 };
             }
             catch (ErrorResponse ex)
