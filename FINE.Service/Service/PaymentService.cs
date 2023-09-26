@@ -52,7 +52,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                var note = $"Thanh toán {order.FinalAmount}VND cho đơn hàng {order.OrderCode}";
+                var note = $"Thanh toán {order.FinalAmount} VND cho đơn hàng {order.OrderCode}";
                 await _accountService.CreateTransaction(TransactionTypeEnum.Payment, AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId, TransactionStatusEnum.Finish, note);
 
                 var payment = new Payment()
@@ -82,7 +82,7 @@ namespace FINE.Service.Service
                 var account = await _unitOfWork.Repository<Account>().GetAll()
                     .FirstOrDefaultAsync(x => x.Customer.Id == Guid.Parse(customerId)
                                         && x.Type == (int)AccountTypeEnum.CreditAccount);
-                var orderInfo = $"Nap {amount} vao tai khoan he thong FINE";
+                var orderInfo = $"Nap {amount} VND vao tai khoan he thong FINE";
                 var transaction =  await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, amount, Guid.Parse(customerId), TransactionStatusEnum.Processing, orderInfo);
 
                 var pay = new VnPayLibrary();

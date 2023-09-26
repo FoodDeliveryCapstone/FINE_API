@@ -18,5 +18,7 @@ namespace FINE.Service.DTO.Response
 
         public int? Status { get; set; }
 
+        public DateTime CreatedAt { get; set; }
+
     }
 }
