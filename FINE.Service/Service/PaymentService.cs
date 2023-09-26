@@ -52,7 +52,8 @@ namespace FINE.Service.Service
         {
             try
             {
-                await _accountService.CreateTransaction(TransactionTypeEnum.Payment, AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId, TransactionStatusEnum.Finish);
+                var note = $"Thanh toán {order.FinalAmount}VND cho đơn hàng {order.OrderCode}";
+                await _accountService.CreateTransaction(TransactionTypeEnum.Payment, AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId, TransactionStatusEnum.Finish, note);
 
                 var payment = new Payment()
                 {

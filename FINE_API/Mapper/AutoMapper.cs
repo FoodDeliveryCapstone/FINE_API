@@ -122,6 +122,10 @@ namespace FINE.API.Mapper
             //CreateMap<UpdateStaffRequest, Staff>();
 
             #endregion
+
+            #region Transaction
+            CreateMap<Transaction, CustomerTransactionResponse>().ReverseMap();
+            #endregion
         }
     }
 }

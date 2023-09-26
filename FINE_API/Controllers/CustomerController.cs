@@ -66,6 +66,29 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// lấy các giao dịch của khách hàng
+        /// </summary>
+        [HttpGet("transaction")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<CustomerTransactionResponse>>> GetTransactionByCustomerId([FromQuery]CustomerTransactionResponse filter, [FromQuery]PagingRequest paging)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var result = await _customerService.GetTransactionByCustomerId(customerId, filter, paging);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Update thông tin khách hàng
         /// </summary>
         /// <param name="data"></param>
@@ -92,7 +115,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// tìm khách hàng bằng số điện thoại
+        /// Tìm khách hàng bằng số điện thoại
         /// </summary>
         [HttpGet("find")]
         public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> FindCustomerByPhone(string phoneNumber)
@@ -134,7 +157,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// lấy url VnPay
+        /// Lấy url VnPay để topup
         /// </summary>
         [HttpGet("topupUrl")]
         public async Task<ActionResult<BaseResponseViewModel<string>>> TopUpWalletRequest(double amount)
@@ -170,7 +193,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        ///  Invitation
+        ///  Gửi lời mời join đơn nhóm
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>

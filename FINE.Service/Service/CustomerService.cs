@@ -13,6 +13,7 @@ using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using FirebaseAdmin.Auth;
 using FirebaseAdmin.Messaging;
+using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
@@ -29,6 +30,7 @@ namespace FINE.Service.Service
     public interface ICustomerService
     {
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
+        Task<BaseResponsePagingViewModel<CustomerTransactionResponse>> GetTransactionByCustomerId(string customerId, CustomerTransactionResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
@@ -320,5 +322,34 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponsePagingViewModel<CustomerTransactionResponse>> GetTransactionByCustomerId(string customerId, CustomerTransactionResponse filter , PagingRequest paging)
+        {
+            try
+            {
+                var transaction =  _unitOfWork.Repository<Transaction>().GetAll()
+                                    .Where(x => x.Account.CustomerId == Guid.Parse(customerId) 
+                                            && x.Account.Type == (int)AccountTypeEnum.CreditAccount)
+                                    .OrderByDescending(x => x.CreatedAt)
+                                    .ProjectTo<CustomerTransactionResponse>(_mapper.ConfigurationProvider)
+                                    .DynamicFilter(filter)
+                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+
+                return new BaseResponsePagingViewModel<CustomerTransactionResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = transaction.Item1
+                    },
+                    Data = transaction.Item2.ToList()
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
