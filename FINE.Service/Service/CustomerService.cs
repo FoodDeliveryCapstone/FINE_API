@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Azure.Core;
 using Castle.Core.Resource;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
@@ -83,11 +84,20 @@ namespace FINE.Service.Service
                 //new customer => add fcm map with Id
                 if (customer is null)
                 {
+                    string customerPhone = userRecord.PhoneNumber;
+                    if (userRecord.PhoneNumber is not null)
+                    {
+                        if (userRecord.PhoneNumber.Contains("+84"))
+                        {
+                            customerPhone = userRecord.PhoneNumber.Replace("+84", "0");
+                        }
+                    }
+
                     CreateCustomerRequest newCustomer = new CreateCustomerRequest()
                     {
                         Name = userRecord.DisplayName,
                         Email = userRecord.Email,
-                        Phone = userRecord.PhoneNumber,
+                        Phone = customerPhone,
                         ImageUrl = userRecord.PhotoUrl
                     };
 
@@ -99,7 +109,7 @@ namespace FINE.Service.Service
 
                 _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
                 newAccessToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, null, customer.Id, _configuration);
-                
+
                 return new BaseResponseViewModel<LoginResponse>()
                 {
                     Status = new StatusViewModel()
@@ -224,7 +234,7 @@ namespace FINE.Service.Service
 
         }
 
-        public async Task SendInvitation(string customerId,string adminId, string partyCode)
+        public async Task SendInvitation(string customerId, string adminId, string partyCode)
         {
             try
             {
@@ -271,7 +281,7 @@ namespace FINE.Service.Service
                 newCustomer.CustomerCode = newCustomer.Id.ToString() + '_' + DateTime.Now.Date.ToString("ddMMyyyy");
                 newCustomer.CreateAt = DateTime.Now;
 
-                if(newCustomer.Phone is not null)
+                if (newCustomer.Phone is not null)
                 {
                     if (newCustomer.Phone.Contains("+84"))
                     {
