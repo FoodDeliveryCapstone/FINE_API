@@ -328,8 +328,7 @@ namespace FINE.Service.Service
             {
                 var transaction =  _unitOfWork.Repository<Transaction>().GetAll()
                                     .Where(x => x.Account.CustomerId == Guid.Parse(customerId) 
-                                            && x.Account.Type == (int)AccountTypeEnum.CreditAccount
-                                            && x.Type == (int)TransactionTypeEnum.Recharge)
+                                            && x.Account.Type == (int)AccountTypeEnum.CreditAccount)
                                     .OrderByDescending(x => x.CreatedAt)
                                     .ProjectTo<CustomerTransactionResponse>(_mapper.ConfigurationProvider)
                                     .DynamicFilter(filter)
