@@ -57,7 +57,7 @@ namespace FINE.Service.Service
 
                 var payment = new Payment()
                 {
-                    Id = Guid.NewGuid(),
+                    Id = Guid.NewGuid(), 
                     OrderId = order.Id,
                     Amount = order.FinalAmount,
                     PaymentType = (int)paymentType,
