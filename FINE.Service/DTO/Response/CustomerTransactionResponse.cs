@@ -8,13 +8,13 @@ namespace FINE.Service.DTO.Response
 {
     public class CustomerTransactionResponse
     {
-        public double Amount { get; set; }
+        public double? Amount { get; set; }
 
         public string? Notes { get; set; }
 
-        public bool IsIncrease { get; set; }
+        public bool? IsIncrease { get; set; }
 
-        public int Type { get; set; }
+        public int? Type { get; set; }
 
         public int? Status { get; set; }
 

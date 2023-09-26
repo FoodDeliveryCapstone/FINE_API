@@ -439,7 +439,7 @@ namespace FINE.Service.Service
                 var coOrder = new CoOrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    PartyCode = Utils.GenerateRandomCode(6),
+                    PartyCode = Constants.PARTYORDER_LINKED + Utils.GenerateRandomCode(6),
                     PartyType = (int)PartyOrderType.LinkedOrder,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot)
                 };
@@ -458,8 +458,9 @@ namespace FINE.Service.Service
                 if (request.PartyType is PartyOrderType.CoOrder)
                 {
                     party.PartyType = (int)PartyOrderType.CoOrder;
-                    coOrder.PartyType = (int)PartyOrderType.CoOrder;
+                    party.PartyCode = Constants.PARTYORDER_COLAB + Utils.GenerateRandomCode(6);
 
+                    coOrder.PartyType = (int)PartyOrderType.CoOrder;
                     coOrder.PartyOrder = new List<CoOrderPartyCard>();
 
                     var orderCard = new CoOrderPartyCard()
@@ -1020,7 +1021,7 @@ namespace FINE.Service.Service
                 if (partyMem.Customer.IsAdmin is true)
                 {
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
-                    foreach (var party in listParty)
+                    foreach (var party in listParty)                                                                                         
                     {
                         party.IsActive = false;
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);

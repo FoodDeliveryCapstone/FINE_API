@@ -11,5 +11,7 @@
         public const string SUC_ORDER_CREATED = "Chòi oi đặt thành công rồi nè !!!";
         public const string VNPAY_PAYMENT_FAIL = "Thanh toán VnPay không thành công";
         public const string VNPAY_PAYMENT_SUCC = "Thanh toán VnPay thành công";
+        public const string PARTYORDER_LINKED = "LPO";
+        public const string PARTYORDER_COLAB = "CPO";
     }
 }
