@@ -460,6 +460,7 @@ namespace FINE.Service.Service
                     party.PartyType = (int)PartyOrderType.CoOrder;
                     party.PartyCode = Constants.PARTYORDER_COLAB + Utils.GenerateRandomCode(6);
 
+                    coOrder.PartyCode = Constants.PARTYORDER_COLAB + Utils.GenerateRandomCode(6);
                     coOrder.PartyType = (int)PartyOrderType.CoOrder;
                     coOrder.PartyOrder = new List<CoOrderPartyCard>();
 
@@ -1016,16 +1017,19 @@ namespace FINE.Service.Service
 
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
-
                 var partyMem = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
+
+                // đứa delete là admin
                 if (partyMem.Customer.IsAdmin is true)
                 {
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
+                    //nếu đơn nhóm chỉ có 2 người
+                    //if()
                     foreach (var party in listParty)                                                                                         
                     {
                         party.IsActive = false;
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);
                     }
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
                 }
                 else
                 {
