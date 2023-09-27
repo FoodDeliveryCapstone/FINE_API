@@ -37,4 +37,5 @@ namespace FINE.Service.DTO.Response
         public List<OrderSuccess> OrderSuccess { get; set; }
         public List<OrderFailed> OrderFailed { get; set; }
     }
+    public class SimulateOrderStatusResponse { }
 }

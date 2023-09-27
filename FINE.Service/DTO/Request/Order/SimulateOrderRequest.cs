@@ -26,4 +26,9 @@ namespace FINE.Service.DTO.Request.Order
         public int? CustomerEach { get; set; }
         public int? TotalOrderSuccess { get; set; }
     }
+
+    public class SimulateOrderStatusRequest
+    {
+        public int TotalOrder { get; set; }
+    }
 }

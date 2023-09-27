@@ -41,6 +41,7 @@ namespace FINE.Service.Service
         //Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request);
         Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
+        Task<BaseResponseViewModel<SimulateOrderStatusResponse>> SimulateOrderStatus(SimulateOrderStatusRequest request);
         Task<BaseResponsePagingViewModel<ReportMissingProductResponse>> GetReportMissingProduct(string storeId, string timeslotId);
         Task<BaseResponseViewModel<ShipperResponse>> UpdateMissingProduct(List<UpdateMissingProductRequest> request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request);
@@ -1398,5 +1399,39 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<SimulateOrderStatusResponse>> SimulateOrderStatus(SimulateOrderStatusRequest request)
+        {
+            try
+            {
+                var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
+                                        .OrderByDescending(x => x.CheckInDate)
+                                        .Take(request.TotalOrder)
+                                        .ToListAsync();
+                getAllOrder = getAllOrder.Where(x => x.OrderStatus == (int)OrderStatusEnum.BoxStored).ToList();
+                foreach(var order in getAllOrder)
+                {
+                    var payload = new UpdateOrderStatusRequest()
+                    {
+                        OrderStatus = OrderStatusEnum.Finished,
+                    };
+
+                    var updateStatus = await UpdateOrderStatus(order.Id.ToString(), payload);
+                }
+
+                return new BaseResponseViewModel<SimulateOrderStatusResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0,
+                    }
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
