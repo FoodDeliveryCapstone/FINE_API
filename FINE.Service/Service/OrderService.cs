@@ -18,6 +18,7 @@ using Hangfire;
 using FirebaseAdmin.Messaging;
 using Azure;
 using System.IO;
+using Castle.Core.Resource;
 
 namespace FINE.Service.Service
 {
@@ -36,7 +37,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
-        Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode);
+        Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode, string memberId = null);
     }
     public class OrderService : IOrderService
     {
@@ -57,7 +58,7 @@ namespace FINE.Service.Service
             _fm = fm;
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter ,PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging)
         {
             try
             {
@@ -366,7 +367,7 @@ namespace FINE.Service.Service
                         { "type", NotifyTypeEnum.ForUsual.ToString()}
                     };
 
-                BackgroundJob.Enqueue(() =>  _fm.SendToToken(customerToken, notification, data));
+                BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -1004,7 +1005,7 @@ namespace FINE.Service.Service
 
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode, string memberId = null)
         {
             try
             {
@@ -1024,16 +1025,34 @@ namespace FINE.Service.Service
                 // đứa delete là admin
                 if (partyMem.Customer.IsAdmin is true)
                 {
-                    //nếu đơn nhóm chỉ có 2 người
-                    if (coOrder.PartyOrder.Count() == 1)
+                    var party = listParty.FirstOrDefault(x => x.CustomerId == Guid.Parse(customerId));
+                    party.IsActive = false;
+                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                    //nếu đơn nhóm chỉ có admin => xóa chế độ coOrder
+                    if (memberId is not null)
                     {
-                        listParty.FirstOrDefault(x => x.CustomerId == partyMem.Customer.Id).IsActive = false;
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
                     }
-
-                    foreach (var party in listParty)
+                    else
                     {
-                        party.IsActive = false;
-                       
+                        coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(memberId)).Customer.IsAdmin = true;
+                        coOrder.PartyOrder.Remove(partyMem);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+
+                        var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token;
+
+                        Notification notification = new Notification
+                        {
+                            Title = Constants.CHANGE_ADMIN_PARTY,
+                            Body = String.Format($"Bạn vừa được {party.Customer.Name} chuyển quyền admin đơn nhóm {coOrder.PartyCode}")
+                        };
+
+                        var data = new Dictionary<string, string>()
+                    {
+                        { "type", NotifyTypeEnum.ForPopup.ToString()}
+                    };
+
+                        BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
                     }
                 }
                 else
@@ -1045,8 +1064,6 @@ namespace FINE.Service.Service
                     coOrder.PartyOrder.Remove(partyMem);
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
                 }
-
-
 
                 await _unitOfWork.CommitAsync();
 

@@ -21,7 +21,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Get order by Id
+        /// Lấy order bằng id
         /// </summary>
         [HttpGet("{orderId}")]
         public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> GetOrderById(string orderId)
@@ -44,6 +44,9 @@ namespace FINE.API.Controllers
             }
         }
 
+        /// <summary>
+        /// fetch status order
+        /// </summary>
         [HttpGet("status/{orderId}")]
         public async Task<ActionResult<BaseResponseViewModel<dynamic>>> GetOrderStatusByOrderId(string orderId)
         {
@@ -66,7 +69,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Get CoOrder
+        /// Lấy CoOrder 
         /// </summary>
         [HttpGet("coOrder/{partyCode}")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> GetPartyOrder(string partyCode)
@@ -281,7 +284,7 @@ namespace FINE.API.Controllers
         /// Delete CoOrder
         /// </summary>
         [HttpPut("coOrder/out")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(string partyCode)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(string partyCode, string? memberId)
         {
             try
             {
@@ -292,7 +295,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var rs = await _orderService.DeletePartyOrder(customerId, partyCode);
+                var rs = await _orderService.DeletePartyOrder(customerId, partyCode, memberId);
                 return Ok(rs);
             }
             catch (ErrorResponse ex)
