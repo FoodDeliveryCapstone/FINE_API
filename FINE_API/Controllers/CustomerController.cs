@@ -91,8 +91,6 @@ namespace FINE.API.Controllers
         /// <summary>
         /// Update thông tin khách hàng
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
         [HttpPut]
         public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> UpdateCustomer([FromQuery] UpdateCustomerRequest request)
         {
@@ -195,8 +193,6 @@ namespace FINE.API.Controllers
         /// <summary>
         ///  Gửi lời mời join đơn nhóm
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
         [HttpPost("invitation")]
         public async Task SendInvitation(string customerId, string partyCode)
         {
@@ -210,6 +206,19 @@ namespace FINE.API.Controllers
                 }
                 //var adminId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
                 await _customerService.SendInvitation(customerId, adminId,partyCode);
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        [HttpGet("time")]
+        public async Task<ActionResult<DateTime>> ServerTime()
+        {
+            try
+            {
+                return Ok(DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss"));
             }
             catch (ErrorResponse ex)
             {
