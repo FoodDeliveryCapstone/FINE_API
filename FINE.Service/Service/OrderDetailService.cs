@@ -148,6 +148,7 @@ namespace FINE.Service.Service
             {
                 var key = Utils.GenerateRandomCode(10);
                 var box = await _unitOfWork.Repository<Box>().GetAll().ToListAsync();
+                var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll().ToListAsync();
                 var preBoxId = Guid.Empty;
                 int nextBoxIndex = 0;
 
@@ -185,30 +186,7 @@ namespace FINE.Service.Service
                             OrderStatus = OrderStatusEnum.Delivering
                         };
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
-
-                        var boxByStation = box
-                            .Where(x => x.StationId == order.StationId)
-                            .OrderBy(x => x.CreateAt)
-                            .ToList();
-                        // lay box tiep theo trong boxByStation
-                        if (boxByStation.Any())
-                        {
-                            if (nextBoxIndex < boxByStation.Count)
-                            {
-                                var nextBox = boxByStation[nextBoxIndex];
-
-                                var addOrderToBoxRequest = new AddOrderToBoxRequest()
-                                {
-                                    BoxId = nextBox.Id,
-                                    OrderId = order.OrderId
-                                };
-                                var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
-
-                                preBoxId = nextBox.Id;
-                                nextBoxIndex++;
-                            }
-                        }
-
+                       
                     }
                     else if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.BoxStored))
                     {
@@ -219,7 +197,45 @@ namespace FINE.Service.Service
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
                         ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.DELETE, order.OrderId.ToString());
                     }
-                    #endregion
+                    #endregion               
+                }
+
+                if (request.OrderDetailStoreStatus == OrderStatusEnum.Delivering)
+                {
+                    HashSet<Guid> orderIdList = new HashSet<Guid>();
+                    foreach (var newEntityOrder in request.ListStoreAndOrder)
+                    {
+                        if (!orderIdList.Equals(newEntityOrder.OrderId))
+                        {
+                            orderIdList.Add(newEntityOrder.OrderId);
+                        }
+                    }
+                    foreach (var orderId in orderIdList)
+                    {
+                        var newOrder = getAllOrder.FirstOrDefault(x => x.Id == orderId);
+                        var boxByStation = box
+                       .Where(x => x.StationId == newOrder.StationId)
+                       .OrderBy(x => x.CreateAt)
+                       .ToList();
+                        // lay box tiep theo trong boxByStation
+                        if (boxByStation.Any())
+                        {
+                            if (nextBoxIndex < boxByStation.Count)
+                            {
+                                var nextBox = boxByStation[nextBoxIndex];
+
+                                var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                                {
+                                    BoxId = nextBox.Id,
+                                    OrderId = newOrder.Id
+                                };
+                                var addOrderToBox = await _boxService.AddOrderToBox(newOrder.StationId.ToString(), key, addOrderToBoxRequest);
+
+                                preBoxId = nextBox.Id;
+                                nextBoxIndex++;
+                            }
+                        }
+                    }
                 }
                 return new BaseResponseViewModel<OrderByStoreResponse>()
                 {

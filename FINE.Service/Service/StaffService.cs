@@ -1411,9 +1411,9 @@ namespace FINE.Service.Service
             {
                 var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
                                         .OrderByDescending(x => x.CheckInDate)
-                                        .Take(request.TotalOrder)
+                                        .Where(x => x.OrderStatus == (int)OrderStatusEnum.BoxStored)
                                         .ToListAsync();
-                getAllOrder = getAllOrder.Where(x => x.OrderStatus == (int)OrderStatusEnum.BoxStored).ToList();
+                getAllOrder = getAllOrder.Take(request.TotalOrder).ToList();
                 foreach(var order in getAllOrder)
                 {
                     var payload = new UpdateOrderStatusRequest()
