@@ -107,6 +107,11 @@ namespace FINE.Service.Service
                         {
                             account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
                             account.UpdateAt = DateTime.Now;
+
+                            if(status == TransactionStatusEnum.Finish)
+                            {
+                                account.Balance += amount;
+                            }
                         }
 
                         try

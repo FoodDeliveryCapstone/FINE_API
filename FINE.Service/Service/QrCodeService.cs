@@ -26,11 +26,13 @@ namespace FINE.Service.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IFirebaseMessagingService _fm;
-        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm)
+        private readonly IPaymentService _paymentService;
+        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm, IPaymentService paymentService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _fm = fm;
+            _paymentService = paymentService;
         }
 
 
@@ -80,16 +82,22 @@ namespace FINE.Service.Service
         {
             try
             {
-                var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
-                                    .FirstOrDefaultAsync(x => x.BoxId == Guid.Parse(boxId) && x.Key == key);
+                var orderBox = _unitOfWork.Repository<OrderBox>().GetAll()
+                                    .FirstOrDefault(x => x.BoxId == Guid.Parse(boxId) && x.Key.Contains(key));
                 if (orderBox == null)
                     throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_BOX_ERROR, BoxErrorEnums.ORDER_BOX_ERROR.GetDisplayName());
 
                 orderBox.Status = (int)OrderBoxStatusEnum.Picked;
-                orderBox.UpdateAt = DateTime.Now;   
+                orderBox.UpdateAt = DateTime.Now;
 
-                await _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
-                await _unitOfWork.CommitAsync();
+                 _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
+
+                var order = _unitOfWork.Repository<Order>().GetAll()
+                    .FirstOrDefault(x => x.Id == orderBox.OrderId);
+                order.OrderStatus = (int)OrderStatusEnum.Finished;
+                _unitOfWork.Repository<Order>().UpdateDetached(order);
+
+                _unitOfWork.CommitAsync();
 
                 var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
                                     .FirstOrDefault(x => x.UserId == orderBox.Order.CustomerId).Token;
@@ -103,6 +111,12 @@ namespace FINE.Service.Service
                     { "type", NotifyTypeEnum.ForPopup.ToString()}
                 };
                 BackgroundJob.Enqueue(() => _fm.SendToToken(token, notification, data));
+
+                var party = orderBox.Order.Parties.FirstOrDefault(x => x.PartyType == (int)PartyOrderType.LinkedOrder);
+                if (party is not null)
+                {
+                    _paymentService.RefundPartialLinkedFee(party.PartyCode, party.CustomerId);
+                }
             }
             catch (ErrorResponse ex)
             {

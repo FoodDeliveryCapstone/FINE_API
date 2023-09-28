@@ -305,26 +305,37 @@ namespace FINE.Service.Service
                 if (request.PartyCode is not null)
                 {
                     var checkCode = await _unitOfWork.Repository<Party>().GetAll()
-                                    .FirstOrDefaultAsync(x => x.PartyCode == request.PartyCode);
+                                    .Where(x => x.PartyCode == request.PartyCode)
+                                    .ToListAsync();
 
                     if (checkCode == null)
                         throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                    if (checkCode.Status is (int)PartyOrderStatus.CloseParty)
+                    if (checkCode.Any(x => x.Status == (int)PartyOrderStatus.CloseParty))
                         throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
 
-                    var linkedOrder = new Party()
+                    var checkJoin = checkCode.Find(x => x.CustomerId == Guid.Parse(customerId));
+                    if (checkJoin == null)
                     {
-                        Id = Guid.NewGuid(),
-                        OrderId = request.Id,
-                        CustomerId = Guid.Parse(customerId),
-                        PartyCode = request.PartyCode,
-                        PartyType = (int)PartyOrderType.LinkedOrder,
-                        Status = (int)PartyOrderStatus.Confirm,
-                        IsActive = true,
-                        CreateAt = DateTime.Now
-                    };
-                    order.Parties.Add(linkedOrder);
+                        var linkedOrder = new Party()
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderId = request.Id,
+                            CustomerId = Guid.Parse(customerId),
+                            PartyCode = request.PartyCode,
+                            PartyType = (int)PartyOrderType.LinkedOrder,
+                            Status = (int)PartyOrderStatus.Confirm,
+                            IsActive = true,
+                            CreateAt = DateTime.Now
+                        };
+                        order.Parties.Add(linkedOrder);
+                    }
+                    else
+                    {
+                        checkJoin.OrderId = request.Id;
+                        checkJoin.Status = (int)PartyOrderStatus.Confirm;
+                        await _unitOfWork.Repository<Party>().UpdateDetached(checkJoin);
+                    }
                 }
 
                 await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);

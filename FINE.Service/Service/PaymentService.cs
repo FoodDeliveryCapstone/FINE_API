@@ -30,6 +30,7 @@ namespace FINE.Service.Service
         Task CreatePayment(Order orderId, int point, PaymentTypeEnum type);
         Task<BaseResponseViewModel<string>> TopUpWalletRequest(string customerId, double amount);
         Task<bool> PaymentExecute(IQueryCollection collections);
+        Task RefundPartialLinkedFee(string partyCode, Guid customerId);
     }
     public class PaymentService : IPaymentService
     {
@@ -57,7 +58,7 @@ namespace FINE.Service.Service
 
                 var payment = new Payment()
                 {
-                    Id = Guid.NewGuid(), 
+                    Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     Amount = order.FinalAmount,
                     PaymentType = (int)paymentType,
@@ -83,7 +84,7 @@ namespace FINE.Service.Service
                     .FirstOrDefaultAsync(x => x.Customer.Id == Guid.Parse(customerId)
                                         && x.Type == (int)AccountTypeEnum.CreditAccount);
                 var orderInfo = $"Nap {amount} VND vao tai khoan he thong FINE";
-                var transaction =  await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, amount, Guid.Parse(customerId), TransactionStatusEnum.Processing, orderInfo);
+                var transaction = await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, amount, Guid.Parse(customerId), TransactionStatusEnum.Processing, orderInfo);
 
                 var pay = new VnPayLibrary();
                 var urlCallBack = _configuration["VnPayment:ReturnUrl"];
@@ -119,6 +120,7 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
         public async Task<bool> PaymentExecute(IQueryCollection collections)
         {
             try
@@ -129,7 +131,7 @@ namespace FINE.Service.Service
                 var transaction = await _unitOfWork.Repository<Transaction>().GetAll()
                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(response.TransactionId));
 
-                if(response.Success is true && response.VnPayResponseCode.Equals("00"))
+                if (response.Success is true && response.VnPayResponseCode.Equals("00"))
                 {
                     transaction.Status = (int)TransactionStatusEnum.Finish;
                     transaction.Account.Balance += transaction.Amount;
@@ -138,13 +140,82 @@ namespace FINE.Service.Service
                 else
                 {
                     transaction.Status = (int)TransactionStatusEnum.Fail;
-                    isSuccess =  false;
+                    isSuccess = false;
                 }
                 await _unitOfWork.Repository<Transaction>().UpdateDetached(transaction);
                 await _unitOfWork.CommitAsync();
                 return isSuccess;
             }
             catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task RefundPartialLinkedFee(string partyCode, Guid customerId)
+        {
+            try
+            {
+                var parties = _unitOfWork.Repository<Party>().GetAll().Where(x => x.PartyCode == partyCode).ToList();
+                if (parties.Count() == 2)
+                {
+                    if (parties.Where(x => x.Order.OrderStatus == (int)OrderStatusEnum.Finished).Count() == 0)
+                    {
+                        foreach (var party in parties)
+                        {
+                            var shippingFee = party.Order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.ShippingFee).Amount;
+                            var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
+
+                            var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
+                            await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+
+
+                            var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == party.CustomerId);
+                            Notification notification = new Notification()
+                            {
+                                Title = "Thông báo!!!",
+                                Body = note
+                            };
+                            Dictionary<string, string> data = new Dictionary<string, string>()
+                        {
+                            { "type", NotifyTypeEnum.ForPopup.ToString()}
+                        };
+                            BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
+
+                            party.Status = (int)PartyOrderStatus.FinishRefund;
+                            await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                        }
+                        await _unitOfWork.CommitAsync();
+                    }
+                }
+                else if (parties.Count() > 2)
+                {
+                    var party = parties.FirstOrDefault(x => x.CustomerId == customerId);
+                    var shippingFee = party.Order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.ShippingFee).Amount;
+                    var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
+
+                    var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
+                    await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+
+
+                    var customerFcm = await _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefaultAsync(x => x.UserId == party.CustomerId);
+                    Notification notification = new Notification()
+                    {
+                        Title = "Thông báo!!!",
+                        Body = note
+                    };
+                    Dictionary<string, string> data = new Dictionary<string, string>()
+                        {
+                            { "type", NotifyTypeEnum.ForPopup.ToString()}
+                        };
+                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
+
+                    party.Status = (int)PartyOrderStatus.FinishRefund;
+                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                    await _unitOfWork.CommitAsync();
+                }
+            }
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
