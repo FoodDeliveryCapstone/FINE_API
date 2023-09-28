@@ -12,4 +12,9 @@ namespace FINE.Service.DTO.Request.Box
         public Guid BoxId { get; set; }
         public Guid OrderId { get; set; }
     }
+
+    public class SystemAddOrderToBoxRequest
+    {
+        public List<Guid> OrderId { get; set; }
+    }
 }

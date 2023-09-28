@@ -39,15 +39,15 @@ namespace FINE.API.Controllers.AdminControler
         }
 
         /// <summary>
-        /// Get split orders detail by store and station
+        /// Get split orders detail
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpGet("staff/{storeId}/{stationId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<OrderByStoreResponse>>> GetSplitOrderDetail(string storeId, string stationId, int status, string? timeslotId)
+        [HttpGet("staff/splitOrderDetail")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderByStoreResponse>>> GetSplitOrderDetail(string stationId, int status, string? timeslotId, string? storeId)
         {
             try
             {
-                return await _orderDetailService.GetSplitOrderDetail(storeId, stationId, status, timeslotId);
+                return await _orderDetailService.GetSplitOrderDetail(stationId, status, timeslotId, storeId);
             }
             catch (ErrorResponse ex)
             {

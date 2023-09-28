@@ -23,6 +23,7 @@ namespace FINE.Service.Service
     public interface IBoxService
     {
         Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, string key, AddOrderToBoxRequest request);
+        Task<BaseResponseViewModel<OrderByStoreResponse>> SystemAddOrderToBox(SystemAddOrderToBoxRequest request);
         Task<BaseResponsePagingViewModel<BoxResponse>> GetBoxByStation(string stationId, BoxResponse filter, PagingRequest paging);
 
     }
@@ -117,6 +118,70 @@ namespace FINE.Service.Service
                         Total = box.Item1
                     },
                     Data = box.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<OrderByStoreResponse>> SystemAddOrderToBox(SystemAddOrderToBoxRequest request)
+        {
+            try
+            {
+                var key = Utils.GenerateRandomCode(10);
+                var box = await _unitOfWork.Repository<Box>().GetAll().ToListAsync();
+                var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll().ToListAsync();
+                var preBoxId = Guid.Empty;
+                int nextBoxIndex = 0;
+                foreach (var item in request.OrderId)
+                {
+                    List<OrderByStoreResponse> checkOrderStatus = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.ToString());
+                    if (!checkOrderStatus.Any(x => x.OrderDetailStoreStatus != OrderStatusEnum.Delivering))
+                    {
+                        HashSet<Guid> orderIdList = new HashSet<Guid>();
+                        var order = getAllOrder.FirstOrDefault(x => x.Id == item);
+                        var boxByStation = box
+                            .Where(x => x.StationId == order.StationId)
+                            .OrderBy(x => x.CreateAt)
+                            .ToList();
+                        // lay box tiep theo trong boxByStation
+                        if (boxByStation.Any())
+                        {
+                            if (nextBoxIndex < boxByStation.Count)
+                            {
+                                var nextBox = boxByStation[nextBoxIndex];
+
+                                var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                                {
+                                    BoxId = nextBox.Id,
+                                    OrderId = order.Id
+                                };
+                                var addOrderToBox = await AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
+
+                                preBoxId = nextBox.Id;
+                                nextBoxIndex++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
+                        OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
+                    }
+                    //}
+                }
+
+                return new BaseResponseViewModel<OrderByStoreResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    //Data =
                 };
             }
             catch (ErrorResponse ex)

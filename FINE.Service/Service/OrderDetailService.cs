@@ -27,7 +27,7 @@ namespace FINE.Service.Service
     public interface IOrderDetailService
     {
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
-        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, int status, string timeslot = null);
+        Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail( string stationId, int status, string timeslot = null, string storeId = null);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
         Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
@@ -80,21 +80,37 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string storeId, string stationId, int status, string timeslotId = null)
+        public async Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail(string stationId, int status, string timeslotId = null, string storeId = null)
         {
             try
             {
                 // Get from Redis
                 List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
-                if (timeslotId == null)
+                if (timeslotId == null && storeId == null)
                 {
-                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) 
+                    orderResponse = orderResponse.Where(x => x.StationId == Guid.Parse(stationId)
+                                                                 && (int)x.OrderDetailStoreStatus == status)
+                                                                 .OrderByDescending(x => x.CheckInDate)
+                                                                 .ToList();
+                }
+               
+                else if (storeId == null)
+                {
+                    orderResponse = orderResponse.Where(x => Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                                                 && x.StationId == Guid.Parse(stationId)
+                                                                 && (int)x.OrderDetailStoreStatus == status)
+                                                                 .OrderByDescending(x => x.CheckInDate)
+                                                                 .ToList();
+                }
+                else if (timeslotId == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
                                              && x.StationId == Guid.Parse(stationId)
                                              && (int)x.OrderDetailStoreStatus == status)
                                              .OrderByDescending(x => x.CheckInDate)
                                              .ToList();
                 }
-                else
+                else 
                 {
                     orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) 
                                              && x.StationId == Guid.Parse(stationId)
@@ -200,43 +216,43 @@ namespace FINE.Service.Service
                     #endregion               
                 }
 
-                if (request.OrderDetailStoreStatus == OrderStatusEnum.Delivering)
-                {
-                    HashSet<Guid> orderIdList = new HashSet<Guid>();
-                    foreach (var newEntityOrder in request.ListStoreAndOrder)
-                    {
-                        if (!orderIdList.Equals(newEntityOrder.OrderId))
-                        {
-                            orderIdList.Add(newEntityOrder.OrderId);
-                        }
-                    }
-                    foreach (var orderId in orderIdList)
-                    {
-                        var newOrder = getAllOrder.FirstOrDefault(x => x.Id == orderId);
-                        var boxByStation = box
-                       .Where(x => x.StationId == newOrder.StationId)
-                       .OrderBy(x => x.CreateAt)
-                       .ToList();
-                        // lay box tiep theo trong boxByStation
-                        if (boxByStation.Any())
-                        {
-                            if (nextBoxIndex < boxByStation.Count)
-                            {
-                                var nextBox = boxByStation[nextBoxIndex];
+                //if (request.OrderDetailStoreStatus == OrderStatusEnum.Delivering)
+                //{
+                //    HashSet<Guid> orderIdList = new HashSet<Guid>();
+                //    foreach (var newEntityOrder in request.ListStoreAndOrder)
+                //    {
+                //        if (!orderIdList.Equals(newEntityOrder.OrderId))
+                //        {
+                //            orderIdList.Add(newEntityOrder.OrderId);
+                //        }
+                //    }
+                //    foreach (var orderId in orderIdList)
+                //    {
+                //        var newOrder = getAllOrder.FirstOrDefault(x => x.Id == orderId);
+                //        var boxByStation = box
+                //       .Where(x => x.StationId == newOrder.StationId)
+                //       .OrderBy(x => x.CreateAt)
+                //       .ToList();
+                //        // lay box tiep theo trong boxByStation
+                //        if (boxByStation.Any())
+                //        {
+                //            if (nextBoxIndex < boxByStation.Count)
+                //            {
+                //                var nextBox = boxByStation[nextBoxIndex];
 
-                                var addOrderToBoxRequest = new AddOrderToBoxRequest()
-                                {
-                                    BoxId = nextBox.Id,
-                                    OrderId = newOrder.Id
-                                };
-                                var addOrderToBox = await _boxService.AddOrderToBox(newOrder.StationId.ToString(), key, addOrderToBoxRequest);
+                //                var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                //                {
+                //                    BoxId = nextBox.Id,
+                //                    OrderId = newOrder.Id
+                //                };
+                //                var addOrderToBox = await _boxService.AddOrderToBox(newOrder.StationId.ToString(), key, addOrderToBoxRequest);
 
-                                preBoxId = nextBox.Id;
-                                nextBoxIndex++;
-                            }
-                        }
-                    }
-                }
+                //                preBoxId = nextBox.Id;
+                //                nextBoxIndex++;
+                //            }
+                //        }
+                //    }
+                //}
                 return new BaseResponseViewModel<OrderByStoreResponse>()
                 {
                     Status = new StatusViewModel()
