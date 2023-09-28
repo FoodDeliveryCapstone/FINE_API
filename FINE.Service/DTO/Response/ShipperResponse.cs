@@ -17,7 +17,8 @@ namespace FINE.Service.DTO.Response
         public Guid TimeSlotId { get; set; }
         public Guid StationId { get; set; }
         public Guid StoreId { get; set; }
-        public Guid BoxId { get; set; }
-        public List<MissingProductRequest> MissingProducts { get; set; }
+        public string? ProductName { get; set; } = null!;
+        public int Quantity { get; set; }
+        public List<Guid> ListBoxId { get; set; }
     }
 }

@@ -275,17 +275,18 @@ namespace FINE.Service.Service
         {
             try 
             {
-                List<ReportMissingProductResponse> reportResponse = await ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.GET);
-                var reportByStore = reportResponse.Where(x => x.StoreId == Guid.Parse(storeId)
-                                                  && x.TimeSlotId == Guid.Parse(timeslotId));
-
+               
+                List<ReportMissingProductResponse> reportsResponse = await ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.GET);
+                var reportsByStore = reportsResponse.Where(x => x.TimeSlotId == Guid.Parse(timeslotId)
+                                                           && x.StoreId == Guid.Parse(storeId));
+  
                 return new BaseResponsePagingViewModel<ReportMissingProductResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {
-                        Total = reportByStore.Count()
+                        Total = reportsByStore.Count()
                     },
-                    Data = reportByStore.ToList()
+                    Data = reportsByStore.ToList(),
                 };
             }
             catch (ErrorResponse ex)

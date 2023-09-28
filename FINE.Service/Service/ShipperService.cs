@@ -53,24 +53,22 @@ namespace FINE.Service.Service
                 if (checkStation == null)
                     throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
                                         StationErrorEnums.NOT_FOUND.GetDisplayName());
-                var checkStore = await _unitOfWork.Repository<Store>().GetAll().FirstOrDefaultAsync(x => x.Id == request.StoreId);
-                if (checkStore == null)
-                    throw new ErrorResponse(404, (int)StoreErrorEnums.NOT_FOUND,
-                                        StoreErrorEnums.NOT_FOUND.GetDisplayName());
-                var checkBox = await _unitOfWork.Repository<Box>().GetAll().FirstOrDefaultAsync(x => x.Id == request.BoxId);
-                if (checkBox == null)
-                    throw new ErrorResponse(404, (int)BoxErrorEnums.NOT_FOUND,
-                                        BoxErrorEnums.NOT_FOUND.GetDisplayName());
                 #endregion
+                var productAttribute = await _unitOfWork.Repository<ProductAttribute>().GetAll().FirstOrDefaultAsync(x => x.Name.Equals(request.ProductName));
+                if (productAttribute == null)
+                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND,
+                                        ProductErrorEnums.NOT_FOUND.GetDisplayName());
+                var getStore = await _unitOfWork.Repository<Product>().GetAll().FirstOrDefaultAsync(x => x.Id == productAttribute.ProductId);
 
                 var reportMissing = new ReportMissingProductResponse()
                 {
                     ReportId = Guid.NewGuid(),
                     TimeSlotId = request.TimeSlotId,
                     StationId = request.StationId,
-                    StoreId = request.StoreId,
-                    BoxId = request.BoxId,
-                    MissingProducts = request.MissingProducts,                      
+                    StoreId = getStore.StoreId,
+                    ProductName = request.ProductName,
+                    Quantity = request.Quantity,
+                    ListBoxId = request.ListBoxId
                 };
                 ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.SET, reportMissing.ReportId.ToString(), reportMissing);
                 

@@ -10,14 +10,8 @@ namespace FINE.Service.DTO.Request.Shipper
     {
         public Guid TimeSlotId { get; set; }
         public Guid StationId { get; set; }
-        public Guid StoreId { get; set; }
-        public Guid BoxId { get; set; }
-        public List<MissingProductRequest> MissingProducts { get; set; }
-    }
-
-    public class MissingProductRequest
-    {
         public string? ProductName { get; set; } = null!;
-        public int Quantity { get; set; }
+        public int Quantity { get; set; } 
+        public List<Guid> ListBoxId { get; set; }
     }
 }
