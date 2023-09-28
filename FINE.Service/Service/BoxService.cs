@@ -103,6 +103,7 @@ namespace FINE.Service.Service
 
                 var box = _unitOfWork.Repository<Box>().GetAll()
                     .Where(x => x.StationId == Guid.Parse(stationId))
+                    .OrderBy(x => x.CreateAt)
                     .ProjectTo<BoxResponse>(_mapper.ConfigurationProvider)
                     .DynamicFilter(filter)
                     .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
