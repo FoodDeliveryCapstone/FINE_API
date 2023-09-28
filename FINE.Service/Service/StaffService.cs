@@ -467,14 +467,14 @@ namespace FINE.Service.Service
                             .ToListAsync();
                 var station = await _unitOfWork.Repository<Station>().GetAll().ToListAsync();
                 var getAllCustomer = await _unitOfWork.Repository<Customer>().GetAll().ToListAsync();
-                int TotalCustomer = (int)request.SingleOrder.TotalOrder;
+                //int TotalCustomer = (int)request.SingleOrder.TotalOrder;
 
                 #region Single Order
                 if (request.SingleOrder is not null)
                 {
                     var listCustomer = getAllCustomer
                                             .OrderBy(x => rand.Next())
-                                            .Take(TotalCustomer)
+                                            //.Take(TotalCustomer)
                                             .ToList();
                     var totalSingleOrderSuccess = request.SingleOrder.TotalOrderSuccess;
                     var totalSingleOrderFailed = request.SingleOrder.TotalOrder - request.SingleOrder.TotalOrderSuccess;
@@ -482,7 +482,7 @@ namespace FINE.Service.Service
                     {
                         //foreach (var customer in listCustomer)
                         int customerIndex = rand.Next(0, listCustomer.Count() - 1);
-                        var customer = listCustomer.ElementAt(customerIndex);
+                        var customer = listCustomer.ElementAt(customerIndex);                       
 
                         if (totalSingleOrderSuccess > 0 && totalSingleOrderFailed > 0)
                         {
@@ -494,9 +494,10 @@ namespace FINE.Service.Service
                                     TimeSlotId = Guid.Parse(request.TimeSlotId),
                                 };
 
+                                int numberProductTake = rand.Next(2, 5);
                                 payload.OrderDetails = productInMenu
                                     .OrderBy(x => rand.Next())
-                                    .Take(3)
+                                    .Take(numberProductTake)
                                     .Select(x => new CreatePreOrderDetailRequest
                                     {
                                         ProductId = x.Id,
@@ -688,9 +689,9 @@ namespace FINE.Service.Service
                                 TimeSlotId = Guid.Parse(request.TimeSlotId),
                             };
 
-
+                            int numberProductTake = rand.Next(2, 5);
                             payload.OrderDetails = productInMenu
-                                .Take(1)
+                                .Take(numberProductTake)
                                 .Select(x => new CreatePreOrderDetailRequest
                                 {
                                     ProductId = x.Id,
@@ -903,9 +904,10 @@ namespace FINE.Service.Service
                                     PartyType = PartyOrderType.CoOrder
                                 };
 
+                                int numberProductTake = rand.Next(1, 4);
                                 payloadPreOrder.OrderDetails = productInMenu
                                     .OrderBy(x => rand.Next())
-                                    .Take(2)
+                                    .Take(numberProductTake)
                                     .Select(x => new CreatePreOrderDetailRequest
                                     {
                                         ProductId = x.Id,
@@ -927,9 +929,10 @@ namespace FINE.Service.Service
                                             PartyType = PartyOrderType.CoOrder
                                         };
 
+                                        int newNumberProductTake = rand.Next(1, 4);
                                         cusPayloadPreOrder.OrderDetails = productInMenu
                                             .OrderBy(x => rand.Next())
-                                            .Take(1)
+                                            .Take(newNumberProductTake)
                                             .Select(x => new CreatePreOrderDetailRequest
                                             {
                                                 ProductId = x.Id,
@@ -1146,9 +1149,10 @@ namespace FINE.Service.Service
                                 PartyType = PartyOrderType.CoOrder
                             };
 
+                            int numberProductTake = rand.Next(1, 4);
                             payloadPreOrder.OrderDetails = productInMenu
                                 .OrderBy(x => rand.Next())
-                                .Take(2)
+                                .Take(numberProductTake)
                                 .Select(x => new CreatePreOrderDetailRequest
                                 {
                                     ProductId = x.Id,
@@ -1170,9 +1174,10 @@ namespace FINE.Service.Service
                                         PartyType = PartyOrderType.CoOrder
                                     };
 
+                                    int newNumberProductTake = rand.Next(1, 4);
                                     cusPayloadPreOrder.OrderDetails = productInMenu
                                         .OrderBy(x => rand.Next())
-                                        .Take(1)
+                                        .Take(newNumberProductTake)
                                         .Select(x => new CreatePreOrderDetailRequest
                                         {
                                             ProductId = x.Id,

@@ -187,7 +187,8 @@ namespace FINE.Service.Service
                         var updateOrder = await _staffService.UpdateOrderStatus(order.OrderId.ToString(), updateOrderStatusRequest);
 
                         var boxByStation = box
-                            .Where(x => x.StationId == order.StationId && x.Id != preBoxId)
+                            .Where(x => x.StationId == order.StationId)
+                            .OrderBy(x => x.CreateAt)
                             .ToList();
                         // lay box tiep theo trong boxByStation
                         if (boxByStation.Any())
