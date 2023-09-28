@@ -18,7 +18,6 @@ namespace FINE.Service.DTO.Response
         public Guid StationId { get; set; }
         public Guid StoreId { get; set; }
         public string? ProductName { get; set; } = null!;
-        public int Quantity { get; set; }
-        public List<Guid> ListBoxId { get; set; }
+        public List<BoxesAndQuantityMissing> ListBoxAndQuantity { get; set; }
     }
 }

@@ -67,8 +67,7 @@ namespace FINE.Service.Service
                     StationId = request.StationId,
                     StoreId = getStore.StoreId,
                     ProductName = request.ProductName,
-                    Quantity = request.Quantity,
-                    ListBoxId = request.ListBoxId
+                    ListBoxAndQuantity = request.ListBoxAndQuantity
                 };
                 ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.SET, reportMissing.ReportId.ToString(), reportMissing);
                 
