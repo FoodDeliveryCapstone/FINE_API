@@ -137,6 +137,23 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Simulate customer 
+        /// </summary>
+        [HttpGet("simulation")]
+        public async Task<ActionResult<List<CustomerResponse>>> SimulateCreateCustomer(int quantity)
+        {
+            try
+            {
+                var result = await _customerService.SimulateCreateCustomer(quantity);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Lấy tất cả order của user 
         /// </summary>
         /// <returns></returns>

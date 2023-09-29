@@ -379,6 +379,15 @@ namespace FINE.Service.Service
                     };
 
                 BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+
+                var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
+
+                if(party.PartyType == (int)PartyOrderType.CoOrder)
+                {
+                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode);
+                    coOrder.IsPayment = true;
+                    await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode);
+                }
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -474,6 +483,8 @@ namespace FINE.Service.Service
                     party.PartyCode = Constants.PARTYORDER_COLAB + Utils.GenerateRandomCode(6);
 
                     coOrder.PartyCode = party.PartyCode;
+                    coOrder.IsPayment = false;
+                    coOrder.OrderType = (int)request.OrderType;
                     coOrder.PartyType = (int)PartyOrderType.CoOrder;
                     coOrder.PartyOrder = new List<CoOrderPartyCard>();
 
@@ -1092,7 +1103,7 @@ namespace FINE.Service.Service
             {
                 throw ex;
             }
-        }
+        } 
 
         public async Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging)
         {

@@ -173,7 +173,6 @@ namespace FINE.Service.Service
                         }
                         break;
                 }
-                await _unitOfWork.CommitAsync();
                 return transaction;
             }
             catch (ErrorResponse ex)

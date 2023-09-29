@@ -60,7 +60,7 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return Ok(_qrCodeService.ReceiveBoxResult(boxId, key).Status);
+                return Ok(_qrCodeService.ReceiveBoxResult(boxId, key));
             }
             catch (ErrorResponse ex)
             {

@@ -69,6 +69,7 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Payment>().InsertAsync(payment);
 
                 await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.PointAccount, point, order.CustomerId, TransactionStatusEnum.Finish);
+                await _unitOfWork.CommitAsync();
             }
             catch (ErrorResponse ex)
             {
@@ -104,6 +105,7 @@ namespace FINE.Service.Service
 
                 var paymentUrl = pay.CreateRequestUrl(_configuration["VnPayment:BaseUrl"], _configuration["VnPayment:SecureHash"]);
 
+                await _unitOfWork.CommitAsync();
                 return new BaseResponseViewModel<string>()
                 {
                     Status = new StatusViewModel()
@@ -159,46 +161,48 @@ namespace FINE.Service.Service
                 var parties = _unitOfWork.Repository<Party>().GetAll().Where(x => x.PartyCode == partyCode).ToList();
                 if (parties.Count() == 2)
                 {
-                    if (parties.Where(x => x.Order.OrderStatus == (int)OrderStatusEnum.Finished).Count() == 0)
+                    if (parties.Where(x => x.Order.OrderStatus == (int)OrderStatusEnum.Finished).Count() >= 1)
                     {
                         foreach (var party in parties)
                         {
+                            var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == party.CustomerId);
                             var shippingFee = party.Order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.ShippingFee).Amount;
                             var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
 
+                            party.Status = (int)PartyOrderStatus.FinishRefund;
+                            _unitOfWork.Repository<Party>().UpdateDetached(party);
+
                             var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
-                            await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+                            _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+                            _unitOfWork.Commit();
 
-
-                            var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == party.CustomerId);
                             Notification notification = new Notification()
                             {
                                 Title = "Thông báo!!!",
                                 Body = note
                             };
                             Dictionary<string, string> data = new Dictionary<string, string>()
-                        {
-                            { "type", NotifyTypeEnum.ForPopup.ToString()}
-                        };
+                            {
+                                { "type", NotifyTypeEnum.ForPopup.ToString()}
+                            };
                             BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
-
-                            party.Status = (int)PartyOrderStatus.FinishRefund;
-                            await _unitOfWork.Repository<Party>().UpdateDetached(party);
                         }
-                        await _unitOfWork.CommitAsync();
                     }
                 }
                 else if (parties.Count() > 2)
                 {
                     var party = parties.FirstOrDefault(x => x.CustomerId == customerId);
+                    var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == party.CustomerId);
                     var shippingFee = party.Order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.ShippingFee).Amount;
                     var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
 
+                    party.Status = (int)PartyOrderStatus.FinishRefund;
+                    _unitOfWork.Repository<Party>().UpdateDetached(party);
+
                     var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
-                    await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+                    _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+                    _unitOfWork.Commit();
 
-
-                    var customerFcm = await _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefaultAsync(x => x.UserId == party.CustomerId);
                     Notification notification = new Notification()
                     {
                         Title = "Thông báo!!!",
@@ -209,10 +213,6 @@ namespace FINE.Service.Service
                             { "type", NotifyTypeEnum.ForPopup.ToString()}
                         };
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
-
-                    party.Status = (int)PartyOrderStatus.FinishRefund;
-                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
-                    await _unitOfWork.CommitAsync();
                 }
             }
             catch (ErrorResponse ex)

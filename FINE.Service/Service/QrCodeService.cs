@@ -96,8 +96,7 @@ namespace FINE.Service.Service
                     .FirstOrDefault(x => x.Id == orderBox.OrderId);
                 order.OrderStatus = (int)OrderStatusEnum.Finished;
                 _unitOfWork.Repository<Order>().UpdateDetached(order);
-
-                _unitOfWork.CommitAsync();
+                _unitOfWork.Commit();
 
                 var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
                                     .FirstOrDefault(x => x.UserId == orderBox.Order.CustomerId).Token;

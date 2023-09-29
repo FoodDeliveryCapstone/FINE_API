@@ -13,10 +13,12 @@ using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using FirebaseAdmin.Auth;
 using FirebaseAdmin.Messaging;
+using Hangfire.MemoryStorage.Database;
 using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
+using NetTopologySuite.Algorithm;
 using NetTopologySuite.Mathematics;
 using StackExchange.Redis;
 using System;
@@ -34,6 +36,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
+        Task<List<CustomerResponse>> SimulateCreateCustomer(int quantity);
         Task SendInvitation(string customerId, string adminId, string partyCode);
         Task Logout(string fcmToken);
     }
@@ -92,7 +95,7 @@ namespace FINE.Service.Service
                 }
                 //check exist customer 
                 var customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email== userRecord.Email || x.Phone == userRecord.PhoneNumber);
+                                .FirstOrDefault(x => x.Email == userRecord.Email || x.Phone == userRecord.PhoneNumber);
 
                 //new customer => add fcm map with Id
                 if (customer is null)
@@ -131,6 +134,40 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<List<CustomerResponse>> SimulateCreateCustomer(int quantity)
+        {
+            try
+            {
+                var result = new List<CustomerResponse>();
+                for (int i = 0; i <= quantity; i++)
+                {
+                    const string chars = "0123456789";
+                    Random random = new Random();
+
+                    char[] resultRnd = new char[7];
+                    for (int x = 0; x < 7; x++)
+                    {
+                        resultRnd[x] = chars[random.Next(chars.Length)];
+                    }
+                    var strings = new string(resultRnd);
+                    CreateCustomerRequest customer = new CreateCustomerRequest()
+                    {
+                        Name = "Test" + i.ToString(),
+                        Email = "Test" + i.ToString() + "@gmail.com",
+                        Phone = "096" + strings,
+                    };
+                    var customerResult = CreateCustomer(customer).Result.Data;
+                    result.Add(customerResult);
+                    Task.Delay(100).Wait();
+                }
+                return result;
+            } 
+            catch (ErrorResponse ex)    
             {
                 throw ex;
             }
@@ -324,12 +361,12 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<CustomerTransactionResponse>> GetTransactionByCustomerId(string customerId, CustomerTransactionResponse filter , PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<CustomerTransactionResponse>> GetTransactionByCustomerId(string customerId, CustomerTransactionResponse filter, PagingRequest paging)
         {
             try
             {
-                var transaction =  _unitOfWork.Repository<Transaction>().GetAll()
-                                    .Where(x => x.Account.CustomerId == Guid.Parse(customerId) 
+                var transaction = _unitOfWork.Repository<Transaction>().GetAll()
+                                    .Where(x => x.Account.CustomerId == Guid.Parse(customerId)
                                             && x.Account.Type == (int)AccountTypeEnum.CreditAccount)
                                     .OrderByDescending(x => x.CreatedAt)
                                     .ProjectTo<CustomerTransactionResponse>(_mapper.ConfigurationProvider)
@@ -348,7 +385,7 @@ namespace FINE.Service.Service
                     Data = transaction.Item2.ToList()
                 };
             }
-            catch(ErrorResponse ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
