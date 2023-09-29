@@ -78,15 +78,10 @@ namespace FINE.Service.Service
                 var auth = FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance;
                 FirebaseToken decodeToken = await auth.VerifyIdTokenAsync(data.IdToken);
                 UserRecord userRecord = await auth.GetUserAsync(decodeToken.Uid);
+                string customerPhone = userRecord.PhoneNumber;
 
-                //check exist customer 
-                var customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email) || x.Phone.Contains(userRecord.PhoneNumber));
-
-                //new customer => add fcm map with Id
-                if (customer is null)
+                if (userRecord.PhoneNumber is not null)
                 {
-                    string customerPhone = userRecord.PhoneNumber;
                     if (userRecord.PhoneNumber is not null)
                     {
                         if (userRecord.PhoneNumber.Contains("+84"))
@@ -94,7 +89,14 @@ namespace FINE.Service.Service
                             customerPhone = userRecord.PhoneNumber.Replace("+84", "0");
                         }
                     }
+                }
+                //check exist customer 
+                var customer = _unitOfWork.Repository<Customer>().GetAll()
+                                .FirstOrDefault(x => x.Email== userRecord.Email || x.Phone == userRecord.PhoneNumber);
 
+                //new customer => add fcm map with Id
+                if (customer is null)
+                {
                     CreateCustomerRequest newCustomer = new CreateCustomerRequest()
                     {
                         Name = userRecord.DisplayName,
