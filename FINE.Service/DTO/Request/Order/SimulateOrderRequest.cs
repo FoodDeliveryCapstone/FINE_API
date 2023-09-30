@@ -16,8 +16,7 @@ namespace FINE.Service.DTO.Request.Order
 
     public class SimulateSingleOrderRequest
     {
-        public int? TotalOrder { get; set; }
-        public int? TotalOrderSuccess { get; set; }       
+        public int? TotalOrder { get; set; }      
     }
 
     public class SimulateCoOrderOrderRequest
