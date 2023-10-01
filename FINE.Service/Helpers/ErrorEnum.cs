@@ -152,6 +152,9 @@ namespace FINE.Service.Helpers
             [Display(Name = "Not found this station!")]
             NOT_FOUND = 4041,
 
+            //400
+            [Display(Name = "There is no available box in this station!")]
+            STATION_FULL = 4001,
         }
 
         public enum TimeSlotErrorEnums
@@ -220,6 +223,13 @@ namespace FINE.Service.Helpers
             PRODUCT_ALREADY_IN_MENU = 4001,
             [Display(Name = "This product is not avaliable!")]
             PRODUCT_NOT_AVALIABLE = 4002
+        }
+
+        public enum OrderBoxErrorEnums
+        {
+            //400
+            [Display(Name = "This order already in box!")]
+            ORDER_BOX_EXISTED = 4001,
         }
     }
 }

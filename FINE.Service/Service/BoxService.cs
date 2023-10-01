@@ -32,12 +32,10 @@ namespace FINE.Service.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IStaffService _staffService;
-        public BoxService(IUnitOfWork unitOfWork, IMapper mapper, IStaffService staffService)
+        public BoxService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
-            _staffService = staffService;
         }
 
         public async Task<BaseResponseViewModel<OrderBoxResponse>> AddOrderToBox(string stationId, string key, AddOrderToBoxRequest request)
@@ -51,18 +49,16 @@ namespace FINE.Service.Service
                 if (activeBox == null)
                     throw new ErrorResponse(404, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
                        BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());
-                //var checkOrderBox = _unitOfWork.Repository<OrderBox>().GetAll().FirstOrDefault(x => x.BoxId);
+                var checkOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll().FirstOrDefaultAsync(x => x.OrderId == request.OrderId);
+                if (checkOrderBox != null)
+                    throw new ErrorResponse(404, (int)OrderBoxErrorEnums.ORDER_BOX_EXISTED,
+                       OrderBoxErrorEnums.ORDER_BOX_EXISTED.GetDisplayName());
 
-                //var box = activeBox.FirstOrDefault();
-
-                var order = _unitOfWork.Repository<Order>().GetAll()
-                                .FirstOrDefault(x => x.Id == request.OrderId);                   
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                                .FirstOrDefaultAsync(x => x.Id == request.OrderId);                   
                 if (order == null)
                     throw new ErrorResponse(404, (int)OrderErrorEnums.NOT_FOUND,
                         OrderErrorEnums.NOT_FOUND.GetDisplayName());
-                if (order.OrderStatus != (int)OrderStatusEnum.Delivering)
-                    throw new ErrorResponse(400, (int)OrderErrorEnums.CANNOT_UPDATE_ORDER,
-                        OrderErrorEnums.CANNOT_UPDATE_ORDER.GetDisplayName());
 
                 var orderBox = new OrderBox()
                 {

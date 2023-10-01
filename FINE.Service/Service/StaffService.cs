@@ -5,6 +5,7 @@ using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.Attributes;
 using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Box;
 using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Request.Shipper;
 using FINE.Service.DTO.Request.Staff;
@@ -57,8 +58,9 @@ namespace FINE.Service.Service
         private readonly string _fineSugar;
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
+        private readonly IBoxService _boxService;
 
-        public StaffService(IMapper mapper, IUnitOfWork unitOfWork, IConfiguration config, IFcmTokenService customerFcmtokenService, IOrderService orderService, IPaymentService paymentService)
+        public StaffService(IMapper mapper, IUnitOfWork unitOfWork, IConfiguration config, IFcmTokenService customerFcmtokenService, IOrderService orderService, IPaymentService paymentService, IBoxService boxService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
@@ -67,6 +69,7 @@ namespace FINE.Service.Service
             _customerFcmtokenService = customerFcmtokenService;
             _orderService = orderService;
             _paymentService = paymentService;
+            _boxService = boxService;
         }
 
         public async Task<BaseResponseViewModel<StaffResponse>> CreateAdminManager(CreateStaffRequest request)
@@ -339,6 +342,32 @@ namespace FINE.Service.Service
                 var station = await _unitOfWork.Repository<Station>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StationId));
 
+                #region Check station in timeslot have available box 
+                var getOrderInTimeslot = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
+                                                .Where(x => x.TimeSlotId == request.TimeSlotId
+                                                && x.StationId == Guid.Parse(request.StationId)
+                                                && x.OrderStatus == (int)OrderStatusEnum.Processing
+                                                && x.CheckInDate.Date == Utils.GetCurrentDatetime().Date).ToListAsync();
+
+                var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
+                                                .Where(x => x.StationId == Guid.Parse(request.StationId))
+                                                .OrderBy(x => x.CreateAt)
+                                                .ToListAsync();
+
+                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                  .Include(x => x.Order)
+                                  .Include(x => x.Box)
+                                  .Where(x => x.Order.TimeSlotId == request.TimeSlotId
+                                      && x.Box.StationId == Guid.Parse(request.StationId)
+                                      && x.Order.CheckInDate.Date == Utils.GetCurrentDatetime().Date)
+                                  .ToListAsync();
+                var availableBoxes = getAllBoxInStation.Where(x => !getOrderBox.Any(a => a.BoxId == x.Id)).ToList();
+
+                if (availableBoxes.Count == 0)
+                    throw new ErrorResponse(400, (int)StationErrorEnums.STATION_FULL,
+                                            StationErrorEnums.STATION_FULL.GetDisplayName());
+                #endregion
+
                 var order = _mapper.Map<Data.Entity.Order>(request);
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
@@ -385,6 +414,22 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
+
+                #region Add order to box
+                string key = null;
+                if (getOrderBox.Count == 0)
+                    key = Utils.GenerateRandomCode(10);               
+                else
+                {
+                    key = getOrderBox.FirstOrDefault().Key;
+                }
+                var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                {
+                    BoxId = availableBoxes.FirstOrDefault().Id,
+                    OrderId = order.Id
+                };
+                var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
+                #endregion
                 #region split order detail by store
                 var orderDetailsByStore = resultOrder.OrderDetails
                   .GroupBy(x => x.StoreId)
@@ -488,13 +533,14 @@ namespace FINE.Service.Service
                         };
 
                         int numberProductTake = rand.Next(1, 4);
+                        int randomQuantity = rand.Next(1, 4);
                         var randomProduct = productInMenu.OrderBy(x => rand.Next());
                         payload.OrderDetails = randomProduct
                             .Take(numberProductTake)
                             .Select(x => new CreatePreOrderDetailRequest
                             {
                                 ProductId = x.Id,
-                                Quantity = numberProductTake
+                                Quantity = randomQuantity
                             })
                             .ToList();
                         try
