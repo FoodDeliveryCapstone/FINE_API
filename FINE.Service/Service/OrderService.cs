@@ -420,6 +420,9 @@ namespace FINE.Service.Service
                 if (partyOrder.IsActive == false)
                     throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
 
+                if (partyOrder.Status == (int)PartyOrderStatus.OutOfTimeslot)
+                    throw new ErrorResponse(404, (int)PartyErrorEnums.OUT_OF_TIMESLOT, PartyErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                
                 CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
@@ -479,6 +482,14 @@ namespace FINE.Service.Service
 
                 if (request.PartyType is PartyOrderType.CoOrder)
                 {
+                    var closingTimeSlot = timeSlot.ArriveTime.Add(new TimeSpan(0, -45, 0));
+
+                    var currentTime = Utils.GetCurrentDatetime().TimeOfDay;
+
+                    var timeWait = closingTimeSlot - currentTime;
+
+                    BackgroundJob.Schedule(() => UpdatePartyOrderStatus(coOrder.PartyCode), TimeSpan.FromMinutes(timeWait.TotalMinutes));
+
                     party.PartyType = (int)PartyOrderType.CoOrder;
                     party.PartyCode = Constants.PARTYORDER_COLAB + Utils.GenerateRandomCode(6);
 
@@ -559,6 +570,31 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async void UpdatePartyOrderStatus(string code)
+        {
+            try
+            {
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, code);
+                if(coOrder is not null)
+                {
+                    coOrder.IsActive = false;
+
+                    var party = await _unitOfWork.Repository<Party>().GetAll()
+                                .Where(x => x.PartyCode == code).FirstOrDefaultAsync();
+                    party.Status = (int)PartyOrderStatus.OutOfTimeslot;
+
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, coOrder.PartyCode, coOrder);
+
+                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                    await _unitOfWork.CommitAsync();
+                }
+            }
+            catch(ErrorResponse ex)
             {
                 throw ex;
             }

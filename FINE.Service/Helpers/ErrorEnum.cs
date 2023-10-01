@@ -54,6 +54,8 @@ namespace FINE.Service.Helpers
             PARTY_CLOSED = 4002,
             [Display(Name = "You already in party")]
             PARTY_JOINED = 4003,
+            [Display(Name = "Party order is out of timeslot!")]
+            OUT_OF_TIMESLOT = 4004,
 
             //404
             [Display(Name = "Party is deleted")]

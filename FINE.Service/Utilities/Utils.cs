@@ -72,7 +72,7 @@ namespace FINE.Service.Utilities
 
         public static bool CheckTimeSlot(TimeSlot timeSlot)
         {
-            var closingTimeSlot = timeSlot.ArriveTime.Add(new TimeSpan(0, -20, 0));
+            var closingTimeSlot = timeSlot.ArriveTime.Add(new TimeSpan(0, -45, 0));
 
             var currentTime = GetCurrentDatetime().TimeOfDay;
 
