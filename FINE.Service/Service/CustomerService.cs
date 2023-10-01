@@ -83,19 +83,13 @@ namespace FINE.Service.Service
                 UserRecord userRecord = await auth.GetUserAsync(decodeToken.Uid);
                 string customerPhone = userRecord.PhoneNumber;
 
-                if (userRecord.PhoneNumber is not null)
+                if (userRecord.PhoneNumber is not null && userRecord.PhoneNumber.Contains("+84"))
                 {
-                    if (userRecord.PhoneNumber is not null)
-                    {
-                        if (userRecord.PhoneNumber.Contains("+84"))
-                        {
-                            customerPhone = userRecord.PhoneNumber.Replace("+84", "0");
-                        }
-                    }
+                    customerPhone = userRecord.PhoneNumber.Replace("+84", "0");
                 }
                 //check exist customer 
                 var customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email == userRecord.Email || x.Phone == userRecord.PhoneNumber);
+                                .FirstOrDefault(x => x.Phone == customerPhone);
 
                 //new customer => add fcm map with Id
                 if (customer is null)
@@ -166,8 +160,8 @@ namespace FINE.Service.Service
                     Task.Delay(100).Wait();
                 }
                 return result;
-            } 
-            catch (ErrorResponse ex)    
+            }
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
