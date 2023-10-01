@@ -20,6 +20,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
 using NetTopologySuite.Algorithm;
 using NetTopologySuite.Mathematics;
+using ServiceStack.Web;
 using StackExchange.Redis;
 using System;
 using System.Linq.Dynamic.Core;
@@ -246,6 +247,11 @@ namespace FINE.Service.Service
         {
             try
             {
+                if (phoneNumber.Contains("+84"))
+                {
+                    phoneNumber = phoneNumber.Replace("+84", "0");
+                }
+
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                             .Where(x => x.Phone.Equals(phoneNumber))
                             .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
