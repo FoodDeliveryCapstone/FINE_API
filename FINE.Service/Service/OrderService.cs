@@ -575,23 +575,24 @@ namespace FINE.Service.Service
             }
         }
 
-        public async void UpdatePartyOrderStatus(string code)
+        public void UpdatePartyOrderStatus(string code)
         {
             try
             {
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, code);
+                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, code).Result;
                 if(coOrder is not null)
                 {
                     coOrder.IsActive = false;
 
-                    var party = await _unitOfWork.Repository<Party>().GetAll()
-                                .Where(x => x.PartyCode == code).FirstOrDefaultAsync();
+                    var party = _unitOfWork.Repository<Party>().GetAll()
+                                .Where(x => x.PartyCode == code).FirstOrDefault();
+
                     party.Status = (int)PartyOrderStatus.OutOfTimeslot;
 
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, coOrder.PartyCode, coOrder);
 
-                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
-                    await _unitOfWork.CommitAsync();
+                     _unitOfWork.Repository<Party>().UpdateDetached(party);
+                     _unitOfWork.Commit();
                 }
             }
             catch(ErrorResponse ex)
