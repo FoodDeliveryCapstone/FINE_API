@@ -108,7 +108,6 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
 
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.CreatePreOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -132,7 +131,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.CreateOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -156,7 +155,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.OpenCoOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -175,6 +174,11 @@ namespace FINE.API.Controllers
             {
                 var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
 
                 return await _orderService.CreatePreCoOrder(customerId, orderType, partyCode);
             }
@@ -199,7 +203,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.JoinPartyOrder(customerId, partyCode);
             }
             catch (ErrorResponse ex)
@@ -223,7 +227,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.AddProductIntoPartyCode(customerId, partyCode, request);
             }
             catch (ErrorResponse ex)
@@ -247,7 +251,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "CD59782C-998C-4693-9920-F1FE4964C24A";
+
                 return Ok(await _orderService.AddProductToCard(request));
             }
             catch (ErrorResponse ex)
@@ -271,7 +275,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.FinalConfirmCoOrder(customerId, partyCode);
             }
             catch (ErrorResponse ex)
