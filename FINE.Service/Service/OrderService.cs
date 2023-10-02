@@ -581,7 +581,8 @@ namespace FINE.Service.Service
             {
                     var party = _unitOfWork.Repository<Party>().GetAll()
                                 .Where(x => x.PartyCode == code).FirstOrDefault();
-
+                if (party != null)
+                {
                     party.Status = (int)PartyOrderStatus.OutOfTimeslot;
 
                      _unitOfWork.Repository<Party>().UpdateDetached(party);
@@ -589,6 +590,7 @@ namespace FINE.Service.Service
 
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, code);
                 }
+            }
             catch (ErrorResponse ex)
             {
                 throw ex;
@@ -602,8 +604,8 @@ namespace FINE.Service.Service
                 var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode)
                                                 .ToListAsync();
-
-                if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId)))
+                var test = listpartyOrder.All(x => x.IsActive == false);
+                if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == true))
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_JOINED, PartyErrorEnums.PARTY_JOINED.GetDisplayName());
                 }
