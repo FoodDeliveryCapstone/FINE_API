@@ -108,23 +108,23 @@ namespace FINE.API.Controllers.AdminControler
             }
         }
 
-        /// <summary>
-        /// Get CoOrder
-        /// </summary>
-        [Authorize(Roles = "SystemAdmin, StoreManager")]
-        [HttpGet("coOrder/{partyCode}")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> GetPartyOrder(string partyCode)
-        {
-            try
-            {
-                var rs = await _orderService.GetPartyOrder(partyCode);
-                return Ok(rs);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
+        ///// <summary>
+        ///// Get CoOrder
+        ///// </summary>
+        //[Authorize(Roles = "SystemAdmin, StoreManager")]
+        //[HttpGet("coOrder/{partyCode}")]
+        //public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> GetPartyOrder(string partyCode)
+        //{
+        //    try
+        //    {
+        //        var rs = await _orderService.GetPartyOrder(partyCode);
+        //        return Ok(rs);
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        return BadRequest(ex.Error);
+        //    }
+        //}
 
         /// <summary>
         /// Add product into CoOrder
