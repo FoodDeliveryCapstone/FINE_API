@@ -630,11 +630,9 @@ namespace FINE.Service.Service
                     IsActive = true,
                     CreateAt = DateTime.Now,
                 };
-
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
                 if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                 {
-                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
-
                     if (coOrder is null)
                         throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
 
@@ -648,12 +646,12 @@ namespace FINE.Service.Service
                     orderCard.Customer.IsConfirm = false;
                     coOrder.PartyOrder.Add(orderCard);
 
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
-
                     newParty.PartyType = (int)PartyOrderType.CoOrder;
                 }
                 _unitOfWork.Repository<Party>().InsertAsync(newParty);
                 _unitOfWork.CommitAsync();
+
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
