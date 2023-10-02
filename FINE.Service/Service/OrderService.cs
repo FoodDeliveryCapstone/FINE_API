@@ -601,6 +601,7 @@ namespace FINE.Service.Service
         {
             try
             {
+                CoOrderResponse coOrder = null;
                 var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode)
                                                 .ToListAsync();
@@ -621,7 +622,9 @@ namespace FINE.Service.Service
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
                 }
-
+                var oldData = listpartyOrder.Find(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == false);
+                if (oldData is null)
+                {
                 var newParty = new Party()
                 {
                     Id = Guid.NewGuid(),
@@ -632,7 +635,7 @@ namespace FINE.Service.Service
                     IsActive = true,
                     CreateAt = DateTime.Now,
                 };
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
                 if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                 {
                     if (coOrder is null)
@@ -650,9 +653,17 @@ namespace FINE.Service.Service
 
                     newParty.PartyType = (int)PartyOrderType.CoOrder;
                 }
-                _unitOfWork.Repository<Party>().InsertAsync(newParty);
-                _unitOfWork.CommitAsync();
+                    await _unitOfWork.Repository<Party>().InsertAsync(newParty);
+                }
+                else
+                {
+                    oldData.IsActive = true;
+                    oldData.UpdateAt = DateTime.Now;
 
+                    await _unitOfWork.Repository<Party>().UpdateDetached(oldData);
+                }
+
+                await _unitOfWork.CommitAsync();
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
