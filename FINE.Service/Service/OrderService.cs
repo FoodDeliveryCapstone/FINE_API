@@ -579,17 +579,10 @@ namespace FINE.Service.Service
         {
             try
             {
-                CoOrderResponse coOrder = ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, code).Result;
-                if(coOrder is not null)
-                {
-                    coOrder.IsActive = false;
-
                     var party = _unitOfWork.Repository<Party>().GetAll()
                                 .Where(x => x.PartyCode == code).FirstOrDefault();
 
                     party.Status = (int)PartyOrderStatus.OutOfTimeslot;
-
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, coOrder.PartyCode, coOrder);
 
                      _unitOfWork.Repository<Party>().UpdateDetached(party);
                      _unitOfWork.Commit();
@@ -607,19 +600,25 @@ namespace FINE.Service.Service
             try
             {
                 var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode && x.IsActive == true)
+                                                .Where(x => x.PartyCode == partyCode)
                                                 .ToListAsync();
 
-                var partyOrder = listpartyOrder.Find(x => x.Status != (int)PartyOrderStatus.CloseParty);
-
-                if (listpartyOrder is null)
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
-
-                if (partyOrder is null)
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
-
                 if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId)))
+                {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_JOINED, PartyErrorEnums.PARTY_JOINED.GetDisplayName());
+                }
+                else if (listpartyOrder.All(x => x.IsActive == false))
+                {
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
+                }
+                else if (listpartyOrder.Any(x => x.Status == (int)PartyOrderStatus.CloseParty))
+                {
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
+                }
+                else if(listpartyOrder == null)
+                {
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+                }
 
                 var newParty = new Party()
                 {
@@ -632,7 +631,7 @@ namespace FINE.Service.Service
                     CreateAt = DateTime.Now,
                 };
 
-                if (partyOrder.PartyType is (int)PartyOrderType.CoOrder)
+                if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                 {
                     CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
