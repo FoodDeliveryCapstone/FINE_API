@@ -56,7 +56,7 @@ namespace FINE.Service.Helpers
             PARTY_CLOSED = 4002,
             [Display(Name = "You already in CoOrder party")]
             COORDER_PARTY_JOINED = 4003,
-            [Display(Name = "You already in CoOrder party")]
+            [Display(Name = "You already in Linked party")]
             LINKED_PARTY_JOINED = 4004,
             [Display(Name = "Party order is out of timeslot!")]
             OUT_OF_TIMESLOT = 4005,
