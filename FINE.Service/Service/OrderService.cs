@@ -28,7 +28,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging);
         Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
-        Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId,string partyCode);
+        Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
@@ -37,7 +37,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
-        Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode, string memberId = null);
+        Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, PartyOrderType type, string partyCode, string memberId = null);
     }
     public class OrderService : IOrderService
     {
@@ -407,7 +407,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId ,string partyCode)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId, string partyCode)
         {
             try
             {
@@ -601,13 +601,27 @@ namespace FINE.Service.Service
             try
             {
                 CoOrderResponse coOrder = null;
+                var checkJoin = await _unitOfWork.Repository<Party>().GetAll()
+                                                .FirstOrDefaultAsync(x => x.CustomerId == Guid.Parse(customerId)
+                                                    && x.PartyCode != partyCode
+                                                    && (x.Status == (int)PartyOrderStatus.NotConfirm
+                                                    || x.Status == (int)PartyOrderStatus.NotRefund));
+                if (checkJoin is not null && checkJoin.PartyType == (int)PartyOrderType.CoOrder)
+                {
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.COORDER_PARTY_JOINED, PartyErrorEnums.COORDER_PARTY_JOINED.GetDisplayName());
+                }
+                else if (checkJoin is not null && checkJoin.PartyType == (int)PartyOrderType.LinkedOrder)
+                {
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.LINKED_PARTY_JOINED, PartyErrorEnums.LINKED_PARTY_JOINED.GetDisplayName());
+                }
+
                 var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode)
                                                 .ToListAsync();
                 var test = listpartyOrder.All(x => x.IsActive == false);
                 if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == true))
                 {
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_JOINED, PartyErrorEnums.PARTY_JOINED.GetDisplayName());
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.COORDER_PARTY_JOINED, PartyErrorEnums.COORDER_PARTY_JOINED.GetDisplayName());
                 }
                 else if (listpartyOrder.All(x => x.IsActive == false))
                 {
@@ -617,10 +631,11 @@ namespace FINE.Service.Service
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
                 }
-                else if(listpartyOrder == null)
+                else if (listpartyOrder == null)
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
                 }
+
                 var oldData = listpartyOrder.Find(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == false);
                 if (oldData is null)
                 {
@@ -1074,29 +1089,44 @@ namespace FINE.Service.Service
 
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, string partyCode, string memberId = null)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, PartyOrderType type, string partyCode, string memberId = null)
         {
             try
             {
+                switch (type)
+                {
+                    case PartyOrderType.LinkedOrder:
+                        var party = await _unitOfWork.Repository<Party>().GetAll()
+                                                      .Where(x => x.PartyCode == partyCode && x.CustomerId == Guid.Parse(customerId))
+                                                      .FirstOrDefaultAsync();
+                        if (party is null) throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                        party.IsActive = true;
+                        await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                        await _unitOfWork.CommitAsync();
+                        break;
+
+                    case PartyOrderType.CoOrder:
+                        var customerToken = "";
+                        if (memberId is not null) { customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token; }
+                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                        if (coOrder is null) throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
+                        var orderOutMember = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
+
                 var listParty = await _unitOfWork.Repository<Party>().GetAll()
                                                .Where(x => x.PartyCode == partyCode)
                                                .ToListAsync();
-                if (listParty is null)
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+                        if (listParty is null) throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                        var partyOutMember = listParty.FirstOrDefault(x => x.CustomerId == Guid.Parse(customerId));
 
-                if (coOrder is null)
-                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
-
-                var partyMem = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
+                        partyOutMember.IsActive = false;
+                        partyOutMember.UpdateAt = DateTime.Now;
+                        await _unitOfWork.Repository<Party>().UpdateDetached(partyOutMember);
 
                 // đứa delete là admin
-                if (partyMem.Customer.IsAdmin is true)
+                        if (orderOutMember.Customer.IsAdmin is true)
                 {
-                    var party = listParty.FirstOrDefault(x => x.CustomerId == Guid.Parse(customerId));
-                    party.IsActive = false;
-                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
                     //nếu đơn nhóm chỉ có admin => xóa chế độ coOrder
                     if (memberId is null)
                     {
@@ -1104,37 +1134,34 @@ namespace FINE.Service.Service
                     }
                     else
                     {
-                        coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(memberId)).Customer.IsAdmin = true;
-                        coOrder.PartyOrder.Remove(partyMem);
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                                var partyOfTheChosenOne = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(memberId)).Customer;
+                                partyOfTheChosenOne.IsAdmin = true;
+                                partyOfTheChosenOne.IsConfirm = true;
 
-                        var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token;
+                                coOrder.PartyOrder.Remove(orderOutMember);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
 
                         Notification notification = new Notification
                         {
                             Title = Constants.CHANGE_ADMIN_PARTY,
-                            Body = String.Format($"Bạn vừa được {party.Customer.Name} chuyển quyền admin đơn nhóm {coOrder.PartyCode}")
+                                    Body = String.Format($"Bạn vừa được {partyOfTheChosenOne.Name} chuyển quyền admin đơn nhóm {partyCode}")
                         };
 
                         var data = new Dictionary<string, string>()
                     {
                         { "type", NotifyTypeEnum.ForPopup.ToString()}
                     };
-
                         BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
                     }
                 }
                 else
                 {
-                    var party = listParty.FirstOrDefault(x => x.CustomerId == Guid.Parse(customerId));
-                    party.IsActive = false;
-                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
-
-                    coOrder.PartyOrder.Remove(partyMem);
+                            coOrder.PartyOrder.Remove(orderOutMember);
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
                 }
-
                 await _unitOfWork.CommitAsync();
+                        break;
+                }
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {

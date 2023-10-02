@@ -104,8 +104,11 @@ namespace FINE.Service.Helpers
             Confirm = 2,
 
             CloseParty = 3,
-            FinishRefund = 4,
-            OutOfTimeslot = 5
+
+            NotRefund = 4,
+            FinishRefund = 5,
+
+            OutOfTimeslot = 6
         }
 
         public enum PartyOrderType

@@ -83,7 +83,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var rs = await _orderService.GetPartyOrder(customerId,partyCode);
+                var rs = await _orderService.GetPartyOrder(customerId, partyCode);
                 return Ok(rs);
             }
             catch (ErrorResponse ex)
@@ -240,7 +240,7 @@ namespace FINE.API.Controllers
         /// Add product into card
         /// </summary>
         [HttpPost("card")]
-        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard([FromBody]AddProductToCardRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard([FromBody] AddProductToCardRequest request)
         {
             try
             {
@@ -288,7 +288,7 @@ namespace FINE.API.Controllers
         /// Delete CoOrder
         /// </summary>
         [HttpPut("coOrder/out")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(string partyCode, string? memberId = null)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(PartyOrderType type, string partyCode, string? memberId = null)
         {
             try
             {
@@ -299,7 +299,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var rs = await _orderService.DeletePartyOrder(customerId, partyCode, memberId);
+                var rs = await _orderService.DeletePartyOrder(customerId, type, partyCode, memberId);
                 return Ok(rs);
             }
             catch (ErrorResponse ex)

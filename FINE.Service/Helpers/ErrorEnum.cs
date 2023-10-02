@@ -52,12 +52,14 @@ namespace FINE.Service.Helpers
             INVALID_CODE = 4001,
             [Display(Name = "Party is closed")]
             PARTY_CLOSED = 4002,
-            [Display(Name = "You already in party")]
-            PARTY_JOINED = 4003,
+            [Display(Name = "You already in CoOrder party")]
+            COORDER_PARTY_JOINED = 4003,
+            [Display(Name = "You already in CoOrder party")]
+            LINKED_PARTY_JOINED = 4004,
             [Display(Name = "Party order is out of timeslot!")]
-            OUT_OF_TIMESLOT = 4004,
+            OUT_OF_TIMESLOT = 4005,
             [Display(Name = "Party is deleted")]
-            PARTY_DELETE = 4005,
+            PARTY_DELETE = 4006,
         }
 
         public enum PaymentErrorsEnum
