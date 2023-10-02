@@ -1,5 +1,6 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Azure.Core;
 using Castle.Core.Resource;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
@@ -12,10 +13,14 @@ using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using FirebaseAdmin.Auth;
 using FirebaseAdmin.Messaging;
+using Hangfire.MemoryStorage.Database;
+using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
+using NetTopologySuite.Algorithm;
 using NetTopologySuite.Mathematics;
+using ServiceStack.Web;
 using StackExchange.Redis;
 using System;
 using System.Linq.Dynamic.Core;
@@ -29,9 +34,11 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<CustomerResponse>> GetCustomers(CustomerResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string customerId);
+        Task<BaseResponsePagingViewModel<CustomerTransactionResponse>> GetTransactionByCustomerId(string customerId, CustomerTransactionResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<CustomerResponse>> UpdateCustomer(string customerId, UpdateCustomerRequest request);
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
+        Task<List<CustomerResponse>> SimulateCreateCustomer(int quantity);
         Task SendInvitation(string customerId, string adminId, string partyCode);
         Task Logout(string fcmToken);
     }
@@ -76,10 +83,15 @@ namespace FINE.Service.Service
                 var auth = FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance;
                 FirebaseToken decodeToken = await auth.VerifyIdTokenAsync(data.IdToken);
                 UserRecord userRecord = await auth.GetUserAsync(decodeToken.Uid);
+                string customerPhone = userRecord.PhoneNumber;
 
+                if (userRecord.PhoneNumber is not null && userRecord.PhoneNumber.Contains("+84"))
+                {
+                    customerPhone = userRecord.PhoneNumber.Replace("+84", "0");
+                }
                 //check exist customer 
                 var customer = _unitOfWork.Repository<Customer>().GetAll()
-                                .FirstOrDefault(x => x.Email.Contains(userRecord.Email) || x.Phone.Contains(userRecord.PhoneNumber));
+                                .FirstOrDefault(x => x.Phone == customerPhone || x.Email == userRecord.Email);
 
                 //new customer => add fcm map with Id
                 if (customer is null)
@@ -88,7 +100,7 @@ namespace FINE.Service.Service
                     {
                         Name = userRecord.DisplayName,
                         Email = userRecord.Email,
-                        Phone = userRecord.PhoneNumber,
+                        Phone = customerPhone,
                         ImageUrl = userRecord.PhotoUrl
                     };
 
@@ -100,7 +112,7 @@ namespace FINE.Service.Service
 
                 _customerFcmtokenService.AddFcmToken(data.FcmToken, customer.Id);
                 newAccessToken = AccessTokenManager.GenerateJwtToken(string.IsNullOrEmpty(customer.Name) ? "" : customer.Name, null, customer.Id, _configuration);
-                
+
                 return new BaseResponseViewModel<LoginResponse>()
                 {
                     Status = new StatusViewModel()
@@ -123,6 +135,40 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<List<CustomerResponse>> SimulateCreateCustomer(int quantity)
+        {
+            try
+            {
+                var result = new List<CustomerResponse>();
+                for (int i = 0; i <= quantity; i++)
+                {
+                    const string chars = "0123456789";
+                    Random random = new Random();
+
+                    char[] resultRnd = new char[7];
+                    for (int x = 0; x < 7; x++)
+                    {
+                        resultRnd[x] = chars[random.Next(chars.Length)];
+                    }
+                    var strings = new string(resultRnd);
+                    CreateCustomerRequest customer = new CreateCustomerRequest()
+                    {
+                        Name = "Test" + i.ToString(),
+                        Email = "Test" + i.ToString() + "@gmail.com",
+                        Phone = "096" + strings,
+                    };
+                    var customerResult = CreateCustomer(customer).Result.Data;
+                    result.Add(customerResult);
+                    Task.Delay(100).Wait();
+                }
+                return result;
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<CustomerResponse>> GetCustomerById(string id)
         {
             try
@@ -131,6 +177,10 @@ namespace FINE.Service.Service
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                     .Where(x => x.Id == customerId)
                     .FirstOrDefaultAsync();
+
+                var result = _mapper.Map<CustomerResponse>(customer);
+                result.Balance = customer.Accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount).Balance;
+                result.Point = customer.Accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.PointAccount).Balance;
 
                 if (customer == null)
                     throw new ErrorResponse(404, (int)CustomerErrorEnums.NOT_FOUND,
@@ -144,7 +194,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<CustomerResponse>(customer)
+                    Data = result
                 };
             }
             catch (ErrorResponse ex)
@@ -198,6 +248,11 @@ namespace FINE.Service.Service
         {
             try
             {
+                if (phoneNumber.Contains("+84"))
+                {
+                    phoneNumber = phoneNumber.Replace("+84", "0");
+                }
+
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                             .Where(x => x.Phone.Equals(phoneNumber))
                             .ProjectTo<CustomerResponse>(_mapper.ConfigurationProvider)
@@ -221,7 +276,7 @@ namespace FINE.Service.Service
 
         }
 
-        public async Task SendInvitation(string customerId,string adminId, string partyCode)
+        public async Task SendInvitation(string customerId, string adminId, string partyCode)
         {
             try
             {
@@ -268,7 +323,7 @@ namespace FINE.Service.Service
                 newCustomer.CustomerCode = newCustomer.Id.ToString() + '_' + DateTime.Now.Date.ToString("ddMMyyyy");
                 newCustomer.CreateAt = DateTime.Now;
 
-                if(newCustomer.Phone is not null)
+                if (newCustomer.Phone is not null)
                 {
                     if (newCustomer.Phone.Contains("+84"))
                     {
@@ -336,5 +391,34 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponsePagingViewModel<CustomerTransactionResponse>> GetTransactionByCustomerId(string customerId, CustomerTransactionResponse filter, PagingRequest paging)
+        {
+            try
+            {
+                var transaction = _unitOfWork.Repository<Transaction>().GetAll()
+                                    .Where(x => x.Account.CustomerId == Guid.Parse(customerId)
+                                            && x.Account.Type == (int)AccountTypeEnum.CreditAccount)
+                                    .OrderByDescending(x => x.CreatedAt)
+                                    .ProjectTo<CustomerTransactionResponse>(_mapper.ConfigurationProvider)
+                                    .DynamicFilter(filter)
+                                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+
+                return new BaseResponsePagingViewModel<CustomerTransactionResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = transaction.Item1
+                    },
+                    Data = transaction.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

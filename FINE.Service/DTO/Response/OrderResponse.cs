@@ -30,7 +30,7 @@ namespace FINE.Service.DTO.Response
 
         public int OrderType { get; set; }
 
-        public TimeSlotOrderResponse TimeSlot { get; set; }  
+        public TimeSlotOrderResponse TimeSlot { get; set; }
 
         public StationOrderResponse StationOrder { get; set; }
 
@@ -170,5 +170,24 @@ namespace FINE.Service.DTO.Response
         [NotMapped]
         public OrderStatusEnum OrderDetailStoreStatus { get; set; }
         public List<OrderDetailResponse>? OrderDetails { get; set; }
+    }
+
+    public class OrderResponseForCustomer
+    {
+        public Guid? Id { get; set; }
+
+        public DateTime? CheckInDate { get; set; }
+
+        public string? OrderCode { get; set; } 
+
+        public double? FinalAmount { get; set; }
+
+        public int? OrderStatus { get; set; }
+
+        public int? OrderType { get; set; }
+
+        public bool? IsPartyMode { get; set; }
+
+        public int? ItemQuantity { get; set; }
     }
 }

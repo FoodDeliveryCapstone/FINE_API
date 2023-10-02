@@ -19,7 +19,7 @@ namespace FINE.Service.Service
 {
     public interface IAccountService
     {
-        Task CreateTransaction(TransactionTypeEnum transactionTypeEnum, AccountTypeEnum accountType, double amount, Guid customerId);
+        Task<Transaction> CreateTransaction(TransactionTypeEnum transactionTypeEnum, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null);
         void CreateAccount(Guid customerId);
     }
 
@@ -83,10 +83,11 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId)
+        public async Task<Transaction> CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null)
         {
             try
             {
+                var transaction = new Transaction();
                 var accounts = await _unitOfWork.Repository<Account>().GetAll()
                                                 .Where(x => x.CustomerId == customerId)
                                                 .ToListAsync();
@@ -105,19 +106,24 @@ namespace FINE.Service.Service
                         else if (accountType.Equals(AccountTypeEnum.CreditAccount))
                         {
                             account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.CreditAccount);
-                            account.Balance += amount;
                             account.UpdateAt = DateTime.Now;
+
+                            if(status == TransactionStatusEnum.Finish)
+                            {
+                                account.Balance += amount;
+                            }
                         }
 
                         try
                         {
-                            var transaction = new Transaction()
+                            transaction = new Transaction()
                             {
                                 Id = Guid.NewGuid(),
                                 AccountId = account.Id,
                                 Amount = amount,
                                 IsIncrease = true,
-                                //Status = (int)TransactionStatusEnum.Finish,
+                                Notes = note,
+                                Status = (int)status,
                                 Type = (int)TransactionTypeEnum.Recharge,
                                 CreatedAt = DateTime.Now
                             };
@@ -145,13 +151,14 @@ namespace FINE.Service.Service
 
                         try
                         {
-                            var transaction = new Transaction()
+                            transaction = new Transaction()
                             {
                                 Id = Guid.NewGuid(),
                                 AccountId = account.Id,
                                 Amount = amount,
                                 IsIncrease = false,
-                                //Status = (int)TransactionStatusEnum.Finish,
+                                Notes = note,
+                                Status = (int)status,
                                 Type = (int)TransactionTypeEnum.Payment,
                                 CreatedAt = DateTime.Now
                             };
@@ -166,6 +173,7 @@ namespace FINE.Service.Service
                         }
                         break;
                 }
+                return transaction;
             }
             catch (ErrorResponse ex)
             {

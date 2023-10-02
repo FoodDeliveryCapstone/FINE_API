@@ -24,7 +24,7 @@ namespace FINE.API.Controllers
         ///Cập nhật các notification đã/chưa đọc
         /// </summary>
         [HttpPut]
-        public async Task<ActionResult> UpdateIsReadForNotify([FromQuery] string notifyId, [FromQuery] bool isRead)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> UpdateIsReadForNotify([FromQuery] string notifyId, [FromQuery] bool isRead)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace FINE.API.Controllers
         ///Lấy tất cả notification
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> GetAllNotify()
+        public async Task<ActionResult<BaseResponseViewModel<List<NotifyResponse>>>> GetAllNotify()
         {
             try
             {
@@ -72,7 +72,7 @@ namespace FINE.API.Controllers
         ///Lấy notification cho user theo ID của notify
         /// </summary>
         [HttpGet("{notifyId}")]
-        public async Task<ActionResult> GetNotifyForUserById(string notifyId)
+        public async Task<ActionResult<BaseResponseViewModel<NotifyResponse>>> GetNotifyForUserById(string notifyId)
         {
             try
             {

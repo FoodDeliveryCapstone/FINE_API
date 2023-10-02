@@ -27,6 +27,8 @@ namespace FINE.Service.Helpers
             CANNOT_UPDATE_ORDER = 4004,
             [Display(Name = "This product cannot add into the box")]
             CANNOT_ADD_TO_CARD = 4005,
+            [Display(Name = "Out of limit order")]
+            OUT_OF_LIMIT_ORDER = 4006,
             //404 
             [Display(Name = "Not found this order!")]
             NOT_FOUND = 4041,
@@ -49,6 +51,8 @@ namespace FINE.Service.Helpers
             NOT_FOUND = 4041,
             [Display(Name = "Not found order in this box!")]
             NOT_FOUND_ORDERBOX = 4042,
+            [Display(Name = "Error!")]
+            ORDER_BOX_ERROR = 4003,
         }
 
         public enum PartyErrorEnums
@@ -58,12 +62,14 @@ namespace FINE.Service.Helpers
             INVALID_CODE = 4001,
             [Display(Name = "Party is closed")]
             PARTY_CLOSED = 4002,
-            [Display(Name = "You already in party")]
-            PARTY_JOINED = 4003,
-
-            //404
+            [Display(Name = "You already in CoOrder party")]
+            COORDER_PARTY_JOINED = 4003,
+            [Display(Name = "You already in Linked party")]
+            LINKED_PARTY_JOINED = 4004,
+            [Display(Name = "Party order is out of timeslot!")]
+            OUT_OF_TIMESLOT = 4005,
             [Display(Name = "Party is deleted")]
-            PARTY_DELETE = 4041,
+            PARTY_DELETE = 4006,
         }
 
         public enum PaymentErrorsEnum

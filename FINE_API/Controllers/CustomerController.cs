@@ -14,11 +14,13 @@ namespace FINE.API.Controllers
     {
         private readonly ICustomerService _customerService;
         private readonly IOrderService _orderService;
+        private readonly IPaymentService _paymentService;
 
-        public CustomerController(ICustomerService customerService, IOrderService orderService)
+        public CustomerController(ICustomerService customerService, IOrderService orderService, IPaymentService paymentService)
         {
             _orderService = orderService;
             _customerService = customerService;
+            _paymentService = paymentService;
         }
 
         /// <summary>
@@ -64,10 +66,31 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// lấy các giao dịch của khách hàng
+        /// </summary>
+        [HttpGet("transaction")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<CustomerTransactionResponse>>> GetTransactionByCustomerId([FromQuery]CustomerTransactionResponse filter, [FromQuery]PagingRequest paging)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var result = await _customerService.GetTransactionByCustomerId(customerId, filter, paging);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Update thông tin khách hàng
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
         [HttpPut]
         public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> UpdateCustomer([FromQuery] UpdateCustomerRequest request)
         {
@@ -90,7 +113,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// lấy thông tin khách hàng bằng token
+        /// Tìm khách hàng bằng số điện thoại
         /// </summary>
         [HttpGet("find")]
         public async Task<ActionResult<BaseResponseViewModel<CustomerResponse>>> FindCustomerByPhone(string phoneNumber)
@@ -114,11 +137,28 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Simulate customer 
+        /// </summary>
+        [HttpGet("simulation")]
+        public async Task<ActionResult<List<CustomerResponse>>> SimulateCreateCustomer(int quantity)
+        {
+            try
+            {
+                var result = await _customerService.SimulateCreateCustomer(quantity);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Lấy tất cả order của user 
         /// </summary>
         /// <returns></returns>
         [HttpGet("orders")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<OrderResponse>>> GetOrderByCustomerId([FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderResponseForCustomer>>> GetOrderByCustomerId([FromQuery] OrderResponseForCustomer filter,[FromQuery] PagingRequest paging)
         {
             var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
@@ -126,8 +166,33 @@ namespace FINE.API.Controllers
             {
                 return Unauthorized();
             }
-            var result = await _orderService.GetOrderByCustomerId(customerId, paging);
+            //var customerId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
+            var result = await _orderService.GetOrderByCustomerId(customerId, filter, paging);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Lấy url VnPay để topup
+        /// </summary>
+        [HttpGet("topupUrl")]
+        public async Task<ActionResult<BaseResponseViewModel<string>>> TopUpWalletRequest(double amount)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                var result = await _paymentService.TopUpWalletRequest(customerId, amount);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
         }
 
         /// <summary>
@@ -143,10 +208,8 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        ///  Invitation
+        ///  Gửi lời mời join đơn nhóm
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
         [HttpPost("invitation")]
         public async Task SendInvitation(string customerId, string partyCode)
         {
@@ -160,6 +223,19 @@ namespace FINE.API.Controllers
                 }
                 //var adminId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
                 await _customerService.SendInvitation(customerId, adminId,partyCode);
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        [HttpGet("time")]
+        public async Task<ActionResult<DateTime>> ServerTime()
+        {
+            try
+            {
+                return Ok(DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss"));
             }
             catch (ErrorResponse ex)
             {

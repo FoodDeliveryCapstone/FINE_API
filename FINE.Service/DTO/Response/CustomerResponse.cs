@@ -14,6 +14,10 @@ namespace FINE.Service.DTO.Response
 
         public string? Phone { get; set; }
 
+        public double? Balance { get; set; }
+
+        public double? Point { get; set; }
+
         public DateTime? DateOfBirth { get; set; }
 
         public string? ImageUrl { get; set; } = null!;

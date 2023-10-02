@@ -110,7 +110,12 @@ namespace FINE.Service.Helpers
             NotConfirm = 1,
             Confirm = 2,
 
-            CloseParty = 3
+            CloseParty = 3,
+
+            NotRefund = 4,
+            FinishRefund = 5,
+
+            OutOfTimeslot = 6
         }
 
         public enum PartyOrderType
@@ -135,7 +140,8 @@ namespace FINE.Service.Helpers
         public enum TransactionStatusEnum
         {
             Processing = 1,
-            Finish = 2
+            Finish = 2,
+            Fail = 3
         }
 
         public enum TransactionTypeEnum
@@ -170,6 +176,14 @@ namespace FINE.Service.Helpers
         {
             ForUsual = 1,
             ForInvitation = 2,
+            ForPopup = 3
+        }
+
+        public enum VnPayTypeEnum
+        {
+            VNPAYQR = 1,
+            VNBANK = 2,
+            INTCARD = 3
         }
     }
 }

@@ -12,6 +12,8 @@ using ZXing.Windows.Compatibility;
 using System.Drawing;
 using FINE.Service.DTO.Request.Box;
 using NetTopologySuite.Index.HPRtree;
+using FirebaseAdmin.Messaging;
+using Hangfire;
 
 namespace FINE.Service.Service
 {
@@ -19,16 +21,21 @@ namespace FINE.Service.Service
     {
         Task<dynamic> GenerateQrCode(string customerId, string boxId);
         Task<dynamic> GenerateShipperQrCode(List<AddOrderToBoxRequest> request);
+        Task ReceiveBoxResult(string boxId, string key);
     }
 
     public class QrCodeService : IQrCodeService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IFirebaseMessagingService _fm;
+        private readonly IPaymentService _paymentService;
+        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm, IPaymentService paymentService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _fm = fm;
+            _paymentService = paymentService;
         }
 
 
@@ -57,7 +64,7 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                string content = box.Key + "." + Utils.GenerateRandomCode(10) + "." + boxId;
+                string content = "1" + box.Key + "." + Utils.GenerateRandomCode(10) + "." + boxId;
 
                 BarcodeWriter writer = new()
                 {
@@ -68,7 +75,52 @@ namespace FINE.Service.Service
 
                 return qrCodeBitmap;
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task ReceiveBoxResult(string boxId, string key)
+        {
+            try
+            {
+                var orderBox = _unitOfWork.Repository<OrderBox>().GetAll()
+                                    .FirstOrDefault(x => x.BoxId == Guid.Parse(boxId) && x.Key.Contains(key));
+                if (orderBox == null)
+                    throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_BOX_ERROR, BoxErrorEnums.ORDER_BOX_ERROR.GetDisplayName());
+
+                orderBox.Status = (int)OrderBoxStatusEnum.Picked;
+                orderBox.UpdateAt = DateTime.Now;
+
+                 _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
+
+                var order = _unitOfWork.Repository<Order>().GetAll()
+                    .FirstOrDefault(x => x.Id == orderBox.OrderId);
+                order.OrderStatus = (int)OrderStatusEnum.Finished;
+                _unitOfWork.Repository<Order>().UpdateDetached(order);
+                _unitOfWork.Commit();
+
+                var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
+                                    .FirstOrDefault(x => x.UserId == orderBox.Order.CustomerId).Token;
+                Notification notification = new Notification()
+                {
+                    Title = "Thành công ùi!!!",
+                    Body = "Bạn đã mở box thành công!!! Sau khi lấy hàng nhớ đóng tủ giúp tụi mình nha!"
+                };
+                Dictionary<string, string> data = new Dictionary<string, string>()
+                {
+                    { "type", NotifyTypeEnum.ForPopup.ToString()}
+                };
+                BackgroundJob.Enqueue(() => _fm.SendToToken(token, notification, data));
+
+                var party = orderBox.Order.Parties.FirstOrDefault(x => x.PartyType == (int)PartyOrderType.LinkedOrder);
+                if (party is not null)
+                {
+                    _paymentService.RefundPartialLinkedFee(party.PartyCode, party.CustomerId);
+                }
+            }
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }

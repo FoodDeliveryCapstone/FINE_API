@@ -26,22 +26,45 @@ namespace FINE.API.Controllers
         [HttpGet("qrCode")]
         public IActionResult GetQRCode(string boxId)
         {
-            var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
-
-            if (customerId == null)
+            try
             {
-                return Unauthorized();
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "CD59782C-998C-4693-9920-F1FE4964C24A";
+
+                var qrCodeBitmap = _qrCodeService.GenerateQrCode(customerId, boxId).Result;
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    qrCodeBitmap.Save(stream, ImageFormat.Png);
+                    byte[] imageBytes = stream.ToArray();
+
+                    return File(imageBytes, "image/png");
+                }
             }
-            //var customerId = "CD59782C-998C-4693-9920-F1FE4964C24A";
-
-            var qrCodeBitmap = _qrCodeService.GenerateQrCode(customerId, boxId).Result;
-            using (MemoryStream stream = new MemoryStream())
+            catch (ErrorResponse ex)
             {
-                qrCodeBitmap.Save(stream, ImageFormat.Png);
-                byte[] imageBytes = stream.ToArray();
+                throw ex;
+            }
+        }
 
-                return File(imageBytes, "image/png");
+        /// <summary>
+        /// Receive Box Result
+        /// </summary>
+        [HttpPost("return")]
+        public IActionResult ReceiveBoxResult(string boxId, string key)
+        {
+            try
+            {
+                return Ok(_qrCodeService.ReceiveBoxResult(boxId, key));
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
             }
         }
     }

@@ -21,7 +21,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Get order by Id
+        /// Lấy order bằng id
         /// </summary>
         [HttpGet("{orderId}")]
         public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> GetOrderById(string orderId)
@@ -44,6 +44,9 @@ namespace FINE.API.Controllers
             }
         }
 
+        /// <summary>
+        /// fetch status order
+        /// </summary>
         [HttpGet("status/{orderId}")]
         public async Task<ActionResult<BaseResponseViewModel<dynamic>>> GetOrderStatusByOrderId(string orderId)
         {
@@ -66,7 +69,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Get CoOrder
+        /// Lấy CoOrder 
         /// </summary>
         [HttpGet("coOrder/{partyCode}")]
         public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> GetPartyOrder(string partyCode)
@@ -80,7 +83,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var rs = await _orderService.GetPartyOrder(partyCode);
+                var rs = await _orderService.GetPartyOrder(customerId, partyCode);
                 return Ok(rs);
             }
             catch (ErrorResponse ex)
@@ -105,7 +108,6 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
 
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
                 return await _orderService.CreatePreOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -129,7 +131,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.CreateOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -153,7 +155,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.OpenCoOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -172,6 +174,11 @@ namespace FINE.API.Controllers
             {
                 var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
 
                 return await _orderService.CreatePreCoOrder(customerId, orderType, partyCode);
             }
@@ -196,7 +203,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.JoinPartyOrder(customerId, partyCode);
             }
             catch (ErrorResponse ex)
@@ -220,7 +227,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.AddProductIntoPartyCode(customerId, partyCode, request);
             }
             catch (ErrorResponse ex)
@@ -233,7 +240,7 @@ namespace FINE.API.Controllers
         /// Add product into card
         /// </summary>
         [HttpPost("card")]
-        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard([FromBody]AddProductToCardRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponse>>> AddProductIntoCard([FromBody] AddProductToCardRequest request)
         {
             try
             {
@@ -244,8 +251,8 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "CD59782C-998C-4693-9920-F1FE4964C24A";
-                return Ok(await _orderService.AddProductToCard(request));
+
+                return Ok(await _orderService.AddProductToCard(customerId,request));
             }
             catch (ErrorResponse ex)
             {
@@ -268,7 +275,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                //var customerId = "3D596DBF-E43E-45E6-85DD-50CD1095E362";
+
                 return await _orderService.FinalConfirmCoOrder(customerId, partyCode);
             }
             catch (ErrorResponse ex)
@@ -281,7 +288,7 @@ namespace FINE.API.Controllers
         /// Delete CoOrder
         /// </summary>
         [HttpPut("coOrder/out")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(string partyCode)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> DeletePartyOrder(PartyOrderType type, string partyCode, string? memberId = null)
         {
             try
             {
@@ -292,7 +299,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var rs = await _orderService.DeletePartyOrder(customerId, partyCode);
+                var rs = await _orderService.DeletePartyOrder(customerId, type, partyCode, memberId);
                 return Ok(rs);
             }
             catch (ErrorResponse ex)

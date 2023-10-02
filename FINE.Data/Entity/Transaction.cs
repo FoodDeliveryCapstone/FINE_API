@@ -17,6 +17,8 @@ public partial class Transaction
 
     public int Type { get; set; }
 
+    public int? Status { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
