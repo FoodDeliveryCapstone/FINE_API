@@ -413,14 +413,14 @@ namespace FINE.Service.Service
             {
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode && x.CustomerId == Guid.Parse(customerId))
-                                                .FirstOrDefaultAsync();
+                                                .ToListAsync();
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                if (partyOrder.IsActive == false)
+                if (partyOrder.All(x => x.IsActive == false))
                     throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
 
-                if (partyOrder.Status == (int)PartyOrderStatus.OutOfTimeslot)
+                if (partyOrder.FirstOrDefault(x => x.IsActive == true).Status == (int)PartyOrderStatus.OutOfTimeslot)
                     throw new ErrorResponse(404, (int)PartyErrorEnums.OUT_OF_TIMESLOT, PartyErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 
                 CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
@@ -593,7 +593,6 @@ namespace FINE.Service.Service
             }
             catch (ErrorResponse ex)
             {
-                throw ex;
             }
         }
 
