@@ -26,11 +26,11 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpGet("all/{storeId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<OrderDetailResponse>>> GetOrderDetailByStoreId(string storeId, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderDetailResponse>>> GetOrderDetailByStoreId(string storeId, int orderStatus, [FromQuery] PagingRequest paging)
         {
             try
             {
-                return await _orderDetailService.GetOrdersDetailByStore(storeId, paging);
+                return await _orderDetailService.GetOrdersDetailByStore(storeId, orderStatus, paging);
             }
             catch (ErrorResponse ex)
             {

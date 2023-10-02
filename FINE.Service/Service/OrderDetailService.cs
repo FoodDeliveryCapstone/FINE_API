@@ -26,7 +26,7 @@ namespace FINE.Service.Service
 {
     public interface IOrderDetailService
     {
-        Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, int orderStatus, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail( string stationId, int status, string timeslot = null, string storeId = null);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
@@ -50,12 +50,12 @@ namespace FINE.Service.Service
             _boxService = boxService;
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, int orderStatus, PagingRequest paging)
         {
             try
             {
                 var order = _unitOfWork.Repository<OrderDetail>().GetAll()
-                                        .Where(x => x.StoreId == Guid.Parse(storeId))
+                                        .Where(x => x.StoreId == Guid.Parse(storeId) && x.Order.OrderStatus == orderStatus)
                                         .OrderBy(x => x.OrderId)
                                         .ThenBy(x => x.Order.CheckInDate)
                                         .ProjectTo<OrderDetailResponse>(_mapper.ConfigurationProvider)
