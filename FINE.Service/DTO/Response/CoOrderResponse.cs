@@ -18,8 +18,6 @@ namespace FINE.Service.DTO.Response
 
         public bool IsPayment { get; set; }
 
-        public bool IsActive { get; set; }
-
         public TimeSlotOrderResponse TimeSlot { get; set; }
 
         public List<CoOrderPartyCard> PartyOrder { get; set; }

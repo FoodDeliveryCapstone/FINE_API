@@ -83,7 +83,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var rs = await _orderService.GetPartyOrder(partyCode);
+                var rs = await _orderService.GetPartyOrder(customerId,partyCode);
                 return Ok(rs);
             }
             catch (ErrorResponse ex)

@@ -15,6 +15,8 @@ public partial class Station
 
     public Guid FloorId { get; set; }
 
+    public bool IsAvailable { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTime CreateAt { get; set; }

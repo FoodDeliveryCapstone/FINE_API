@@ -28,7 +28,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging);
         Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
-        Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode);
+        Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId,string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
@@ -382,7 +382,7 @@ namespace FINE.Service.Service
 
                 var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
 
-                if(party.PartyType == (int)PartyOrderType.CoOrder)
+                if (party.PartyType == (int)PartyOrderType.CoOrder)
                 {
                     CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode);
                     coOrder.IsPayment = true;
@@ -407,12 +407,12 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string partyCode)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId ,string partyCode)
         {
             try
             {
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode)
+                                                .Where(x => x.PartyCode == partyCode && x.CustomerId == Guid.Parse(customerId))
                                                 .FirstOrDefaultAsync();
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
@@ -593,9 +593,10 @@ namespace FINE.Service.Service
 
                      _unitOfWork.Repository<Party>().UpdateDetached(party);
                      _unitOfWork.Commit();
+
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, code);
                 }
-            }
-            catch(ErrorResponse ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
