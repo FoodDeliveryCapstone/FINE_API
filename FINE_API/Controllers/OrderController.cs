@@ -252,7 +252,7 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
 
-                return Ok(await _orderService.AddProductToCard(request));
+                return Ok(await _orderService.AddProductToCard(customerId,request));
             }
             catch (ErrorResponse ex)
             {

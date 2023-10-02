@@ -27,6 +27,8 @@ namespace FINE.Service.Helpers
             CANNOT_UPDATE_ORDER = 4004,
             [Display(Name = "This product cannot add into the box")]
             CANNOT_ADD_TO_CARD = 4005,
+            [Display(Name = "Out of limit order")]
+            OUT_OF_LIMIT_ORDER = 4006,
             //404 
             [Display(Name = "Not found this order!")]
             NOT_FOUND = 4041,

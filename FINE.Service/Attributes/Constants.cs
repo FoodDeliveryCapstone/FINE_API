@@ -15,5 +15,7 @@
         public const string PARTYORDER_COLAB = "CPO";
 
         public const string CHANGE_ADMIN_PARTY = "Bạn lên chức tổ trưởng ròi nè!!!";
+        public const string OUT_OF_LIMIT_ORDER = "Bạn đã hết lượt đặt đơn!!!";
+
     }
 }

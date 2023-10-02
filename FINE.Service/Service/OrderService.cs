@@ -33,7 +33,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
-        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(AddProductToCardRequest request);
+        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string customerId, AddProductToCardRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
@@ -696,10 +696,37 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(AddProductToCardRequest request)
+        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string customerId, AddProductToCardRequest request)
         {
             try
             {
+                //check xem customer đã hết lượt đặt đơn hay chưa
+                var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.CustomerId == Guid.Parse(customerId)
+                                            && x.OrderStatus != (int)OrderStatusEnum.Finished
+                                            && x.TimeSlotId ==Guid.Parse(request.TimeSlotId))
+                                        .ToListAsync();
+                if(customerOrder.Count() >= 2)
+                {
+                    var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
+
+                    Notification notification = new Notification
+                    {
+                        Title = Constants.OUT_OF_LIMIT_ORDER,
+                        Body = String.Format("Bạn chỉ 2 lượt đặt đơn trong cùng 1 khung giờ, vui lòng chờ các đơn bạn đã đặt được giao tới nhé!!!")
+                    };
+
+                    var data = new Dictionary<string, string>()
+                    {
+                        { "type", NotifyTypeEnum.ForUsual.ToString()}
+                    };
+
+                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
+                                            OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
+                }
+
                 var existInCard = request.Card.Find(x => x.ProductId == request.ProductId);
                 if (existInCard is not null)
                 {
@@ -817,7 +844,7 @@ namespace FINE.Service.Service
                     Data = result
                 };
             }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
