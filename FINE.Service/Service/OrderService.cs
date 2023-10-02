@@ -423,7 +423,11 @@ namespace FINE.Service.Service
                 if (partyOrder.FirstOrDefault(x => x.IsActive == true).Status == (int)PartyOrderStatus.OutOfTimeslot)
                     throw new ErrorResponse(404, (int)PartyErrorEnums.OUT_OF_TIMESLOT, PartyErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                CoOrderResponse coOrder = null;
+                if (partyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
+                {
+                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                }
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
