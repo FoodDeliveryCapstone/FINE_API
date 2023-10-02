@@ -1086,7 +1086,7 @@ namespace FINE.Service.Service
                     party.IsActive = false;
                     await _unitOfWork.Repository<Party>().UpdateDetached(party);
                     //nếu đơn nhóm chỉ có admin => xóa chế độ coOrder
-                    if (memberId is not null)
+                    if (memberId is null)
                     {
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
                     }
