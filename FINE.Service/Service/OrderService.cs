@@ -722,7 +722,7 @@ namespace FINE.Service.Service
 
                     var data = new Dictionary<string, string>()
                     {
-                        { "type", NotifyTypeEnum.ForUsual.ToString()}
+                        { "type", NotifyTypeEnum.ForPopup.ToString()}
                     };
 
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
