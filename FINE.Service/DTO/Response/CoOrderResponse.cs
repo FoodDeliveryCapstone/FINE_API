@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
+    public class CoOrderStatusResponse
+    {
+        public int NumberOfMember { get; set; }
+        public bool IsReady { get; set; }
+    }
     public class CoOrderResponse
     {
         public Guid Id { get; set; }

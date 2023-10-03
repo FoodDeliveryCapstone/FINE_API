@@ -29,6 +29,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging);
         Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId, string partyCode);
+        Task<BaseResponseViewModel<CoOrderStatusResponse>> GetPartyStatus(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
@@ -1248,6 +1249,34 @@ namespace FINE.Service.Service
             {
                 throw ex;
             }
+        }
+
+        public async Task<BaseResponseViewModel<CoOrderStatusResponse>> GetPartyStatus(string partyCode)
+        {
+            try
+            {
+                var result = new CoOrderStatusResponse();
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+
+                result.NumberOfMember = coOrder.PartyOrder.Where(x => x.Customer.IsAdmin == false).Count();
+
+                result.IsReady = coOrder.PartyOrder.All(x => x.Customer.IsConfirm == true);
+                return new BaseResponseViewModel<CoOrderStatusResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+
         }
     }
 }

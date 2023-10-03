@@ -93,6 +93,30 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Lấy CoOrder status
+        /// </summary>
+        [HttpGet("coOrder/status/{partyCode}")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderStatusResponse>>> GetPartyStatus(string partyCode)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var rs = await _orderService.GetPartyStatus(partyCode);
+                return Ok(rs);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Create PreOrder
         /// </summary>
         [HttpPost("preOrder")]
