@@ -29,6 +29,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid Id { get; set; }
         public string OrderCode { get; set; }
+        public int ItemQuantity { get; set; }
         public CustomerOrderResponse Customer { get; set; }
     }
 
@@ -37,5 +38,10 @@ namespace FINE.Service.DTO.Response
         public List<OrderSuccess> OrderSuccess { get; set; }
         public List<OrderFailed> OrderFailed { get; set; }
     }
-    public class SimulateOrderStatusResponse { }
+    public class SimulateOrderStatusResponse 
+    {
+        public string OrderCode { get; set; }
+        public int ItemQuantity { get; set; }
+        public string CustomerName { get; set; }
+    }
 }

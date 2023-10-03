@@ -42,7 +42,7 @@ namespace FINE.Service.Service
         //Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request);
         Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
-        Task<BaseResponseViewModel<SimulateOrderStatusResponse>> SimulateOrderStatus(SimulateOrderStatusRequest request);
+        Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatus(SimulateOrderStatusRequest request);
         Task<BaseResponsePagingViewModel<ReportMissingProductResponse>> GetReportMissingProduct(string storeId, string timeslotId);
         Task<BaseResponseViewModel<ShipperResponse>> UpdateMissingProduct(List<UpdateMissingProductRequest> request);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request);
@@ -594,6 +594,7 @@ namespace FINE.Service.Service
                                 {
                                     Id = result.Id,
                                     OrderCode = result.OrderCode,
+                                    ItemQuantity = result.ItemQuantity,
                                     Customer = result.Customer,
                                 };
                                 response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
@@ -1169,7 +1170,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<SimulateOrderStatusResponse>> SimulateOrderStatus(SimulateOrderStatusRequest request)
+        public async Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatus(SimulateOrderStatusRequest request)
         {
             try
             {
@@ -1178,7 +1179,10 @@ namespace FINE.Service.Service
                                         .Where(x => x.OrderStatus == (int)OrderStatusEnum.BoxStored)
                                         .ToListAsync();
                 getAllOrder = getAllOrder.Take(request.TotalOrder).ToList();
-                foreach(var order in getAllOrder)
+                var getAllCustomer = await _unitOfWork.Repository<Customer>().GetAll().ToListAsync();
+                List<SimulateOrderStatusResponse> response = new List<SimulateOrderStatusResponse>();
+
+                foreach (var order in getAllOrder)
                 {
                     var payload = new UpdateOrderStatusRequest()
                     {
@@ -1186,16 +1190,24 @@ namespace FINE.Service.Service
                     };
 
                     var updateStatus = await UpdateOrderStatus(order.Id.ToString(), payload);
+
+                    var result = new SimulateOrderStatusResponse()
+                    {
+                        OrderCode = order.OrderCode,
+                        ItemQuantity = order.ItemQuantity,
+                        CustomerName = getAllCustomer.FirstOrDefault(x => x.Id == order.CustomerId).Name
+                    };
+
+                    response.Add(result);
                 }
 
-                return new BaseResponseViewModel<SimulateOrderStatusResponse>()
+                return new BaseResponsePagingViewModel<SimulateOrderStatusResponse>()
                 {
-                    Status = new StatusViewModel()
+                    Metadata = new PagingsMetadata()
                     {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0,
-                    }
+                        Total = response.Count()
+                    },
+                    Data = response
                 };
             }
             catch(ErrorResponse ex)
