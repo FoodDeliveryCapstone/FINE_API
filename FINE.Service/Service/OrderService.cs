@@ -608,8 +608,10 @@ namespace FINE.Service.Service
                 var checkJoin = await _unitOfWork.Repository<Party>().GetAll()
                                                 .FirstOrDefaultAsync(x => x.CustomerId == Guid.Parse(customerId)
                                                     && x.PartyCode != partyCode
+                                                    && x.IsActive == true
                                                     && (x.Status == (int)PartyOrderStatus.NotConfirm
                                                     || x.Status == (int)PartyOrderStatus.NotRefund));
+
                 if (checkJoin is not null && checkJoin.PartyType == (int)PartyOrderType.CoOrder)
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.COORDER_PARTY_JOINED, PartyErrorEnums.COORDER_PARTY_JOINED.GetDisplayName());
