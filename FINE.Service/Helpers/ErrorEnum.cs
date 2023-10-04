@@ -152,6 +152,14 @@ namespace FINE.Service.Helpers
 
         }
 
+        public enum KafkaErrorEnums
+        {
+            //400
+            [Display(Name = "Kafka publish error!!!")]
+            KAFKA_ERROR = 4001,
+
+        }
+
         public enum TimeSlotErrorEnums
         {
             //400

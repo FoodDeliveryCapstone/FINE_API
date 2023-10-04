@@ -172,14 +172,14 @@ namespace FINE.API.Controllers
         {
             try
             {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
-
+                //if (customerId == null)
+                //{
+                //    return Unauthorized();
+                //}
+                var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
                 return await _orderService.OpenCoOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -205,30 +205,6 @@ namespace FINE.API.Controllers
                 }
 
                 return await _orderService.CreatePreCoOrder(customerId, orderType, partyCode);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
-
-        /// <summary>
-        /// Join CoOrder
-        /// </summary>
-        [HttpPut("coOrder/party")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string partyCode)
-        {
-            try
-            {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
-
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
-
-                return await _orderService.JoinPartyOrder(customerId, partyCode);
             }
             catch (ErrorResponse ex)
             {
@@ -277,6 +253,30 @@ namespace FINE.API.Controllers
                 }
 
                 return Ok(await _orderService.AddProductToCard(customerId,request));
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Join CoOrder
+        /// </summary>
+        [HttpPut("coOrder/party")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string partyCode)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                return await _orderService.JoinPartyOrder(customerId, partyCode);
             }
             catch (ErrorResponse ex)
             {

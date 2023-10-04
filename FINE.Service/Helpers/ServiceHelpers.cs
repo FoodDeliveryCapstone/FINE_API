@@ -69,48 +69,6 @@ namespace FINE.Service.Helpers
             }
         }
 
-        public async static Task<dynamic> GetSetDataIntoKafka(RedisSetUpType type, string key, object value = null)
-        {
-            try
-            {
-                CoOrderResponse rs = new CoOrderResponse();
-                string connectRedisString = config.GetSection("Endpoint:RedisEndpoint").Value + "," + config.GetSection("Endpoint:Password").Value;
-                // Tạo kết nối
-                ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
-
-                // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
-
-                // Ping thử
-                if (db.Ping().TotalSeconds > 5)
-                {
-                    throw new TimeoutException("Server Redis không hoạt động");
-                }
-                switch (type)
-                {
-                    case RedisSetUpType.GET:
-                        var redisValue = db.StringGet(key);
-                        rs = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-                        break;
-
-                    case RedisSetUpType.SET:
-                        var redisNewValue = JsonConvert.SerializeObject(value);
-                        db.StringSet(key, redisNewValue);
-                        break;
-
-                    case RedisSetUpType.DELETE:
-                        db.KeyDelete(key);
-                        break;
-                }
-                redis.Close();
-                return rs;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
         public static FixBoxResponse CheckProductFixTheBox(ProductAttribute product, int quantity, List<CheckFixBoxRequest> card)
         {
             try
@@ -438,7 +396,7 @@ namespace FINE.Service.Helpers
                             Length = space.RemainingLengthSpace.Length
                         };
                     }
-                    if (space.VolumeWidthOccupied.Length != 0 && space.VolumeWidthOccupied is not null )
+                    if (space.VolumeWidthOccupied.Length != 0 && space.VolumeWidthOccupied is not null)
                     {
                         recoveryRemainingWidthSpace = new CubeModel()
                         {
@@ -526,7 +484,7 @@ namespace FINE.Service.Helpers
                     }
                 }
                 else
-                { 
+                {
                     response.Success = false;
                 }
 

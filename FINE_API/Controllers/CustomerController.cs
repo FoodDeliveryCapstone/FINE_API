@@ -207,28 +207,29 @@ namespace FINE.API.Controllers
             return Ok();
         }
 
-        /// <summary>
-        ///  Gửi lời mời join đơn nhóm
-        /// </summary>
-        [HttpPost("invitation")]
-        public async Task SendInvitation(string customerId, string partyCode)
-        {
-            try
-            {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var adminId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
-                if (adminId == null)
-                {
-                    Unauthorized();
-                }
-                //var adminId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
-                await _customerService.SendInvitation(customerId, adminId,partyCode);
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
+        ///// <summary>
+        /////  Gửi lời mời join đơn nhóm
+        ///// </summary>
+        //[HttpPost("invitation")]
+        //public async Task SendInvitation(string customerId, string partyCode)
+        //{
+        //    try
+        //    {
+        //        var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+        //        var adminId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+        //        if (adminId == null)
+        //        {
+        //            Unauthorized();
+        //        }
+        //        //var adminId = "4873582B-52AF-4D9E-96D0-0C461018CF81";
+        //        await _customerService.SendInvitation(customerId, adminId,partyCode);
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
+        //}
 
         [HttpGet("time")]
         public async Task<ActionResult<DateTime>> ServerTime()

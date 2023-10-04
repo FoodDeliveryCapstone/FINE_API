@@ -38,7 +38,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<LoginResponse>> Login(ExternalAuthRequest data);
         Task<BaseResponseViewModel<CustomerResponse>> FindCustomer(string phoneNumber);
         Task<List<CustomerResponse>> SimulateCreateCustomer(int quantity);
-        Task SendInvitation(string customerId, string adminId, string partyCode);
+        //Task SendInvitation(string customerId, string adminId, string partyCode);
         Task Logout(string fcmToken);
     }
     public class CustomerService : ICustomerService
@@ -275,42 +275,42 @@ namespace FINE.Service.Service
 
         }
 
-        public async Task SendInvitation(string customerId, string adminId, string partyCode)
-        {
-            try
-            {
-                var party = await _unitOfWork.Repository<Party>().GetAll()
-                                                    .FirstOrDefaultAsync(x => x.PartyCode == partyCode);
+        //public async Task SendInvitation(string customerId, string adminId, string partyCode)
+        //{
+        //    try
+        //    {
+        //        var party = await _unitOfWork.Repository<Party>().GetAll()
+        //                                            .FirstOrDefaultAsync(x => x.PartyCode == partyCode);
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+        //        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
 
-                var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(adminId)).FirstOrDefault();
+        //        var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(adminId)).FirstOrDefault();
 
-                var customerToken = await _unitOfWork.Repository<Fcmtoken>().GetAll()
-                                                    .Where(x => x.UserId == Guid.Parse(customerId))
-                                                    .Select(x => x.Token)
-                                                    .FirstOrDefaultAsync();
+        //        var customerToken = await _unitOfWork.Repository<Fcmtoken>().GetAll()
+        //                                            .Where(x => x.UserId == Guid.Parse(customerId))
+        //                                            .Select(x => x.Token)
+        //                                            .FirstOrDefaultAsync();
 
-                Notification notification = new Notification
-                {
-                    Title = Constants.NOTIFICATION_INVITATION_TITLE,
-                    Body = String.Format("Bạn {0} gửi đến bạn lời mời gia nhập party được giao vào lúc {1}"
-                                        , admin.Customer.Name, coOrder.TimeSlot.ArriveTime)
-                };
+        //        Notification notification = new Notification
+        //        {
+        //            Title = Constants.NOTIFICATION_INVITATION_TITLE,
+        //            Body = String.Format("Bạn {0} gửi đến bạn lời mời gia nhập party được giao vào lúc {1}"
+        //                                , admin.Customer.Name, coOrder.TimeSlot.ArriveTime)
+        //        };
 
-                var data = new Dictionary<string, string>()
-                    {
-                        { "key", partyCode },
-                        { "type", NotifyTypeEnum.ForInvitation.ToString()}
-                    };
+        //        var data = new Dictionary<string, string>()
+        //            {
+        //                { "key", partyCode },
+        //                { "type", NotifyTypeEnum.ForInvitation.ToString()}
+        //            };
 
-                _fm.SendToToken(customerToken, notification, data);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+        //        _fm.SendToToken(customerToken, notification, data);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
         public async Task<BaseResponseViewModel<CustomerResponse>> CreateCustomer(CreateCustomerRequest request)
         {

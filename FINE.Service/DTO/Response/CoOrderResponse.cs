@@ -25,7 +25,7 @@ namespace FINE.Service.DTO.Response
 
         public TimeSlotOrderResponse TimeSlot { get; set; }
 
-        public List<CoOrderPartyCard> PartyOrder { get; set; }
+        public CoOrderPartyCard PartyOrder { get; set; }
     }
 
     public class CoOrderPartyCard
