@@ -444,8 +444,11 @@ namespace FINE.Service.Service
                       CheckInDate = order.CheckInDate,
                       OrderType = resultOrder.OrderType,
                       OrderDetailStoreStatus = OrderStatusEnum.Processing,
-                      OrderDetails = resultOrder.OrderDetails.Where(x => x.StoreId == group.Key).ToList(),
-                  }).ToList();
+                      OrderDetails = _mapper.Map<List<OrderDetailResponse>, List<OrderDetailForStaffResponse>>
+                                (resultOrder.OrderDetails.Where(x => x.StoreId == group.Key).ToList())
+                                
+                //resultOrder.OrderDetails.Where(x => x.StoreId == group.Key).ToList(),
+            }).ToList();
                 ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, resultOrder.Id.ToString(), orderDetailsByStore);
                 #endregion
 

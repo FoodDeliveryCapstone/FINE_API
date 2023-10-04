@@ -29,8 +29,9 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<OrderDetailResponse>> GetOrdersDetailByStore(string storeId, int orderStatus, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetSplitOrderDetail( string stationId, int status, string timeslot = null, string storeId = null);
         Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateOrderByStoreStatus(UpdateOrderDetailStatusRequest request);
+        Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateProductInOrderStatus(UpdateProductStatusRequest request);
         Task<BaseResponsePagingViewModel<OrderByStoreResponse>> GetStaffOrderDetailByOrderId(string orderId);
-        Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status,string stationId = null);
+        Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int? status, int? productStatus, string stationId = null);
         Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string timeslotId, string stationId, string? storeId, int? status);
         Task<BaseResponsePagingViewModel<ShipperOrderBoxResponse>> GetShipperOrderBox(string stationId, string timeslotId);
 
@@ -162,12 +163,6 @@ namespace FINE.Service.Service
         {
             try
             {
-                var key = Utils.GenerateRandomCode(10);
-                var box = await _unitOfWork.Repository<Box>().GetAll().ToListAsync();
-                var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll().ToListAsync();
-                var preBoxId = Guid.Empty;
-                int nextBoxIndex = 0;
-
                 foreach (var item in request.ListStoreAndOrder)
                 {
                     List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET, item.OrderId.ToString());
@@ -215,44 +210,6 @@ namespace FINE.Service.Service
                     }
                     #endregion               
                 }
-
-                //if (request.OrderDetailStoreStatus == OrderStatusEnum.Delivering)
-                //{
-                //    HashSet<Guid> orderIdList = new HashSet<Guid>();
-                //    foreach (var newEntityOrder in request.ListStoreAndOrder)
-                //    {
-                //        if (!orderIdList.Equals(newEntityOrder.OrderId))
-                //        {
-                //            orderIdList.Add(newEntityOrder.OrderId);
-                //        }
-                //    }
-                //    foreach (var orderId in orderIdList)
-                //    {
-                //        var newOrder = getAllOrder.FirstOrDefault(x => x.Id == orderId);
-                //        var boxByStation = box
-                //       .Where(x => x.StationId == newOrder.StationId)
-                //       .OrderBy(x => x.CreateAt)
-                //       .ToList();
-                //        // lay box tiep theo trong boxByStation
-                //        if (boxByStation.Any())
-                //        {
-                //            if (nextBoxIndex < boxByStation.Count)
-                //            {
-                //                var nextBox = boxByStation[nextBoxIndex];
-
-                //                var addOrderToBoxRequest = new AddOrderToBoxRequest()
-                //                {
-                //                    BoxId = nextBox.Id,
-                //                    OrderId = newOrder.Id
-                //                };
-                //                var addOrderToBox = await _boxService.AddOrderToBox(newOrder.StationId.ToString(), key, addOrderToBoxRequest);
-
-                //                preBoxId = nextBox.Id;
-                //                nextBoxIndex++;
-                //            }
-                //        }
-                //    }
-                //}
                 return new BaseResponseViewModel<OrderByStoreResponse>()
                 {
                     Status = new StatusViewModel()
@@ -269,54 +226,116 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int status, string stationId = null)
+
+        public async Task<BaseResponseViewModel<OrderByStoreResponse>> UpdateProductInOrderStatus(UpdateProductStatusRequest request)
+        {
+            try 
+            {
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
+                foreach (var item in request.OrderDetailId)
+                {
+                    var order = orderResponse.Where(x => x.OrderId == orderResponse.Find(o => o.OrderDetails.Any(a => a.Id == item)).OrderId);
+
+                    order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item))
+                        .OrderDetails.FirstOrDefault(x => x.Id == item).OrderDetailProductStatus = request.ProductStatus;
+
+                    ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, order.FirstOrDefault().OrderId.ToString(), order);
+                    #region đừng đọc                 
+                    if (!order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).OrderDetails
+                              .Any(detail => detail.OrderDetailProductStatus != OrderStatusEnum.FinishPrepare))
+                    {
+                        var updateOrderDetailRequest = new UpdateOrderDetailStatusRequest()
+                        { 
+                            OrderDetailStoreStatus = OrderStatusEnum.FinishPrepare,
+                            ListStoreAndOrder = new List<ListOrderStoreRequest>()
+                                                    {
+                                                        new ListOrderStoreRequest()
+                                                        {
+                                                            OrderId = order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).OrderId,
+                                                            StoreId = order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).StoreId,
+                                                        }
+                                                    }
+                        };
+                        var updateOrder = await UpdateOrderByStoreStatus(updateOrderDetailRequest);
+
+                    }
+                    else if (!order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).OrderDetails
+                                   .Any(x => x.OrderDetailProductStatus != OrderStatusEnum.Delivering))
+                    {
+                        var updateOrderDetailRequest = new UpdateOrderDetailStatusRequest()
+                        {
+                            OrderDetailStoreStatus = OrderStatusEnum.Delivering,
+                            ListStoreAndOrder = new List<ListOrderStoreRequest>()
+                                                    {
+                                                        new ListOrderStoreRequest()
+                                                        {
+                                                            OrderId = order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).OrderId,
+                                                            StoreId = order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).StoreId,
+                                                        }
+                                                    }
+                        };
+                        var updateOrder = await UpdateOrderByStoreStatus(updateOrderDetailRequest);
+
+                    }
+                    else if (!order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).OrderDetails
+                                   .Any(x => x.OrderDetailProductStatus != OrderStatusEnum.BoxStored))
+                    {
+                        var updateOrderDetailRequest = new UpdateOrderDetailStatusRequest()
+                        {
+                            OrderDetailStoreStatus = OrderStatusEnum.BoxStored,
+                            ListStoreAndOrder = new List<ListOrderStoreRequest>()
+                                                    {
+                                                        new ListOrderStoreRequest()
+                                                        {
+                                                            OrderId = order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).OrderId,
+                                                            StoreId = order.FirstOrDefault(x => x.OrderDetails.Any(a => a.Id == item)).StoreId,
+                                                        }
+                                                    }
+                        };
+                        var updateOrder = await UpdateOrderByStoreStatus(updateOrderDetailRequest);
+
+                    }
+                    
+                    #endregion
+                }
+
+                return new BaseResponseViewModel<OrderByStoreResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    //Data =
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<BaseResponsePagingViewModel<SplitOrderResponse>> GetSplitOrder(string storeId, string timeslotId, int? status, int? productStatus, string stationId = null)
         {
             try
             {
-                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);                
+                List<OrderByStoreResponse> orderResponse = await ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.GET);
                 var productInMenuList = new List<SplitOrderResponse>();
-                if (stationId == null)
+                if (stationId == null && productStatus == null && status == null)
                 {
                     orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
-                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
-                                            && (int)x.OrderDetailStoreStatus == status)
+                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId))
                                             .OrderByDescending(x => x.CheckInDate)
                                             .ToList();
                     foreach (var order in orderResponse)
                     {
                         productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
                         {
-                            ProductName = x.ProductName,
-                            Quantity = x.Quantity,
-                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
-                        })
-                        .ToList()); 
-                    }
-                    productInMenuList = productInMenuList
-                        .GroupBy(x => new {
-                            x.ProductName,
-                            x.TimeSlotId
-                        })
-                        .Select(x => new SplitOrderResponse
-                        {
-                            ProductName = x.Key.ProductName,
-                            Quantity = x.Sum(x => x.Quantity),
-                            TimeSlotId = x.Key.TimeSlotId
-                        })
-                        .ToList();
-                }
-                else
-                {
-                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId) 
-                                             && x.StationId == Guid.Parse(stationId)
-                                             && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
-                                             && (int)x.OrderDetailStoreStatus == status)
-                                             .OrderByDescending(x => x.CheckInDate)
-                                             .ToList();
-                    foreach (var order in orderResponse)
-                    {
-                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
-                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
                             ProductName = x.ProductName,
                             Quantity = x.Quantity,
                             TimeSlotId = Guid.Parse(order.TimeSlot.Id),
@@ -330,6 +349,342 @@ namespace FINE.Service.Service
                         })
                         .Select(x => new SplitOrderResponse
                         {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else if (stationId == null && productStatus == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                            && (int)x.OrderDetailStoreStatus == status)
+                                            .OrderByDescending(x => x.CheckInDate)
+                                            .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else if (stationId == null && status == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId))
+                                            //&& x.OrderDetails.Any(prd => (int?)prd.OrderDetailProductStatus == productStatus))
+                                            .Select(x => new OrderByStoreResponse
+                                            {
+                                                OrderId = x.OrderId,
+                                                StoreId = x.StoreId,
+                                                CustomerName = x.CustomerName,
+                                                TimeSlot = x.TimeSlot,
+                                                StationId = x.StationId,
+                                                StationName = x.StationName,
+                                                CheckInDate = x.CheckInDate,
+                                                OrderType = x.OrderType,
+                                                OrderDetailStoreStatus = x.OrderDetailStoreStatus,
+                                                OrderDetails = x.OrderDetails
+                                                        .Where(prd => (int?)prd.OrderDetailProductStatus == productStatus) 
+                                                        .ToList()
+                                            })
+                                            .OrderByDescending(x => x.CheckInDate)
+                                            .ToList();
+                    
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else if (status == null && productStatus == null)
+                {
+                    //them product status
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                            && x.StationId == Guid.Parse(stationId))
+                                            .OrderByDescending(x => x.CheckInDate)
+                                            .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else if (productStatus == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                            && x.StationId == Guid.Parse(stationId)
+                                            && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                            && (int)x.OrderDetailStoreStatus == status)
+                                            .OrderByDescending(x => x.CheckInDate)
+                                            .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else if (status == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                           && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                           && x.StationId == Guid.Parse(stationId))
+                                           //&& x.OrderDetails.Any(prd => (int?)prd.OrderDetailProductStatus == productStatus))
+                                           .Select(x => new OrderByStoreResponse
+                                           {
+                                               OrderId = x.OrderId,
+                                               StoreId = x.StoreId,
+                                               CustomerName = x.CustomerName,
+                                               TimeSlot = x.TimeSlot,
+                                               StationId = x.StationId,
+                                               StationName = x.StationName,
+                                               CheckInDate = x.CheckInDate,
+                                               OrderType = x.OrderType,
+                                               OrderDetailStoreStatus = x.OrderDetailStoreStatus,
+                                               OrderDetails = x.OrderDetails
+                                                       .Where(prd => (int?)prd.OrderDetailProductStatus == productStatus)
+                                                       .ToList()
+                                           })
+                                           .OrderByDescending(x => x.CheckInDate)
+                                           .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else if (stationId == null)
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                           && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                           && (int)x.OrderDetailStoreStatus == status)
+                                           //&& x.OrderDetails.Any(prd => (int?)prd.OrderDetailProductStatus == productStatus))
+                                           .Select(x => new OrderByStoreResponse
+                                           {
+                                               OrderId = x.OrderId,
+                                               StoreId = x.StoreId,
+                                               CustomerName = x.CustomerName,
+                                               TimeSlot = x.TimeSlot,
+                                               StationId = x.StationId,
+                                               StationName = x.StationName,
+                                               CheckInDate = x.CheckInDate,
+                                               OrderType = x.OrderType,
+                                               OrderDetailStoreStatus = x.OrderDetailStoreStatus,
+                                               OrderDetails = x.OrderDetails
+                                                       .Where(prd => (int?)prd.OrderDetailProductStatus == productStatus)
+                                                       .ToList()
+                                           })
+                                           .OrderByDescending(x => x.CheckInDate)
+                                           .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
+                            ProductName = x.Key.ProductName,
+                            Quantity = x.Sum(x => x.Quantity),
+                            TimeSlotId = x.Key.TimeSlotId
+                        })
+                        .ToList();
+                }
+                else
+                {
+                    orderResponse = orderResponse.Where(x => x.StoreId == Guid.Parse(storeId)
+                                           && Guid.Parse(x.TimeSlot.Id) == Guid.Parse(timeslotId)
+                                            && x.StationId == Guid.Parse(stationId)
+                                             && (int)x.OrderDetailStoreStatus == status)
+                                           //&& x.OrderDetails.Any(prd => (int?)prd.OrderDetailProductStatus == productStatus))
+                                           .Select(x => new OrderByStoreResponse
+                                           {
+                                               OrderId = x.OrderId,
+                                               StoreId = x.StoreId,
+                                               CustomerName = x.CustomerName,
+                                               TimeSlot = x.TimeSlot,
+                                               StationId = x.StationId,
+                                               StationName = x.StationName,
+                                               CheckInDate = x.CheckInDate,
+                                               OrderType = x.OrderType,
+                                               OrderDetailStoreStatus = x.OrderDetailStoreStatus,
+                                               OrderDetails = x.OrderDetails
+                                                       .Where(prd => (int?)prd.OrderDetailProductStatus == productStatus)
+                                                       .ToList()
+                                           })
+                                           .OrderByDescending(x => x.CheckInDate)
+                                           .ToList();
+                    foreach (var order in orderResponse)
+                    {
+                        productInMenuList.AddRange(order.OrderDetails.Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = orderResponse.FindAll(ord => ord.OrderDetails.Any(ordDet => ordDet.ProductName == x.ProductName))
+                                                    .SelectMany(ord => ord.OrderDetails)
+                                                    .Where(detail => detail.ProductName == x.ProductName)
+                                                    .Select(detail => detail.Id)
+                                                    .ToList(),
+                            ProductName = x.ProductName,
+                            Quantity = x.Quantity,
+                            TimeSlotId = Guid.Parse(order.TimeSlot.Id),
+                        })
+                        .ToList());
+                    }
+                    productInMenuList = productInMenuList
+                        .GroupBy(x => new {
+                            x.ProductName,
+                            x.TimeSlotId
+                        })
+                        .Select(x => new SplitOrderResponse
+                        {
+                            OrderDetailId = productInMenuList.FirstOrDefault(a => a.ProductName == x.Key.ProductName
+                                                && a.TimeSlotId == x.Key.TimeSlotId)
+                                                .OrderDetailId,
                             ProductName = x.Key.ProductName,
                             Quantity = x.Sum(x => x.Quantity),
                             TimeSlotId = x.Key.TimeSlotId
@@ -351,6 +706,7 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
 
         public async Task<BaseResponsePagingViewModel<ShipperSplitOrderResponse>> GetShipperSplitOrder(string timeslotId, string stationId, string? storeId, int? status)
         {
@@ -549,7 +905,7 @@ namespace FINE.Service.Service
                 var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
                 var orderBoxList = new List<ShipperOrderBoxResponse>();
                 Guid prevBoxId = Guid.Empty;
-                var orderDetail = new List<OrderDetailResponse>();
+                var orderDetail = new List<OrderDetailForStaffResponse>();
 
                 foreach(var order in orderResponse)
                 {
@@ -561,7 +917,7 @@ namespace FINE.Service.Service
                     if (prevBoxId != box.BoxId)
                     {
                         //khac thi tao lai list roi add theo box id moi
-                        orderDetail = new List<OrderDetailResponse>();
+                        orderDetail = new List<OrderDetailForStaffResponse>();
                         orderDetail.AddRange(order.OrderDetails);
                         orderBoxList.Add(new ShipperOrderBoxResponse
                         {

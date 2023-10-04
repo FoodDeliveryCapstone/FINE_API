@@ -73,6 +73,23 @@ namespace FINE.API.Controllers.AdminControler
         }
 
         /// <summary>
+        /// Update Product in split order status
+        /// </summary>    
+        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        [HttpPut("status/storeId/orderDetailId")]
+        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> UpdateProductStatus([FromBody] UpdateProductStatusRequest request)
+        {
+            try
+            {
+                return await _orderDetailService.UpdateProductInOrderStatus(request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Get order details by order
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
@@ -95,11 +112,11 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpGet("splitOrder/{storeId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<SplitOrderResponse>>> GetSplitOrder(string storeId, string timeslotId, int status,string? stationId)
+        public async Task<ActionResult<BaseResponsePagingViewModel<SplitOrderResponse>>> GetSplitOrder(string storeId, string timeslotId, int? status, int? productStatus, string? stationId)
         {
             try
             {
-                return await _orderDetailService.GetSplitOrder(storeId, timeslotId, status, stationId);
+                return await _orderDetailService.GetSplitOrder(storeId, timeslotId, status, productStatus, stationId);
             }
             catch (ErrorResponse ex)
             {

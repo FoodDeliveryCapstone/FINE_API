@@ -120,6 +120,8 @@ namespace FINE.API.Mapper
 
             CreateMap<Staff, StaffResponse>().ReverseMap();
             CreateMap<CreateStaffRequest, Staff>();
+            //CreateMap<List<OrderDetailResponse>, List<OrderDetailForStaffResponse>>();
+            CreateMap<OrderDetailResponse, OrderDetailForStaffResponse>();
             //CreateMap<UpdateStaffRequest, Staff>();
 
             #endregion
