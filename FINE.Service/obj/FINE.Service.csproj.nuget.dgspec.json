@@ -145,6 +145,10 @@
               "target": "Package",
               "version": "[12.0.1, )"
             },
+            "Confluent.Kafka": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
             "FirebaseAdmin": {
               "target": "Package",
               "version": "[2.3.0, )"

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "WhehkMDltJ1sjj1b1HE+GdYAEAvB7Ya9v0hA19IujuAa/3+XkvbjuoQw/7LYMGHvoZqXDJpyjbsI42vj4xkG3w==",
+  "dgSpecHash": "+iRPFMem3coLDpokzXzE9LK9sIx2GWNCld2gZghd+dc+RXCzgJ7Sq5YCApOEQW+CrnPMGim4zRsbPYTN7r9nvA==",
   "success": true,
   "projectFilePath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Service\\FINE.Service.csproj",
   "expectedPackageFiles": [
@@ -9,6 +9,7 @@
     "C:\\Users\\denwi\\.nuget\\packages\\azure.core\\1.24.0\\azure.core.1.24.0.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\azure.identity\\1.6.0\\azure.identity.1.6.0.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\castle.core\\5.1.0\\castle.core.5.1.0.nupkg.sha512",
+    "C:\\Users\\denwi\\.nuget\\packages\\confluent.kafka\\2.2.0\\confluent.kafka.2.2.0.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\firebaseadmin\\2.3.0\\firebaseadmin.2.3.0.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\google.api.gax\\3.2.0\\google.api.gax.3.2.0.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\google.api.gax.rest\\3.2.0\\google.api.gax.rest.3.2.0.nupkg.sha512",
@@ -22,6 +23,7 @@
     "C:\\Users\\denwi\\.nuget\\packages\\hangfire.memorystorage\\1.7.0\\hangfire.memorystorage.1.7.0.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\hangfire.sqlserver\\1.7.34\\hangfire.sqlserver.1.7.34.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\denwi\\.nuget\\packages\\librdkafka.redist\\2.2.0\\librdkafka.redist.2.2.0.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\microsoft.aspnet.webapi.client\\5.2.9\\microsoft.aspnet.webapi.client.5.2.9.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\7.0.5\\microsoft.aspnetcore.authentication.jwtbearer.7.0.5.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\microsoft.aspnetcore.authentication.openidconnect\\3.0.3\\microsoft.aspnetcore.authentication.openidconnect.3.0.3.nupkg.sha512",
