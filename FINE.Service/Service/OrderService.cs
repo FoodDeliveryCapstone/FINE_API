@@ -420,7 +420,7 @@ namespace FINE.Service.Service
             try
             {
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode && x.CustomerId == Guid.Parse(customerId))
+                                                .Where(x => x.PartyCode == partyCode )
                                                 .ToListAsync();
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
