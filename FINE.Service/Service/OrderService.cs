@@ -303,6 +303,20 @@ namespace FINE.Service.Service
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
+
+                var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.CustomerId == order.CustomerId);
+
+                if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
+                {
+                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode);
+                    coOrder.IsPayment = true;
+                    await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode);
+
+                    party.OrderId = order.Id;
+
+                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                }
+
                 if (request.PartyCode is not null)
                 {
                     var checkCode = await _unitOfWork.Repository<Party>().GetAll()
@@ -380,15 +394,6 @@ namespace FINE.Service.Service
                     };
 
                 BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
-
-                var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
-
-                if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
-                {
-                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode);
-                    coOrder.IsPayment = true;
-                    await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode);
-                }
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
