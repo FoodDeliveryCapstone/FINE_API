@@ -308,9 +308,9 @@ namespace FINE.Service.Service
 
                 if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
                 {
-                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode);
+                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode, null);
                     coOrder.IsPayment = true;
-                    await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode);
+                    await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode, coOrder);
 
                     party.OrderId = order.Id;
 
@@ -432,7 +432,7 @@ namespace FINE.Service.Service
                 CoOrderResponse coOrder = null;
                 if (partyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
                 {
-                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
                 }
 
                 return new BaseResponseViewModel<CoOrderResponse>()
@@ -598,7 +598,7 @@ namespace FINE.Service.Service
                     _unitOfWork.Repository<Party>().UpdateDetached(party);
                     _unitOfWork.Commit();
 
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, code);
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, code, null);
                 }
             }
             catch (ErrorResponse ex)
@@ -661,7 +661,7 @@ namespace FINE.Service.Service
                         IsActive = true,
                         CreateAt = DateTime.Now,
                     };
-                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
                     if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                     {
                         if (coOrder is null)
@@ -873,7 +873,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
 
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
@@ -982,7 +982,7 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Party>().UpdateDetached(partyOrder);
                 await _unitOfWork.CommitAsync();
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
 
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
@@ -1013,7 +1013,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
 
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
@@ -1155,7 +1155,7 @@ namespace FINE.Service.Service
                     case PartyOrderType.CoOrder:
                         var customerToken = "";
                         if (memberId is not null) { customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token; }
-                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
                         if (coOrder is null) throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
                         var orderOutMember = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
 
@@ -1176,7 +1176,7 @@ namespace FINE.Service.Service
                             //nếu đơn nhóm chỉ có admin => xóa chế độ coOrder
                             if (memberId is null)
                             {
-                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode);
+                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode, null);
                             }
                             else
                             {
@@ -1261,7 +1261,7 @@ namespace FINE.Service.Service
             try
             {
                 var result = new CoOrderStatusResponse();
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
 
                 result.NumberOfMember = coOrder.PartyOrder.Where(x => x.Customer.IsAdmin == false).Count();
 
