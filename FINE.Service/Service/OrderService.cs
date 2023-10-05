@@ -610,7 +610,6 @@ namespace FINE.Service.Service
         {
             try
             {
-                CoOrderResponse coOrder = null;
                 var checkJoin = await _unitOfWork.Repository<Party>().GetAll()
                                                 .FirstOrDefaultAsync(x => x.CustomerId == Guid.Parse(customerId)
                                                     && x.PartyCode != partyCode
@@ -661,6 +660,7 @@ namespace FINE.Service.Service
                         IsActive = true,
                         CreateAt = DateTime.Now,
                     };
+                    CoOrderResponse coOrder = null;
                     coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
                     if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                     {
@@ -680,6 +680,8 @@ namespace FINE.Service.Service
                         newParty.PartyType = (int)PartyOrderType.CoOrder;
                     }
                     await _unitOfWork.Repository<Party>().InsertAsync(newParty);
+                    await _unitOfWork.CommitAsync();
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
                 }
                 else
                 {
@@ -687,10 +689,8 @@ namespace FINE.Service.Service
                     oldData.UpdateAt = DateTime.Now;
 
                     await _unitOfWork.Repository<Party>().UpdateDetached(oldData);
+                    await _unitOfWork.CommitAsync();
                 }
-
-                await _unitOfWork.CommitAsync();
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
