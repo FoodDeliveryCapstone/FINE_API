@@ -8,9 +8,11 @@ namespace FINE.Service.DTO.Request.TimeSlot
 {
     public class CreateTimeslotRequest
     {
-        public int DestinationId { get; set; }
+        public Guid DestinationId { get; set; }
+        public TimeOnly CloseTime { get; set; }
+
         public TimeOnly ArriveTime { get; set; }
+
         public TimeOnly CheckoutTime { get; set; }
-        public bool IsActive { get; set; }
     }
 }

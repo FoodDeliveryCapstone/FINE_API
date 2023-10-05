@@ -64,27 +64,27 @@ namespace FINE.API.Controllers.AdminControler
         //    return await _timeslotService.GetTimeSlotById(timeslotId);
         //}
 
-        ///// <summary>
-        ///// Create Timeslot
-        ///// </summary>
-        //[Authorize(Roles = "SystemAdmin")]
-        //[HttpPost]
-        //public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> CreateTimeslot
-        //    ([FromBody] CreateTimeslotRequest request)
-        //{
-        //    return await _timeslotService.CreateTimeslot(request);
-        //}
+        /// <summary>
+        /// Create Timeslot
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin")]
+        [HttpPost]
+        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> CreateTimeslot
+            ([FromBody] CreateTimeslotRequest request)
+        {
+            return await _timeslotService.CreateTimeslot(request);
+        }
 
-        ///// <summary>
-        ///// Update Timeslot
-        ///// </summary>
-        //[Authorize(Roles = "SystemAdmin")]
-        //[HttpPut("{timeslotId}")]
-        //public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> UpdateTimeslot
-        //    ([FromRoute] int timeslotId, [FromBody] UpdateTimeslotRequest request)
+        /// <summary>
+        /// Update Timeslot
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin")]
+        [HttpPut("{timeslotId}")]
+        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> UpdateTimeslot
+            ([FromRoute] string timeslotId, [FromBody] UpdateTimeslotRequest request)
 
-        //{
-        //    return await _timeslotService.UpdateTimeslot(timeslotId, request);
-        //}
+        {
+            return await _timeslotService.UpdateTimeslot(timeslotId, request);
+        }
     }
 }

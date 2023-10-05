@@ -24,7 +24,7 @@ namespace FINE.Service.DTO.Request.Staff
         [MaxLength(10,
         ErrorMessage = "Value for {0} must shorter than {1} characters.")]
         [Required]
-        public String Pass { get; set; } = null!;
+        public string Pass { get; set; } = null!;
 
         public int? RoleType { get; set; }
 

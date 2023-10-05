@@ -26,23 +26,23 @@ namespace FINE.API.Controllers.AdminStaffController
             _qrCodeService = qrCodeService;
         }
 
-        ///// <summary>
-        ///// Get List Staff    
-        ///// </summary>
-        //[Authorize(Roles = "SystemAdmin, StoreManager")]
-        //[HttpGet]
-        //public async Task<ActionResult<BaseResponsePagingViewModel<StaffResponse>>> GetStaffs
-        //    ([FromQuery] StaffResponse request, [FromQuery] PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        return await _staffService.GetStaffs(request, paging);
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        return BadRequest(ex.Error);
-        //    }
-        //}
+        /// <summary>
+        /// Get List Staff    
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [HttpGet]
+        public async Task<ActionResult<BaseResponsePagingViewModel<StaffResponse>>> GetStaffs
+            ([FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _staffService.GetStaffs(paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
 
         /// <summary>
         /// Get Staff info by token
@@ -139,16 +139,16 @@ namespace FINE.API.Controllers.AdminStaffController
             }
         }
 
-        ///// <summary>
-        ///// Update Staff 
-        ///// </summary>
-        //[Authorize(Roles = "SystemAdmin, StoreManager")]
-        //[HttpPut("{staffId}")]
-        //public async Task<ActionResult<BaseResponseViewModel<StaffResponse>>> UpdateStaff
-        //    ([FromRoute] int staffId, [FromBody] UpdateStaffRequest request)
-        //{
-        //    return await _staffService.UpdateStaff(staffId, request);
-        //}
+        /// <summary>
+        /// Update Staff 
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [HttpPut("{staffId}")]
+        public async Task<ActionResult<BaseResponseViewModel<StaffResponse>>> UpdateStaff
+            ([FromRoute] string staffId, [FromBody] UpdateStaffRequest request)
+        {
+            return await _staffService.UpdateStaff(staffId, request);
+        }
 
     }
 }

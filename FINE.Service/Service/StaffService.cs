@@ -35,11 +35,11 @@ namespace FINE.Service.Service
 {
     public interface IStaffService
     {
-        //Task<BaseResponsePagingViewModel<StaffResponse>> GetStaffs(StaffResponse filter, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<StaffResponse>> GetStaffs(PagingRequest paging);
         Task<BaseResponseViewModel<StaffResponse>> GetStaffById(string staffId);
         Task<BaseResponseViewModel<dynamic>> Login(LoginRequest request);
         Task<BaseResponseViewModel<StaffResponse>> CreateAdminManager(CreateStaffRequest request);
-        //Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request);
+        Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request);
         Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatus(SimulateOrderStatusRequest request);
@@ -131,25 +131,23 @@ namespace FINE.Service.Service
             };
         }
 
-        //public async Task<BaseResponsePagingViewModel<StaffResponse>> GetStaffs(StaffResponse filter, PagingRequest paging)
-        //{
-        //    var staff = _unitOfWork.Repository<Staff>().GetAll()
-        //                           .ProjectTo<StaffResponse>(_mapper.ConfigurationProvider)
-        //                           .DynamicFilter(filter)
-        //                           .DynamicSort(filter)
-        //                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-        //                            Constants.DefaultPaging);
-        //    return new BaseResponsePagingViewModel<StaffResponse>()
-        //    {
-        //        Metadata = new PagingsMetadata()
-        //        {
-        //            Page = paging.Page,
-        //            Size = paging.PageSize,
-        //            Total = staff.Item1
-        //        },
-        //        Data = staff.Item2.ToList()
-        //    };
-        //}
+        public async Task<BaseResponsePagingViewModel<StaffResponse>> GetStaffs(PagingRequest paging)
+        {
+            var staff = _unitOfWork.Repository<Staff>().GetAll()
+                                   .ProjectTo<StaffResponse>(_mapper.ConfigurationProvider)
+                                   .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                    Constants.DefaultPaging);
+            return new BaseResponsePagingViewModel<StaffResponse>()
+            {
+                Metadata = new PagingsMetadata()
+                {
+                    Page = paging.Page,
+                    Size = paging.PageSize,
+                    Total = staff.Item1
+                },
+                Data = staff.Item2.ToList()
+            };
+        }
 
         public async Task<BaseResponseViewModel<dynamic>> Login(LoginRequest request)
         {
@@ -212,33 +210,31 @@ namespace FINE.Service.Service
             }
         }
 
-        //public async Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string id, UpdateStaffRequest request)
-        //{
-        //    var staffId = Guid.Parse(id);
-        //    var staff = _unitOfWork.Repository<Staff>().Find(x => x.Id == staffId);
-        //    if (staff == null)
-        //    {
-        //        throw new ErrorResponse(404, (int)StaffErrorEnum.NOT_FOUND,
-        //                            StaffErrorEnum.NOT_FOUND.GetDisplayName());
-        //    }
-        //    var staffMappingResult = _mapper.Map<UpdateStaffRequest, Staff>(request, staff);
-        //    staffMappingResult.UpdateAt = DateTime.Now;
-        //    staffMappingResult.Password = Utils.GetHash(request.Pass, _fineSugar);
+        public async Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request)
+        {
+            var staff = _unitOfWork.Repository<Staff>().Find(x => x.Id == Guid.Parse(staffId));
+            if (staff == null)
+            {
+                throw new ErrorResponse(404, (int)StaffErrorEnum.NOT_FOUND,
+                                    StaffErrorEnum.NOT_FOUND.GetDisplayName());
+            }
+            var staffMappingResult = _mapper.Map<UpdateStaffRequest, Staff>(request, staff);
+            staffMappingResult.UpdateAt = DateTime.Now;
+            staffMappingResult.Password = Utils.GetHash(request.Pass, _fineSugar);
 
-        //    await _unitOfWork.Repository<Staff>()
-        //                    .UpdateDetached(staffMappingResult);
-        //    await _unitOfWork.CommitAsync();
-        //    return new BaseResponseViewModel<StaffResponse>()
-        //    {
-        //        Status = new StatusViewModel()
-        //        {
-        //            Message = "Success",
-        //            Success = true,
-        //            ErrorCode = 0
-        //        },
-        //        Data = _mapper.Map<StaffResponse>(staffMappingResult)
-        //    };
-        //}
+            await _unitOfWork.Repository<Staff>().UpdateDetached(staffMappingResult);
+            await _unitOfWork.CommitAsync();
+            return new BaseResponseViewModel<StaffResponse>()
+            {
+                Status = new StatusViewModel()
+                {
+                    Message = "Success",
+                    Success = true,
+                    ErrorCode = 0
+                },
+                Data = _mapper.Map<StaffResponse>(staffMappingResult)
+            };
+        }
         public async Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request)
         {
             try

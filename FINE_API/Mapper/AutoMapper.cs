@@ -30,12 +30,14 @@ namespace FINE.API.Mapper
             #region TimeSlot
 
             CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
-            //CreateMap<CreateTimeslotRequest, TimeSlot>()
-            //    .ForMember(x => x.ArriveTime, opt => opt.Ignore())
-            //    .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
-            //CreateMap<UpdateTimeslotRequest, TimeSlot>()
-            //    .ForMember(x => x.ArriveTime, opt => opt.Ignore())
-            //    .ForMember(x => x.CheckoutTime, opt => opt.Ignore());
+            CreateMap<CreateTimeslotRequest, TimeSlot>()
+                .ForMember(x => x.ArriveTime, opt => opt.Ignore())
+                .ForMember(x => x.CheckoutTime, opt => opt.Ignore())
+                .ForMember(x => x.CloseTime, opt => opt.Ignore());
+            CreateMap<UpdateTimeslotRequest, TimeSlot>()
+                .ForMember(x => x.ArriveTime, opt => opt.Ignore())
+                .ForMember(x => x.CheckoutTime, opt => opt.Ignore())
+                .ForMember(x => x.CloseTime, opt => opt.Ignore());
             #endregion
 
             #region Floor
@@ -120,9 +122,8 @@ namespace FINE.API.Mapper
 
             CreateMap<Staff, StaffResponse>().ReverseMap();
             CreateMap<CreateStaffRequest, Staff>();
-            //CreateMap<List<OrderDetailResponse>, List<OrderDetailForStaffResponse>>();
             CreateMap<OrderDetailResponse, OrderDetailForStaffResponse>();
-            //CreateMap<UpdateStaffRequest, Staff>();
+            CreateMap<UpdateStaffRequest, Staff>();
 
             #endregion
 
