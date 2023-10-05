@@ -660,8 +660,7 @@ namespace FINE.Service.Service
                         IsActive = true,
                         CreateAt = DateTime.Now,
                     };
-                    CoOrderResponse coOrder = null;
-                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
                     if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                     {
                         if (coOrder is null)
