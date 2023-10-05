@@ -10,6 +10,9 @@ namespace FINE.Service.DTO.Response
     {
         public int NumberOfMember { get; set; }
         public bool IsReady { get; set; }
+        public bool IsFinish { get; set; }
+        public bool IsDelete { get; set; }
+
     }
     public class CoOrderResponse
     {

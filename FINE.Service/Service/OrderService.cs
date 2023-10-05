@@ -1289,11 +1289,22 @@ namespace FINE.Service.Service
             try
             {
                 var result = new CoOrderStatusResponse();
+                var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.PartyCode == partyCode);
                 CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
-
-                result.NumberOfMember = coOrder.PartyOrder.Where(x => x.Customer.IsAdmin == false).Count();
-
-                result.IsReady = coOrder.PartyOrder.All(x => x.Customer.IsConfirm == true);
+                if (coOrder is not null)
+                {
+                    result = new CoOrderStatusResponse()
+                    {
+                        NumberOfMember = coOrder.PartyOrder.Where(x => x.Customer.IsAdmin == false).Count(),
+                        IsReady = coOrder.PartyOrder.All(x => x.Customer.IsConfirm == true),
+                        IsFinish = coOrder.IsPayment,
+                        IsDelete = false,
+                    };
+                }
+                else
+                {
+                    result.IsDelete = true;
+                }
                 return new BaseResponseViewModel<CoOrderStatusResponse>()
                 {
                     Status = new StatusViewModel()
@@ -1309,7 +1320,6 @@ namespace FINE.Service.Service
             {
                 throw ex;
             }
-
         }
     }
 }
