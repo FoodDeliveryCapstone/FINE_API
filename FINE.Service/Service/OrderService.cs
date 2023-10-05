@@ -303,22 +303,6 @@ namespace FINE.Service.Service
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
-
-                var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.CustomerId == order.CustomerId);
-
-                if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
-                {
-                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode, null);
-                    if (coOrder != null)
-                    {
-                        coOrder.IsPayment = true;
-                        await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode, coOrder);
-                    }
-                    party.OrderId = order.Id;
-
-                    await _unitOfWork.Repository<Party>().UpdateDetached(party);
-                }
-
                 if (request.PartyCode is not null)
                 {
                     var checkCode = await _unitOfWork.Repository<Party>().GetAll()
@@ -331,27 +315,43 @@ namespace FINE.Service.Service
                     if (checkCode.Any(x => x.Status == (int)PartyOrderStatus.CloseParty))
                         throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
 
-                    var checkJoin = checkCode.Find(x => x.CustomerId == Guid.Parse(customerId));
-                    if (checkJoin == null)
+                    if (checkCode.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
                     {
-                        var linkedOrder = new Party()
+                        var party = checkCode.FirstOrDefault(x => x.CustomerId == order.CustomerId);
+                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, request.PartyCode, null);
+                        if (coOrder != null)
                         {
-                            Id = Guid.NewGuid(),
-                            OrderId = request.Id,
-                            CustomerId = Guid.Parse(customerId),
-                            PartyCode = request.PartyCode,
-                            PartyType = (int)PartyOrderType.LinkedOrder,
-                            Status = (int)PartyOrderStatus.Confirm,
-                            IsActive = true,
-                            CreateAt = DateTime.Now
-                        };
-                        order.Parties.Add(linkedOrder);
+                            coOrder.IsPayment = true;
+                            await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, request.PartyCode, coOrder);
+                        }
+                        party.OrderId = order.Id;
+
+                        await _unitOfWork.Repository<Party>().UpdateDetached(party);
                     }
                     else
                     {
-                        checkJoin.OrderId = request.Id;
-                        checkJoin.Status = (int)PartyOrderStatus.Confirm;
-                        await _unitOfWork.Repository<Party>().UpdateDetached(checkJoin);
+                        var checkJoin = checkCode.Find(x => x.CustomerId == Guid.Parse(customerId));
+                        if (checkJoin == null)
+                        {
+                            var linkedOrder = new Party()
+                            {
+                                Id = Guid.NewGuid(),
+                                OrderId = request.Id,
+                                CustomerId = Guid.Parse(customerId),
+                                PartyCode = request.PartyCode,
+                                PartyType = (int)PartyOrderType.LinkedOrder,
+                                Status = (int)PartyOrderStatus.Confirm,
+                                IsActive = true,
+                                CreateAt = DateTime.Now
+                            };
+                            order.Parties.Add(linkedOrder);
+                        }
+                        else
+                        {
+                            checkJoin.OrderId = request.Id;
+                            checkJoin.Status = (int)PartyOrderStatus.Confirm;
+                            await _unitOfWork.Repository<Party>().UpdateDetached(checkJoin);
+                        }
                     }
                 }
 
