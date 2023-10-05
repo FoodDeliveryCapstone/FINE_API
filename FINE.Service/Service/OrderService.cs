@@ -309,9 +309,11 @@ namespace FINE.Service.Service
                 if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
                 {
                     CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode, null);
-                    coOrder.IsPayment = true;
-                    await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode, coOrder);
-
+                    if (coOrder != null)
+                    {
+                        coOrder.IsPayment = true;
+                        await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, party.PartyCode, coOrder);
+                    }
                     party.OrderId = order.Id;
 
                     await _unitOfWork.Repository<Party>().UpdateDetached(party);
