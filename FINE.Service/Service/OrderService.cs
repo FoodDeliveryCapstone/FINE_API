@@ -420,7 +420,7 @@ namespace FINE.Service.Service
             try
             {
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode )
+                                                .Where(x => x.PartyCode == partyCode)
                                                 .ToListAsync();
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
@@ -646,51 +646,80 @@ namespace FINE.Service.Service
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
                 }
-
                 var oldData = listpartyOrder.Find(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == false);
-                if (oldData is null)
+
+                switch (listpartyOrder.FirstOrDefault().PartyType)
                 {
-                    var newParty = new Party()
-                    {
-                        Id = Guid.NewGuid(),
-                        CustomerId = Guid.Parse(customerId),
-                        PartyCode = partyCode,
-                        PartyType = (int)PartyOrderType.LinkedOrder,
-                        Status = (int)PartyOrderStatus.NotConfirm,
-                        IsActive = true,
-                        CreateAt = DateTime.Now,
-                    };
-                    CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
-                    if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
-                    {
-                        if (coOrder is null)
-                            throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
-
-                        var customer = await _unitOfWork.Repository<Customer>().GetAll()
-                                            .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
-
-                        var orderCard = new CoOrderPartyCard()
+                    case (int)PartyOrderType.CoOrder:
+                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                        if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                         {
-                            Customer = _mapper.Map<CustomerCoOrderResponse>(customer)
-                        };
-                        orderCard.Customer.IsConfirm = false;
-                        coOrder.PartyOrder.Add(orderCard);
+                            if (coOrder is null)
+                                throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
 
-                        newParty.PartyType = (int)PartyOrderType.CoOrder;
-                    }
-                    await _unitOfWork.Repository<Party>().InsertAsync(newParty);
-                    await _unitOfWork.CommitAsync();
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                            var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                                .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
+
+                            var orderCard = new CoOrderPartyCard()
+                            {
+                                Customer = _mapper.Map<CustomerCoOrderResponse>(customer)
+                            };
+                            orderCard.Customer.IsConfirm = false;
+                            coOrder.PartyOrder.Add(orderCard);
+                        }
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+
+                        if (oldData is null)
+                        {
+                            var newParty = new Party()
+                            {
+                                Id = Guid.NewGuid(),
+                                CustomerId = Guid.Parse(customerId),
+                                PartyCode = partyCode,
+                                PartyType = (int)PartyOrderType.CoOrder,
+                                Status = (int)PartyOrderStatus.NotConfirm,
+                                IsActive = true,
+                                CreateAt = DateTime.Now,
+                            };
+                            await _unitOfWork.Repository<Party>().InsertAsync(newParty);
+                            await _unitOfWork.CommitAsync();
+                        }
+                        else
+                        {
+                            oldData.IsActive = true;
+                            oldData.UpdateAt = DateTime.Now;
+
+                            await _unitOfWork.Repository<Party>().UpdateDetached(oldData);
+                            await _unitOfWork.CommitAsync();
+                        }
+                        break;
+
+                    case (int)PartyOrderType.LinkedOrder:
+                        if (oldData is null)
+                        {
+                            var newParty = new Party()
+                            {
+                                Id = Guid.NewGuid(),
+                                CustomerId = Guid.Parse(customerId),
+                                PartyCode = partyCode,
+                                PartyType = (int)PartyOrderType.LinkedOrder,
+                                Status = (int)PartyOrderStatus.NotConfirm,
+                                IsActive = true,
+                                CreateAt = DateTime.Now,
+                            };
+                            await _unitOfWork.Repository<Party>().InsertAsync(newParty);
+                            await _unitOfWork.CommitAsync();
+                        }
+                        else
+                        {
+                            oldData.IsActive = true;
+                            oldData.UpdateAt = DateTime.Now;
+
+                            await _unitOfWork.Repository<Party>().UpdateDetached(oldData);
+                            await _unitOfWork.CommitAsync();
+                        }
+                        break;
                 }
-                else
-                {
-                    oldData.IsActive = true;
-                    oldData.UpdateAt = DateTime.Now;
-
-                    await _unitOfWork.Repository<Party>().UpdateDetached(oldData);
-                    await _unitOfWork.CommitAsync();
-                }
-
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
