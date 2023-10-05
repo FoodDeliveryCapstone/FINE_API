@@ -718,7 +718,7 @@ namespace FINE.Service.Service
                                             && x.OrderStatus != (int)OrderStatusEnum.Finished
                                             && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
                                         .ToListAsync();
-                if (customerOrder.Count() >= 2)
+                if (customerOrder.Count() >= 2 && request.TimeSlotId != "E8D529D4-6A51-4FDB-B9DB-E29F54C0486E")
                 {
                     var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
 
