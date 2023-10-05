@@ -383,7 +383,7 @@ namespace FINE.Service.Service
 
                 var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
 
-                if (party.PartyType == (int)PartyOrderType.CoOrder)
+                if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
                 {
                     CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, party.PartyCode);
                     coOrder.IsPayment = true;
