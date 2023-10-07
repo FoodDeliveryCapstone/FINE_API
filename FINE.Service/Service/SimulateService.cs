@@ -170,8 +170,10 @@ namespace FINE.Service.Service
                                 {
                                     Id = result.Id,
                                     OrderCode = result.OrderCode,
-                                    ItemQuantity = result.ItemQuantity,
-                                    Customer = result.Customer,
+                                    Customer = result.Customer, 
+                                    //OrderDetails = result.OrderDetails,
+                                    OrderDetails = _mapper.Map<List<OrderDetailResponse>, List<OrderSuccessOrderDetail>>
+                                                (result.OrderDetails.ToList())
                                 };
                                 response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
                             }
