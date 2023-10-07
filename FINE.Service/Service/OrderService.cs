@@ -19,6 +19,7 @@ using FirebaseAdmin.Messaging;
 using Azure;
 using System.IO;
 using Castle.Core.Resource;
+using ZXing;
 
 namespace FINE.Service.Service
 {
@@ -39,6 +40,8 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, PartyOrderType type, string partyCode, string memberId = null);
+        Task<BaseResponseViewModel<dynamic>> RemovePartyMember(string customerId, string partyCode, string memberId = null);
+
     }
     public class OrderService : IOrderService
     {
@@ -1317,6 +1320,38 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<dynamic>> RemovePartyMember(string customerId, string partyCode, string memberId = null)
+        {
+            try
+            {
+                var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.CustomerId == Guid.Parse(memberId));
+                party.IsActive = false;
+
+                await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                await _unitOfWork.CommitAsync();
+
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                var memParty = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(memberId));
+                coOrder.PartyOrder.Remove(memParty);
+
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }

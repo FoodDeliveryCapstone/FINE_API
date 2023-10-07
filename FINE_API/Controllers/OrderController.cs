@@ -331,5 +331,29 @@ namespace FINE.API.Controllers
                 throw ex;
             }
         }
+
+        /// <summary>
+        /// Remove party member CoOrder
+        /// </summary>
+        [HttpPut("coOrder/member")]
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> RemovePartyMember(string partyCode, string? memberId = null)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var rs = await _orderService.RemovePartyMember(customerId, partyCode, memberId);
+                return Ok(rs);
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
