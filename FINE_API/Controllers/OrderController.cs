@@ -141,6 +141,30 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Create PreOrder for reOrder
+        /// </summary>
+        [HttpPost("reOrder")]
+        public async Task<ActionResult<BaseResponseViewModel<CreateReOrderResponse>>> CreatePreOrderFromReOrder(string orderId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                return await _orderService.CreatePreOrderFromReOrder(customerId, orderId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Create Order
         /// </summary>
         [HttpPost]
