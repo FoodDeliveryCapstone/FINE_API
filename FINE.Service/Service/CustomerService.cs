@@ -222,6 +222,7 @@ namespace FINE.Service.Service
                 }
 
                 customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
+                customer.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<Customer>().UpdateDetached(customer);
                 await _unitOfWork.CommitAsync();

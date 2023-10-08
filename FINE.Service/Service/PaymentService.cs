@@ -144,6 +144,7 @@ namespace FINE.Service.Service
                     transaction.Status = (int)TransactionStatusEnum.Fail;
                     isSuccess = false;
                 }
+                transaction.UpdatedAt = DateTime.Now;
                 await _unitOfWork.Repository<Transaction>().UpdateDetached(transaction);
                 await _unitOfWork.CommitAsync();
                 return isSuccess;
@@ -172,6 +173,7 @@ namespace FINE.Service.Service
                             var refundFee = shippingFee * discountRate;
 
                             party.Status = (int)PartyOrderStatus.FinishRefund;
+                            party.UpdateAt = DateTime.Now;
                             _unitOfWork.Repository<Party>().UpdateDetached(party);
 
                             var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
@@ -199,6 +201,7 @@ namespace FINE.Service.Service
                     var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
 
                     party.Status = (int)PartyOrderStatus.FinishRefund;
+                    party.UpdateAt = DateTime.Now;
                     _unitOfWork.Repository<Party>().UpdateDetached(party);
 
                     var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";

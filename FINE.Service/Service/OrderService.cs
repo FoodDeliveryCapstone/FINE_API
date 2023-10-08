@@ -347,19 +347,22 @@ namespace FINE.Service.Service
         {
             try
             {
+                #region Timeslot
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
                 if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
 
+                #region customer phone
                 var customer = await _unitOfWork.Repository<Customer>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
 
                 if (customer.Phone is null)
                     throw new ErrorResponse(400, (int)CustomerErrorEnums.MISSING_PHONENUMBER,
                                             CustomerErrorEnums.MISSING_PHONENUMBER.GetDisplayName());
-
+                #endregion
                 var station = await _unitOfWork.Repository<Station>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StationId));
 
@@ -368,6 +371,7 @@ namespace FINE.Service.Service
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
+                #region Party (if have)
                 if (request.PartyCode is not null)
                 {
                     var checkCode = await _unitOfWork.Repository<Party>().GetAll()
@@ -390,6 +394,7 @@ namespace FINE.Service.Service
                             await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, request.PartyCode, coOrder);
                         }
                         party.OrderId = order.Id;
+                        party.UpdateAt = DateTime.Now;
 
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);
                     }
@@ -415,10 +420,13 @@ namespace FINE.Service.Service
                         {
                             checkJoin.OrderId = request.Id;
                             checkJoin.Status = (int)PartyOrderStatus.Confirm;
+                            checkJoin.UpdateAt = DateTime.Now;
                             await _unitOfWork.Repository<Party>().UpdateDetached(checkJoin);
                         }
                     }
+                    order.IsPartyMode = true;
                 }
+                #endregion
 
                 await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();
@@ -661,6 +669,7 @@ namespace FINE.Service.Service
                     {
                         party.Status = (int)PartyOrderStatus.OutOfTimeslot;
                         party.IsActive = false;
+                        party.UpdateAt = DateTime.Now;
                         _unitOfWork.Repository<Party>().UpdateDetached(party);
                     }
                     _unitOfWork.Commit();
@@ -1073,6 +1082,7 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
                 partyOrder.Status = (int)PartyOrderStatus.Confirm;
+                partyOrder.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<Party>().UpdateDetached(partyOrder);
                 await _unitOfWork.CommitAsync();
@@ -1243,6 +1253,7 @@ namespace FINE.Service.Service
                         if (party is null) throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
                         party.IsActive = true;
+                        party.UpdateAt = DateTime.Now;
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);
                         await _unitOfWork.CommitAsync();
                         break;
@@ -1395,6 +1406,7 @@ namespace FINE.Service.Service
             {
                 var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.CustomerId == Guid.Parse(memberId));
                 party.IsActive = false;
+                party.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<Party>().UpdateDetached(party);
                 await _unitOfWork.CommitAsync();
