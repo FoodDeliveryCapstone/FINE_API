@@ -223,6 +223,7 @@ namespace FINE.Service.Service
                 }
 
                 customer = _mapper.Map<UpdateCustomerRequest, Customer>(request, customer);
+                customer.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<Customer>().UpdateDetached(customer);
                 await _unitOfWork.CommitAsync();
@@ -283,7 +284,7 @@ namespace FINE.Service.Service
                 var party = await _unitOfWork.Repository<Party>().GetAll()
                                                     .FirstOrDefaultAsync(x => x.PartyCode == partyCode);
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode);
+                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
 
                 var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(adminId)).FirstOrDefault();
 

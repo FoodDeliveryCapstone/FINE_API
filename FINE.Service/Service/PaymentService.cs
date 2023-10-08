@@ -144,6 +144,7 @@ namespace FINE.Service.Service
                     transaction.Status = (int)TransactionStatusEnum.Fail;
                     isSuccess = false;
                 }
+                transaction.UpdatedAt = DateTime.Now;
                 await _unitOfWork.Repository<Transaction>().UpdateDetached(transaction);
                 await _unitOfWork.CommitAsync();
                 return isSuccess;
@@ -161,20 +162,22 @@ namespace FINE.Service.Service
                 var parties = _unitOfWork.Repository<Party>().GetAll().Where(x => x.PartyCode == partyCode).ToList();
                 if (parties.Count() == 2)
                 {
-                    if (parties.Where(x => x.Order.OrderStatus == (int)OrderStatusEnum.Finished).Count() >= 1)
+                    if (parties.Where(x => x.Order.OrderStatus == (int)OrderStatusEnum.Finished).Count() > 1)
                     {
                         foreach (var party in parties)
                         {
                             var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == party.CustomerId);
                             var shippingFee = party.Order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.ShippingFee).Amount;
-                            var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
+
+                            var discountRate = Int32.Parse(_configuration["LinkedDiscountRate"]);
+                            var refundFee = shippingFee * discountRate;
 
                             party.Status = (int)PartyOrderStatus.FinishRefund;
+                            party.UpdateAt = DateTime.Now;
                             _unitOfWork.Repository<Party>().UpdateDetached(party);
 
                             var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
                             _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
-                            _unitOfWork.Commit();
 
                             Notification notification = new Notification()
                             {
@@ -187,6 +190,7 @@ namespace FINE.Service.Service
                             };
                             BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
                         }
+                        _unitOfWork.Commit();
                     }
                 }
                 else if (parties.Count() > 2)
@@ -197,6 +201,7 @@ namespace FINE.Service.Service
                     var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
 
                     party.Status = (int)PartyOrderStatus.FinishRefund;
+                    party.UpdateAt = DateTime.Now;
                     _unitOfWork.Repository<Party>().UpdateDetached(party);
 
                     var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";

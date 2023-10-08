@@ -98,6 +98,7 @@ namespace FINE.Service.Service
                 var order = _unitOfWork.Repository<Order>().GetAll()
                     .FirstOrDefault(x => x.Id == orderBox.OrderId);
                 order.OrderStatus = (int)OrderStatusEnum.Finished;
+                order.UpdateAt = DateTime.Now;
                 _unitOfWork.Repository<Order>().UpdateDetached(order);
                 _unitOfWork.Commit();
 

@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
+    public class MenuByTimeSlotResponse
+    {
+        public List<MenuResponse> Menus  {get; set; }
+        public List<ReOrderResponse>? ReOrders { get; set; }
+    }
+
     public class MenuResponse
     {
         public Guid Id { get; set; }
@@ -25,6 +31,13 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
 
-       public ICollection<ProductResponse>? Products { get; set;}
+        public ICollection<ProductResponse>? Products { get; set; }
+    }
+    public class ReOrderResponse
+    {
+        public Guid Id { get; set; }
+        public DateTime CheckInDate { get; set; }
+        public int ItemQuantity { get; set; }
+        public List<string> ListProductNameInReOrder { get; set; }
     }
 }

@@ -20,13 +20,9 @@ namespace FINE.Service.Service
 {
     public interface IMenuService
     {
-        //Task<BaseResponsePagingViewModel<MenuWithoutProductResponse>> GetMenus(MenuWithoutProductResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<MenuResponse>> GetMenuById(string menuId);
-        Task<BaseResponseViewModel<List<MenuResponse>>> GetMenuByTimeslot(string timeslotId, PagingRequest paging);
-        //Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request);
-        //Task<BaseResponseViewModel<MenuResponse>> UpdateMenu(int menuId, UpdateMenuRequest request);
+        Task<BaseResponseViewModel<MenuByTimeSlotResponse>> GetMenuByTimeslot(string customerId, string timeslotId);
     }
-
 
     public class MenuService : IMenuService
     {
@@ -38,114 +34,6 @@ namespace FINE.Service.Service
             _mapper = mapper;
             _unitOfWork = unitOfWork;
         }
-
-        //public async Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request)
-        //{
-        //    try
-        //    {
-        //        var menu = _mapper.Map<CreateMenuRequest, Menu>(request);
-
-        //        menu.CreateAt = DateTime.Now;
-
-        //        await _unitOfWork.Repository<Menu>().InsertAsync(menu);
-        //        await _unitOfWork.CommitAsync();
-
-        //        return new BaseResponseViewModel<MenuResponse>()
-        //        {
-        //            Status = new StatusViewModel()
-        //            {
-        //                Message = "Success",
-        //                Success = true,
-        //                ErrorCode = 0
-        //            },
-        //            Data = _mapper.Map<MenuResponse>(menu)
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
-
-        //public async Task<BaseResponsePagingViewModel<MenuWithoutProductResponse>> GetMenus(MenuWithoutProductResponse filter, PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        var menu = _unitOfWork.Repository<Menu>().GetAll()
-        //                                .ProjectTo<MenuWithoutProductResponse>(_mapper.ConfigurationProvider)
-        //                                .DynamicFilter(filter)
-        //                                .DynamicSort(filter)
-        //                                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-        //                                Constants.DefaultPaging);
-
-        //        return new BaseResponsePagingViewModel<MenuWithoutProductResponse>()
-        //        {
-        //            Metadata = new PagingsMetadata()
-        //            {
-        //                Page = paging.Page,
-        //                Size = paging.PageSize,
-        //                Total = menu.Item1
-        //            },
-        //            Data = menu.Item2.ToList()
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
-
-        //public async Task<BaseResponseViewModel<MenuResponse>> UpdateMenu(int menuId, UpdateMenuRequest request)
-        //{
-        //    try
-        //    {
-        //        var menu = _unitOfWork.Repository<Menu>().GetAll()
-        //             .FirstOrDefault(x => x.Id == menuId);
-
-        //        if (menu == null)
-        //            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
-        //                MenuErrorEnums.NOT_FOUND.GetDisplayName());
-
-        //        var updateMenu = _mapper.Map<UpdateMenuRequest, Menu>(request, menu);
-
-        //        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-        //                               .Where(x => x.MenuId == menuId);
-        //        if (request.IsActive == false)
-        //        {
-
-        //            foreach (var productInMenuStatus in productInMenu)
-        //            {
-        //                productInMenuStatus.Status = (int)ProductInMenuStatusEnum.OutOfStock;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            foreach (var productInMenuStatus in productInMenu)
-        //            {
-        //                productInMenuStatus.Status = (int)ProductInMenuStatusEnum.Avaliable;
-        //            }
-        //        }
-        //        updateMenu.UpdateAt = DateTime.Now;
-
-        //        await _unitOfWork.Repository<Menu>().UpdateDetached(updateMenu);
-        //        await _unitOfWork.CommitAsync();
-
-        //        return new BaseResponseViewModel<MenuResponse>()
-        //        {
-        //            Status = new StatusViewModel()
-        //            {
-        //                Message = "Success",
-        //                Success = true,
-        //                ErrorCode = 0
-        //            },
-        //            Data = _mapper.Map<MenuResponse>(menu)
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
 
         public async Task<BaseResponseViewModel<MenuResponse>> GetMenuById(string menuId)
         {
@@ -185,10 +73,11 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<List<MenuResponse>>> GetMenuByTimeslot(string timeslotId, PagingRequest paging)
+        public async Task<BaseResponseViewModel<MenuByTimeSlotResponse>> GetMenuByTimeslot(string customerId, string timeslotId)
         {
             try
             {
+                var result = new MenuByTimeSlotResponse();
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                             .FirstOrDefault(x => x.Id == Guid.Parse(timeslotId));
 
@@ -196,11 +85,11 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
                         TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
-                var listMenu = _unitOfWork.Repository<Menu>().GetAll()
+                result.Menus = _unitOfWork.Repository<Menu>().GetAll()
                                     .Where(x => x.TimeSlotId == Guid.Parse(timeslotId) && x.IsActive == true)
                                     .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
                                     .ToList();
-                foreach(var menu in listMenu)
+                foreach(var menu in result.Menus)
                 {
                     menu.Products = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                             .Include(x => x.Product)
@@ -212,8 +101,19 @@ namespace FINE.Service.Service
                                             .Select(x => _mapper.Map<ProductResponse>(x.Key))
                                             .ToList();
                 }
+                result.ReOrders = _unitOfWork.Repository<Order>().GetAll()
+                                .Where(x => x.CustomerId == Guid.Parse(customerId)
+                                    && x.TimeSlotId == Guid.Parse(timeslotId)
+                                    && x.OrderStatus == (int)OrderStatusEnum.Finished)
+                                .Select(x => new ReOrderResponse
+                                {
+                                    Id = x.Id,
+                                    CheckInDate = x.CheckInDate,
+                                    ItemQuantity = x.ItemQuantity,
+                                    ListProductNameInReOrder = x.OrderDetails.Select(s => s.ProductName).ToList()
+                                }).ToList();
 
-                return new BaseResponseViewModel<List<MenuResponse>>()
+                return new BaseResponseViewModel<MenuByTimeSlotResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -221,7 +121,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = listMenu
+                    Data = result
                 };
             }
             catch (Exception ex)

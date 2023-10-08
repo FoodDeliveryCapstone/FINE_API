@@ -93,6 +93,30 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Lấy CoOrder status
+        /// </summary>
+        [HttpGet("coOrder/status/{partyCode}")]
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderStatusResponse>>> GetPartyStatus(string partyCode)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var rs = await _orderService.GetPartyStatus(partyCode);
+                return Ok(rs);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Create PreOrder
         /// </summary>
         [HttpPost("preOrder")]
@@ -109,6 +133,30 @@ namespace FINE.API.Controllers
                 }
 
                 return await _orderService.CreatePreOrder(customerId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Create PreOrder for reOrder
+        /// </summary>
+        [HttpPost("reOrder")]
+        public async Task<ActionResult<BaseResponseViewModel<CreateReOrderResponse>>> CreatePreOrderFromReOrder(string orderId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                return await _orderService.CreatePreOrderFromReOrder(customerId, orderId);
             }
             catch (ErrorResponse ex)
             {
@@ -300,6 +348,30 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
                 var rs = await _orderService.DeletePartyOrder(customerId, type, partyCode, memberId);
+                return Ok(rs);
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Remove party member CoOrder
+        /// </summary>
+        [HttpPut("coOrder/member")]
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> RemovePartyMember(string partyCode, string? memberId = null)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var rs = await _orderService.RemovePartyMember(customerId, partyCode, memberId);
                 return Ok(rs);
             }
             catch (ErrorResponse ex)

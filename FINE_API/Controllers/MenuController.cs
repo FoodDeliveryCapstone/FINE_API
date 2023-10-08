@@ -59,11 +59,17 @@ namespace FINE.API.Controllers
         /// </summary>
 
         [HttpGet("timeslot/{timeslotId}")]
-        public async Task<ActionResult<BaseResponseViewModel<List<MenuResponse>>>> GetMenusByTimeslot([FromRoute] string timeslotId, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponseViewModel<MenuByTimeSlotResponse>>> GetMenusByTimeslot([FromRoute] string timeslotId)
         {
             try
             {
-                return await _menuService.GetMenuByTimeslot(timeslotId, paging);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                return await _menuService.GetMenuByTimeslot(customerId,timeslotId);
             }
             catch (ErrorResponse ex)
             {
