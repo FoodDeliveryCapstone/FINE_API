@@ -173,4 +173,12 @@ namespace FINE.Service.DTO.Response
 
         public int? ItemQuantity { get; set; }
     }
+
+    public class CreateReOrderResponse
+    {
+        public List<string> ProductCannotAdd { get; set; }
+        public OrderResponse OrderResponse { get; set; }
+    }
+
+
 }
