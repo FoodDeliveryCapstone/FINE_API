@@ -102,6 +102,8 @@ namespace FINE.API.Mapper
 
             CreateMap<Order, OrderForStaffResponse>().ReverseMap();
             CreateMap<Order, OrderResponseForCustomer>().ReverseMap();
+            CreateMap<OrderDetail, ProductInReOrder>()
+                .ForMember(x => x.ImageUrl, opt => opt.MapFrom(dst => dst.ProductInMenu.Product.Product.ImageUrl));
             #endregion
 
             #region Customer
