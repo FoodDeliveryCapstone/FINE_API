@@ -110,7 +110,7 @@ namespace FINE.Service.Service
                                     Id = x.Id,
                                     CheckInDate = x.CheckInDate,
                                     ItemQuantity = x.ItemQuantity,
-                                    ListProductNameInReOrder = x.OrderDetails.Select(s => s.ProductName).ToList()
+                                    ListProductInReOrder = _mapper.Map<List<ProductInReOrder>>(x.OrderDetails)
                                 }).ToList();
 
                 return new BaseResponseViewModel<MenuByTimeSlotResponse>()

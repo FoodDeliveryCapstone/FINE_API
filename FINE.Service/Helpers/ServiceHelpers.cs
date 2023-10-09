@@ -146,7 +146,7 @@ namespace FINE.Service.Helpers
                     for (var successCase = 1; successCase <= turnCard; successCase++)
                     {
                         // đem đi bỏ vào tủ 
-                        var calculateCardResult = CalculateRemainingSpace(boxSize, spaceInBox, pairingCardResult.ProductOccupied);
+                        var calculateCardResult = CalculateRemainingSpace(boxSize, spaceInBox, pairingCardResult.ProductOccupied); 
 
                         if (calculateCardResult.Success == true)
                         {
@@ -292,6 +292,10 @@ namespace FINE.Service.Helpers
             }
         }
 
+        //qui định: giả định đặt sp vào vị trí phải trên cùng của hộp
+        //luồn : ưu tiên RemainingWidthSpace
+        //RemainingLengthSpace : khoảng trống bên trái sp (cắt dọc xuống)
+        //RemainingWidthSpace : khoảng trống bên dưới sp (cắt ngang qua)
         public static SpaceInBoxMode CalculateRemainingSpace(CubeModel box, SpaceInBoxMode space, CubeModel productOccupied)
         {
             try
@@ -332,7 +336,7 @@ namespace FINE.Service.Helpers
                 // trường hợp 2: product thứ n trở đi và chưa có bất kì phần chia box nào
                 else if (space.RemainingSpaceBox is not null)
                 {
-                    //Trường hợp 2.1: ghép tiếp vào thể tích đã có bên chiều rộng => sâu box vẫn ok
+                    //Trường hợp 2.1: ghép tiếp vào thể tích đã có bên dưới sp mà vẫn ok
                     if (space.VolumeOccupied.Width + productOccupied.Width <= box.Length)
                     {
                         response.VolumeOccupied = new CubeModel()
@@ -356,8 +360,8 @@ namespace FINE.Service.Helpers
                             Length = box.Length - response.VolumeOccupied.Width
                         };
                     }
-                    //Trường hợp 2.2: ghép với thể tích đã có bên chiều rộng => sâu box mà vượt qua giới hạn,
-                    //nhưng ghép bên chiều rộng vẫn có thể => cắt box làm 2 phần và bắt đầu ghép bên phần mới cắt
+                    //Trường hợp 2.2: ghép với thể tích đã có bên dưới sp mà vượt qua giới hạn chều sâu box,
+                    //but ghép bên chiều rộng vẫn có thể => cắt box làm 2 phần và bắt đầu ghép bên phần mới cắt
                     else if (space.VolumeOccupied.Width + productOccupied.Width > box.Length
                         && space.VolumeOccupied.Length + productOccupied.Length <= box.Width)
                     {
@@ -374,27 +378,8 @@ namespace FINE.Service.Helpers
                             Width = box.Width,
                             Length = box.Length - space.VolumeOccupied.Width
                         };
-
-                        //đem productOccupied qua phần remainingLength trước
-                        if (productOccupied.Width < response.RemainingLengthSpace.Width)
-                        {
-                            response.VolumeLengthOccupied = new CubeModel()
-                            {
-                                Height = productOccupied.Height,
-                                Width = productOccupied.Width,
-                                Length = productOccupied.Length
-                            };
-
-                            response.RemainingLengthSpace = new CubeModel()
-                            {
-                                Height = box.Height,
-                                Width = response.RemainingLengthSpace.Width - response.VolumeLengthOccupied.Width,
-                                Length = response.RemainingLengthSpace.Length
-                            };
-                            response.VolumeWidthOccupied = new CubeModel();
-                        }
-                        //đem productOccupied qua phần remainingWidth
-                        else if (productOccupied.Width < response.RemainingWidthSpace.Length)
+                        //ưu tiên RemainingWidthSpace
+                        if (productOccupied.Width < response.RemainingWidthSpace.Length)
                         {
                             response.VolumeWidthOccupied = new CubeModel()
                             {
@@ -410,6 +395,23 @@ namespace FINE.Service.Helpers
                                 Length = response.RemainingWidthSpace.Length - response.VolumeWidthOccupied.Width
                             };
                             response.VolumeLengthOccupied = new CubeModel();
+                        }
+                        else if (productOccupied.Width < response.RemainingLengthSpace.Width)
+                        {
+                            response.VolumeLengthOccupied = new CubeModel()
+                            {
+                                Height = productOccupied.Height,
+                                Width = productOccupied.Width,
+                                Length = productOccupied.Length
+                            };
+
+                            response.RemainingLengthSpace = new CubeModel()
+                            {
+                                Height = box.Height,
+                                Width = response.RemainingLengthSpace.Width - response.VolumeLengthOccupied.Width,
+                                Length = response.RemainingLengthSpace.Length
+                            };
+                            response.VolumeWidthOccupied = new CubeModel();
                         }
                         else
                         {
@@ -429,27 +431,15 @@ namespace FINE.Service.Helpers
                     var recoveryRemainingLengthSpace = new CubeModel();
                     var recoveryRemainingWidthSpace = new CubeModel();
                     //khôi phục lại remainingWidth và length space
-                    if (space.VolumeLengthOccupied.Length != 0 && space.VolumeLengthOccupied is not null)
-                    {
-                        recoveryRemainingLengthSpace = new CubeModel()
-                        {
-                            Height = box.Height,
-                            Width = space.RemainingLengthSpace.Width + space.VolumeLengthOccupied.Length,
-                            Length = space.RemainingLengthSpace.Length
-                        };
-                    }
-                    if (space.VolumeWidthOccupied.Length != 0 && space.VolumeWidthOccupied is not null )
+                    //ưu tiên đặt phần remainingWidth trước  
+                    if (space.VolumeWidthOccupied is not null && space.VolumeWidthOccupied.Length != 0)
                     {
                         recoveryRemainingWidthSpace = new CubeModel()
                         {
                             Height = box.Height,
                             Width = space.RemainingWidthSpace.Width,
                             Length = space.RemainingWidthSpace.Length + space.VolumeWidthOccupied.Width
-                        };
-                    }
-                    if (space.VolumeWidthOccupied.Length != 0 && space.VolumeWidthOccupied is not null)
-                    {
-                        //ưu tiên đặt phần remainingWidth trước                    
+                        };                  
                         if (space.VolumeWidthOccupied.Length + productOccupied.Length <= response.RemainingWidthSpace.Width)
                         {
                             response.VolumeWidthOccupied = new CubeModel()
@@ -481,10 +471,14 @@ namespace FINE.Service.Helpers
                             };
                         }
                     }
-
-                    if (space.VolumeLengthOccupied.Length != 0 && space.VolumeLengthOccupied is not null)
+                    if (space.VolumeLengthOccupied is not null && space.VolumeLengthOccupied.Length != 0)
                     {
-                        //đặt phần remainingWidth
+                        recoveryRemainingLengthSpace = new CubeModel()
+                        {
+                            Height = box.Height,
+                            Width = space.RemainingLengthSpace.Width + space.VolumeLengthOccupied.Length,
+                            Length = space.RemainingLengthSpace.Length
+                        };
                         if (space.VolumeLengthOccupied is not null && (space.VolumeLengthOccupied.Width + productOccupied.Width <= response.RemainingLengthSpace.Width))
                         {
                             response.VolumeLengthOccupied = new CubeModel()
@@ -526,7 +520,7 @@ namespace FINE.Service.Helpers
                     }
                 }
                 else
-                { 
+                {
                     response.Success = false;
                 }
 
