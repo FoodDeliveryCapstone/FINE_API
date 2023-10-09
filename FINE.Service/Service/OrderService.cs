@@ -20,6 +20,7 @@ using Azure;
 using System.IO;
 using Castle.Core.Resource;
 using ZXing;
+using FINE.Service.DTO.Request.Box;
 
 namespace FINE.Service.Service
 {
@@ -52,8 +53,9 @@ namespace FINE.Service.Service
         private readonly IConfiguration _configuration;
         private readonly INotifyService _notifyService;
         private readonly IFirebaseMessagingService _fm;
+        private readonly IBoxService _boxService;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService, IFirebaseMessagingService fm)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService, IFirebaseMessagingService fm, IBoxService boxService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -61,6 +63,7 @@ namespace FINE.Service.Service
             _paymentService = paymentService;
             _notifyService = notifyService;
             _fm = fm;
+            _boxService = boxService;
         }
 
         public async Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging)
@@ -366,6 +369,32 @@ namespace FINE.Service.Service
                 var station = await _unitOfWork.Repository<Station>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StationId));
 
+                #region Check station in timeslot have available box 
+                var getOrderInTimeslot = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
+                                                .Where(x => x.TimeSlotId == request.TimeSlotId
+                                                && x.StationId == Guid.Parse(request.StationId)
+                                                && x.OrderStatus == (int)OrderStatusEnum.Processing
+                                                && x.CheckInDate.Date == Utils.GetCurrentDatetime().Date).ToListAsync();
+
+                var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
+                                                .Where(x => x.StationId == Guid.Parse(request.StationId))
+                                                .OrderBy(x => x.CreateAt)
+                                                .ToListAsync();
+
+                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                  .Include(x => x.Order)
+                                  .Include(x => x.Box)
+                                  .Where(x => x.Order.TimeSlotId == request.TimeSlotId
+                                      && x.Box.StationId == Guid.Parse(request.StationId)
+                                      && x.Order.CheckInDate.Date == Utils.GetCurrentDatetime().Date)
+                                  .ToListAsync();
+                var availableBoxes = getAllBoxInStation.Where(x => !getOrderBox.Any(a => a.BoxId == x.Id)).ToList();
+
+                if (availableBoxes.Count == 0)
+                    throw new ErrorResponse(400, (int)StationErrorEnums.STATION_FULL,
+                                            StationErrorEnums.STATION_FULL.GetDisplayName());
+                #endregion
+
                 var order = _mapper.Map<Data.Entity.Order>(request);
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
@@ -444,6 +473,21 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
+                #region Add order to box
+                string key = null;
+                if (getOrderBox.Count == 0)
+                    key = Utils.GenerateRandomCode(10);
+                else
+                {
+                    key = getOrderBox.FirstOrDefault().Key;
+                }
+                var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                {
+                    BoxId = availableBoxes.FirstOrDefault().Id,
+                    OrderId = order.Id
+                };
+                var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
+                #endregion
                 #region split order detail by store
                 var orderDetailsByStore = resultOrder.OrderDetails
                   .GroupBy(x => x.StoreId)

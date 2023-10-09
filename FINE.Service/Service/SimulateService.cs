@@ -164,13 +164,13 @@ namespace FINE.Service.Service
 
                             try
                             {
-                                var result =  _staffService.CreateOrderForSimulate(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+                                var result = _staffService.CreateOrderForSimulate(customer.Id.ToString(), payloadCreateOrder).Result.Data;
                                 //var result = _orderService.CreateOrder("4873582B-52AF-4D9E-96D0-0C461018CF81", payloadCreateOrder).Result.Data;
                                 var orderSuccess = new OrderSuccess
                                 {
                                     Id = result.Id,
                                     OrderCode = result.OrderCode,
-                                    Customer = result.Customer, 
+                                    Customer = result.Customer,
                                     //OrderDetails = result.OrderDetails,
                                     OrderDetails = _mapper.Map<List<OrderDetailResponse>, List<OrderSuccessOrderDetail>>
                                                 (result.OrderDetails.ToList())
@@ -225,438 +225,136 @@ namespace FINE.Service.Service
                 #region CoOrder
                 if (request.CoOrder is not null)
                 {
-                    var listCustomer = getAllCustomer
-                                           .OrderBy(x => rand.Next())
-                                           .Take((int)request.CoOrder.CustomerEach)
-                                           .ToList();
-                    var openCoOrderCustomer = listCustomer.OrderBy(x => rand.Next()).Take(1).FirstOrDefault();
-                    var restCustomers = listCustomer.Skip(1).ToList();
-
-                    var totalCoOrderSuccess = request.CoOrder.TotalOrderSuccess;
-                    var totalCoOrderFailed = request.CoOrder.TotalOrder - request.CoOrder.TotalOrderSuccess;
-
                     for (int quantity = 1; quantity <= request.CoOrder.TotalOrder; quantity++)
                     {
-                        if (totalCoOrderSuccess > 0 && totalCoOrderFailed > 0)
+                        var listCustomer = getAllCustomer
+                       .OrderBy(x => rand.Next())
+                       .Take((int)request.CoOrder.CustomerEach)
+                       .ToList();
+                        var openCoOrderCustomer = listCustomer.Take(1).FirstOrDefault();
+                        var restCustomers = listCustomer.Skip(1).ToList();
+
+                        var payloadPreOrder = new CreatePreOrderRequest
                         {
-                            if (rand.Next() % 2 == 0)
+                            OrderType = OrderTypeEnum.OrderToday,
+                            TimeSlotId = Guid.Parse(request.TimeSlotId),
+                            PartyType = PartyOrderType.CoOrder
+                        };
+
+                        int numberProductTake = rand.Next(1, 4);
+                        payloadPreOrder.OrderDetails = productInMenu
+                            .OrderBy(x => rand.Next())
+                            .Take(numberProductTake)
+                            .Select(x => new CreatePreOrderDetailRequest
                             {
-                                var payloadPreOrder = new CreatePreOrderRequest
+                                ProductId = x.Id,
+                                Quantity = 1
+                            })
+                            .ToList();
+
+                        var openCoOrder = await _orderService.OpenCoOrder(openCoOrderCustomer.Id.ToString(), payloadPreOrder);
+
+                        try
+                        {
+                            foreach (var cus in restCustomers)
+                            {
+                                var joinCoOrder = await _orderService.JoinPartyOrder(cus.Id.ToString(), openCoOrder.Data.PartyCode);
+                                var cusPayloadPreOrder = new CreatePreOrderRequest
                                 {
                                     OrderType = OrderTypeEnum.OrderToday,
                                     TimeSlotId = Guid.Parse(request.TimeSlotId),
                                     PartyType = PartyOrderType.CoOrder
                                 };
 
-                                int numberProductTake = rand.Next(1, 4);
-                                payloadPreOrder.OrderDetails = productInMenu
+                                int newNumberProductTake = rand.Next(1, 4);
+                                cusPayloadPreOrder.OrderDetails = productInMenu
                                     .OrderBy(x => rand.Next())
-                                    .Take(numberProductTake)
+                                    .Take(newNumberProductTake)
                                     .Select(x => new CreatePreOrderDetailRequest
                                     {
                                         ProductId = x.Id,
                                         Quantity = 1
                                     })
                                     .ToList();
-
-                                var openCoOrder = _orderService.OpenCoOrder(openCoOrderCustomer.Id.ToString(), payloadPreOrder);
-
-                                try
-                                {
-                                    foreach (var cus in restCustomers)
-                                    {
-                                        var joinCoOrder = _orderService.JoinPartyOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
-                                        var cusPayloadPreOrder = new CreatePreOrderRequest
-                                        {
-                                            OrderType = OrderTypeEnum.OrderToday,
-                                            TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                            PartyType = PartyOrderType.CoOrder
-                                        };
-
-                                        int newNumberProductTake = rand.Next(1, 4);
-                                        cusPayloadPreOrder.OrderDetails = productInMenu
-                                            .OrderBy(x => rand.Next())
-                                            .Take(newNumberProductTake)
-                                            .Select(x => new CreatePreOrderDetailRequest
-                                            {
-                                                ProductId = x.Id,
-                                                Quantity = 1
-                                            })
-                                            .ToList();
-                                        var addProduct = _orderService.AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode, cusPayloadPreOrder);
-                                        var confirmCoOrder = _orderService.FinalConfirmCoOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
-                                    }
-
-
-                                    var preCoOrder = _orderService.CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (OrderTypeEnum)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;
-
-                                    var stationId = station
-                                                        .OrderBy(x => rand.Next())
-                                                        .Select(x => x.Id)
-                                                        .FirstOrDefault();
-
-                                    var payloadCreateOrder = new CreateOrderRequest()
-                                    {
-                                        Id = preCoOrder.Id,
-                                        OrderCode = preCoOrder.OrderCode,
-                                        PartyCode = openCoOrder.Result.Data.PartyCode,
-                                        TotalAmount = preCoOrder.TotalAmount,
-                                        FinalAmount = preCoOrder.FinalAmount,
-                                        TotalOtherAmount = preCoOrder.TotalOtherAmount,
-                                        OrderType = (OrderTypeEnum)preCoOrder.OrderType,
-                                        TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                        StationId = stationId.ToString(),
-                                        PaymentType = PaymentTypeEnum.FineWallet,
-                                        IsPartyMode = true,
-                                        ItemQuantity = preCoOrder.ItemQuantity,
-                                        Point = preCoOrder.Point,
-                                        OrderDetails = preCoOrder.OrderDetails.Select(detail => new CreateOrderDetail()
-                                        {
-                                            Id = detail.Id,
-                                            OrderId = detail.Id,
-                                            ProductInMenuId = detail.ProductInMenuId,
-                                            StoreId = detail.StoreId,
-                                            ProductCode = detail.ProductCode,
-                                            ProductName = detail.ProductName,
-                                            UnitPrice = detail.UnitPrice,
-                                            Quantity = detail.Quantity,
-                                            TotalAmount = detail.TotalAmount,
-                                            FinalAmount = detail.FinalAmount,
-                                            Note = detail.Note
-
-                                        }).ToList(),
-                                        OtherAmounts = preCoOrder.OtherAmounts
-                                    };
-                                    try
-                                    {
-                                        var result = _staffService.CreateOrderForSimulate(openCoOrderCustomer.Id.ToString(), payloadCreateOrder).Result.Data;
-
-                                        var orderSuccess = new OrderSuccess
-                                        {
-                                            Id = result.Id,
-                                            OrderCode = result.OrderCode,
-                                            Customer = result.Customer,
-                                        };
-                                        response.CoOrderOrderResult.OrderSuccess.Add(orderSuccess);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = preCoOrder.OrderCode,
-                                            Customer = preCoOrder.Customer,
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = err.Error.Message,
-                                                Success = false,
-                                                ErrorCode = err.Error.ErrorCode,
-                                            }
-                                        };
-                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                                    if (ex is ErrorResponse errorResponse)
-                                    {
-                                        ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                            Customer = new CustomerOrderResponse
-                                            {
-                                                Id = randomCustomer.Id,
-                                                CustomerCode = randomCustomer.Name,
-                                                Email = randomCustomer.Email,
-                                                Name = randomCustomer.Name,
-                                                Phone = randomCustomer.Phone,
-                                            },
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = err.Error.Message,
-                                                Success = false,
-                                                ErrorCode = err.Error.ErrorCode,
-                                            }
-                                        };
-                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                    else
-                                    {
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = "",
-                                            Customer = new CustomerOrderResponse
-                                            {
-                                                Id = randomCustomer.Id,
-                                                CustomerCode = randomCustomer.Name,
-                                                Email = randomCustomer.Email,
-                                                Name = randomCustomer.Name,
-                                                Phone = randomCustomer.Phone,
-                                            },
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = ex.Message,
-                                                Success = false,
-                                                ErrorCode = 400
-                                            }
-                                        };
-                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                }
-                                totalCoOrderSuccess--;
+                                var addProduct = await _orderService.AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Data.PartyCode, cusPayloadPreOrder);
+                                var confirmCoOrder = await _orderService.FinalConfirmCoOrder(cus.Id.ToString(), openCoOrder.Data.PartyCode);
                             }
-                            else
-                            {
-                                var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                                if (!Utils.CheckTimeSlot(timeslot))
-                                {
-                                    var orderFail = new OrderFailed
-                                    {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = randomCustomer.Id,
-                                            CustomerCode = randomCustomer.Name,
-                                            Email = randomCustomer.Email,
-                                            Name = randomCustomer.Name,
-                                            Phone = randomCustomer.Phone,
-                                        },
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = "Out of Time Slot!",
-                                            Success = false,
-                                            ErrorCode = 400,
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                }
-                                else
-                                {
-                                    int randomError = rand.Next(1, 2);
-                                    if (randomError == (int)SimulateOrderFailedType.Payment)
-                                    {
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
-                                            Customer = new CustomerOrderResponse
-                                            {
-                                                Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
-                                                CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
-                                                Email = "",
-                                                Name = "Di Na Cuteeeee",
-                                                Phone = "+84838073755",
-                                            },
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = "Balance is not enough",
-                                                Success = false,
-                                                ErrorCode = 400,
-                                            }
-                                        };
-                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                    else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
-                                    {
-                                        var orderFail = new OrderFailed
-                                        {
-                                            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                            Customer = new CustomerOrderResponse
-                                            {
-                                                Id = randomCustomer.Id,
-                                                CustomerCode = randomCustomer.Name,
-                                                Email = randomCustomer.Email,
-                                                Name = randomCustomer.Name,
-                                                Phone = randomCustomer.Phone,
-                                            },
-                                            Status = new StatusViewModel
-                                            {
-                                                Message = "This product is not avaliable!",
-                                                Success = false,
-                                                ErrorCode = 400,
-                                            }
-                                        };
-                                        response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                    }
-                                }
-                                totalCoOrderFailed--;
-                            }
-                        }
-                        else if (totalCoOrderSuccess > 0)
-                        {
 
-                            var payloadPreOrder = new CreatePreOrderRequest
+
+                            var preCoOrder = await _orderService.CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (OrderTypeEnum)payloadPreOrder.OrderType, openCoOrder.Data.PartyCode);
+
+                            var stationId = station
+                                                .OrderBy(x => rand.Next())
+                                                .Select(x => x.Id)
+                                                .FirstOrDefault();
+
+                            var payloadCreateOrder = new CreateOrderRequest()
                             {
-                                OrderType = OrderTypeEnum.OrderToday,
+                                Id = preCoOrder.Data.Id,
+                                OrderCode = preCoOrder.Data.OrderCode,
+                                PartyCode = openCoOrder.Data.PartyCode,
+                                TotalAmount = preCoOrder.Data.TotalAmount,
+                                FinalAmount = preCoOrder.Data.FinalAmount,
+                                TotalOtherAmount = preCoOrder.Data.TotalOtherAmount,
+                                OrderType = (OrderTypeEnum)preCoOrder.Data.OrderType,
                                 TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                PartyType = PartyOrderType.CoOrder
-                            };
-
-                            int numberProductTake = rand.Next(1, 4);
-                            payloadPreOrder.OrderDetails = productInMenu
-                                .OrderBy(x => rand.Next())
-                                .Take(numberProductTake)
-                                .Select(x => new CreatePreOrderDetailRequest
+                                StationId = stationId.ToString(),
+                                PaymentType = PaymentTypeEnum.FineWallet,
+                                IsPartyMode = true,
+                                ItemQuantity = preCoOrder.Data.ItemQuantity,
+                                Point = preCoOrder.Data.Point,
+                                OrderDetails = preCoOrder.Data.OrderDetails.Select(detail => new CreateOrderDetail()
                                 {
-                                    ProductId = x.Id,
-                                    Quantity = 1
-                                })
-                                .ToList();
+                                    Id = detail.Id,
+                                    OrderId = detail.Id,
+                                    ProductInMenuId = detail.ProductInMenuId,
+                                    StoreId = detail.StoreId,
+                                    ProductCode = detail.ProductCode,
+                                    ProductName = detail.ProductName,
+                                    UnitPrice = detail.UnitPrice,
+                                    Quantity = detail.Quantity,
+                                    TotalAmount = detail.TotalAmount,
+                                    FinalAmount = detail.FinalAmount,
+                                    Note = detail.Note
 
-                            var openCoOrder = _orderService.OpenCoOrder(openCoOrderCustomer.Id.ToString(), payloadPreOrder);
-
+                                }).ToList(),
+                                OtherAmounts = preCoOrder.Data.OtherAmounts
+                            };
                             try
                             {
-                                foreach (var cus in restCustomers)
+                                var result = await _staffService.CreateOrderForSimulate(openCoOrderCustomer.Id.ToString(), payloadCreateOrder);
+
+                                var orderSuccess = new OrderSuccess
                                 {
-                                    var joinCoOrder = _orderService.JoinPartyOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
-                                    var cusPayloadPreOrder = new CreatePreOrderRequest
-                                    {
-                                        OrderType = OrderTypeEnum.OrderToday,
-                                        TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                        PartyType = PartyOrderType.CoOrder
-                                    };
-
-                                    int newNumberProductTake = rand.Next(1, 4);
-                                    cusPayloadPreOrder.OrderDetails = productInMenu
-                                        .OrderBy(x => rand.Next())
-                                        .Take(newNumberProductTake)
-                                        .Select(x => new CreatePreOrderDetailRequest
-                                        {
-                                            ProductId = x.Id,
-                                            Quantity = 1
-                                        })
-                                        .ToList();
-                                    var addProduct = _orderService.AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode, cusPayloadPreOrder);
-                                    var confirmCoOrder = _orderService.FinalConfirmCoOrder(cus.Id.ToString(), openCoOrder.Result.Data.PartyCode);
-                                }
-
-
-                                var preCoOrder = _orderService.CreatePreCoOrder(openCoOrderCustomer.Id.ToString(), (OrderTypeEnum)payloadPreOrder.OrderType, openCoOrder.Result.Data.PartyCode).Result.Data;
-
-                                var stationId = station
-                                                    .OrderBy(x => rand.Next())
-                                                    .Select(x => x.Id)
-                                                    .FirstOrDefault();
-
-                                var payloadCreateOrder = new CreateOrderRequest()
-                                {
-                                    Id = preCoOrder.Id,
-                                    OrderCode = preCoOrder.OrderCode,
-                                    PartyCode = openCoOrder.Result.Data.PartyCode,
-                                    TotalAmount = preCoOrder.TotalAmount,
-                                    FinalAmount = preCoOrder.FinalAmount,
-                                    TotalOtherAmount = preCoOrder.TotalOtherAmount,
-                                    OrderType = (OrderTypeEnum)preCoOrder.OrderType,
-                                    TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                    StationId = stationId.ToString(),
-                                    PaymentType = PaymentTypeEnum.FineWallet,
-                                    IsPartyMode = true,
-                                    ItemQuantity = preCoOrder.ItemQuantity,
-                                    Point = preCoOrder.Point,
-                                    OrderDetails = preCoOrder.OrderDetails.Select(detail => new CreateOrderDetail()
-                                    {
-                                        Id = detail.Id,
-                                        OrderId = detail.Id,
-                                        ProductInMenuId = detail.ProductInMenuId,
-                                        StoreId = detail.StoreId,
-                                        ProductCode = detail.ProductCode,
-                                        ProductName = detail.ProductName,
-                                        UnitPrice = detail.UnitPrice,
-                                        Quantity = detail.Quantity,
-                                        TotalAmount = detail.TotalAmount,
-                                        FinalAmount = detail.FinalAmount,
-                                        Note = detail.Note
-
-                                    }).ToList(),
-                                    OtherAmounts = preCoOrder.OtherAmounts
+                                    Id = result.Data.Id,
+                                    OrderCode = result.Data.OrderCode,
+                                    Customer = result.Data.Customer,
                                 };
-                                try
-                                {
-                                    var result = _staffService.CreateOrderForSimulate(openCoOrderCustomer.Id.ToString(), payloadCreateOrder).Result.Data;
-
-                                    var orderSuccess = new OrderSuccess
-                                    {
-                                        Id = result.Id,
-                                        OrderCode = result.OrderCode,
-                                        Customer = result.Customer,
-                                    };
-                                    response.CoOrderOrderResult.OrderSuccess.Add(orderSuccess);
-                                }
-                                catch (Exception ex)
-                                {
-                                    ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                    var orderFail = new OrderFailed
-                                    {
-                                        OrderCode = preCoOrder.OrderCode,
-                                        Customer = preCoOrder.Customer,
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = err.Error.Message,
-                                            Success = false,
-                                            ErrorCode = err.Error.ErrorCode,
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                }
+                                response.CoOrderOrderResult.OrderSuccess.Add(orderSuccess);
                             }
                             catch (Exception ex)
                             {
-                                var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                                if (ex is ErrorResponse errorResponse)
+                                ErrorResponse err = (ErrorResponse)ex.InnerException;
+                                var orderFail = new OrderFailed
                                 {
-                                    ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                    var orderFail = new OrderFailed
+                                    OrderCode = preCoOrder.Data.OrderCode,
+                                    Customer = preCoOrder.Data.Customer,
+                                    Status = new StatusViewModel
                                     {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = randomCustomer.Id,
-                                            CustomerCode = randomCustomer.Name,
-                                            Email = randomCustomer.Email,
-                                            Name = randomCustomer.Name,
-                                            Phone = randomCustomer.Phone,
-                                        },
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = err.Error.Message,
-                                            Success = false,
-                                            ErrorCode = err.Error.ErrorCode,
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                }
-                                else
-                                {
-                                    var orderFail = new OrderFailed
-                                    {
-                                        OrderCode = "",
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = randomCustomer.Id,
-                                            CustomerCode = randomCustomer.Name,
-                                            Email = randomCustomer.Email,
-                                            Name = randomCustomer.Name,
-                                            Phone = randomCustomer.Phone,
-                                        },
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = ex.Message,
-                                            Success = false,
-                                            ErrorCode = 400
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                }
+                                        Message = err.Error.Message,
+                                        Success = false,
+                                        ErrorCode = err.Error.ErrorCode,
+                                    }
+                                };
+                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
                             }
-                            totalCoOrderSuccess--;
                         }
-                        else if (totalCoOrderFailed > 0)
+                        catch (Exception ex)
                         {
                             var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                            if (!Utils.CheckTimeSlot(timeslot))
+                            if (ex is ErrorResponse errorResponse)
                             {
+                                ErrorResponse err = (ErrorResponse)ex.InnerException;
                                 var orderFail = new OrderFailed
                                 {
                                     OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
@@ -670,63 +368,37 @@ namespace FINE.Service.Service
                                     },
                                     Status = new StatusViewModel
                                     {
-                                        Message = "Out of Time Slot!",
+                                        Message = err.Error.Message,
                                         Success = false,
-                                        ErrorCode = 400,
+                                        ErrorCode = err.Error.ErrorCode,
                                     }
                                 };
                                 response.CoOrderOrderResult.OrderFailed.Add(orderFail);
                             }
                             else
                             {
-                                int randomError = rand.Next(1, 2);
-                                if (randomError == (int)SimulateOrderFailedType.Payment)
+                                var orderFail = new OrderFailed
                                 {
-                                    var orderFail = new OrderFailed
+                                    OrderCode = "",
+                                    Customer = new CustomerOrderResponse
                                     {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + "1245020C-759F-4C5A-9F23-539B9673D523",
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = Guid.Parse("1245020C-759F-4C5A-9F23-539B9673D523"),
-                                            CustomerCode = "1245020c-759f-4c5a-9f23-539b9673d523_03092023",
-                                            Email = "",
-                                            Name = "Di Na Cuteeeee",
-                                            Phone = "+84838073755",
-                                        },
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = "Balance is not enough",
-                                            Success = false,
-                                            ErrorCode = 400,
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                }
-                                else if (randomError == (int)SimulateOrderFailedType.OutOfProduct)
-                                {
-                                    var orderFail = new OrderFailed
+                                        Id = randomCustomer.Id,
+                                        CustomerCode = randomCustomer.Name,
+                                        Email = randomCustomer.Email,
+                                        Name = randomCustomer.Name,
+                                        Phone = randomCustomer.Phone,
+                                    },
+                                    Status = new StatusViewModel
                                     {
-                                        OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                        Customer = new CustomerOrderResponse
-                                        {
-                                            Id = randomCustomer.Id,
-                                            CustomerCode = randomCustomer.Name,
-                                            Email = randomCustomer.Email,
-                                            Name = randomCustomer.Name,
-                                            Phone = randomCustomer.Phone,
-                                        },
-                                        Status = new StatusViewModel
-                                        {
-                                            Message = "This product is not avaliable!",
-                                            Success = false,
-                                            ErrorCode = 400,
-                                        }
-                                    };
-                                    response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                                }
+                                        Message = ex.Message,
+                                        Success = false,
+                                        ErrorCode = 400
+                                    }
+                                };
+                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
                             }
-                            totalCoOrderFailed--;
                         }
+
                     }
                 }
                 #endregion
