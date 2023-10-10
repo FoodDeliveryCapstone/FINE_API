@@ -494,9 +494,6 @@ namespace FINE.Service.Service
                 };
                 var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
                 #endregion
-                #region split order 
-                SplitOrder(order);
-                #endregion
 
                 #region Background Job
                 NotifyOrderRequestModel notifyRequest = new NotifyOrderRequestModel
@@ -522,6 +519,10 @@ namespace FINE.Service.Service
                     };
 
                 BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+                #endregion
+
+                #region split order 
+                SplitOrder(order);
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -1505,23 +1506,24 @@ namespace FINE.Service.Service
         {
             try
             {
+                PackageResponse staffOrderResponse;
+
                 HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
                 foreach (var od in order.OrderDetails)
                 {
-
-                    listStoreId.Add(new KeyValuePair<Guid, string>(od.StoreId, od.Store.StoreName));
+                    var store = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == od.StoreId);
+                    listStoreId.Add(new KeyValuePair<Guid, string>(store.Id, store.StoreName));
                 }
 
                 foreach (var storeId in listStoreId)
                 {
-                    var key = storeId.Value + "-" + order.TimeSlot.ArriveTime;
+                    string key = storeId.Value + "-" + order.TimeSlot.ArriveTime;
 
                     var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
 
                     var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
-                    PackageResponse staffOrderResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
 
-                    if (staffOrderResponse is null)
+                    if (redisValue.HasValue == false)
                     {
                         staffOrderResponse = new PackageResponse()
                         {
@@ -1529,24 +1531,34 @@ namespace FINE.Service.Service
                             productTotalDetails = new List<ProductTotalDetail>()
                         };
                     }
+                    else
+                    {
+                        staffOrderResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                    }
 
                     foreach (var orderDetail in listOdByStore)
-                    {
-                        
+                    {          
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
                         var productTotalDetail = staffOrderResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
 
                         if (productTotalDetail is null)
                         {
                             productTotalDetail = new ProductTotalDetail()
                             {
-                                ProductId = orderDetail.ProductInMenu.ProductId,
-                                ProductInMenuId = orderDetail.ProductInMenuId,
-                                ProductName = orderDetail.ProductName,
+                                ProductId = productInMenu.ProductId,
+                                ProductInMenuId = productInMenu.Id,
+                                ProductName = productInMenu.Product.Product.ProductName,
                                 PendingQuantity = orderDetail.Quantity,
                                 ReadyQuantity = 0,
                                 ErrorQuantity = 0,
                                 productDetails = new List<ProductDetail>()
                             };
+                            productTotalDetail.productDetails.Add(new ProductDetail()
+                            {
+                                OrderId = order.Id,
+                                Quantity = orderDetail.Quantity,
+                                IsReady = false
+                            });
                             staffOrderResponse.productTotalDetails.Add(productTotalDetail);
                         } 
                         else
