@@ -18,16 +18,18 @@ namespace FINE.Service.Service
     public interface IPackageService
     {
         Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId);
+        Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, string timeSlotId);
+
     }
     public class PackageService : IPackageService
     {
-        private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public PackageService(IMapper mapper, UnitOfWork unitOfWork) 
+        public PackageService(IUnitOfWork unitOfWork, IMapper mapper) 
         {
-            _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public async Task<BaseResponseViewModel<PackageResponse>> GetPackage(string storeId, string timeSlotId)
@@ -60,6 +62,11 @@ namespace FINE.Service.Service
             {
                 throw ex;
             }
+        }
+
+        public Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, string timeSlotId)
+        {
+            throw new NotImplementedException();
         }
     }
 }
