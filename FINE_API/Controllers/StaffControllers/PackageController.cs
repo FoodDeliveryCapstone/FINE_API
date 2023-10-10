@@ -1,4 +1,6 @@
 ﻿using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Package;
+using FINE.Service.DTO.Request.Staff;
 using FINE.Service.DTO.Request.Store;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -6,6 +8,7 @@ using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.API.Controllers.StaffControllers
 {
@@ -23,13 +26,19 @@ namespace FINE.API.Controllers.StaffControllers
         /// <summary>
         /// Lấy package theo store và timeSlot 
         /// </summary>
-        [Authorize(Roles = "StoreManager")]
         [HttpGet]
-        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> GetOrderById(string storeId, string timeSlotId)
+        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> GetPackage(string timeSlotId)
         {
             try
             {
-                return await _packageService.GetPackage(storeId, timeSlotId);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                return await _packageService.GetPackage(staffId, timeSlotId);
             }
             catch (ErrorResponse ex)
             {
@@ -37,5 +46,27 @@ namespace FINE.API.Controllers.StaffControllers
             }
         }
 
+        /// <summary>
+        /// Cập nhật tình trạng sp của package
+        /// </summary>
+        [HttpPut]
+        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> UpdateStaff([FromBody]UpdateProductPackageRequest request)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                return await _packageService.UpdatePackage(staffId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }

@@ -1506,7 +1506,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                PackageResponse staffOrderResponse;
+                PackageResponse packageResponse;
 
                 HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
                 foreach (var od in order.OrderDetails)
@@ -1525,7 +1525,7 @@ namespace FINE.Service.Service
 
                     if (redisValue.HasValue == false)
                     {
-                        staffOrderResponse = new PackageResponse()
+                        packageResponse = new PackageResponse()
                         {
                             TotalProductInDay = 0,
                             TotalProductPending = 0,
@@ -1536,13 +1536,13 @@ namespace FINE.Service.Service
                     }
                     else
                     {
-                        staffOrderResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                        packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
                     }
 
                     foreach (var orderDetail in listOdByStore)
                     {          
                         var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
-                        var productTotalDetail = staffOrderResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
+                        var productTotalDetail = packageResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
 
                         if (productTotalDetail is null)
                         {
@@ -1562,16 +1562,16 @@ namespace FINE.Service.Service
                                 Quantity = orderDetail.Quantity,
                                 IsReady = false
                             });
-                            staffOrderResponse.productTotalDetails.Add(productTotalDetail);
+                            packageResponse.productTotalDetails.Add(productTotalDetail);
                         } 
                         else
                         {
                             productTotalDetail.PendingQuantity += orderDetail.Quantity;
                         }
-                        staffOrderResponse.TotalProductInDay += orderDetail.Quantity;
-                        staffOrderResponse.TotalProductPending += orderDetail.Quantity;
+                        packageResponse.TotalProductInDay += orderDetail.Quantity;
+                        packageResponse.TotalProductPending += orderDetail.Quantity;
                     }
-                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, staffOrderResponse);
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
                 }
             }
             catch (ErrorResponse ex)

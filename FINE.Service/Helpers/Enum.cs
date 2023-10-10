@@ -191,12 +191,12 @@ namespace FINE.Service.Helpers
             INTCARD = 3
         }
 
-        public enum PackageStatusEnum
+        public enum PackageUpdateTypeEnum
         {
             Confirm = 1,
-            NotConfirm = 2,
+            Error = 2,
 
-            Error = 3,
+            ReConfirm = 3
         }
     }
 }
