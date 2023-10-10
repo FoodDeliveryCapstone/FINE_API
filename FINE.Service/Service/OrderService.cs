@@ -1528,6 +1528,9 @@ namespace FINE.Service.Service
                         staffOrderResponse = new PackageResponse()
                         {
                             TotalProductInDay = 0,
+                            TotalProductPending = 0,
+                            TotalProductError = 0,
+                            TotalProductReady = 0,
                             productTotalDetails = new List<ProductTotalDetail>()
                         };
                     }
@@ -1566,6 +1569,7 @@ namespace FINE.Service.Service
                             productTotalDetail.PendingQuantity += orderDetail.Quantity;
                         }
                         staffOrderResponse.TotalProductInDay += orderDetail.Quantity;
+                        staffOrderResponse.TotalProductPending += orderDetail.Quantity;
                     }
                     ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, staffOrderResponse);
                 }
