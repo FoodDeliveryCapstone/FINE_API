@@ -21,6 +21,8 @@ using System.IO;
 using Castle.Core.Resource;
 using ZXing;
 using FINE.Service.DTO.Request.Box;
+using Newtonsoft.Json;
+using System.Collections.Specialized;
 
 namespace FINE.Service.Service
 {
@@ -66,6 +68,7 @@ namespace FINE.Service.Service
             _boxService = boxService;
         }
 
+        #region User
         public async Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging)
         {
             try
@@ -416,11 +419,14 @@ namespace FINE.Service.Service
                     if (checkCode.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
                     {
                         var party = checkCode.FirstOrDefault(x => x.CustomerId == order.CustomerId);
-                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, request.PartyCode, null);
+
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, request.PartyCode, null);
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
                         if (coOrder != null)
                         {
                             coOrder.IsPayment = true;
-                            await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, request.PartyCode, coOrder);
+                            await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, request.PartyCode, coOrder);
                         }
                         party.OrderId = order.Id;
                         party.UpdateAt = DateTime.Now;
@@ -488,25 +494,8 @@ namespace FINE.Service.Service
                 };
                 var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
                 #endregion
-                #region split order detail by store
-                var orderDetailsByStore = resultOrder.OrderDetails
-                  .GroupBy(x => x.StoreId)
-                  .Select(group => new OrderByStoreResponse
-                  {
-                      OrderId = resultOrder.Id,
-                      StoreId = group.Key,
-                      CustomerName = resultOrder.Customer.Name,
-                      TimeSlot = resultOrder.TimeSlot,
-                      StationId = resultOrder.StationOrder.Id,
-                      StationName = resultOrder.StationOrder.Name,
-                      CheckInDate = order.CheckInDate,
-                      OrderType = resultOrder.OrderType,
-                      OrderDetailStoreStatus = OrderStatusEnum.Processing,
-                      OrderDetails = _mapper.Map<List<OrderDetailResponse>, List<OrderDetailForStaffResponse>>
-                                (resultOrder.OrderDetails.Where(x => x.StoreId == group.Key).ToList())
-                      //OrderDetails = resultOrder.OrderDetails.Where(x => x.StoreId == group.Key).ToList(),
-                  }).ToList();
-                ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.SET, resultOrder.Id.ToString(), orderDetailsByStore);
+                #region split order 
+                SplitOrder(order);
                 #endregion
 
                 #region Background Job
@@ -569,7 +558,8 @@ namespace FINE.Service.Service
                 CoOrderResponse coOrder = null;
                 if (partyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
                 {
-                    coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                    coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
                 }
 
                 return new BaseResponseViewModel<CoOrderResponse>()
@@ -702,7 +692,7 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Party>().InsertAsync(party);
                 await _unitOfWork.CommitAsync();
 
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, coOrder.PartyCode, coOrder);
+                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, coOrder.PartyCode, coOrder);
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -737,7 +727,7 @@ namespace FINE.Service.Service
                         _unitOfWork.Repository<Party>().UpdateDetached(party);
                     }
                     _unitOfWork.Commit();
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, code, null);
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.DELETE, code, null);
                 }
             }
             catch (ErrorResponse ex)
@@ -791,7 +781,9 @@ namespace FINE.Service.Service
                 switch (listpartyOrder.FirstOrDefault().PartyType)
                 {
                     case (int)PartyOrderType.CoOrder:
-                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
                         if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
                         {
                             if (coOrder is null)
@@ -831,7 +823,7 @@ namespace FINE.Service.Service
                             await _unitOfWork.Repository<Party>().UpdateDetached(oldData);
                             await _unitOfWork.CommitAsync();
                         }
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
                         break;
 
                     case (int)PartyOrderType.LinkedOrder:
@@ -1041,7 +1033,8 @@ namespace FINE.Service.Service
         {
             try
             {
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
@@ -1116,7 +1109,7 @@ namespace FINE.Service.Service
                     orderCard.TotalAmount += product.TotalAmount;
                 }
 
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
@@ -1151,7 +1144,8 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Party>().UpdateDetached(partyOrder);
                 await _unitOfWork.CommitAsync();
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
@@ -1159,7 +1153,7 @@ namespace FINE.Service.Service
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
                 orderCard.Customer.IsConfirm = true;
 
-                var rs = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                var rs = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
 
                 return new BaseResponseViewModel<CoOrderPartyCard>()
                 {
@@ -1182,7 +1176,8 @@ namespace FINE.Service.Service
         {
             try
             {
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
@@ -1325,7 +1320,9 @@ namespace FINE.Service.Service
                     case PartyOrderType.CoOrder:
                         var customerToken = "";
                         if (memberId is not null) { customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token; }
-                        CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
                         if (coOrder is null) throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
                         var orderOutMember = coOrder.PartyOrder.Find(x => x.Customer.Id == Guid.Parse(customerId));
 
@@ -1347,7 +1344,7 @@ namespace FINE.Service.Service
                             //nếu đơn nhóm chỉ có admin => xóa chế độ coOrder
                             if (memberId is null)
                             {
-                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, partyCode, null);
+                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.DELETE, partyCode, null);
                             }
                             else
                             {
@@ -1356,7 +1353,7 @@ namespace FINE.Service.Service
                                 partyOfTheChosenOne.IsConfirm = true;
 
                                 coOrder.PartyOrder.Remove(orderOutMember);
-                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
 
                                 Notification notification = new Notification
                                 {
@@ -1374,7 +1371,7 @@ namespace FINE.Service.Service
                         else
                         {
                             coOrder.PartyOrder.Remove(orderOutMember);
-                            ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                            ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
                         }
                         break;
                 }
@@ -1395,44 +1392,16 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging)
-        {
-            try
-            {
-
-                var order = _unitOfWork.Repository<Data.Entity.Order>().GetAll()
-                                        .OrderByDescending(x => x.CheckInDate)
-                                        .ProjectTo<OrderForStaffResponse>(_mapper.ConfigurationProvider)
-                                        .DynamicFilter(filter)
-                                        .DynamicSort(filter)
-                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                        Constants.DefaultPaging);
-
-                return new BaseResponsePagingViewModel<OrderForStaffResponse>()
-                {
-                    Metadata = new PagingsMetadata()
-                    {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = order.Item1
-                    },
-                    Data = order.Item2.ToList()
-
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
         public async Task<BaseResponseViewModel<CoOrderStatusResponse>> GetPartyStatus(string partyCode)
         {
             try
             {
                 var result = new CoOrderStatusResponse();
                 var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.PartyCode == partyCode);
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
                 if (coOrder is not null)
                 {
                     result = new CoOrderStatusResponse()
@@ -1475,11 +1444,13 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Party>().UpdateDetached(party);
                 await _unitOfWork.CommitAsync();
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
                 var memParty = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(memberId));
                 coOrder.PartyOrder.Remove(memParty);
 
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
 
                 return new BaseResponseViewModel<dynamic>()
                 {
@@ -1496,5 +1467,102 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+        #endregion
+
+        #region Staff
+        public async Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging)
+        {
+            try
+            {
+
+                var order = _unitOfWork.Repository<Order>().GetAll()
+                                        .OrderByDescending(x => x.CheckInDate)
+                                        .ProjectTo<OrderForStaffResponse>(_mapper.ConfigurationProvider)
+                                        .DynamicFilter(filter)
+                                        .DynamicSort(filter)
+                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
+                                        Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<OrderForStaffResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = order.Item1
+                    },
+                    Data = order.Item2.ToList()
+
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async void SplitOrder(Order order)
+        {
+            try
+            {
+                HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
+                foreach (var od in order.OrderDetails)
+                {
+
+                    listStoreId.Add(new KeyValuePair<Guid, string>(od.StoreId, od.Store.StoreName));
+                }
+
+                foreach (var storeId in listStoreId)
+                {
+                    var key = storeId.Value + "-" + order.TimeSlot.ArriveTime;
+
+                    var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
+
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+                    PackageResponse staffOrderResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+
+                    if (staffOrderResponse is null)
+                    {
+                        staffOrderResponse = new PackageResponse()
+                        {
+                            TotalProductInDay = 0,
+                            productTotalDetails = new List<ProductTotalDetail>()
+                        };
+                    }
+
+                    foreach (var orderDetail in listOdByStore)
+                    {
+                        
+                        var productTotalDetail = staffOrderResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
+
+                        if (productTotalDetail is null)
+                        {
+                            productTotalDetail = new ProductTotalDetail()
+                            {
+                                ProductId = orderDetail.ProductInMenu.ProductId,
+                                ProductInMenuId = orderDetail.ProductInMenuId,
+                                ProductName = orderDetail.ProductName,
+                                PendingQuantity = orderDetail.Quantity,
+                                ReadyQuantity = 0,
+                                ErrorQuantity = 0,
+                                productDetails = new List<ProductDetail>()
+                            };
+                            staffOrderResponse.productTotalDetails.Add(productTotalDetail);
+                        } 
+                        else
+                        {
+                            productTotalDetail.PendingQuantity += orderDetail.Quantity;
+                        }
+                        staffOrderResponse.TotalProductInDay += orderDetail.Quantity;
+                    }
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, staffOrderResponse);
+                }
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+        #endregion
     }
 }

@@ -5,17 +5,22 @@ namespace FINE.Service.Helpers
     public class Enum
 
     {
-        public enum FcmTokenType
+        public enum RedisDbEnum
         {
-            Customer = 1,
+            CoOrder = 1,
             Staff = 2
         }
-
         public enum RedisSetUpType
         {
             GET = 1,
             SET = 2,
             DELETE = 3
+        }
+
+        public enum FcmTokenType
+        {
+            Customer = 1,
+            Staff = 2
         }
 
         public enum SimulateOrderFailedType
@@ -184,6 +189,14 @@ namespace FINE.Service.Helpers
             VNPAYQR = 1,
             VNBANK = 2,
             INTCARD = 3
+        }
+
+        public enum PackageStatusEnum
+        {
+            Confirm = 1,
+            NotConfirm = 2,
+
+            Error = 3,
         }
     }
 }

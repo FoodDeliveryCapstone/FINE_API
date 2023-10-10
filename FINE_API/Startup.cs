@@ -126,7 +126,7 @@ namespace FINE.API
             builder.RegisterType<FloorService>().As<IFloorService>();
             builder.RegisterType<DestinationService>().As<IDestinationService>();
             builder.RegisterType<StationService>().As<IStationService>();
-            //builder.RegisterType<AreaService>().As<IAreaService>();
+
             builder.RegisterType<StoreService>().As<IStoreService>();
             builder.RegisterType<TimeslotService>().As<ITimeslotService>();
             builder.RegisterType<ProductService>().As<IProductService>();
@@ -142,6 +142,7 @@ namespace FINE.API
             builder.RegisterType<FirebaseMessagingService>().As<IFirebaseMessagingService>();
 
             builder.RegisterType<StaffService>().As<IStaffService>();
+            builder.RegisterType<PackageService>().As<IPackageService>();
             builder.RegisterType<BoxService>().As<IBoxService>();
             builder.RegisterType<OrderDetailService>().As<IOrderDetailService>();      
             builder.RegisterType<NotifyService>().As<INotifyService>();

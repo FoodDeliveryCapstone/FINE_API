@@ -27,17 +27,19 @@ namespace FINE.Service.Helpers
             config = Configuration;
         }
 
-        public async static Task<dynamic> GetSetDataRedis(RedisSetUpType type, string key, object value)
+        //note: key for coOrder is party code
+        //      key for staff is storeId.Value + "-" + order.TimeSlot.ArriveTime; (xem thêm ở SplitOrder line 1509)
+        public async static Task<RedisValue> GetSetDataRedis(RedisDbEnum numberDb,RedisSetUpType type, string key, object value)
         {
             try
             {
-                CoOrderResponse rs = new CoOrderResponse();
+                RedisValue rs = new RedisValue();
                 string connectRedisString = config.GetSection("Endpoint:RedisEndpoint").Value + "," + config.GetSection("Endpoint:Password").Value;
                 // Tạo kết nối
                 ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
 
                 // Lấy DB
-                IDatabase db = redis.GetDatabase(1);
+                IDatabase db = redis.GetDatabase((int)numberDb);
 
                 // Ping thử
                 if (db.Ping().TotalSeconds > 5)
@@ -47,8 +49,7 @@ namespace FINE.Service.Helpers
                 switch (type)
                 {
                     case RedisSetUpType.GET:
-                        var redisValue = db.StringGet(key);
-                        rs = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                        rs = db.StringGet(key);
                         break;
 
                     case RedisSetUpType.SET:

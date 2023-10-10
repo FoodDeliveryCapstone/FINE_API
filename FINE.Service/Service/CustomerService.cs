@@ -20,6 +20,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
 using NetTopologySuite.Algorithm;
 using NetTopologySuite.Mathematics;
+using Newtonsoft.Json;
 using ServiceStack.Web;
 using StackExchange.Redis;
 using System;
@@ -296,7 +297,8 @@ namespace FINE.Service.Service
                 var party = await _unitOfWork.Repository<Party>().GetAll()
                                                     .FirstOrDefaultAsync(x => x.PartyCode == partyCode);
 
-                CoOrderResponse coOrder = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, partyCode, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder,RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(adminId)).FirstOrDefault();
 
