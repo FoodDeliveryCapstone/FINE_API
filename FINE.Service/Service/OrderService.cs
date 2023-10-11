@@ -570,7 +570,6 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region split order + create order box
-                CreateOrderBox(order);
                 SplitOrder(order);
                 #endregion
 
@@ -1458,6 +1457,8 @@ namespace FINE.Service.Service
         {
             try
             {
+                CreateOrderBox(order);
+
                 List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                 PackageResponse packageResponse;
 
@@ -1546,15 +1547,15 @@ namespace FINE.Service.Service
             }
         }
 
-        public async void CreateOrderBox(Order order)
+        public void CreateOrderBox(Order order)
         {
             try
             {
-                var listBox = await _unitOfWork.Repository<Box>().GetAll()
+                var listBox =  _unitOfWork.Repository<Box>().GetAll()
                                  .Where(x => x.StationId == order.StationId
                                          && x.OrderBoxes.Any(z => z.BoxId == x.Id
                                                             && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
-                                 .ToListAsync();
+                                 .ToList();
 
                 var orderBox = new OrderBox()
                 {
@@ -1565,17 +1566,17 @@ namespace FINE.Service.Service
                     Status = (int)OrderBoxStatusEnum.NotPicked,
                     CreateAt = DateTime.Now
                 };
-                await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
+                 _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
 
                 if (listBox.Count() == 1)
                 {
-                    var station = await _unitOfWork.Repository<Station>().GetAll()
-                                        .FirstOrDefaultAsync(x => x.Id == order.StationId);
+                    var station =  _unitOfWork.Repository<Station>().GetAll()
+                                        .FirstOrDefault(x => x.Id == order.StationId);
                     station.IsAvailable = false;
 
-                    await _unitOfWork.Repository<Station>().UpdateDetached(station);
+                     _unitOfWork.Repository<Station>().UpdateDetached(station);
                 }
-                await _unitOfWork.CommitAsync();
+                 _unitOfWork.Commit();
             }
             catch (ErrorResponse ex)
             {
