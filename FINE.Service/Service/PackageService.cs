@@ -222,6 +222,7 @@ namespace FINE.Service.Service
                                     }
                                     else
                                     {
+                                        product.ErrorProducts = new List<ErrorProduct>();
                                         product.ErrorProducts.Add(new ErrorProduct()
                                         {
                                             ProductId = product.ProductId,
