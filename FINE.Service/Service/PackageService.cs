@@ -93,7 +93,7 @@ namespace FINE.Service.Service
                     HashSet<Guid> listStationId = new HashSet<Guid>();
                     foreach (var item in packageResponse.productTotalDetails)
                     {
-                        foreach (var product in item.ProductDetails) 
+                        foreach (var product in item.ProductDetails)
                         {
                             listStationId.Add(product.StationId);
                         }
@@ -118,7 +118,7 @@ namespace FINE.Service.Service
                                                                 Quantity = x.Quantity
                                                             })
                                                             .ToList();
-                            
+
                         }
                         result.Add(stationPackage);
                     }
@@ -175,19 +175,19 @@ namespace FINE.Service.Service
                             var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
 
                             var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
-                            foreach(var order in listOrder)
+                            foreach (var order in listOrder)
                             {
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderId.ToString(), null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if(numberOfConfirm >= productInOrder.Quantity)
+                                if (numberOfConfirm >= productInOrder.Quantity)
                                 {
                                     numberOfConfirm -= productInOrder.Quantity;
                                     productInOrder.IsReady = true;
                                 }
 
-                                if(packageOrderDetail.All(x => x.IsReady) is true)
+                                if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
                                     var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
                                     orderDb.OrderStatus = (int)OrderStatusEnum.StaffConfirm;
@@ -201,15 +201,64 @@ namespace FINE.Service.Service
                         break;
 
                     case PackageUpdateTypeEnum.Error:
-                        foreach (var item in request.ProductsUpdate)
+                        switch (staff.RoleType)
                         {
-                            var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+                            case (int)SystemRoleTypeEnum.StoreManager:
+                                foreach (var item in request.ProductsUpdate)
+                                {
+                                    var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
-                            packageResponse.TotalProductError += (int)request.quantity;
-                            packageResponse.TotalProductPending -= (int)request.quantity;
+                                    packageResponse.TotalProductError += (int)request.quantity;
+                                    packageResponse.TotalProductPending -= (int)request.quantity;
 
-                            product.PendingQuantity -= (int)request.quantity;
-                            product.ErrorQuantity += (int)request.quantity;
+                                    product.PendingQuantity -= (int)request.quantity;
+                                    product.ErrorQuantity += (int)request.quantity;
+
+                                    if (product.ErrorProducts is not null && product.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
+                                                                                                    && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
+                                    {
+                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.quantity;
+                                    }
+                                    else
+                                    {
+                                        product.ErrorProducts.Add(new ErrorProduct()
+                                        {
+                                            ProductId = product.ProductId,
+                                            ProductInMenuId = product.ProductInMenuId,
+                                            ProductName = product.ProductName,
+                                            Quantity = (int)request.quantity,
+                                            ReportMemType = (int)SystemRoleTypeEnum.StoreManager,
+                                        });
+                                    }
+                                }
+                                break;
+
+                            case (int)SystemRoleTypeEnum.Shipper:
+                                foreach (var item in request.ProductsUpdate)
+                                {
+                                    var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+
+                                    packageResponse.TotalProductError += (int)request.quantity;
+                                    product.ErrorQuantity += (int)request.quantity;
+
+                                    if (product.ErrorProducts is not null && product.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
+                                                                                                   && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
+                                    {
+                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.quantity;
+                                    }
+                                    else
+                                    {
+                                        product.ErrorProducts.Add(new ErrorProduct()
+                                        {
+                                            ProductId = product.ProductId,
+                                            ProductInMenuId = product.ProductInMenuId,
+                                            ProductName = product.ProductName,
+                                            Quantity = (int)request.quantity,
+                                            ReportMemType = (int)SystemRoleTypeEnum.Shipper,
+                                        });
+                                    }
+                                }
+                                break;
                         }
                         break;
 

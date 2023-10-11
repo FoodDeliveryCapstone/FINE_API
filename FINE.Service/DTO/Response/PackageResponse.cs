@@ -25,7 +25,7 @@ namespace FINE.Service.DTO.Response
         public int ErrorQuantity { get; set; }
         public int WaitingQuantity { get; set; }
         public List<ProductDetail> ProductDetails { get; set; }
-
+        public List<ErrorProduct> ErrorProducts { get; set; }
     }
     public class ProductDetail
     {
@@ -34,6 +34,16 @@ namespace FINE.Service.DTO.Response
         public DateTime CheckInDate { get; set; }
         public int Quantity { get; set; }
         public bool IsReady { get; set; }
+    }
+
+    public class ErrorProduct
+    {
+        public Guid ProductId { get; set; }
+        public Guid ProductInMenuId { get; set; }
+        public string ProductName { get; set; }
+        public int Quantity { get; set; }
+        public int? StationId { get; set; }
+        public int ReportMemType { get; set; }
     }
 
     public class PackageStatusResponse
