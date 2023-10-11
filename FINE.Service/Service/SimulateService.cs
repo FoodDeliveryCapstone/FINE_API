@@ -24,7 +24,6 @@ namespace FINE.Service.Service
     public interface ISimulateService
     {
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
-        Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToFinish(SimulateOrderStatusRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToFinishPrepare(SimulateOrderStatusRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToDelivering(SimulateOrderStatusRequest request);
@@ -39,9 +38,8 @@ namespace FINE.Service.Service
         private readonly IStaffService _staffService;
         private readonly IPaymentService _paymentService;
         private readonly IBoxService _boxService;
-        private readonly OrderService _orderServices;
 
-        public SimulateService(IMapper mapper, IUnitOfWork unitOfWork, IOrderService orderService, IStaffService staffService, IPaymentService paymentService, IBoxService boxService, OrderService orderServices)
+        public SimulateService(IMapper mapper, IUnitOfWork unitOfWork, IOrderService orderService, IStaffService staffService, IPaymentService paymentService, IBoxService boxService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
@@ -49,9 +47,94 @@ namespace FINE.Service.Service
             _staffService = staffService;
             _paymentService = paymentService;
             _boxService = boxService;
-            _orderServices = orderServices;
         }
+        #region Simulate CreateOrder
+        public async void SplitOrder(Order order)
+        {
+            try
+            {
+                List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
+                PackageResponse packageResponse;
 
+                HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
+                foreach (var od in order.OrderDetails)
+                {
+                    var store = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == od.StoreId);
+                    listStoreId.Add(new KeyValuePair<Guid, string>(store.Id, store.StoreName));
+                }
+
+                foreach (var storeId in listStoreId)
+                {
+                    string key = storeId.Value + "-" + order.TimeSlot.ArriveTime;
+
+                    var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
+
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+
+                    if (redisValue.HasValue == false)
+                    {
+                        packageResponse = new PackageResponse()
+                        {
+                            TotalProductInDay = 0,
+                            TotalProductPending = 0,
+                            TotalProductError = 0,
+                            TotalProductReady = 0,
+                            productTotalDetails = new List<ProductTotalDetail>()
+                        };
+                    }
+                    else
+                    {
+                        packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                    }
+
+                    foreach (var orderDetail in listOdByStore)
+                    {
+                        packageOrderDetails.Add(new PackageOrderDetailModel()
+                        {
+                            ProductInMenuId = orderDetail.ProductInMenuId,
+                            Quantity = orderDetail.Quantity,
+                            IsReady = false
+                        });
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
+                        var productTotalDetail = packageResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
+
+                        if (productTotalDetail is null)
+                        {
+                            productTotalDetail = new ProductTotalDetail()
+                            {
+                                ProductId = productInMenu.ProductId,
+                                ProductInMenuId = productInMenu.Id,
+                                ProductName = productInMenu.Product.Product.ProductName,
+                                PendingQuantity = orderDetail.Quantity,
+                                ReadyQuantity = 0,
+                                ErrorQuantity = 0,
+                                productDetails = new List<ProductDetail>()
+                            };
+                            productTotalDetail.productDetails.Add(new ProductDetail()
+                            {
+                                OrderId = order.Id,
+                                StationId = (Guid)order.StationId,
+                                Quantity = orderDetail.Quantity,
+                                IsReady = false
+                            });
+                            packageResponse.productTotalDetails.Add(productTotalDetail);
+                        }
+                        else
+                        {
+                            productTotalDetail.PendingQuantity += orderDetail.Quantity;
+                        }
+                        packageResponse.TotalProductInDay += orderDetail.Quantity;
+                        packageResponse.TotalProductPending += orderDetail.Quantity;
+                    }
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.Id.ToString(), packageOrderDetails);
+                }
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }       
         public async Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request)
         {
             try
@@ -193,7 +276,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region split order 
-                _orderServices.SplitOrder(order);
+                SplitOrder(order);
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -212,7 +295,7 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
+        #endregion
         public async Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request)
         {
             try
