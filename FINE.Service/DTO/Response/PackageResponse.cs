@@ -24,7 +24,7 @@ namespace FINE.Service.DTO.Response
         public int ReadyQuantity { get; set; }
         public int ErrorQuantity { get; set; }
         public int WaitingQuantity { get; set; }
-        public List<ProductDetail> productDetails { get; set; }
+        public List<ProductDetail> ProductDetails { get; set; }
 
     }
     public class ProductDetail

@@ -108,9 +108,9 @@ namespace FINE.Service.Service
                                 PendingQuantity = orderDetail.Quantity,
                                 ReadyQuantity = 0,
                                 ErrorQuantity = 0,
-                                productDetails = new List<ProductDetail>()
+                                ProductDetails = new List<ProductDetail>()
                             };
-                            productTotalDetail.productDetails.Add(new ProductDetail()
+                            productTotalDetail.ProductDetails.Add(new ProductDetail()
                             {
                                 OrderId = order.Id,
                                 StationId = (Guid)order.StationId,

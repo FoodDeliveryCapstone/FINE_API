@@ -93,7 +93,7 @@ namespace FINE.Service.Service
                     HashSet<Guid> listStationId = new HashSet<Guid>();
                     foreach (var item in packageResponse.productTotalDetails)
                     {
-                        foreach (var product in item.productDetails) 
+                        foreach (var product in item.ProductDetails) 
                         {
                             listStationId.Add(product.StationId);
                         }
@@ -110,7 +110,7 @@ namespace FINE.Service.Service
 
                         foreach (var item in packageResponse.productTotalDetails)
                         {
-                            var listProductGroupByStation = item.productDetails.Where(x => x.StationId == stationId)
+                            var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId)
                                                             .Select(x => new PackageStationDetailResponse()
                                                             {
                                                                 ProductId = item.ProductId,
@@ -172,7 +172,7 @@ namespace FINE.Service.Service
                             product.ReadyQuantity += product.PendingQuantity;
                             product.PendingQuantity = 0;
 
-                            var listOrder = product.productDetails.OrderByDescending(x => x.CheckInDate);
+                            var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
 
                             var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
                             foreach(var order in listOrder)
@@ -224,7 +224,7 @@ namespace FINE.Service.Service
                             product.ReadyQuantity += (int)request.quantity;
                             product.ErrorQuantity -= (int)request.quantity;
 
-                            var listOrder = product.productDetails.OrderByDescending(x => x.CheckInDate);
+                            var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
 
                             var numberOfConfirm = request.quantity + product.WaitingQuantity;
                             foreach (var order in listOrder)
