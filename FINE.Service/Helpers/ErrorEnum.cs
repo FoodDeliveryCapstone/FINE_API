@@ -159,8 +159,8 @@ namespace FINE.Service.Helpers
             NOT_FOUND = 4041,
 
             //400
-            [Display(Name = "There is no available box in this station!")]
-            STATION_FULL = 4001,
+            [Display(Name = "Station is unavailable!")]
+            UNAVAILABLE = 4001,
         }
 
         public enum TimeSlotErrorEnums

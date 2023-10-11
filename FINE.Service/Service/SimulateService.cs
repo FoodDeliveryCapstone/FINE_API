@@ -91,8 +91,8 @@ namespace FINE.Service.Service
                 var availableBoxes = getAllBoxInStation.Where(x => !getOrderBox.Any(a => a.BoxId == x.Id)).ToList();
 
                 if (availableBoxes.Count == 0)
-                    throw new ErrorResponse(400, (int)StationErrorEnums.STATION_FULL,
-                                            StationErrorEnums.STATION_FULL.GetDisplayName());
+                    throw new ErrorResponse(400, (int)StationErrorEnums.UNAVAILABLE,
+                                            StationErrorEnums.UNAVAILABLE.GetDisplayName());
                 #endregion
 
                 var order = _mapper.Map<Data.Entity.Order>(request);

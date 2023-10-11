@@ -9,7 +9,6 @@ using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using ServiceStack.Web;
-using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -172,6 +171,32 @@ namespace FINE.Service.Service
 
                             product.ReadyQuantity += product.PendingQuantity;
                             product.PendingQuantity = 0;
+
+                            var listOrder = product.productDetails.OrderByDescending(x => x.CheckInDate);
+
+                            var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
+                            foreach(var order in listOrder)
+                            {
+                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderId.ToString(), null);
+                                List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
+
+                                var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                if(numberOfConfirm >= productInOrder.Quantity)
+                                {
+                                    numberOfConfirm -= productInOrder.Quantity;
+                                    productInOrder.IsReady = true;
+                                }
+
+                                if(packageOrderDetail.All(x => x.IsReady) is true)
+                                {
+                                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
+                                    orderDb.OrderStatus = (int)OrderStatusEnum.StaffConfirm;
+
+                                    await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
+                                    await _unitOfWork.CommitAsync();
+                                }
+                            }
+                            product.WaitingQuantity = numberOfConfirm;
                         }
                         break;
 
@@ -198,6 +223,32 @@ namespace FINE.Service.Service
 
                             product.ReadyQuantity += (int)request.quantity;
                             product.ErrorQuantity -= (int)request.quantity;
+
+                            var listOrder = product.productDetails.OrderByDescending(x => x.CheckInDate);
+
+                            var numberOfConfirm = request.quantity + product.WaitingQuantity;
+                            foreach (var order in listOrder)
+                            {
+                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderId.ToString(), null);
+                                List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
+
+                                var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                if (numberOfConfirm >= productInOrder.Quantity)
+                                {
+                                    numberOfConfirm -= productInOrder.Quantity;
+                                    productInOrder.IsReady = true;
+                                }
+
+                                if (packageOrderDetail.All(x => x.IsReady) is true)
+                                {
+                                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
+                                    orderDb.OrderStatus = (int)OrderStatusEnum.StaffConfirm;
+
+                                    await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
+                                    await _unitOfWork.CommitAsync();
+                                }
+                            }
+                            product.WaitingQuantity = (int)numberOfConfirm;
                         }
                         break;
                 }

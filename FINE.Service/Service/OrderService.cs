@@ -183,6 +183,85 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId, string partyCode)
+        {
+            try
+            {
+                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
+                                                .Where(x => x.PartyCode == partyCode)
+                                                .ToListAsync();
+                if (partyOrder == null)
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+                else if (partyOrder.All(x => x.IsActive == false))
+                    throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
+                else if (partyOrder.FirstOrDefault(x => x.IsActive == true).Status == (int)PartyOrderStatus.OutOfTimeslot)
+                    throw new ErrorResponse(404, (int)PartyErrorEnums.OUT_OF_TIMESLOT, PartyErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+
+                CoOrderResponse coOrder = null;
+                if (partyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
+                {
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                    coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                }
+
+                return new BaseResponseViewModel<CoOrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = coOrder
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<CoOrderStatusResponse>> GetPartyStatus(string partyCode)
+        {
+            try
+            {
+                var result = new CoOrderStatusResponse();
+                var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.PartyCode == partyCode);
+
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                if (coOrder is not null)
+                {
+                    result = new CoOrderStatusResponse()
+                    {
+                        NumberOfMember = coOrder.PartyOrder.Where(x => x.Customer.IsAdmin == false).Count(),
+                        IsReady = coOrder.PartyOrder.All(x => x.Customer.IsConfirm == true),
+                        IsFinish = coOrder.IsPayment,
+                        IsDelete = false,
+                    };
+                }
+                else
+                {
+                    result.IsDelete = true;
+                }
+                return new BaseResponseViewModel<CoOrderStatusResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request)
         {
             try
@@ -369,30 +448,20 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)CustomerErrorEnums.MISSING_PHONENUMBER,
                                             CustomerErrorEnums.MISSING_PHONENUMBER.GetDisplayName());
                 #endregion
+
+                #region station
                 var station = await _unitOfWork.Repository<Station>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StationId));
 
-                #region Check station in timeslot have available box 
-                var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
-                                                .Where(x => x.StationId == Guid.Parse(request.StationId))
-                                                .OrderBy(x => x.CreateAt)
-                                                .ToListAsync();
-
-                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
-                                  .Include(x => x.Order)
-                                  .Include(x => x.Box)
-                                  .Where(x => x.Order.TimeSlotId == request.TimeSlotId
-                                      && x.Box.StationId == Guid.Parse(request.StationId)
-                                      && x.Order.CheckInDate.Date == Utils.GetCurrentDatetime().Date)
-                                  .ToListAsync();
-                var availableBoxes = getAllBoxInStation.Where(x => !getOrderBox.Any(a => a.BoxId == x.Id)).ToList();
-
-                if (availableBoxes.Count == 0)
-                    throw new ErrorResponse(400, (int)StationErrorEnums.STATION_FULL,
-                                            StationErrorEnums.STATION_FULL.GetDisplayName());
+                if (station.IsAvailable == false)
+                {
+                    throw new ErrorResponse(400, (int)StationErrorEnums.UNAVAILABLE,
+                                            StationErrorEnums.UNAVAILABLE.GetDisplayName());
+                }
                 #endregion
 
-                var order = _mapper.Map<Data.Entity.Order>(request);
+                var order = _mapper.Map<Order>(request);
+
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
@@ -457,14 +526,14 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-                await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);
+                await _unitOfWork.Repository<Order>().InsertAsync(order);
                 await _unitOfWork.CommitAsync();
 
                 await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
 
                 order.OrderStatus = (int)OrderStatusEnum.Processing;
 
-                await _unitOfWork.Repository<Data.Entity.Order>().UpdateDetached(order);
+                await _unitOfWork.Repository<Order>().UpdateDetached(order);
                 await _unitOfWork.CommitAsync();
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
@@ -473,23 +542,8 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
-                #region Add order to box
-                string key = null;
-                if (getOrderBox.Count == 0)
-                    key = Utils.GenerateRandomCode(10);
-                else
-                {
-                    key = getOrderBox.FirstOrDefault().Key;
-                }
-                var addOrderToBoxRequest = new AddOrderToBoxRequest()
-                {
-                    BoxId = availableBoxes.FirstOrDefault().Id,
-                    OrderId = order.Id
-                };
-                var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
-                #endregion
 
-                #region Background Job
+                #region Background Job noti
                 NotifyOrderRequestModel notifyRequest = new NotifyOrderRequestModel
                 {
                     OrderCode = order.OrderCode,
@@ -515,7 +569,8 @@ namespace FINE.Service.Service
                 BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
                 #endregion
 
-                #region split order 
+                #region split order + create order box
+                CreateOrderBox(order);
                 SplitOrder(order);
                 #endregion
 
@@ -528,44 +583,6 @@ namespace FINE.Service.Service
                         ErrorCode = 0
                     },
                     Data = resultOrder
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId, string partyCode)
-        {
-            try
-            {
-                var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
-                                                .Where(x => x.PartyCode == partyCode)
-                                                .ToListAsync();
-                if (partyOrder == null)
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
-                else if (partyOrder.All(x => x.IsActive == false))
-                    throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
-                else if (partyOrder.FirstOrDefault(x => x.IsActive == true).Status == (int)PartyOrderStatus.OutOfTimeslot)
-                    throw new ErrorResponse(404, (int)PartyErrorEnums.OUT_OF_TIMESLOT, PartyErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-
-                CoOrderResponse coOrder = null;
-                if (partyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
-                {
-                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
-                    coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-                }
-
-                return new BaseResponseViewModel<CoOrderResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = coOrder
                 };
             }
             catch (ErrorResponse ex)
@@ -703,30 +720,6 @@ namespace FINE.Service.Service
             catch (ErrorResponse ex)
             {
                 throw ex;
-            }
-        }
-
-        public void UpdatePartyOrderStatus(string code)
-        {
-            try
-            {
-                var parties = _unitOfWork.Repository<Party>().GetAll()
-                            .Where(x => x.PartyCode == code).ToList();
-                if (parties != null)
-                {
-                    foreach (var party in parties)
-                    {
-                        party.Status = (int)PartyOrderStatus.OutOfTimeslot;
-                        party.IsActive = false;
-                        party.UpdateAt = DateTime.Now;
-                        _unitOfWork.Repository<Party>().UpdateDetached(party);
-                    }
-                    _unitOfWork.Commit();
-                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.DELETE, code, null);
-                }
-            }
-            catch (ErrorResponse ex)
-            {
             }
         }
 
@@ -1387,47 +1380,6 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderStatusResponse>> GetPartyStatus(string partyCode)
-        {
-            try
-            {
-                var result = new CoOrderStatusResponse();
-                var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.PartyCode == partyCode);
-
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
-                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-
-                if (coOrder is not null)
-                {
-                    result = new CoOrderStatusResponse()
-                    {
-                        NumberOfMember = coOrder.PartyOrder.Where(x => x.Customer.IsAdmin == false).Count(),
-                        IsReady = coOrder.PartyOrder.All(x => x.Customer.IsConfirm == true),
-                        IsFinish = coOrder.IsPayment,
-                        IsDelete = false,
-                    };
-                }
-                else
-                {
-                    result.IsDelete = true;
-                }
-                return new BaseResponseViewModel<CoOrderStatusResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = result
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
         public async Task<BaseResponseViewModel<dynamic>> RemovePartyMember(string customerId, string partyCode, string memberId = null)
         {
             try
@@ -1536,14 +1488,17 @@ namespace FINE.Service.Service
 
                     foreach (var orderDetail in listOdByStore)
                     {
-                        packageOrderDetails.Add(new PackageOrderDetailModel()
-                        {
-                            ProductInMenuId = orderDetail.ProductInMenuId,
-                            Quantity = orderDetail.Quantity,
-                            IsReady = false
-                        });
                         var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
                         var productTotalDetail = packageResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
+
+                        packageOrderDetails.Add(new PackageOrderDetailModel()
+                        {
+                            ProductId = productInMenu.ProductId,
+                            ProductInMenuId = orderDetail.ProductInMenuId,
+                            Quantity = orderDetail.Quantity,
+                            ErrorQuantity = 0,
+                            IsReady = false
+                        });
 
                         if (productTotalDetail is null)
                         {
@@ -1555,12 +1510,14 @@ namespace FINE.Service.Service
                                 PendingQuantity = orderDetail.Quantity,
                                 ReadyQuantity = 0,
                                 ErrorQuantity = 0,
+                                WaitingQuantity = 0,
                                 productDetails = new List<ProductDetail>()
                             };
                             productTotalDetail.productDetails.Add(new ProductDetail()
                             {
                                 OrderId = order.Id,
                                 StationId = (Guid)order.StationId,
+                                CheckInDate = order.CheckInDate,
                                 Quantity = orderDetail.Quantity,
                                 IsReady = false
                             });
@@ -1580,6 +1537,67 @@ namespace FINE.Service.Service
             catch (ErrorResponse ex)
             {
                 throw ex;
+            }
+        }
+
+        public async void CreateOrderBox(Order order)
+        {
+            try
+            {
+                var listBox = await _unitOfWork.Repository<Box>().GetAll()
+                                 .Where(x => x.StationId == order.StationId
+                                         && x.OrderBoxes.Any(z => z.BoxId == x.Id 
+                                                            && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
+                                 .ToListAsync();
+
+                var orderBox = new OrderBox()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    BoxId = listBox.FirstOrDefault().Id,
+                    Key = Utils.GenerateRandomCode(10),
+                    Status = (int)OrderBoxStatusEnum.NotPicked,
+                    CreateAt = DateTime.Now
+                };
+                await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
+
+                if(listBox.Count() == 1)
+                {
+                    var station = await _unitOfWork.Repository<Station>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == order.StationId);
+                    station.IsAvailable = false;
+
+                    await _unitOfWork.Repository<Station>().UpdateDetached(station);
+                }
+                await _unitOfWork.CommitAsync();
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public void UpdatePartyOrderStatus(string code)
+        {
+            try
+            {
+                var parties = _unitOfWork.Repository<Party>().GetAll()
+                            .Where(x => x.PartyCode == code).ToList();
+                if (parties != null)
+                {
+                    foreach (var party in parties)
+                    {
+                        party.Status = (int)PartyOrderStatus.OutOfTimeslot;
+                        party.IsActive = false;
+                        party.UpdateAt = DateTime.Now;
+                        _unitOfWork.Repository<Party>().UpdateDetached(party);
+                    }
+                    _unitOfWork.Commit();
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.DELETE, code, null);
+                }
+            }
+            catch (ErrorResponse ex)
+            {
             }
         }
         #endregion
