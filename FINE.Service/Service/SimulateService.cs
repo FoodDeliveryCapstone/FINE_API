@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
+using FINE.Service.DTO.Request.Box;
 using FINE.Service.DTO.Request.Order;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
@@ -8,6 +10,7 @@ using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +24,7 @@ namespace FINE.Service.Service
     public interface ISimulateService
     {
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
+        Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToFinish(SimulateOrderStatusRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToFinishPrepare(SimulateOrderStatusRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToDelivering(SimulateOrderStatusRequest request);
@@ -33,13 +37,180 @@ namespace FINE.Service.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOrderService _orderService;
         private readonly IStaffService _staffService;
+        private readonly IPaymentService _paymentService;
+        private readonly IBoxService _boxService;
+        private readonly OrderService _orderServices;
 
-        public SimulateService(IMapper mapper, IUnitOfWork unitOfWork, IOrderService orderService, IStaffService staffService)
+        public SimulateService(IMapper mapper, IUnitOfWork unitOfWork, IOrderService orderService, IStaffService staffService, IPaymentService paymentService, IBoxService boxService, OrderService orderServices)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _orderService = orderService;
             _staffService = staffService;
+            _paymentService = paymentService;
+            _boxService = boxService;
+            _orderServices = orderServices;
+        }
+
+        public async Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request)
+        {
+            try
+            {
+                #region Timeslot
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
+
+                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
+
+                #region customer phone
+                var customer = await _unitOfWork.Repository<Customer>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(customerId));
+
+                if (customer.Phone is null)
+                    throw new ErrorResponse(400, (int)CustomerErrorEnums.MISSING_PHONENUMBER,
+                                            CustomerErrorEnums.MISSING_PHONENUMBER.GetDisplayName());
+                #endregion
+                var station = await _unitOfWork.Repository<Station>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StationId));
+
+                #region Check station in timeslot have available box 
+                var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
+                                                .Where(x => x.StationId == Guid.Parse(request.StationId))
+                                                .OrderBy(x => x.CreateAt)
+                                                .ToListAsync();
+
+                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                  .Include(x => x.Order)
+                                  .Include(x => x.Box)
+                                  .Where(x => x.Order.TimeSlotId == request.TimeSlotId
+                                      && x.Box.StationId == Guid.Parse(request.StationId)
+                                      && x.Order.CheckInDate.Date == Utils.GetCurrentDatetime().Date)
+                                  .ToListAsync();
+                var availableBoxes = getAllBoxInStation.Where(x => !getOrderBox.Any(a => a.BoxId == x.Id)).ToList();
+
+                if (availableBoxes.Count == 0)
+                    throw new ErrorResponse(400, (int)StationErrorEnums.STATION_FULL,
+                                            StationErrorEnums.STATION_FULL.GetDisplayName());
+                #endregion
+
+                var order = _mapper.Map<Data.Entity.Order>(request);
+                order.CustomerId = Guid.Parse(customerId);
+                order.CheckInDate = DateTime.Now;
+                order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
+
+                #region Party (if have)
+                if (request.PartyCode is not null)
+                {
+                    var checkCode = await _unitOfWork.Repository<Party>().GetAll()
+                                    .Where(x => x.PartyCode == request.PartyCode)
+                                    .ToListAsync();
+
+                    if (checkCode == null)
+                        throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
+
+                    if (checkCode.Any(x => x.Status == (int)PartyOrderStatus.CloseParty))
+                        throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_CLOSED, PartyErrorEnums.PARTY_CLOSED.GetDisplayName());
+
+                    if (checkCode.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
+                    {
+                        var party = checkCode.FirstOrDefault(x => x.CustomerId == order.CustomerId);
+
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, request.PartyCode, null);
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                        if (coOrder != null)
+                        {
+                            coOrder.IsPayment = true;
+                            await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, request.PartyCode, coOrder);
+                        }
+                        party.OrderId = order.Id;
+                        party.UpdateAt = DateTime.Now;
+
+                        await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                    }
+                    else
+                    {
+                        var checkJoin = checkCode.Find(x => x.CustomerId == Guid.Parse(customerId));
+                        if (checkJoin == null)
+                        {
+                            var linkedOrder = new Party()
+                            {
+                                Id = Guid.NewGuid(),
+                                OrderId = request.Id,
+                                CustomerId = Guid.Parse(customerId),
+                                PartyCode = request.PartyCode,
+                                PartyType = (int)PartyOrderType.LinkedOrder,
+                                Status = (int)PartyOrderStatus.Confirm,
+                                IsActive = true,
+                                CreateAt = DateTime.Now
+                            };
+                            order.Parties.Add(linkedOrder);
+                        }
+                        else
+                        {
+                            checkJoin.OrderId = request.Id;
+                            checkJoin.Status = (int)PartyOrderStatus.Confirm;
+                            checkJoin.UpdateAt = DateTime.Now;
+                            await _unitOfWork.Repository<Party>().UpdateDetached(checkJoin);
+                        }
+                    }
+                    order.IsPartyMode = true;
+                }
+                #endregion
+
+                await _unitOfWork.Repository<Data.Entity.Order>().InsertAsync(order);
+                await _unitOfWork.CommitAsync();
+
+                await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
+
+                order.OrderStatus = (int)OrderStatusEnum.Processing;
+
+                await _unitOfWork.Repository<Data.Entity.Order>().UpdateDetached(order);
+                await _unitOfWork.CommitAsync();
+
+                var resultOrder = _mapper.Map<OrderResponse>(order);
+                resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
+                resultOrder.StationOrder = _unitOfWork.Repository<Station>().GetAll()
+                                                .Where(x => x.Id == Guid.Parse(request.StationId))
+                                                .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
+                                                .FirstOrDefault();
+                #region Add order to box
+                string key = null;
+                if (getOrderBox.Count == 0)
+                    key = Utils.GenerateRandomCode(10);
+                else
+                {
+                    key = getOrderBox.FirstOrDefault().Key;
+                }
+                var addOrderToBoxRequest = new AddOrderToBoxRequest()
+                {
+                    BoxId = availableBoxes.FirstOrDefault().Id,
+                    OrderId = order.Id
+                };
+                var addOrderToBox = await _boxService.AddOrderToBox(order.StationId.ToString(), key, addOrderToBoxRequest);
+                #endregion
+
+                #region split order 
+                _orderServices.SplitOrder(order);
+                #endregion
+
+                return new BaseResponseViewModel<OrderResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = resultOrder
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
         }
 
         public async Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request)
@@ -164,7 +335,7 @@ namespace FINE.Service.Service
 
                             try
                             {
-                                var result = _staffService.CreateOrderForSimulate(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+                                var result = CreateOrderForSimulate(customer.Id.ToString(), payloadCreateOrder).Result.Data;
                                 //var result = _orderService.CreateOrder("4873582B-52AF-4D9E-96D0-0C461018CF81", payloadCreateOrder).Result.Data;
                                 var orderSuccess = new OrderSuccess
                                 {
@@ -322,7 +493,7 @@ namespace FINE.Service.Service
                             };
                             try
                             {
-                                var result = await _staffService.CreateOrderForSimulate(openCoOrderCustomer.Id.ToString(), payloadCreateOrder);
+                                var result = await CreateOrderForSimulate(openCoOrderCustomer.Id.ToString(), payloadCreateOrder);
 
                                 var orderSuccess = new OrderSuccess
                                 {
