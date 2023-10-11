@@ -26,4 +26,6 @@ public partial class Station
     public virtual ICollection<Box> Boxes { get; set; } = new List<Box>();
 
     public virtual Floor Floor { get; set; } = null!;
+
+    public virtual ICollection<Staff> Staff { get; set; } = new List<Staff>();
 }

@@ -17,11 +17,15 @@ public partial class Staff
 
     public Guid? StoreId { get; set; }
 
+    public Guid? StationId { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTime CreateAt { get; set; }
 
     public DateTime? UpdateAt { get; set; }
+
+    public virtual Station? Station { get; set; }
 
     public virtual ICollection<StationReport> StationReports { get; set; } = new List<StationReport>();
 

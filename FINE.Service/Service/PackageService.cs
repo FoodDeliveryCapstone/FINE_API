@@ -208,16 +208,16 @@ namespace FINE.Service.Service
                                 {
                                     var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
-                                    packageResponse.TotalProductError += (int)request.quantity;
-                                    packageResponse.TotalProductPending -= (int)request.quantity;
+                                    packageResponse.TotalProductError += (int)request.Quantity;
+                                    packageResponse.TotalProductPending -= (int)request.Quantity;
 
-                                    product.PendingQuantity -= (int)request.quantity;
-                                    product.ErrorQuantity += (int)request.quantity;
+                                    product.PendingQuantity -= (int)request.Quantity;
+                                    product.ErrorQuantity += (int)request.Quantity;
 
                                     if (product.ErrorProducts is not null && product.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                                                     && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
                                     {
-                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.quantity;
+                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.Quantity;
                                     }
                                     else
                                     {
@@ -226,7 +226,7 @@ namespace FINE.Service.Service
                                             ProductId = product.ProductId,
                                             ProductInMenuId = product.ProductInMenuId,
                                             ProductName = product.ProductName,
-                                            Quantity = (int)request.quantity,
+                                            Quantity = (int)request.Quantity,
                                             ReportMemType = (int)SystemRoleTypeEnum.StoreManager,
                                         });
                                     }
@@ -238,13 +238,13 @@ namespace FINE.Service.Service
                                 {
                                     var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
-                                    packageResponse.TotalProductError += (int)request.quantity;
-                                    product.ErrorQuantity += (int)request.quantity;
+                                    packageResponse.TotalProductError += (int)request.Quantity;
+                                    product.ErrorQuantity += (int)request.Quantity;
 
                                     if (product.ErrorProducts is not null && product.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                                                    && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
                                     {
-                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.quantity;
+                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
                                     }
                                     else
                                     {
@@ -253,7 +253,8 @@ namespace FINE.Service.Service
                                             ProductId = product.ProductId,
                                             ProductInMenuId = product.ProductInMenuId,
                                             ProductName = product.ProductName,
-                                            Quantity = (int)request.quantity,
+                                            Quantity = (int)request.Quantity,
+                                            StationId = staff.StationId,
                                             ReportMemType = (int)SystemRoleTypeEnum.Shipper,
                                         });
                                     }
@@ -267,15 +268,15 @@ namespace FINE.Service.Service
                         {
                             var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
-                            packageResponse.TotalProductError -= (int)request.quantity;
-                            packageResponse.TotalProductReady += (int)request.quantity;
+                            packageResponse.TotalProductError -= (int)request.Quantity;
+                            packageResponse.TotalProductReady += (int)request.Quantity;
 
-                            product.ReadyQuantity += (int)request.quantity;
-                            product.ErrorQuantity -= (int)request.quantity;
+                            product.ReadyQuantity += (int)request.Quantity;
+                            product.ErrorQuantity -= (int)request.Quantity;
 
                             var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
 
-                            var numberOfConfirm = request.quantity + product.WaitingQuantity;
+                            var numberOfConfirm = request.Quantity + product.WaitingQuantity;
                             foreach (var order in listOrder)
                             {
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderId.ToString(), null);

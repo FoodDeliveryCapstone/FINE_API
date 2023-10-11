@@ -74,7 +74,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// Cập nhật tình trạng sp của package
         /// </summary>
         [HttpPut]
-        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> UpdateStaff([FromBody]UpdateProductPackageRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> UpdatePackage([FromBody]UpdateProductPackageRequest request)
         {
             try
             {

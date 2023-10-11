@@ -543,6 +543,10 @@ public partial class FineDevDbV2Context : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
 
+            entity.HasOne(d => d.Station).WithMany(p => p.Staff)
+                .HasForeignKey(d => d.StationId)
+                .HasConstraintName("FK_Staff_Station");
+
             entity.HasOne(d => d.Store).WithMany(p => p.Staff)
                 .HasForeignKey(d => d.StoreId)
                 .HasConstraintName("FK_Staff_Store");
