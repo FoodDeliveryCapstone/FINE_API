@@ -173,7 +173,6 @@ namespace FINE.Service.Service
                             product.PendingQuantity = 0;
 
                             var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
-
                             var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
                             foreach (var order in listOrder)
                             {
@@ -185,6 +184,7 @@ namespace FINE.Service.Service
                                 {
                                     numberOfConfirm -= productInOrder.Quantity;
                                     productInOrder.IsReady = true;
+                                    order.IsReady = true;
                                 }
 
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
@@ -195,6 +195,7 @@ namespace FINE.Service.Service
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                     await _unitOfWork.CommitAsync();
                                 }
+                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderId.ToString(), packageOrderDetail);
                             }
                             product.WaitingQuantity = numberOfConfirm;
                         }
