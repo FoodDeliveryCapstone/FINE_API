@@ -11,6 +11,8 @@ public partial class Party
 
     public Guid CustomerId { get; set; }
 
+    public Guid TimeSlotId { get; set; }
+
     public string PartyCode { get; set; } = null!;
 
     public int PartyType { get; set; }

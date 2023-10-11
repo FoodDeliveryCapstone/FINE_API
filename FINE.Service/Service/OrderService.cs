@@ -37,8 +37,8 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CreateReOrderResponse>> CreatePreOrderFromReOrder(string customerId, string reOrderId, OrderTypeEnum orderType);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
-        Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
-        Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
+        Task<BaseResponseViewModel<CoOrderResponse>> OpenParty(string customerId, CreatePreOrderRequest request);
+        Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string timeSlotId ,string partyCode);
         Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string customerId, AddProductToCardRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
@@ -591,7 +591,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> OpenParty(string customerId, CreatePreOrderRequest request)
         {
             try
             {
@@ -622,6 +622,7 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     CustomerId = Guid.Parse(customerId),
+                    TimeSlotId = (Guid)request.TimeSlotId,
                     PartyCode = coOrder.PartyCode,
                     PartyType = (int)PartyOrderType.LinkedOrder,
                     Status = (int)PartyOrderStatus.NotConfirm,
@@ -723,7 +724,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string timeslotId, string partyCode)
         {
             try
             {
@@ -746,7 +747,7 @@ namespace FINE.Service.Service
                 var listpartyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                             .Where(x => x.PartyCode == partyCode)
                                             .ToListAsync();
-                var test = listpartyOrder.All(x => x.IsActive == false);
+
                 if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == true))
                 {
                     var code = listpartyOrder.Find(x => x.CustomerId == Guid.Parse(customerId)).PartyCode;
@@ -764,6 +765,11 @@ namespace FINE.Service.Service
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
                 }
+                else if (listpartyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.LinkedOrder && listpartyOrder.FirstOrDefault().Order.TimeSlotId != Guid.Parse(timeslotId))
+                {
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.WRONG_TIMESLOT, PartyErrorEnums.WRONG_TIMESLOT.GetDisplayName() + $": {listpartyOrder.FirstOrDefault().TimeSlotId}");
+                }
+
                 var oldData = listpartyOrder.Find(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == false);
 
                 switch (listpartyOrder.FirstOrDefault().PartyType)
@@ -1522,7 +1528,7 @@ namespace FINE.Service.Service
                                 IsReady = false
                             });
                             packageResponse.productTotalDetails.Add(productTotalDetail);
-                        } 
+                        }
                         else
                         {
                             productTotalDetail.PendingQuantity += orderDetail.Quantity;
@@ -1546,7 +1552,7 @@ namespace FINE.Service.Service
             {
                 var listBox = await _unitOfWork.Repository<Box>().GetAll()
                                  .Where(x => x.StationId == order.StationId
-                                         && x.OrderBoxes.Any(z => z.BoxId == x.Id 
+                                         && x.OrderBoxes.Any(z => z.BoxId == x.Id
                                                             && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
                                  .ToListAsync();
 
@@ -1561,7 +1567,7 @@ namespace FINE.Service.Service
                 };
                 await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
 
-                if(listBox.Count() == 1)
+                if (listBox.Count() == 1)
                 {
                     var station = await _unitOfWork.Repository<Station>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == order.StationId);

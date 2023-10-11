@@ -70,6 +70,8 @@ namespace FINE.Service.Helpers
             OUT_OF_TIMESLOT = 4005,
             [Display(Name = "Party is deleted")]
             PARTY_DELETE = 4006,
+            [Display(Name = "Join wrong timeslot")]
+            WRONG_TIMESLOT = 4007,
         }
 
         public enum PaymentErrorsEnum

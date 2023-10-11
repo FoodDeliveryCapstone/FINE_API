@@ -506,13 +506,13 @@ namespace FINE.Service.Service
                             })
                             .ToList();
 
-                        var openCoOrder = await _orderService.OpenCoOrder(openCoOrderCustomer.Id.ToString(), payloadPreOrder);
+                        var openCoOrder = await _orderService.OpenParty(openCoOrderCustomer.Id.ToString(), payloadPreOrder);
 
                         try
                         {
                             foreach (var cus in restCustomers)
                             {
-                                var joinCoOrder = await _orderService.JoinPartyOrder(cus.Id.ToString(), openCoOrder.Data.PartyCode);
+                                var joinCoOrder = await _orderService.JoinPartyOrder(cus.Id.ToString(),timeslot.Id.ToString(),openCoOrder.Data.PartyCode);
                                 var cusPayloadPreOrder = new CreatePreOrderRequest
                                 {
                                     OrderType = OrderTypeEnum.OrderToday,
