@@ -35,7 +35,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<CoOrderStatusResponse>> GetPartyStatus(string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreOrder(string customerId, CreatePreOrderRequest request);
-        Task<BaseResponseViewModel<CreateReOrderResponse>> CreatePreOrderFromReOrder(string customerId, string reOrderId);
+        Task<BaseResponseViewModel<CreateReOrderResponse>> CreatePreOrderFromReOrder(string customerId, string reOrderId, OrderTypeEnum orderType);
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenCoOrder(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string partyCode);
@@ -194,9 +194,9 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType == OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
-                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                //if (request.OrderType == OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
                 var order = new OrderResponse()
@@ -288,7 +288,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CreateReOrderResponse>> CreatePreOrderFromReOrder(string customerId, string reOrderId)
+        public async Task<BaseResponseViewModel<CreateReOrderResponse>> CreatePreOrderFromReOrder(string customerId, string reOrderId, OrderTypeEnum orderType)
         {
             try
             {
@@ -325,7 +325,7 @@ namespace FINE.Service.Service
                 {
                     var request = new CreatePreOrderRequest()
                     {
-                        OrderType = OrderTypeEnum.OrderToday,
+                        OrderType = orderType,
                         TimeSlotId = oldOrder.TimeSlotId,
                         OrderDetails = listOrderDetailRequest
                     };

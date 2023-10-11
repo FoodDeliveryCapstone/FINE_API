@@ -23,6 +23,7 @@ namespace FINE.Service.Service
     public interface ITimeslotService
     {
         Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeslotsByDestination(string destinationId, PagingRequest paging);
+        Task<BaseResponseViewModel<List<ProductResponse>>> GetProductsInTimeSlot(string timeSlotId);
         Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request);
         Task<BaseResponseViewModel<TimeslotResponse>> UpdateTimeslot(string timeslotId, UpdateTimeslotRequest request);
     }
@@ -70,6 +71,35 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<List<ProductResponse>>> GetProductsInTimeSlot(string timeSlotId)
+        {
+            try
+            {
+                var products = await _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                               .Include(x => x.Product)
+                                               .ThenInclude(x => x.Product)
+                                               .Where(x => x.Menu.TimeSlotId == Guid.Parse(timeSlotId))
+                                                .GroupBy(x => x.Product.Product)
+                                                .Select(x => _mapper.Map<ProductResponse>(x.Key))
+                                                .ToListAsync();
+
+                return new BaseResponseViewModel<List<ProductResponse>>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = products
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request)
         {
             try
@@ -104,7 +134,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<TimeslotResponse>(timeslot)
                 };
             }
-            catch(ErrorResponse ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }

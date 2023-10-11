@@ -144,7 +144,7 @@ namespace FINE.API.Controllers
         /// Create PreOrder for reOrder
         /// </summary>
         [HttpPost("reOrder")]
-        public async Task<ActionResult<BaseResponseViewModel<CreateReOrderResponse>>> CreatePreOrderFromReOrder(string orderId)
+        public async Task<ActionResult<BaseResponseViewModel<CreateReOrderResponse>>> CreatePreOrderFromReOrder(string orderId, OrderTypeEnum orderType)
         {
             try
             {
@@ -155,8 +155,9 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
+                //var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
 
-                return await _orderService.CreatePreOrderFromReOrder(customerId, orderId);
+                return await _orderService.CreatePreOrderFromReOrder(customerId, orderId, orderType);
             }
             catch (ErrorResponse ex)
             {
@@ -292,15 +293,17 @@ namespace FINE.API.Controllers
         {
             try
             {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
+                //if (customerId == null)
+                //{
+                //    return Unauthorized();
+                //}
 
-                return Ok(await _orderService.AddProductToCard(customerId,request));
+                var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
+
+                return Ok(await _orderService.AddProductToCard(customerId, request));
             }
             catch (ErrorResponse ex)
             {

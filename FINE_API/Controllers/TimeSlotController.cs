@@ -43,5 +43,25 @@ namespace FINE.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Get list product in timeslot  
+        /// </summary>
+        [HttpGet("listProduct")]
+        public async Task<ActionResult<BaseResponseViewModel<List<ProductResponse>>>> GetProductsInTimeSlot(string timeSlotId)
+        {
+            try
+            {
+                var rs = await _timeslotService.GetProductsInTimeSlot(timeSlotId);
+                if (rs == null)
+                {
+                    return NotFound();
+                }
+                return Ok(rs);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }
