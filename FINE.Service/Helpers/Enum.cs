@@ -8,7 +8,8 @@ namespace FINE.Service.Helpers
         public enum RedisDbEnum
         {
             CoOrder = 1,
-            Staff = 2
+            Staff = 2,
+            OrderOperation = 3
         }
         public enum RedisSetUpType
         {

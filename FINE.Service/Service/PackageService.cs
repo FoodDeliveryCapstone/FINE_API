@@ -5,8 +5,10 @@ using FINE.Data.UnitOfWork;
 using FINE.Service.DTO.Request.Package;
 using FINE.Service.DTO.Response;
 using FINE.Service.Helpers;
+using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using ServiceStack.Web;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -20,6 +22,7 @@ namespace FINE.Service.Service
     public interface IPackageService
     {
         Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId);
+        Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
     }
     public class PackageService : IPackageService
@@ -61,6 +64,75 @@ namespace FINE.Service.Service
                         ErrorCode = 0
                     },
                     Data = packageResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId)
+        {
+            try
+            {
+                var result = new List<PackageStationResponse>();
+                PackageResponse packageResponse = new PackageResponse();
+                var staff = await _unitOfWork.Repository<Staff>().GetAll()
+                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
+
+                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime;
+
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+                if (redisValue.HasValue == true)
+                {
+                    packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+
+                    HashSet<Guid> listStationId = new HashSet<Guid>();
+                    foreach (var item in packageResponse.productTotalDetails)
+                    {
+                        foreach (var product in item.productDetails) 
+                        {
+                            listStationId.Add(product.StationId);
+                        }
+                    }
+                    foreach (var stationId in listStationId)
+                    {
+                        var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == stationId);
+                        var stationPackage = new PackageStationResponse()
+                        {
+                            StationId = stationId,
+                            StationName = station.Name,
+                            PackageStationDetails = new List<PackageStationDetailResponse>()
+                        };
+
+                        foreach (var item in packageResponse.productTotalDetails)
+                        {
+                            var listProductGroupByStation = item.productDetails.Where(x => x.StationId == stationId)
+                                                            .Select(x => new PackageStationDetailResponse()
+                                                            {
+                                                                ProductId = item.ProductId,
+                                                                ProductName = item.ProductName,
+                                                                Quantity = x.Quantity
+                                                            })
+                                                            .ToList();
+                            
+                        }
+                        result.Add(stationPackage);
+                    }
+                }
+                return new BaseResponseViewModel<List<PackageStationResponse>>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
                 };
             }
             catch (Exception ex)

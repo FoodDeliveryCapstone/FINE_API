@@ -46,6 +46,30 @@ namespace FINE.API.Controllers.StaffControllers
             }
         }
 
+
+        /// <summary>
+        /// Lấy package theo store và timeSlot và group lại theo station
+        /// </summary>
+        [HttpGet("station")]
+        public async Task<ActionResult<BaseResponseViewModel<List<PackageStationResponse>>>> GetPackageGroupByStation(string timeSlotId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                return await _packageService.GetPackageGroupByStation(staffId, timeSlotId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
         /// <summary>
         /// Cập nhật tình trạng sp của package
         /// </summary>

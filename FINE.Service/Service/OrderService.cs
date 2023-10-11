@@ -1506,6 +1506,7 @@ namespace FINE.Service.Service
         {
             try
             {
+                List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                 PackageResponse packageResponse;
 
                 HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
@@ -1540,7 +1541,13 @@ namespace FINE.Service.Service
                     }
 
                     foreach (var orderDetail in listOdByStore)
-                    {          
+                    {
+                        packageOrderDetails.Add(new PackageOrderDetailModel()
+                        {
+                            ProductInMenuId = orderDetail.ProductInMenuId,
+                            Quantity = orderDetail.Quantity,
+                            IsReady = false
+                        });
                         var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
                         var productTotalDetail = packageResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
 
@@ -1559,6 +1566,7 @@ namespace FINE.Service.Service
                             productTotalDetail.productDetails.Add(new ProductDetail()
                             {
                                 OrderId = order.Id,
+                                StationId = (Guid)order.StationId,
                                 Quantity = orderDetail.Quantity,
                                 IsReady = false
                             });
@@ -1572,6 +1580,7 @@ namespace FINE.Service.Service
                         packageResponse.TotalProductPending += orderDetail.Quantity;
                     }
                     ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.Id.ToString(), packageOrderDetails);
                 }
             }
             catch (ErrorResponse ex)
