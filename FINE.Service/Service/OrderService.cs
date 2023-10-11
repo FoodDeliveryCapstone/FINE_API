@@ -570,6 +570,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region split order + create order box
+                                CreateOrderBox(order);
                 SplitOrder(order);
                 #endregion
 
@@ -1457,8 +1458,6 @@ namespace FINE.Service.Service
         {
             try
             {
-                CreateOrderBox(order);
-
                 List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                 PackageResponse packageResponse;
 
@@ -1532,6 +1531,14 @@ namespace FINE.Service.Service
                         }
                         else
                         {
+                            productTotalDetail.ProductDetails.Add(new ProductDetail()
+                            {
+                                OrderId = order.Id,
+                                StationId = (Guid)order.StationId,
+                                CheckInDate = order.CheckInDate,
+                                Quantity = orderDetail.Quantity,
+                                IsReady = false
+                            });
                             productTotalDetail.PendingQuantity += orderDetail.Quantity;
                         }
                         packageResponse.TotalProductInDay += orderDetail.Quantity;
