@@ -700,12 +700,12 @@ namespace FINE.Service.Service
                         }
                     }
                     coOrder.PartyOrder.Add(orderCard);
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, coOrder.PartyCode, coOrder);
                 }
 
                 await _unitOfWork.Repository<Party>().InsertAsync(party);
                 await _unitOfWork.CommitAsync();
 
-                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, coOrder.PartyCode, coOrder);
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
                     Status = new StatusViewModel()
