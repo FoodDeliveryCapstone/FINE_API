@@ -21,23 +21,6 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Add Order to Box
-        /// </summary>
-        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<OrderByStoreResponse>>> AddOrderToBox([FromBody] SystemAddOrderToBoxRequest request)
-        {
-            try
-            {
-                return await _boxService.SystemAddOrderToBox(request);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
-
-        /// <summary>
         /// Get All Box by Station Id
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]

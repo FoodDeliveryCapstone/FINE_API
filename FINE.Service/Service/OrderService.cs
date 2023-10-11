@@ -373,12 +373,6 @@ namespace FINE.Service.Service
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StationId));
 
                 #region Check station in timeslot have available box 
-                var getOrderInTimeslot = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
-                                                .Where(x => x.TimeSlotId == request.TimeSlotId
-                                                && x.StationId == Guid.Parse(request.StationId)
-                                                && x.OrderStatus == (int)OrderStatusEnum.Processing
-                                                && x.CheckInDate.Date == Utils.GetCurrentDatetime().Date).ToListAsync();
-
                 var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
                                                 .Where(x => x.StationId == Guid.Parse(request.StationId))
                                                 .OrderBy(x => x.CreateAt)
