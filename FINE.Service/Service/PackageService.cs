@@ -118,7 +118,7 @@ namespace FINE.Service.Service
                                                                 Quantity = x.Quantity
                                                             })
                                                             .ToList();
-
+                            stationPackage.PackageStationDetails.AddRange(listProductGroupByStation);
                         }
                         result.Add(stationPackage);
                     }
