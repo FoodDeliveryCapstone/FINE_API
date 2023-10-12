@@ -47,13 +47,6 @@ namespace FINE.Service.DTO.Response
         public int ReportMemType { get; set; }
     }
 
-    public class PackageStatusResponse
-    {
-        public Guid ProductId { get; set; }
-        public Guid ProductInMenuId { get; set; }
-        public string ProductName { get; set; }
-        public int Quantity { get; set; }
-    }
     public class PackageStationResponse
     {
         public Guid StationId { get; set; }
@@ -61,12 +54,11 @@ namespace FINE.Service.DTO.Response
         public int TotalQuantity { get; set; }
         public int ReadyQuantity { get; set; }
         public bool IsShipperAssign { get; set; }
-        public List<PackageStationDetailResponse> PackageStationDetails { get; set; }
-        public List<PackageStationDetailResponse> ListPackageMissing { get; set; }
-
+        public List<PackageDetailResponse> PackageStationDetails { get; set; }
+        public List<PackageDetailResponse> ListPackageMissing { get; set; }
     }
 
-    public class PackageStationDetailResponse
+    public class PackageDetailResponse
     {
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
@@ -86,14 +78,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid StoreId { get; set; }
         public string StoreName { get; set; }
-        public List<PackageShipperDetailResponse> PackageShipperDetails { get; set; }
-    }
-
-    public class PackageShipperDetailResponse
-    {
-        public Guid ProductId { get; set; }
-        public string ProductName { get; set; }
-        public int Quantity { get; set; }
+        public List<PackageDetailResponse> PackageShipperDetails { get; set; }
     }
 }
 

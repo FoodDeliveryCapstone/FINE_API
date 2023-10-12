@@ -46,30 +46,30 @@ namespace FINE.API.Controllers.StaffControllers
             }
         }
 
-        ///// <summary>
-        ///// Lấy package theo station và timeSlot và group lại theo store (dành cho shipper)
-        ///// </summary>
-        //[Authorize(Roles = "Shipper")]
-        //[HttpGet("delivery")]
-        //public async Task<ActionResult<BaseResponseViewModel<List<PackageStationResponse>>>> GetPackageForShipper(string timeSlotId)
-        //{
-        //    try
-        //    {
-        //        var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-        //        var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+        /// <summary>
+        /// Lấy package theo station và timeSlot và group lại theo store (dành cho shipper)
+        /// </summary>
+        [Authorize(Roles = "Shipper")]
+        [HttpGet("deliveryPackage")]
+        public async Task<ActionResult<BaseResponseViewModel<List<PackageStationResponse>>>> GetPackageForShipper(string timeSlotId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-        //        if (staffId == null)
-        //        {
-        //            return Unauthorized();
-        //        }
-        //        //var staffId = "719840C7-5EA9-4A34-81ED-22E52F474CD1";
-        //        return await _packageService.GetPackageForShipper(staffId, timeSlotId);
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        return BadRequest(ex.Error);
-        //    }
-        //}
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                //var staffId = "719840C7-5EA9-4A34-81ED-22E52F474CD1";
+                return await _packageService.GetPackageForShipper(staffId, timeSlotId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
 
         /// <summary>
         /// Lấy package theo store và timeSlot và group lại theo station (dành cho staff)

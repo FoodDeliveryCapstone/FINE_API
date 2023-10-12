@@ -5,10 +5,8 @@ using FINE.Data.UnitOfWork;
 using FINE.Service.DTO.Request.Package;
 using FINE.Service.DTO.Response;
 using FINE.Service.Helpers;
-using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using ServiceStack.Web;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +20,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
-        //Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
+        Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
         Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
     }
@@ -75,12 +73,12 @@ namespace FINE.Service.Service
                     {
                         StoreId = (Guid)staff.StoreId,
                         StoreName = staff.Store.StoreName,
-                        PackageShipperDetails = new List<PackageShipperDetailResponse>()
+                        PackageShipperDetails = new List<PackageDetailResponse>()
                     };
                 }
                 foreach (var pack in packageStation.PackageStationDetails)
                 {
-                    packageShipper.PackageShipperDetails.Add(new PackageShipperDetailResponse()
+                    packageShipper.PackageShipperDetails.Add(new PackageDetailResponse()
                     {
                         ProductId = pack.ProductId,
                         ProductName = pack.ProductName,
@@ -141,17 +139,43 @@ namespace FINE.Service.Service
             }
         }
 
-        //public async Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageForShipper(string staffId, string timeSlotId)
-        //{
-        //    try
-        //    {
+        public async Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId)
+        {
+            try
+            {
+                List<PackageShipperResponse> packageResponse = new List<PackageShipperResponse>();
 
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw ex;
-        //    }
-        //}
+                var staff = await _unitOfWork.Repository<Staff>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
+
+                var key = staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Shipper, RedisSetUpType.GET, key, null);
+
+                if (redisShipperValue.HasValue == true)
+                {
+                    packageResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                }
+
+                return new BaseResponseViewModel<List<PackageShipperResponse>>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = packageResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
 
         public async Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId)
         {
@@ -270,8 +294,8 @@ namespace FINE.Service.Service
                                 TotalQuantity = 0,
                                 ReadyQuantity = 0,
                                 IsShipperAssign = false,
-                                PackageStationDetails = new List<PackageStationDetailResponse>(),
-                                ListPackageMissing = new List<PackageStationDetailResponse>(),
+                                PackageStationDetails = new List<PackageDetailResponse>(),
+                                ListPackageMissing = new List<PackageDetailResponse>(),
                             };
                             foreach (var item in packageResponse.ProductTotalDetails)
                             {
@@ -279,7 +303,7 @@ namespace FINE.Service.Service
                                 var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId).ToList();
 
                                 var listProductReadyByStation = listProductGroupByStation.Where(x => x.IsReady == true)
-                                                                                        .Select(x => new PackageStationDetailResponse()
+                                                                                        .Select(x => new PackageDetailResponse()
                                                                                         {
                                                                                             ProductId = item.ProductId,
                                                                                             ProductName = item.ProductName,
@@ -287,7 +311,7 @@ namespace FINE.Service.Service
                                                                                         }).ToList();
 
                                 var listProductMissingByStation = listProductGroupByStation.Where(x => x.IsReady == false)
-                                                                                       .Select(x => new PackageStationDetailResponse()
+                                                                                       .Select(x => new PackageDetailResponse()
                                                                                        {
                                                                                            ProductId = item.ProductId,
                                                                                            ProductName = item.ProductName,
