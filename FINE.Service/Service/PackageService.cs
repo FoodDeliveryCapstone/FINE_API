@@ -46,7 +46,7 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime;
+                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
@@ -83,7 +83,7 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime;
+                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
@@ -151,7 +151,7 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.timeSlotId));
 
-                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime;
+                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
@@ -186,6 +186,7 @@ namespace FINE.Service.Service
                                     productInOrder.IsReady = true;
                                     order.IsReady = true;
                                 }
+                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderId.ToString(), packageOrderDetail);
 
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
@@ -195,7 +196,6 @@ namespace FINE.Service.Service
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                     await _unitOfWork.CommitAsync();
                                 }
-                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderId.ToString(), packageOrderDetail);
                             }
                             product.WaitingQuantity = numberOfConfirm;
                         }

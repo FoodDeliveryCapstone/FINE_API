@@ -65,7 +65,7 @@ namespace FINE.Service.Service
 
                 foreach (var storeId in listStoreId)
                 {
-                    string key = storeId.Value + "-" + order.TimeSlot.ArriveTime;
+                    string key = storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                     var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
 
