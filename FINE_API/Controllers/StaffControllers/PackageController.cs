@@ -117,5 +117,28 @@ namespace FINE.API.Controllers.StaffControllers
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// Cập nhật package đã sẵn sàng để giao
+        /// </summary>
+        [HttpPut("cofirmDelivery")]
+        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> ConfirmReadyToDelivery(string timeslotId, string stationId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                return await _packageService.ConfirmReadyToDelivery(staffId, timeslotId ,stationId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }

@@ -24,6 +24,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
         //Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
+        Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
     }
     public class PackageService : IPackageService
     {
@@ -34,6 +35,74 @@ namespace FINE.Service.Service
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+        }
+
+        public async Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId)
+        {
+            try
+            {
+                PackageResponse packageResponse = new PackageResponse();
+                var staff = await _unitOfWork.Repository<Staff>().GetAll()
+                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
+
+                var station = await _unitOfWork.Repository<Station>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(stationId));
+
+                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+
+                packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+
+                var packageStation = packageResponse.PackageStations.Where(x => x.IsShipperAssign == false).FirstOrDefault();
+                packageStation.IsShipperAssign = true;
+
+                var keyShipper = station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Shipper, RedisSetUpType.GET, key, null);
+
+                PackageShipperResponse packageShipper = new PackageShipperResponse();
+
+                if (redisShipperValue.HasValue == true)
+                {
+                    packageShipper = JsonConvert.DeserializeObject<PackageShipperResponse>(redisValue);
+                }
+                else
+                {
+                    packageShipper = new PackageShipperResponse()
+                    {
+                        StoreId = (Guid)staff.StoreId,
+                        StoreName = staff.Store.StoreName,
+                        PackageShipperDetails = new List<PackageShipperDetailResponse>()
+                    };
+                }
+                foreach (var pack in packageStation.PackageStationDetails)
+                {
+                    packageShipper.PackageShipperDetails.Add(new PackageShipperDetailResponse()
+                    {
+                        ProductId = pack.ProductId,
+                        ProductName = pack.ProductName,
+                        Quantity = pack.Quantity,
+                    });
+                }
+                ServiceHelpers.GetSetDataRedis(RedisDbEnum.Shipper, RedisSetUpType.SET, keyShipper, packageShipper);
+                ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
+                return new BaseResponseViewModel<PackageResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public async Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId)
@@ -76,7 +145,7 @@ namespace FINE.Service.Service
         //{
         //    try
         //    {
-               
+
         //    }
         //    catch (Exception ex)
         //    {
@@ -103,7 +172,7 @@ namespace FINE.Service.Service
                 {
                     packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
                     result.AddRange(packageResponse.PackageStations);
-                    }
+                }
                 return new BaseResponseViewModel<List<PackageStationResponse>>()
                 {
                     Status = new StatusViewModel()

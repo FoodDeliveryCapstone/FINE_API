@@ -92,8 +92,8 @@ namespace FINE.Service.DTO.Response
     public class PackageShipperDetailResponse
     {
         public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
         public int Quantity { get; set; }
-        public List<Guid> ListOrderBox { get; set; }
     }
 }
 
