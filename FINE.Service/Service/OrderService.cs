@@ -1306,7 +1306,7 @@ namespace FINE.Service.Service
                                                       .FirstOrDefaultAsync();
                         if (party is null) throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
 
-                        party.IsActive = true;
+                        party.IsActive = false;
                         party.UpdateAt = DateTime.Now;
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);
                         await _unitOfWork.CommitAsync();
