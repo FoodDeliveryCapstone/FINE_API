@@ -195,7 +195,10 @@ namespace FINE.Service.Service
                 if (redisValue.HasValue == true)
                 {
                     packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
-                    result.AddRange(packageResponse.PackageStations);
+                    if (packageResponse.PackageStations is not null)
+                    {
+                        result.AddRange(packageResponse.PackageStations);
+                    }
                 }
                 return new BaseResponseViewModel<List<PackageStationResponse>>()
                 {
