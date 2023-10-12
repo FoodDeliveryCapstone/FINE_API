@@ -110,7 +110,7 @@ namespace FINE.Service.Service
 
                         foreach (var item in packageResponse.productTotalDetails)
                         {
-                            var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId)
+                            var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId && x.IsReady == true)
                                                             .Select(x => new PackageStationDetailResponse()
                                                             {
                                                                 ProductId = item.ProductId,
