@@ -51,7 +51,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// </summary>
         [Authorize(Roles = "Shipper")]
         [HttpGet("deliveryPackage")]
-        public async Task<ActionResult<BaseResponseViewModel<List<PackageStationResponse>>>> GetPackageForShipper(string timeSlotId)
+        public async Task<ActionResult<BaseResponseViewModel<List<PackageShipperResponse>>>> GetPackageForShipper(string timeSlotId)
         {
             try
             {
