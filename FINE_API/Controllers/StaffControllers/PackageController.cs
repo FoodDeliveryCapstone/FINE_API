@@ -12,7 +12,7 @@ using static FINE.Service.Helpers.Enum;
 
 namespace FINE.API.Controllers.StaffControllers
 {
-    [Route(Helpers.SettingVersionApi.ApiStaffVersion)]
+    [Route(Helpers.SettingVersionApi.ApiStaffVersion + "/package")]
     [ApiController]
     public class PackageController : ControllerBase
     {
