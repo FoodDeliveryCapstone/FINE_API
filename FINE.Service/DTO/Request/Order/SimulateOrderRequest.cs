@@ -29,4 +29,9 @@ namespace FINE.Service.DTO.Request.Order
     {
         public int TotalOrder { get; set; }
     }
+
+    public class SimulateOrderStatusForStaffRequest
+    {
+        public Guid TimeSlotId { get; set; }
+    }
 }
