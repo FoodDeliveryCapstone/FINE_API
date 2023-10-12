@@ -14,7 +14,7 @@ namespace FINE.Service.DTO.Response
         public int TotalProductError { get; set; }
         public List<ProductTotalDetail> ProductTotalDetails { get; set; }
         public List<ErrorProduct> ErrorProducts { get; set; }
-
+        public List<PackageStationResponse> PackageStations { get; set; }
     }
     public class ProductTotalDetail
     {
@@ -45,11 +45,6 @@ namespace FINE.Service.DTO.Response
         public Guid? StationId { get; set; }
         public int ReportMemType { get; set; }
     }
-    public class PackageShipperResponse
-    {
-        public Guid StoreId { get; set; }
-        public string StoreName { get; set; }
-    }
 
     public class PackageStatusResponse
     {
@@ -62,7 +57,12 @@ namespace FINE.Service.DTO.Response
     {
         public Guid StationId { get; set; }
         public string StationName { get; set; } = null!;
+        public int TotalQuantity { get; set; }
+        public int ReadyQuantity { get; set; }
+        public bool IsShipperAssign { get; set; }
         public List<PackageStationDetailResponse> PackageStationDetails { get; set; }
+        public List<PackageStationDetailResponse> ListPackageMissing { get; set; }
+
     }
 
     public class PackageStationDetailResponse
@@ -79,6 +79,21 @@ namespace FINE.Service.DTO.Response
         public int Quantity { get; set; }
         public int ErrorQuantity { get; set; }
         public bool IsReady { get; set; }
+    }
+
+    public class PackageShipperResponse
+    {
+        public Guid StoreId { get; set; }
+        public string StoreName { get; set; }
+        public List<PackageShipperDetailResponse> PackageShipperDetails { get; set; }
+    }
+
+    public class PackageShipperDetailResponse
+    {
+        public Guid ProductId { get; set; }
+        public Guid ProductInMenuId { get; set; }
+        public int Quantity { get; set; }
+        public List<Guid> ListOrderBox { get; set; }
     }
 }
 

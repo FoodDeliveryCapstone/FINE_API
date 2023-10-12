@@ -102,40 +102,8 @@ namespace FINE.Service.Service
                 if (redisValue.HasValue == true)
                 {
                     packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
-
-                    HashSet<Guid> listStationId = new HashSet<Guid>();
-                    foreach (var item in packageResponse.ProductTotalDetails)
-                    {
-                        foreach (var product in item.ProductDetails)
-                        {
-                            listStationId.Add(product.StationId);
-                        }
+                    result.AddRange(packageResponse.PackageStations);
                     }
-                    foreach (var stationId in listStationId)
-                    {
-                        var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == stationId);
-                        var stationPackage = new PackageStationResponse()
-                        {
-                            StationId = stationId,
-                            StationName = station.Name,
-                            PackageStationDetails = new List<PackageStationDetailResponse>()
-                        };
-
-                        foreach (var item in packageResponse.ProductTotalDetails)
-                        {
-                            var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId && x.IsReady == true)
-                                                            .Select(x => new PackageStationDetailResponse()
-                                                            {
-                                                                ProductId = item.ProductId,
-                                                                ProductName = item.ProductName,
-                                                                Quantity = x.Quantity
-                                                            })
-                                                            .ToList();
-                            stationPackage.PackageStationDetails.AddRange(listProductGroupByStation);
-                        }
-                        result.Add(stationPackage);
-                    }
-                }
                 return new BaseResponseViewModel<List<PackageStationResponse>>()
                 {
                     Status = new StatusViewModel()
@@ -212,6 +180,58 @@ namespace FINE.Service.Service
                                 }
                             }
                             product.WaitingQuantity = numberOfConfirm;
+                        }
+
+                        packageResponse.PackageStations = new List<PackageStationResponse>();
+                        HashSet<Guid> listStationId = new HashSet<Guid>();
+                        foreach (var item in packageResponse.ProductTotalDetails)
+                        {
+                            foreach (var product in item.ProductDetails)
+                            {
+                                listStationId.Add(product.StationId);
+                            }
+                        }
+                        foreach (var stationId in listStationId)
+                        {
+                            var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == stationId);
+                            var stationPackage = new PackageStationResponse()
+                            {
+                                StationId = stationId,
+                                StationName = station.Name,
+                                TotalQuantity = 0,
+                                ReadyQuantity = 0,
+                                IsShipperAssign = false,
+                                PackageStationDetails = new List<PackageStationDetailResponse>(),
+                                ListPackageMissing = new List<PackageStationDetailResponse>(),
+                            };
+                            foreach (var item in packageResponse.ProductTotalDetails)
+                            {
+
+                                var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId).ToList();
+
+                                var listProductReadyByStation = listProductGroupByStation.Where(x => x.IsReady == true)
+                                                                                        .Select(x => new PackageStationDetailResponse()
+                                                                                        {
+                                                                                            ProductId = item.ProductId,
+                                                                                            ProductName = item.ProductName,
+                                                                                            Quantity = x.Quantity
+                                                                                        }).ToList();
+
+                                var listProductMissingByStation = listProductGroupByStation.Where(x => x.IsReady == false)
+                                                                                       .Select(x => new PackageStationDetailResponse()
+                                                                                       {
+                                                                                           ProductId = item.ProductId,
+                                                                                           ProductName = item.ProductName,
+                                                                                           Quantity = x.Quantity
+                                                                                       }).ToList();
+
+                                stationPackage.TotalQuantity += listProductGroupByStation.Count();
+                                stationPackage.ReadyQuantity += listProductReadyByStation.Count();
+
+                                stationPackage.PackageStationDetails.AddRange(listProductReadyByStation);
+                                stationPackage.ListPackageMissing.AddRange(listProductMissingByStation);
+                            }
+                            packageResponse.PackageStations.Add(stationPackage);
                         }
                         break;
 
