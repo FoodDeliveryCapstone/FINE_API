@@ -46,7 +46,7 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
@@ -83,7 +83,7 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
@@ -151,7 +151,7 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.timeSlotId));
 
-                var key = staff.Store.StoreName + "-" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
@@ -165,6 +165,7 @@ namespace FINE.Service.Service
                         foreach (var item in request.ProductsUpdate)
                         {
                             var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+                            var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
 
                             packageResponse.TotalProductPending -= product.PendingQuantity;
                             packageResponse.TotalProductReady += product.PendingQuantity;
@@ -173,7 +174,7 @@ namespace FINE.Service.Service
                             product.PendingQuantity = 0;
 
                             var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
-                            var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
+
                             foreach (var order in listOrder)
                             {
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderId.ToString(), null);
