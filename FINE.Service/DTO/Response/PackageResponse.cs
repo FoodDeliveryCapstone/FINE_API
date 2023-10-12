@@ -75,5 +75,10 @@ namespace FINE.Service.DTO.Response
         public int ErrorQuantity { get; set; }
         public bool IsReady { get; set; }
     }
+
+    public class PackageShipperResponse
+    {
+
+    }
 }
 

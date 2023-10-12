@@ -9,7 +9,8 @@ namespace FINE.Service.Helpers
         {
             CoOrder = 1,
             Staff = 2,
-            OrderOperation = 3
+            OrderOperation = 3,
+            Shipper = 4
         }
         public enum RedisSetUpType
         {
