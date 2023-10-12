@@ -31,6 +31,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid OrderId { get; set; }
         public Guid StationId { get; set; }
+        public Guid BoxId { get; set; }
         public DateTime CheckInDate { get; set; }
         public int Quantity { get; set; }
         public bool IsReady { get; set; }
@@ -91,7 +92,6 @@ namespace FINE.Service.DTO.Response
     public class PackageShipperDetailResponse
     {
         public Guid ProductId { get; set; }
-        public Guid ProductInMenuId { get; set; }
         public int Quantity { get; set; }
         public List<Guid> ListOrderBox { get; set; }
     }

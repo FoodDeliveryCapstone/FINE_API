@@ -571,8 +571,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region split order + create order box
-                                CreateOrderBox(order);
-                SplitOrder(order);
+                SplitOrderAndCreateOrderBox(order);
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -1455,10 +1454,37 @@ namespace FINE.Service.Service
             }
         }
 
-        public async void SplitOrder(Order order)
+        public async void SplitOrderAndCreateOrderBox(Order order)
         {
             try
             {
+                var listBox = _unitOfWork.Repository<Box>().GetAll()
+                                 .Where(x => x.StationId == order.StationId
+                                         && x.OrderBoxes.Any(z => z.BoxId == x.Id
+                                                            && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
+                                 .ToList();
+
+                var orderBox = new OrderBox()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    BoxId = listBox.FirstOrDefault().Id,
+                    Key = Utils.GenerateRandomCode(10),
+                    Status = (int)OrderBoxStatusEnum.NotPicked,
+                    CreateAt = DateTime.Now
+                };
+                _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
+
+                if (listBox.Count() == 1)
+                {
+                    var station = _unitOfWork.Repository<Station>().GetAll()
+                                        .FirstOrDefault(x => x.Id == order.StationId);
+                    station.IsAvailable = false;
+
+                    _unitOfWork.Repository<Station>().UpdateDetached(station);
+                }
+                _unitOfWork.Commit();
+
                 List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                 PackageResponse packageResponse;
 
@@ -1524,6 +1550,7 @@ namespace FINE.Service.Service
                             {
                                 OrderId = order.Id,
                                 StationId = (Guid)order.StationId,
+                                BoxId = orderBox.BoxId,
                                 CheckInDate = order.CheckInDate,
                                 Quantity = orderDetail.Quantity,
                                 IsReady = false
@@ -1536,6 +1563,7 @@ namespace FINE.Service.Service
                             {
                                 OrderId = order.Id,
                                 StationId = (Guid)order.StationId,
+                                BoxId = orderBox.BoxId,
                                 CheckInDate = order.CheckInDate,
                                 Quantity = orderDetail.Quantity,
                                 IsReady = false
@@ -1548,43 +1576,6 @@ namespace FINE.Service.Service
                     ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
                     ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.Id.ToString(), packageOrderDetails);
                 }
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
-        public void CreateOrderBox(Order order)
-        {
-            try
-            {
-                var listBox =  _unitOfWork.Repository<Box>().GetAll()
-                                 .Where(x => x.StationId == order.StationId
-                                         && x.OrderBoxes.Any(z => z.BoxId == x.Id
-                                                            && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
-                                 .ToList();
-
-                var orderBox = new OrderBox()
-                {
-                    Id = Guid.NewGuid(),
-                    OrderId = order.Id,
-                    BoxId = listBox.FirstOrDefault().Id,
-                    Key = Utils.GenerateRandomCode(10),
-                    Status = (int)OrderBoxStatusEnum.NotPicked,
-                    CreateAt = DateTime.Now
-                };
-                 _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
-
-                if (listBox.Count() == 1)
-                {
-                    var station =  _unitOfWork.Repository<Station>().GetAll()
-                                        .FirstOrDefault(x => x.Id == order.StationId);
-                    station.IsAvailable = false;
-
-                     _unitOfWork.Repository<Station>().UpdateDetached(station);
-                }
-                 _unitOfWork.Commit();
             }
             catch (ErrorResponse ex)
             {
