@@ -79,7 +79,7 @@ namespace FINE.Service.Service
                             TotalProductPending = 0,
                             TotalProductError = 0,
                             TotalProductReady = 0,
-                            productTotalDetails = new List<ProductTotalDetail>()
+                            ProductTotalDetails = new List<ProductTotalDetail>()
                         };
                     }
                     else
@@ -96,7 +96,7 @@ namespace FINE.Service.Service
                             IsReady = false
                         });
                         var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
-                        var productTotalDetail = packageResponse.productTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
+                        var productTotalDetail = packageResponse.ProductTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
 
                         if (productTotalDetail is null)
                         {
@@ -117,7 +117,7 @@ namespace FINE.Service.Service
                                 Quantity = orderDetail.Quantity,
                                 IsReady = false
                             });
-                            packageResponse.productTotalDetails.Add(productTotalDetail);
+                            packageResponse.ProductTotalDetails.Add(productTotalDetail);
                         }
                         else
                         {

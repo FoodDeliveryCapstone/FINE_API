@@ -22,7 +22,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
-        Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
+        //Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
     }
     public class PackageService : IPackageService
@@ -72,74 +72,17 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageForShipper(string staffId, string timeSlotId)
-        {
-            try
-            {
-                var result = new List<PackageStationResponse>();
-                PackageResponse packageResponse = new PackageResponse();
-                var staff = await _unitOfWork.Repository<Staff>().GetAll()
-                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
-
-                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
-                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
-
-                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
-                if (redisValue.HasValue == true)
-                {
-                    packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
-
-                    HashSet<Guid> listStationId = new HashSet<Guid>();
-                    foreach (var item in packageResponse.productTotalDetails)
-                    {
-                        foreach (var product in item.ProductDetails)
-                        {
-                            listStationId.Add(product.StationId);
-                        }
-                    }
-                    foreach (var stationId in listStationId)
-                    {
-                        var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == stationId);
-                        var stationPackage = new PackageStationResponse()
-                        {
-                            StationId = stationId,
-                            StationName = station.Name,
-                            PackageStationDetails = new List<PackageStationDetailResponse>()
-                        };
-
-                        foreach (var item in packageResponse.productTotalDetails)
-                        {
-                            var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId && x.IsReady == true)
-                                                            .Select(x => new PackageStationDetailResponse()
-                                                            {
-                                                                ProductId = item.ProductId,
-                                                                ProductName = item.ProductName,
-                                                                Quantity = x.Quantity
-                                                            })
-                                                            .ToList();
-                            stationPackage.PackageStationDetails.AddRange(listProductGroupByStation);
-                        }
-                        result.Add(stationPackage);
-                    }
-                }
-                return new BaseResponseViewModel<List<PackageStationResponse>>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                    Data = result
-                };
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+        //public async Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageForShipper(string staffId, string timeSlotId)
+        //{
+        //    try
+        //    {
+               
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
         public async Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId)
         {
@@ -161,7 +104,7 @@ namespace FINE.Service.Service
                     packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
 
                     HashSet<Guid> listStationId = new HashSet<Guid>();
-                    foreach (var item in packageResponse.productTotalDetails)
+                    foreach (var item in packageResponse.ProductTotalDetails)
                     {
                         foreach (var product in item.ProductDetails)
                         {
@@ -178,7 +121,7 @@ namespace FINE.Service.Service
                             PackageStationDetails = new List<PackageStationDetailResponse>()
                         };
 
-                        foreach (var item in packageResponse.productTotalDetails)
+                        foreach (var item in packageResponse.ProductTotalDetails)
                         {
                             var listProductGroupByStation = item.ProductDetails.Where(x => x.StationId == stationId && x.IsReady == true)
                                                             .Select(x => new PackageStationDetailResponse()
@@ -234,7 +177,7 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.Confirm:
                         foreach (var item in request.ProductsUpdate)
                         {
-                            var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+                            var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
                             var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
 
                             packageResponse.TotalProductPending -= product.PendingQuantity;
@@ -278,7 +221,7 @@ namespace FINE.Service.Service
                             case (int)SystemRoleTypeEnum.StoreManager:
                                 foreach (var item in request.ProductsUpdate)
                                 {
-                                    var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+                                    var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
                                     packageResponse.TotalProductError += (int)request.Quantity;
                                     packageResponse.TotalProductPending -= (int)request.Quantity;
@@ -286,15 +229,15 @@ namespace FINE.Service.Service
                                     product.PendingQuantity -= (int)request.Quantity;
                                     product.ErrorQuantity += (int)request.Quantity;
 
-                                    if (product.ErrorProducts is not null && product.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
+                                    if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                                                     && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
                                     {
-                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.Quantity;
+                                        packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.Quantity;
                                     }
                                     else
                                     {
-                                        product.ErrorProducts = new List<ErrorProduct>();
-                                        product.ErrorProducts.Add(new ErrorProduct()
+                                        packageResponse.ErrorProducts = new List<ErrorProduct>();
+                                        packageResponse.ErrorProducts.Add(new ErrorProduct()
                                         {
                                             ProductId = product.ProductId,
                                             ProductInMenuId = product.ProductInMenuId,
@@ -309,19 +252,19 @@ namespace FINE.Service.Service
                             case (int)SystemRoleTypeEnum.Shipper:
                                 foreach (var item in request.ProductsUpdate)
                                 {
-                                    var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+                                    var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
                                     packageResponse.TotalProductError += (int)request.Quantity;
                                     product.ErrorQuantity += (int)request.Quantity;
 
-                                    if (product.ErrorProducts is not null && product.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
+                                    if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                                                    && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
                                     {
-                                        product.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
+                                        packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
                                     }
                                     else
                                     {
-                                        product.ErrorProducts.Add(new ErrorProduct()
+                                        packageResponse.ErrorProducts.Add(new ErrorProduct()
                                         {
                                             ProductId = product.ProductId,
                                             ProductInMenuId = product.ProductInMenuId,
@@ -339,7 +282,7 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.ReConfirm:
                         foreach (var item in request.ProductsUpdate)
                         {
-                            var product = packageResponse.productTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+                            var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
                             packageResponse.TotalProductError -= (int)request.Quantity;
                             packageResponse.TotalProductReady += (int)request.Quantity;

@@ -155,6 +155,4 @@ namespace FINE.Service.DTO.Response
         public List<string> ProductCannotAdd { get; set; }
         public OrderResponse OrderResponse { get; set; }
     }
-
-
 }
