@@ -173,7 +173,7 @@ namespace FINE.Service.Service
                             product.ReadyQuantity += product.PendingQuantity;
                             product.PendingQuantity = 0;
 
-                            var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
+                            var listOrder = product.ProductDetails.Where(x => x.IsReady == false).OrderByDescending(x => x.CheckInDate);
 
                             foreach (var order in listOrder)
                             {
@@ -277,7 +277,7 @@ namespace FINE.Service.Service
                             product.ReadyQuantity += (int)request.Quantity;
                             product.ErrorQuantity -= (int)request.Quantity;
 
-                            var listOrder = product.ProductDetails.OrderByDescending(x => x.CheckInDate);
+                            var listOrder = product.ProductDetails.Where(x => x.IsReady == false).OrderByDescending(x => x.CheckInDate);
 
                             var numberOfConfirm = request.Quantity + product.WaitingQuantity;
                             foreach (var order in listOrder)
