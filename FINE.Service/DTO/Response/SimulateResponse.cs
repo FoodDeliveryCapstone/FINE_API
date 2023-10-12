@@ -51,4 +51,27 @@ namespace FINE.Service.DTO.Response
         public string? ProductName { get; set; } = null!;
         public int Quantity { get; set; }
     }
+
+    public class SimulateOrderForStaffResponse
+    {
+        public List<SimulateOrderForStaffSuccess> OrderSuccess { get; set; }
+        public List<SimulateOrderForStaffFailed> OrderFailed { get; set; }
+    }
+
+    public class SimulateOrderForStaffSuccess
+    {
+        public Guid? StoreId { get; set; }
+        public string StaffName { get; set; }
+        public string? ProductName { get; set; } = null!;
+        public int Quantity { get; set; }
+    }
+
+    public class SimulateOrderForStaffFailed
+    {
+        public Guid? StoreId { get; set; }
+        public string StaffName { get; set; }
+        public string? ProductName { get; set; } = null!;
+        public int Quantity { get; set; }
+        public StatusViewModel Status { get; set; }
+    }
 }

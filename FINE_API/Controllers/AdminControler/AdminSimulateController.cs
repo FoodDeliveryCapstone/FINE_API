@@ -74,7 +74,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpPut("status/finishPrepare")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<SimulateOrderStatusResponse>>> SimulateOrderStatusToFinishPrepare([FromBody] SimulateOrderStatusRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForStaffResponse>>> SimulateOrderStatusToFinishPrepare([FromBody] SimulateOrderStatusForStaffRequest request)
         {
             try
             {
