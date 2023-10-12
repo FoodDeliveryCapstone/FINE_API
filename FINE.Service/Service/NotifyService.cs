@@ -59,8 +59,8 @@ namespace FINE.Service.Service
                     case OrderStatusEnum.Processing:
                         newNotify.Description = $"Đơn hàng mới {request.OrderCode}.";
                         break;
-                    case OrderStatusEnum.StaffConfirm:
-                        newNotify.Description = $"Đơn hàng {request.OrderCode} đang được chuẩn bị tại cửa hàng.";
+                    case OrderStatusEnum.FinishPrepare:
+                        newNotify.Description = $"Đơn hàng {request.OrderCode} đã được chuẩn bị tại cửa hàng.";
                         break;
                     case OrderStatusEnum.Delivering:
                         newNotify.Description = $"Đơn hàng {request.OrderCode} đang đến station.";

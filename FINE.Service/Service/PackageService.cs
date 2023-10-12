@@ -262,7 +262,7 @@ namespace FINE.Service.Service
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
                                     var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
-                                    orderDb.OrderStatus = (int)OrderStatusEnum.StaffConfirm;
+                                    orderDb.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
 
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                     await _unitOfWork.CommitAsync();
@@ -365,7 +365,7 @@ namespace FINE.Service.Service
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
                                     var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
-                                    orderDb.OrderStatus = (int)OrderStatusEnum.StaffConfirm;
+                                    orderDb.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
 
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                     await _unitOfWork.CommitAsync();
