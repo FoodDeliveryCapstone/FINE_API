@@ -752,7 +752,7 @@ namespace FINE.Service.Service
                 if (listpartyOrder.Any(x => x.CustomerId == Guid.Parse(customerId) && x.IsActive == true))
                 {
                     var code = listpartyOrder.Find(x => x.CustomerId == Guid.Parse(customerId)).PartyCode;
-                    throw new ErrorResponse(400, (int)PartyErrorEnums.COORDER_PARTY_JOINED, PartyErrorEnums.COORDER_PARTY_JOINED.GetDisplayName() + $": {code}");
+                    throw new ErrorResponse(400, (int)PartyErrorEnums.PARTY_JOINED, PartyErrorEnums.PARTY_JOINED.GetDisplayName() + $": {code}");
                 }
                 else if (listpartyOrder.All(x => x.IsActive == false))
                 {
@@ -766,7 +766,7 @@ namespace FINE.Service.Service
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
                 }
-                else if (listpartyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.LinkedOrder && listpartyOrder.FirstOrDefault().Order.TimeSlotId != Guid.Parse(timeslotId))
+                else if (listpartyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.LinkedOrder && listpartyOrder.FirstOrDefault().TimeSlotId != Guid.Parse(timeslotId))
                 {
                     throw new ErrorResponse(400, (int)PartyErrorEnums.WRONG_TIMESLOT, PartyErrorEnums.WRONG_TIMESLOT.GetDisplayName() + $": {listpartyOrder.FirstOrDefault().TimeSlotId}");
                 }
