@@ -67,6 +67,8 @@ namespace FINE.Service.DTO.Response
 
         public string? ProductName { get; set; } = null!;
 
+        public string? ImageUrl { get; set; }
+
         public double UnitPrice { get; set; }
 
         public int Quantity { get; set; }

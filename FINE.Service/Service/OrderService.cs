@@ -273,9 +273,9 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                //if (request.OrderType == OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
-                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                if (request.OrderType == OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
                 var order = new OrderResponse()
@@ -327,6 +327,7 @@ namespace FINE.Service.Service
                         ProductInMenuId = productInMenu.Id,
                         StoreId = productInMenu.Product.Product.StoreId,
                         ProductName = productInMenu.Product.Name,
+                        ImageUrl = productInMenu.Product.Product.ImageUrl,
                         ProductCode = productInMenu.Product.Code,
                         UnitPrice = productInMenu.Product.Price,
                         Quantity = orderDetail.Quantity,
