@@ -398,6 +398,9 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.ReConfirm:
                         foreach (var item in request.ProductsUpdate)
                         {
+                            var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(item)).FirstOrDefault();
+                            packageResponse.ErrorProducts.Remove(packageError);
+
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
                             packageResponse.TotalProductError -= (int)request.Quantity;
