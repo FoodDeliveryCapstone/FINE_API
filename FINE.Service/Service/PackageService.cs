@@ -254,7 +254,7 @@ namespace FINE.Service.Service
 
                             foreach (var order in listOrder)
                             {
-                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderId.ToString(), null);
+                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderCode, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
@@ -264,7 +264,7 @@ namespace FINE.Service.Service
                                     productInOrder.IsReady = true;
                                     order.IsReady = true;
                                 }
-                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderId.ToString(), packageOrderDetail);
+                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderCode, packageOrderDetail);
 
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
@@ -279,14 +279,9 @@ namespace FINE.Service.Service
                         }
 
                         packageResponse.PackageStations = new List<PackageStationResponse>();
-                        HashSet<Guid> listStationId = new HashSet<Guid>();
-                        foreach (var item in packageResponse.ProductTotalDetails)
-                        {
-                            foreach (var product in item.ProductDetails)
-                            {
-                                listStationId.Add(product.StationId);
-                            }
-                        }
+                        HashSet<Guid> listStationId = new HashSet<Guid>(packageResponse.ProductTotalDetails
+                                                                         .SelectMany(item => item.ProductDetails)
+                                                                         .Select(product => product.StationId));
                         foreach (var stationId in listStationId)
                         {
                             var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == stationId);
@@ -414,7 +409,7 @@ namespace FINE.Service.Service
                             var numberOfConfirm = request.Quantity + product.WaitingQuantity;
                             foreach (var order in listOrder)
                             {
-                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderId.ToString(), null);
+                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderCode, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));

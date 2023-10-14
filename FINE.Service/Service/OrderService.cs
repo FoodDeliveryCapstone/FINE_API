@@ -40,7 +40,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> OpenParty(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string timeSlotId, string partyCode);
         Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string customerId, AddProductToCardRequest request);
-        Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
+        Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, AddProductToCardRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
         Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, PartyOrderType type, string partyCode, string memberId = null);
@@ -615,7 +615,8 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     PartyCode = Constants.PARTYORDER_LINKED + Utils.GenerateRandomCode(6),
                     PartyType = (int)PartyOrderType.LinkedOrder,
-                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot)
+                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
+                    NumberBox = 0
                 };
 
                 var party = new Party()
@@ -691,8 +692,7 @@ namespace FINE.Service.Service
                                 ProductName = productInMenu.Product.Name,
                                 UnitPrice = productInMenu.Product.Price,
                                 Quantity = orderDetail.Quantity,
-                                TotalAmount = orderDetail.Quantity * productInMenu.Product.Price,
-                                Note = orderDetail.Note
+                                TotalAmount = orderDetail.Quantity * productInMenu.Product.Price
                             };
                             orderCard.OrderDetails.Add(product);
                             orderCard.ItemQuantity += product.Quantity;
@@ -1023,27 +1023,29 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request)
+        public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, AddProductToCardRequest request)
         {
             try
             {
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
-                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-
-                if (coOrder is null)
-                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
+                var isFinishCheck = false;
 
                 #region check timeslot
-                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == request.TimeSlotId);
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(request.TimeSlotId));
 
                 if (timeSlot == null || timeSlot.IsActive == false)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
 
-                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
-                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                //if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
+
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                if (coOrder is null)
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
 
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode)
@@ -1071,37 +1073,75 @@ namespace FINE.Service.Service
                     orderCard.TotalAmount = 0;
                 }
 
-                foreach (var requestOD in request.OrderDetails)
+                var requestProductInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                    .Include(x => x.Menu)
+                    .Include(x => x.Product)
+                    .Where(x => x.ProductId == Guid.Parse(request.ProductId) && x.Menu.TimeSlotId == timeSlot.Id).AsQueryable();
+
+                if (requestProductInMenu is null)
+                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+                       ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+
+                //if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+                //    throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                //       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+
+                List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
+
+                if(orderCard.OrderDetails is not null)
                 {
-                    var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                        .Include(x => x.Menu)
-                        .Include(x => x.Product)
-                        .Where(x => x.ProductId == requestOD.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
-                        .FirstOrDefault();
-
-                    if (productInMenu is null)
-                        throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
-                           ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
-
-                    if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                        throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
-
-                    var product = new CoOrderDetailResponse()
+                    foreach(var productCardParty in orderCard.OrderDetails)
                     {
-                        ProductInMenuId = productInMenu.Id,
-                        ProductId = productInMenu.ProductId,
-                        ProductName = productInMenu.Product.Name,
-                        UnitPrice = productInMenu.Product.Price,
-                        Quantity = requestOD.Quantity,
-                        TotalAmount = requestOD.Quantity * productInMenu.Product.Price,
-                        Note = requestOD.Note
-                    };
-
-                    orderCard.OrderDetails.Add(product);
-                    orderCard.ItemQuantity += product.Quantity;
-                    orderCard.TotalAmount += product.TotalAmount;
+                        var productAtt = await _unitOfWork.Repository<ProductAttribute>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == productCardParty.ProductId);
+                        listProductInCard.Add(new CheckFixBoxRequest()
+                        {
+                            Product = productAtt,
+                            Quantity = productCardParty.Quantity,
+                        });
+                    }
                 }
+                var productAttRequest = requestProductInMenu.GroupBy(x => x.Product)
+                                                            .Select(x => x.Key)
+                                                            .FirstOrDefault();
+                listProductInCard.Add(new CheckFixBoxRequest()
+                {
+                    Product = productAttRequest,
+                    Quantity = request.Quantity
+                });
+                while (isFinishCheck == false)
+                {
+                    var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(productAttRequest, request.Quantity, listProductInCard);
+
+                    if (addToBoxResult.QuantitySuccess == request.Quantity)
+                    {
+                        coOrder.NumberBox += 1;
+
+                    }
+                    else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess != 0)
+                    {
+
+                    }
+                    else
+                    {
+
+                    }
+                }
+                var productInMenu = requestProductInMenu.FirstOrDefault();
+;
+                var product = new CoOrderDetailResponse()
+                {
+                    ProductInMenuId = productInMenu.Id,
+                    ProductId = productInMenu.ProductId,
+                    ProductName = productInMenu.Product.Name,
+                    UnitPrice = productInMenu.Product.Price,
+                    Quantity = request.Quantity,
+                    TotalAmount = request.Quantity * productInMenu.Product.Price
+                };
+
+                orderCard.OrderDetails.Add(product);
+                orderCard.ItemQuantity += product.Quantity;
+                orderCard.TotalAmount += product.TotalAmount;
 
                 ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
 
@@ -1556,6 +1596,7 @@ namespace FINE.Service.Service
                                 productTotalDetail.ProductDetails.Add(new ProductDetail()
                                 {
                                     OrderId = order.Id,
+                                    OrderCode = order.OrderCode,
                                     StationId = (Guid)order.StationId,
                                     BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
@@ -1569,6 +1610,7 @@ namespace FINE.Service.Service
                                 productTotalDetail.ProductDetails.Add(new ProductDetail()
                                 {
                                     OrderId = order.Id,
+                                    OrderCode = order.OrderCode,
                                     StationId = (Guid)order.StationId,
                                     BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
@@ -1581,7 +1623,7 @@ namespace FINE.Service.Service
                             packageResponse.TotalProductPending += orderDetail.Quantity;
                         }
                         ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
-                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.Id.ToString(), packageOrderDetails);
+                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderCode, packageOrderDetails);
                     }
                 }
             }

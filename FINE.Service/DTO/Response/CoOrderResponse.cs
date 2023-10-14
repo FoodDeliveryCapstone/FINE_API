@@ -26,6 +26,8 @@ namespace FINE.Service.DTO.Response
 
         public bool IsPayment { get; set; }
 
+        public int NumberBox { get; set; }
+
         public TimeSlotOrderResponse TimeSlot { get; set; }
 
         public List<CoOrderPartyCard> PartyOrder { get; set; }
@@ -55,8 +57,6 @@ namespace FINE.Service.DTO.Response
         public int Quantity { get; set; }
 
         public double TotalAmount { get; set; }
-
-        public string? Note { get; set; }
     }
 
     public class CustomerCoOrderResponse
@@ -64,8 +64,6 @@ namespace FINE.Service.DTO.Response
         public Guid? Id { get; set; }
 
         public string? Name { get; set; } = null!;
-
-        public string? CustomerCode { get; set; } = null!;
 
         public bool IsAdmin { get; set; }
 

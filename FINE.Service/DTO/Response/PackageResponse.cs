@@ -30,6 +30,7 @@ namespace FINE.Service.DTO.Response
     public class ProductDetail
     {
         public Guid OrderId { get; set; }
+        public string OrderCode { get; set; }
         public Guid StationId { get; set; }
         public Guid BoxId { get; set; }
         public DateTime CheckInDate { get; set; }

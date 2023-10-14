@@ -175,7 +175,7 @@ namespace FINE.Service.Service
                         packageResponse.TotalProductPending += orderDetail.Quantity;
                     }
                     ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
-                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.Id.ToString(), packageOrderDetails);
+                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderCode, packageOrderDetails);
                 }
             }
             catch (ErrorResponse ex)
@@ -554,7 +554,7 @@ namespace FINE.Service.Service
                                         Quantity = 1
                                     })
                                     .ToList();
-                                var addProduct = await _orderService.AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Data.PartyCode, cusPayloadPreOrder);
+                                //var addProduct = await _orderService.AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Data.PartyCode, cusPayloadPreOrder);
                                 var confirmCoOrder = await _orderService.FinalConfirmCoOrder(cus.Id.ToString(), openCoOrder.Data.PartyCode);
                             }
 

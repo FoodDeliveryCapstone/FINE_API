@@ -29,6 +29,7 @@ namespace FINE.Service.Helpers
 
         //note: key for coOrder is party code
         //      key for staff is storeId.Value + "-" + order.TimeSlot.ArriveTime; (xem thêm ở SplitOrder line 1509)
+        //      keyShipper is station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
         public async static Task<RedisValue> GetSetDataRedis(RedisDbEnum numberDb,RedisSetUpType type, string key, object value)
         {
             try
