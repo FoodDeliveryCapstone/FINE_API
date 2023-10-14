@@ -187,6 +187,7 @@ namespace FINE.Service.Service
         {
             try
             {
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode)
                                                 .ToListAsync();
@@ -200,7 +201,7 @@ namespace FINE.Service.Service
                 CoOrderResponse coOrder = null;
                 if (partyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
                 {
-                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                     coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
                 }
 
@@ -225,10 +226,11 @@ namespace FINE.Service.Service
         {
             try
             {
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
                 var result = new CoOrderStatusResponse();
                 var party = await _unitOfWork.Repository<Party>().GetAll().FirstOrDefaultAsync(x => x.PartyCode == partyCode);
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                 CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 if (coOrder is not null)
@@ -482,15 +484,16 @@ namespace FINE.Service.Service
 
                     if (checkCode.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
                     {
+                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
                         var party = checkCode.FirstOrDefault(x => x.CustomerId == order.CustomerId);
 
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, request.PartyCode, null);
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                         CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                         if (coOrder != null)
                         {
                             coOrder.IsPayment = true;
-                            await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, request.PartyCode, coOrder);
+                            await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
                         }
                         party.OrderId = order.Id;
                         party.UpdateAt = DateTime.Now;
@@ -700,7 +703,9 @@ namespace FINE.Service.Service
                         }
                     }
                     coOrder.PartyOrder.Add(orderCard);
-                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, coOrder.PartyCode, coOrder);
+
+                    var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + coOrder.PartyCode;
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
                 }
 
                 await _unitOfWork.Repository<Party>().InsertAsync(party);
@@ -728,6 +733,7 @@ namespace FINE.Service.Service
         {
             try
             {
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
                 var checkJoin = await _unitOfWork.Repository<Party>().GetAll()
                                                 .FirstOrDefaultAsync(x => x.CustomerId == Guid.Parse(customerId)
                                                     && x.PartyCode != partyCode
@@ -775,7 +781,7 @@ namespace FINE.Service.Service
                 switch (listpartyOrder.FirstOrDefault().PartyType)
                 {
                     case (int)PartyOrderType.CoOrder:
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                         CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                         if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
@@ -817,7 +823,7 @@ namespace FINE.Service.Service
                             await _unitOfWork.Repository<Party>().UpdateDetached(oldData);
                             await _unitOfWork.CommitAsync();
                         }
-                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
                         break;
 
                     case (int)PartyOrderType.LinkedOrder:
@@ -1041,7 +1047,8 @@ namespace FINE.Service.Service
                 //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                 CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 if (coOrder is null)
@@ -1143,7 +1150,7 @@ namespace FINE.Service.Service
                 orderCard.ItemQuantity += product.Quantity;
                 orderCard.TotalAmount += product.TotalAmount;
 
-                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
@@ -1178,7 +1185,8 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Party>().UpdateDetached(partyOrder);
                 await _unitOfWork.CommitAsync();
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                 CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 if (coOrder is null)
@@ -1187,7 +1195,7 @@ namespace FINE.Service.Service
                 var orderCard = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(customerId));
                 orderCard.Customer.IsConfirm = true;
 
-                var rs = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
+                var rs = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
 
                 return new BaseResponseViewModel<CoOrderPartyCard>()
                 {
@@ -1210,7 +1218,8 @@ namespace FINE.Service.Service
         {
             try
             {
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                 CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 if (coOrder is null)
@@ -1354,7 +1363,9 @@ namespace FINE.Service.Service
                     case PartyOrderType.CoOrder:
                         var customerToken = "";
                         if (memberId is not null) { customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token; }
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+
+                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                         CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                         if (coOrder is null) throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
@@ -1378,7 +1389,7 @@ namespace FINE.Service.Service
                             //nếu đơn nhóm chỉ có admin => xóa chế độ coOrder
                             if (memberId is null)
                             {
-                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.DELETE, partyCode, null);
+                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyCoOrder, null);
                             }
                             else
                             {
@@ -1387,7 +1398,7 @@ namespace FINE.Service.Service
                                 partyOfTheChosenOne.IsConfirm = true;
 
                                 coOrder.PartyOrder.Remove(orderOutMember);
-                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
+                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
 
                                 Notification notification = new Notification
                                 {
@@ -1405,7 +1416,7 @@ namespace FINE.Service.Service
                         else
                         {
                             coOrder.PartyOrder.Remove(orderOutMember);
-                            ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
+                            ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
                         }
                         break;
                 }
@@ -1437,13 +1448,14 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Party>().UpdateDetached(party);
                 await _unitOfWork.CommitAsync();
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.GET, partyCode, null);
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                 CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 var memParty = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == Guid.Parse(memberId));
                 coOrder.PartyOrder.Remove(memParty);
 
-                ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.SET, partyCode, coOrder);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
 
                 return new BaseResponseViewModel<dynamic>()
                 {
@@ -1544,11 +1556,11 @@ namespace FINE.Service.Service
 
                     foreach (var storeId in listStoreId)
                     {
-                        string key = storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                        var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                         var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
 
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
 
                         if (redisValue.HasValue == false)
                         {
@@ -1622,8 +1634,10 @@ namespace FINE.Service.Service
                             packageResponse.TotalProductInDay += orderDetail.Quantity;
                             packageResponse.TotalProductPending += orderDetail.Quantity;
                         }
-                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
-                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderCode, packageOrderDetails);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
+
+                        var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, order.OrderCode, packageOrderDetails);
                     }
                 }
             }
@@ -1649,7 +1663,8 @@ namespace FINE.Service.Service
                         _unitOfWork.Repository<Party>().UpdateDetached(party);
                     }
                     _unitOfWork.Commit();
-                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder, RedisSetUpType.DELETE, code, null);
+                    var keyCoOrder = RedisDbEnum.CoOrder + ":" + code;
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyCoOrder, null);
                 }
             }
             catch (ErrorResponse ex)

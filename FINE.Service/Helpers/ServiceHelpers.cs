@@ -30,7 +30,7 @@ namespace FINE.Service.Helpers
         //note: key for coOrder is party code
         //      key for staff is storeId.Value + "-" + order.TimeSlot.ArriveTime; (xem thêm ở SplitOrder line 1509)
         //      keyShipper is station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-        public async static Task<RedisValue> GetSetDataRedis(RedisDbEnum numberDb,RedisSetUpType type, string key, object value)
+        public async static Task<RedisValue> GetSetDataRedis(RedisSetUpType type, string key, object value)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace FINE.Service.Helpers
                 ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
 
                 // Lấy DB
-                IDatabase db = redis.GetDatabase((int)numberDb);
+                IDatabase db = redis.GetDatabase(0);
 
                 // Ping thử
                 if (db.Ping().TotalSeconds > 5)

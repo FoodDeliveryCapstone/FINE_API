@@ -294,10 +294,11 @@ namespace FINE.Service.Service
         {
             try
             {
+                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
                 var party = await _unitOfWork.Repository<Party>().GetAll()
                                                     .FirstOrDefaultAsync(x => x.PartyCode == partyCode);
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.CoOrder,RedisSetUpType.GET, partyCode, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                 CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                 var admin = coOrder.PartyOrder.Where(x => x.Customer.Id == Guid.Parse(adminId)).FirstOrDefault();

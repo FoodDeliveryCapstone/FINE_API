@@ -5,6 +5,7 @@ using FINE.Data.UnitOfWork;
 using FINE.Service.DTO.Request.Package;
 using FINE.Service.DTO.Response;
 using FINE.Service.Helpers;
+using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
@@ -49,17 +50,17 @@ namespace FINE.Service.Service
                 var station = await _unitOfWork.Repository<Station>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(stationId));
 
-                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
 
                 packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
 
                 var packageStation = packageResponse.PackageStations.Where(x => x.IsShipperAssign == false).FirstOrDefault();
                 packageStation.IsShipperAssign = true;
 
-                var keyShipper = station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Shipper, RedisSetUpType.GET, key, null);
+                var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyShipper, null);
 
                 PackageShipperResponse packageShipper = new PackageShipperResponse();
 
@@ -85,8 +86,8 @@ namespace FINE.Service.Service
                         Quantity = pack.Quantity,
                     });
                 }
-                ServiceHelpers.GetSetDataRedis(RedisDbEnum.Shipper, RedisSetUpType.SET, keyShipper, packageShipper);
-                ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyShipper, packageShipper);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
                 return new BaseResponseViewModel<PackageResponse>()
                 {
                     Status = new StatusViewModel()
@@ -114,9 +115,9 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
                 {
                     packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
@@ -151,9 +152,9 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                var key = staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Shipper, RedisSetUpType.GET, key, null);
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
 
                 if (redisShipperValue.HasValue == true)
                 {
@@ -189,9 +190,9 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
                 {
                     packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
@@ -228,9 +229,9 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.timeSlotId));
 
-                var key = staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
                 {
                     packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
@@ -250,11 +251,12 @@ namespace FINE.Service.Service
                             product.ReadyQuantity += product.PendingQuantity;
                             product.PendingQuantity = 0;
 
-                            var listOrder = product.ProductDetails.Where(x => x.IsReady == false).OrderByDescending(x => x.CheckInDate);
+                            var listOrder = product.ProductDetails.Where(x => x.IsReady == false).OrderBy(x => x.CheckInDate);
 
                             foreach (var order in listOrder)
                             {
-                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderCode, null);
+                                var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
@@ -264,7 +266,7 @@ namespace FINE.Service.Service
                                     productInOrder.IsReady = true;
                                     order.IsReady = true;
                                 }
-                                ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderCode, packageOrderDetail);
+                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
 
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
@@ -409,7 +411,8 @@ namespace FINE.Service.Service
                             var numberOfConfirm = request.Quantity + product.WaitingQuantity;
                             foreach (var order in listOrder)
                             {
-                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.GET, order.OrderCode, null);
+                                var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
@@ -432,7 +435,7 @@ namespace FINE.Service.Service
                         }
                         break;
                 }
-                ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
 
                 return new BaseResponseViewModel<PackageResponse>()
                 {

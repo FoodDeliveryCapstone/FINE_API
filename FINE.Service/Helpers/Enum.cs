@@ -7,9 +7,13 @@ namespace FINE.Service.Helpers
     {
         public enum RedisDbEnum
         {
+            [Display(Name = "CoOrder")]
             CoOrder = 1,
+            [Display(Name = "Staff")]
             Staff = 2,
+            [Display(Name = "Order")]
             OrderOperation = 3,
+            [Display(Name = "Shipper")]
             Shipper = 4
         }
         public enum RedisSetUpType
