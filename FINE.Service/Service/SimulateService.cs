@@ -59,123 +59,131 @@ namespace FINE.Service.Service
         {
             try
             {
-                var listBox = _unitOfWork.Repository<Box>().GetAll()
-                                 .Where(x => x.StationId == order.StationId
-                                         && x.OrderBoxes.Any(z => z.BoxId == x.Id
-                                                            && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
-                                 .ToList();
 
-                var orderBox = new OrderBox()
+                if (order.IsPartyMode == true)
                 {
-                    Id = Guid.NewGuid(),
-                    OrderId = order.Id,
-                    BoxId = listBox.FirstOrDefault().Id,
-                    Key = Utils.GenerateRandomCode(10),
-                    Status = (int)OrderBoxStatusEnum.NotPicked,
-                    CreateAt = DateTime.Now
-                };
-                _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
 
-                if (listBox.Count() == 1)
-                {
-                    var station = _unitOfWork.Repository<Station>().GetAll()
-                                        .FirstOrDefault(x => x.Id == order.StationId);
-                    station.IsAvailable = false;
-
-                    _unitOfWork.Repository<Station>().UpdateDetached(station);
                 }
-                _unitOfWork.Commit();
-
-                List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
-                PackageResponse packageResponse;
-
-                HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
-                foreach (var od in order.OrderDetails)
+                else
                 {
-                    var store = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == od.StoreId);
-                    listStoreId.Add(new KeyValuePair<Guid, string>(store.Id, store.StoreName));
-                }
+                    var listBox = _unitOfWork.Repository<Box>().GetAll()
+                                     .Where(x => x.StationId == order.StationId
+                                             && x.OrderBoxes.Any(z => z.BoxId == x.Id
+                                                                && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
+                                     .ToList();
 
-                foreach (var storeId in listStoreId)
-                {
-                    string key = storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-
-                    var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
-
-                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
-
-                    if (redisValue.HasValue == false)
+                    var orderBox = new OrderBox()
                     {
-                        packageResponse = new PackageResponse()
-                        {
-                            TotalProductInDay = 0,
-                            TotalProductPending = 0,
-                            TotalProductError = 0,
-                            TotalProductReady = 0,
-                            ProductTotalDetails = new List<ProductTotalDetail>()
-                        };
+                        Id = Guid.NewGuid(),
+                        OrderId = order.Id,
+                        BoxId = listBox.FirstOrDefault().Id,
+                        Key = Utils.GenerateRandomCode(10),
+                        Status = (int)OrderBoxStatusEnum.NotPicked,
+                        CreateAt = DateTime.Now
+                    };
+                    _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
+
+                    if (listBox.Count() == 1)
+                    {
+                        var station = _unitOfWork.Repository<Station>().GetAll()
+                                            .FirstOrDefault(x => x.Id == order.StationId);
+                        station.IsAvailable = false;
+
+                        _unitOfWork.Repository<Station>().UpdateDetached(station);
                     }
-                    else
+                    _unitOfWork.Commit();
+
+                    List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
+                    PackageResponse packageResponse;
+
+                    HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
+                    foreach (var od in order.OrderDetails)
                     {
-                        packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                        var store = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == od.StoreId);
+                        listStoreId.Add(new KeyValuePair<Guid, string>(store.Id, store.StoreName));
                     }
 
-                    foreach (var orderDetail in listOdByStore)
+                    foreach (var storeId in listStoreId)
                     {
-                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
-                        var productTotalDetail = packageResponse.ProductTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
+                        string key = storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                        packageOrderDetails.Add(new PackageOrderDetailModel()
-                        {
-                            ProductId = productInMenu.ProductId,
-                            ProductInMenuId = orderDetail.ProductInMenuId,
-                            Quantity = orderDetail.Quantity,
-                            ErrorQuantity = 0,
-                            IsReady = false
-                        });
+                        var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
 
-                        if (productTotalDetail is null)
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.GET, key, null);
+
+                        if (redisValue.HasValue == false)
                         {
-                            productTotalDetail = new ProductTotalDetail()
+                            packageResponse = new PackageResponse()
                             {
-                                ProductId = productInMenu.ProductId,
-                                ProductInMenuId = productInMenu.Id,
-                                ProductName = productInMenu.Product.Product.ProductName,
-                                PendingQuantity = orderDetail.Quantity,
-                                ReadyQuantity = 0,
-                                ErrorQuantity = 0,
-                                WaitingQuantity = 0,
-                                ProductDetails = new List<ProductDetail>()
+                                TotalProductInDay = 0,
+                                TotalProductPending = 0,
+                                TotalProductError = 0,
+                                TotalProductReady = 0,
+                                ProductTotalDetails = new List<ProductTotalDetail>()
                             };
-                            productTotalDetail.ProductDetails.Add(new ProductDetail()
-                            {
-                                OrderId = order.Id,
-                                StationId = (Guid)order.StationId,
-                                BoxId = orderBox.BoxId,
-                                CheckInDate = order.CheckInDate,
-                                Quantity = orderDetail.Quantity,
-                                IsReady = false
-                            });
-                            packageResponse.ProductTotalDetails.Add(productTotalDetail);
                         }
                         else
                         {
-                            productTotalDetail.ProductDetails.Add(new ProductDetail()
+                            packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                        }
+
+                        foreach (var orderDetail in listOdByStore)
+                        {
+                            var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
+                            var productTotalDetail = packageResponse.ProductTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
+
+                            packageOrderDetails.Add(new PackageOrderDetailModel()
                             {
-                                OrderId = order.Id,
-                                StationId = (Guid)order.StationId,
-                                BoxId = orderBox.BoxId,
-                                CheckInDate = order.CheckInDate,
+                                ProductId = productInMenu.ProductId,
+                                ProductInMenuId = orderDetail.ProductInMenuId,
                                 Quantity = orderDetail.Quantity,
+                                ErrorQuantity = 0,
                                 IsReady = false
                             });
-                            productTotalDetail.PendingQuantity += orderDetail.Quantity;
+
+                            if (productTotalDetail is null)
+                            {
+                                productTotalDetail = new ProductTotalDetail()
+                                {
+                                    ProductId = productInMenu.ProductId,
+                                    ProductInMenuId = productInMenu.Id,
+                                    ProductName = productInMenu.Product.Product.ProductName,
+                                    PendingQuantity = orderDetail.Quantity,
+                                    ReadyQuantity = 0,
+                                    ErrorQuantity = 0,
+                                    WaitingQuantity = 0,
+                                    ProductDetails = new List<ProductDetail>()
+                                };
+                                productTotalDetail.ProductDetails.Add(new ProductDetail()
+                                {
+                                    OrderId = order.Id,
+                                    StationId = (Guid)order.StationId,
+                                    BoxId = orderBox.BoxId,
+                                    CheckInDate = order.CheckInDate,
+                                    Quantity = orderDetail.Quantity,
+                                    IsReady = false
+                                });
+                                packageResponse.ProductTotalDetails.Add(productTotalDetail);
+                            }
+                            else
+                            {
+                                productTotalDetail.ProductDetails.Add(new ProductDetail()
+                                {
+                                    OrderId = order.Id,
+                                    StationId = (Guid)order.StationId,
+                                    BoxId = orderBox.BoxId,
+                                    CheckInDate = order.CheckInDate,
+                                    Quantity = orderDetail.Quantity,
+                                    IsReady = false
+                                });
+                                productTotalDetail.PendingQuantity += orderDetail.Quantity;
+                            }
+                            packageResponse.TotalProductInDay += orderDetail.Quantity;
+                            packageResponse.TotalProductPending += orderDetail.Quantity;
                         }
-                        packageResponse.TotalProductInDay += orderDetail.Quantity;
-                        packageResponse.TotalProductPending += orderDetail.Quantity;
+                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
+                        ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.Id.ToString(), packageOrderDetails);
                     }
-                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.Staff, RedisSetUpType.SET, key, packageResponse);
-                    ServiceHelpers.GetSetDataRedis(RedisDbEnum.OrderOperation, RedisSetUpType.SET, order.OrderCode, packageOrderDetails);
                 }
             }
             catch (ErrorResponse ex)
@@ -798,30 +806,36 @@ namespace FINE.Service.Service
                             }
                             else
                             {
-                                List<string> listProductId = new List<string>
+                                //Bỏ qua product có pending quantity = 0
+                                if (product.PendingQuantity == 0)
+                                { }
+                                else
+                                {
+                                    List<string> listProductId = new List<string>
                                 {
                                     product.ProductId.ToString()
                                 };
 
-                                var updatePackagePayload = new UpdateProductPackageRequest
-                                {
-                                    timeSlotId = request.TimeSlotId.ToString(),
-                                    Type = PackageUpdateTypeEnum.Confirm,
-                                    Quantity = product.PendingQuantity,
-                                    ProductsUpdate = listProductId
-                                };
+                                    var updatePackagePayload = new UpdateProductPackageRequest
+                                    {
+                                        timeSlotId = request.TimeSlotId.ToString(),
+                                        Type = PackageUpdateTypeEnum.Confirm,
+                                        Quantity = product.PendingQuantity,
+                                        ProductsUpdate = listProductId
+                                    };
 
-                                var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
+                                    var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
 
-                                var orderSuccess = new SimulateOrderForStaffSuccess()
-                                {
-                                    StoreId = staff.StoreId,
-                                    StaffName = staff.Name,
-                                    ProductName = product.ProductName,
-                                    Quantity = product.PendingQuantity
-                                };
+                                    var orderSuccess = new SimulateOrderForStaffSuccess()
+                                    {
+                                        StoreId = staff.StoreId,
+                                        StaffName = staff.Name,
+                                        ProductName = product.ProductName,
+                                        Quantity = product.PendingQuantity
+                                    };
 
-                                response.OrderSuccess.Add(orderSuccess);
+                                    response.OrderSuccess.Add(orderSuccess);
+                                }
                             }
                         }
                     }
