@@ -16,4 +16,12 @@ namespace FINE.Service.DTO.Response
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
     }
+
+    public class AvailableBoxResponse
+    {
+        public Guid? Id { get; set; }
+        public string? Code { get; set; }
+        public bool? IsActive { get; set; }
+        public bool? IsHeat { get; set; }
+    }
 }

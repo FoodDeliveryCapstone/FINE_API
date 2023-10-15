@@ -96,8 +96,8 @@ namespace FINE.Service.Service
             {
                 var checkCode = _unitOfWork.Repository<Destination>().GetAll().Any(x => x.Code == request.Code);
                 if (checkCode)
-                    throw new ErrorResponse(400, (int)DestinationErrorEnums.Destination_CODE_EXSIST,
-                            DestinationErrorEnums.Destination_CODE_EXSIST.GetDisplayName());
+                    throw new ErrorResponse(400, (int)DestinationErrorEnums.Destination_CODE_EXIST,
+                            DestinationErrorEnums.Destination_CODE_EXIST.GetDisplayName());
 
                 var destination = _mapper.Map<CreateDestinationRequest, Destination>(request);
 

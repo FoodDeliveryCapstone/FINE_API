@@ -45,6 +45,8 @@ namespace FINE.Service.Helpers
             STAFF_TAKEN = 4002,
             [Display(Name = "Box is not available!")]
             BOX_NOT_AVAILABLE = 4003,
+            [Display(Name = "This box code already exsist!")]
+            CODE_EXIST = 4004,
 
             //404
             [Display(Name = "Not found this box!")]
@@ -108,7 +110,7 @@ namespace FINE.Service.Helpers
         {
             //400
             [Display(Name = "This Destination code already exsist!")]
-            Destination_CODE_EXSIST = 4001,
+            Destination_CODE_EXIST = 4001,
             //404
             [Display(Name = "Not found this destination!")]
             NOT_FOUND = 4041
@@ -125,7 +127,7 @@ namespace FINE.Service.Helpers
 
             //400
             [Display(Name = "This product code already exsist!")]
-            PRODUCT_CODE_EXSIST = 4001,
+            PRODUCT_CODE_EXIST = 4001,
         }
 
         public enum StoreErrorEnums
@@ -139,7 +141,7 @@ namespace FINE.Service.Helpers
 
             //400
             [Display(Name = "This store code already exsist!")]
-            CODE_EXSIST = 4001,
+            CODE_EXIST = 4001,
         }
 
         public enum AreaErrorEnums
@@ -153,7 +155,7 @@ namespace FINE.Service.Helpers
 
             //400
             [Display(Name = "This area code already exsist!")]
-            CODE_EXSIST = 4001,
+            CODE_EXIST = 4001,
         }
 
         public enum StationErrorEnums
@@ -165,6 +167,8 @@ namespace FINE.Service.Helpers
             //400
             [Display(Name = "Station is unavailable!")]
             UNAVAILABLE = 4001,
+            [Display(Name = "This station code already exsist!")]
+            CODE_EXIST = 4002,
         }
 
         public enum TimeSlotErrorEnums
