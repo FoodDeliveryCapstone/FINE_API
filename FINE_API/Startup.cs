@@ -148,7 +148,7 @@ namespace FINE.API
             builder.RegisterType<NotifyService>().As<INotifyService>();
             builder.RegisterType<ShipperService>().As<IShipperService>();
             builder.RegisterType<NotifyService>().As<INotifyService>();
-            builder.RegisterType<SimulateService>().As<ISimulateService>();
+            //builder.RegisterType<SimulateService>().As<ISimulateService>();
 
             builder.Register<IRedisClientsManager>(c =>
             new RedisManagerPool(Configuration.GetConnectionString("RedisConnectionString")));
