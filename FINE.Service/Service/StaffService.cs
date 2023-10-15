@@ -43,10 +43,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<dynamic>> Login(LoginRequest request);
         Task<BaseResponseViewModel<StaffResponse>> CreateAdminManager(CreateStaffRequest request);
         Task<BaseResponseViewModel<StaffResponse>> UpdateStaff(string staffId, UpdateStaffRequest request);
-        Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);
-        Task<BaseResponsePagingViewModel<ReportMissingProductResponse>> GetReportMissingProduct(string storeId, string timeslotId);
-        Task<BaseResponseViewModel<ShipperResponse>> UpdateMissingProduct(List<UpdateMissingProductRequest> request);
-        
+        Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request);        
 
     }
 
@@ -261,54 +258,6 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-        public async Task<BaseResponsePagingViewModel<ReportMissingProductResponse>> GetReportMissingProduct(string storeId, string timeslotId)
-        {
-            try 
-            {
-               
-                List<ReportMissingProductResponse> reportsResponse = await ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.GET);
-                var reportsByStore = reportsResponse.Where(x => x.TimeSlotId == Guid.Parse(timeslotId)
-                                                           && x.StoreId == Guid.Parse(storeId));
-  
-                return new BaseResponsePagingViewModel<ReportMissingProductResponse>()
-                {
-                    Metadata = new PagingsMetadata()
-                    {
-                        Total = reportsByStore.Count()
-                    },
-                    Data = reportsByStore.ToList(),
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<ShipperResponse>> UpdateMissingProduct(List<UpdateMissingProductRequest> request)
-        {
-            try 
-            {
-                foreach (var item in request)
-                {
-                    ServiceHelpers.GetSetDataRedisReportMissingProduct(RedisSetUpType.DELETE, item.ReportId.ToString());
-                }
-
-                return new BaseResponseViewModel<ShipperResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    },
-                };
-            }
-            catch(ErrorResponse ex)
             {
                 throw ex;
             }

@@ -15,6 +15,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -186,7 +187,7 @@ namespace FINE.Service.Service
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
 
                         var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, order.OrderCode, packageOrderDetails);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetails);
                     }
                 }
             }
@@ -772,10 +773,15 @@ namespace FINE.Service.Service
 
                     if (getOrderInStore.Data.TotalProductPending != 0)
                     {
+                        //lấy ds sản phẩm bị thiếu
+                        string jsonFilePath = "Configuration\\listProductsMissingInSimulate.json"; 
+                        string jsonString = File.ReadAllText(jsonFilePath);
+                        var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString);
+                        var productIdsMissing = jsonObject["ProductIdsMissing"];
+
                         foreach (var product in getOrderInStore.Data.ProductTotalDetails)
                         {
-                            //sản phẩm thiếu là mì omachi hầm bò và trà đào cam sả
-                            if (product.ProductId == Guid.Parse("2386ed0c-9ffc-498e-bd01-d5eafb9419bc") || product.ProductId == Guid.Parse("6084cccd-974f-4bff-876d-a88376629f1d"))
+                            if(productIdsMissing.Any(x => x == product.ProductId.ToString()))
                             {
                                 List<string> listProductId = new List<string>
                                 {
@@ -817,9 +823,9 @@ namespace FINE.Service.Service
                                 else
                                 {
                                     List<string> listProductId = new List<string>
-                                {
-                                    product.ProductId.ToString()
-                                };
+                                    {
+                                        product.ProductId.ToString()
+                                    };
 
                                     var updatePackagePayload = new UpdateProductPackageRequest
                                     {
@@ -936,7 +942,6 @@ namespace FINE.Service.Service
                     };
 
                     response.Add(result);
-                    ServiceHelpers.GetSetDataRedisOrder(RedisSetUpType.DELETE, order.Id.ToString());
                 }
 
                 return new BaseResponsePagingViewModel<SimulateOrderStatusResponse>()
