@@ -156,7 +156,8 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                    PackageShipperResponse[] result = JsonConvert.DeserializeObject<PackageShipperResponse[]>(redisShipperValue);
+                    packageResponse = result.ToList();
                 }
 
                 return new BaseResponseViewModel<List<PackageShipperResponse>>()
