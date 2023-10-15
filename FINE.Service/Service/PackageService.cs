@@ -51,12 +51,10 @@ namespace FINE.Service.Service
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(stationId));
 
                 var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
-
                 packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
 
-                var packageStation = packageResponse.PackageStations.Where(x => x.IsShipperAssign == false).FirstOrDefault();
+                var packageStation = packageResponse.PackageStations.Where(x =>x.StationId == Guid.Parse(stationId) && x.IsShipperAssign == false).FirstOrDefault();
                 packageStation.IsShipperAssign = true;
 
                 var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
