@@ -163,7 +163,7 @@ namespace FINE.Service.Service
                                     BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
                                     Quantity = orderDetail.Quantity,
-                                    IsReady = false
+                                    IsFinishPrepare = false
                                 });
                                 packageResponse.ProductTotalDetails.Add(productTotalDetail);
                             }
@@ -177,7 +177,7 @@ namespace FINE.Service.Service
                                     BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
                                     Quantity = orderDetail.Quantity,
-                                    IsReady = false
+                                    IsFinishPrepare = false
                                 });
                                 productTotalDetail.PendingQuantity += orderDetail.Quantity;
                             }

@@ -35,7 +35,8 @@ namespace FINE.Service.DTO.Response
         public Guid BoxId { get; set; }
         public DateTime CheckInDate { get; set; }
         public int Quantity { get; set; }
-        public bool IsReady { get; set; }
+        public bool IsFinishPrepare { get; set; }
+        public bool IsAssignToShipper { get; set; }
     }
 
     public class ErrorProduct
