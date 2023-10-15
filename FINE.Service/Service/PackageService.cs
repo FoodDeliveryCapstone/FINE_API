@@ -60,7 +60,7 @@ namespace FINE.Service.Service
                 var packageOrder = packageResponse.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == true && x.IsAssignToShipper == false).ToList();
                 packageOrder.ForEach(x => x.IsAssignToShipper = true);
 
-                var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + ":" + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyShipper, null);
 
                 PackageShipperResponse packageShipper = new PackageShipperResponse();
@@ -456,6 +456,7 @@ namespace FINE.Service.Service
                                 {
                                     stationPack.ListPackageMissing.Remove(missingPack);
                                 }
+                                stationPack.TotalQuantity = readyPack.Quantity + missingPack.Quantity;
                             }
                             product.WaitingQuantity = (int)numberOfConfirm;
                         }

@@ -1598,7 +1598,7 @@ namespace FINE.Service.Service
                                 {
                                     ProductId = productInMenu.ProductId,
                                     ProductInMenuId = productInMenu.Id,
-                                    ProductName = productInMenu.Product.Product.ProductName,
+                                    ProductName = productInMenu.Product.Name,
                                     PendingQuantity = orderDetail.Quantity,
                                     ReadyQuantity = 0,
                                     ErrorQuantity = 0,
