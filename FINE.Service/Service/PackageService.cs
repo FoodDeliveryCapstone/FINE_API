@@ -318,8 +318,8 @@ namespace FINE.Service.Service
                                                                                            Quantity = x.Quantity
                                                                                        }).ToList();
 
-                                stationPackage.TotalQuantity += listProductGroupByStation.Count();
-                                stationPackage.ReadyQuantity += listProductReadyByStation.Count();
+                                stationPackage.TotalQuantity += item.ProductDetails.Where(x => x.StationId == stationId).Select(x => x.Quantity).Sum();
+                                stationPackage.ReadyQuantity += item.ProductDetails.Where(x => x.StationId == stationId && x.IsReady == true).Select(x => x.Quantity).Sum();
 
                                 stationPackage.PackageStationDetails.AddRange(listProductReadyByStation);
                                 stationPackage.ListPackageMissing.AddRange(listProductMissingByStation);
