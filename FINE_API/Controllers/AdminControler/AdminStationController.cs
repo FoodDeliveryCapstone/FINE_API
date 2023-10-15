@@ -1,4 +1,5 @@
 ﻿using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Station;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
@@ -54,6 +55,41 @@ namespace FINE.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Create Station
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        public async Task<ActionResult<BaseResponseViewModel<StationResponse>>> CreateStation
+            ([FromBody] CreateStationRequest request)
+        {
+            try
+            {
+                return await _stationService.CreateStation(request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Update Station
+        /// </summary>
+        [HttpPut("{stationId}")]
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        public async Task<ActionResult<BaseResponseViewModel<StationResponse>>> UpdateStation
+            ([FromRoute] string stationId, [FromBody] UpdateStationRequest request)
+        {
+            try
+            {
+                return await _stationService.UpdateStation(stationId, request);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
 
     }
 }

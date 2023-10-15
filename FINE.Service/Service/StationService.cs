@@ -4,9 +4,12 @@ using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.Attributes;
 using FINE.Service.DTO.Request;
+using FINE.Service.DTO.Request.Station;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +24,8 @@ namespace FINE.Service.Service
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
+        Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
+        Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
     }
 
     public class StationService : IStationService
@@ -87,6 +92,113 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request)
+        {
+            try
+            {
+                var checkCode = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Code == request.Code);
+                if (checkCode != null)
+                    throw new ErrorResponse(404, (int)StationErrorEnums.CODE_EXIST,
+                       StationErrorEnums.CODE_EXIST.GetDisplayName());
+                var checkFloor = await _unitOfWork.Repository<Floor>().GetAll().FirstOrDefaultAsync(x => x.Id == request.FloorId);
+                if (checkFloor == null)
+                    throw new ErrorResponse(404, (int)FloorErrorEnums.NOT_FOUND,
+                       FloorErrorEnums.NOT_FOUND.GetDisplayName());
+
+                //lấy ds area trong json
+                string jsonFilePath = "Configuration\\listArea.json";
+                string jsonString = File.ReadAllText(jsonFilePath);
+                var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString);
+                var allAreaCode = jsonObject["AreaCodes"];
+                var areaCode = allAreaCode.FirstOrDefault(x => x == request.AreaCode);
+                if(areaCode == null)
+                    throw new ErrorResponse(404, (int)AreaErrorEnums.NOT_FOUND_CODE,
+                       AreaErrorEnums.NOT_FOUND_CODE.GetDisplayName());
+
+                var station = _mapper.Map<CreateStationRequest, Station>(request);
+
+                station.Id = Guid.NewGuid();
+                station.AreaCode = areaCode;
+                station.IsAvailable = true;
+                station.IsActive = true;
+                station.CreateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Station>().InsertAsync(station);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<StationResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<StationResponse>(station)
+                };
+            }
+            catch(ErrorResponse ex) 
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request)
+        {
+            try
+            {
+                var getAllStation = _unitOfWork.Repository<Station>().GetAll();
+                var station = getAllStation.FirstOrDefault(x => x.Id == Guid.Parse(stationId));
+                if (station == null)
+                    throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
+                        StationErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var checkCode = getAllStation.FirstOrDefault(x => x.Code == request.Code && x.Id != Guid.Parse(stationId));
+                if (checkCode != null)
+                    throw new ErrorResponse(404, (int)StationErrorEnums.CODE_EXIST,
+                       StationErrorEnums.CODE_EXIST.GetDisplayName());
+
+                var checkFloor = await _unitOfWork.Repository<Floor>().GetAll().FirstOrDefaultAsync(x => x.Id == request.FloorId);
+                if (checkFloor == null)
+                    throw new ErrorResponse(404, (int)FloorErrorEnums.NOT_FOUND,
+                       FloorErrorEnums.NOT_FOUND.GetDisplayName());
+
+                //lấy ds area trong json
+                string jsonFilePath = "Configuration\\listArea.json";
+                string jsonString = File.ReadAllText(jsonFilePath);
+                var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString);
+                var allAreaCode = jsonObject["AreaCodes"];
+
+                var areaCode = allAreaCode.FirstOrDefault(x => x == request.AreaCode);
+                if (areaCode == null)
+                    throw new ErrorResponse(404, (int)AreaErrorEnums.NOT_FOUND_CODE,
+                  AreaErrorEnums.NOT_FOUND_CODE.GetDisplayName());
+
+                var updateStation = _mapper.Map<UpdateStationRequest, Station>(request, station);
+
+                updateStation.AreaCode = areaCode;
+                updateStation.UpdateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Station>().UpdateDetached(updateStation);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<StationResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<StationResponse>(updateStation)
+                };
+            }
+            catch(ErrorResponse ex)
             {
                 throw ex;
             }

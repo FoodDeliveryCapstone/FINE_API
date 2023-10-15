@@ -14,6 +14,8 @@ using FINE.Service.DTO.Request.Menu;
 using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.API.Controllers;
 using FINE.Service.Helpers;
+using FINE.Service.DTO.Request.Station;
+using FINE.Service.DTO.Request.Box;
 
 namespace FINE.API.Mapper
 {
@@ -50,6 +52,8 @@ namespace FINE.API.Mapper
 
             #region Station
             CreateMap<Station, StationResponse>().ReverseMap();
+            CreateMap<CreateStationRequest, Station>();
+            CreateMap<UpdateStationRequest, Station>();
             #endregion
 
             #region Box

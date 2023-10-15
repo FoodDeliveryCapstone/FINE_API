@@ -17,6 +17,7 @@ namespace FINE.Service.DTO.Response
         public string? AreaCode { get; set; } = null!;
 
         public Guid? FloorId { get; set; }
+        public bool IsAvailable { get; set; }
 
         public bool? IsActive { get; set; }
 
