@@ -430,6 +430,17 @@ namespace FINE.Service.Service
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                     await _unitOfWork.CommitAsync();
                                 }
+                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
+
+                                var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                readyPack.Quantity += (int)request.Quantity;
+
+                                var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                missingPack.Quantity -= (int)request.Quantity;
+                                if (missingPack.Quantity == 0)
+                                {
+                                    stationPack.ListPackageMissing.Remove(missingPack);
+                                }
                             }
                             product.WaitingQuantity = (int)numberOfConfirm;
                         }
