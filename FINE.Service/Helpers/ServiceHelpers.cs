@@ -40,7 +40,7 @@ namespace FINE.Service.Helpers
                 ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectRedisString);
 
                 // Lấy DB
-                IDatabase db = redis.GetDatabase(0);
+                IDatabase db = redis.GetDatabase(1);
 
                 // Ping thử
                 if (db.Ping().TotalSeconds > 5)

@@ -1637,7 +1637,7 @@ namespace FINE.Service.Service
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
 
                         var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, order.OrderCode, packageOrderDetails);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetails);
                     }
                 }
             }
