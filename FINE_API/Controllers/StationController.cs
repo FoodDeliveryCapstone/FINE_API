@@ -40,6 +40,10 @@ namespace FINE.API.Controllers
         //    }
         //}
 
+        ///// <summary>
+        ///// lấy thông tin khách hàng bằng token
+        ///// </summary>
+        [HttpGet("destination/{destinationId}")]
         public async Task<ActionResult<BaseResponsePagingViewModel<StationResponse>>> GetStationByDestination(string destinationId, [FromQuery] PagingRequest paging)
         {
             try
