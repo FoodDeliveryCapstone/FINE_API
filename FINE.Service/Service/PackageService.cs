@@ -278,8 +278,10 @@ namespace FINE.Service.Service
                 switch (request.Type)
                 {
                     case PackageUpdateTypeEnum.Confirm:
+                        HashSet<Guid> listStationId = new HashSet<Guid>();
                         foreach (var item in request.ProductsUpdate)
                         {
+                            //cập nhật lại số lượng từng stage
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
                             var numberOfConfirm = product.PendingQuantity;
@@ -316,13 +318,10 @@ namespace FINE.Service.Service
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                     await _unitOfWork.CommitAsync();
                                 }
+                                listStationId.Add(order.StationId);
                             }
                         }
-
-                        packageResponse.PackageStations = new List<PackageStationResponse>();
-                        HashSet<Guid> listStationId = new HashSet<Guid>(packageResponse.ProductTotalDetails
-                                                                         .SelectMany(item => item.ProductDetails)
-                                                                         .Select(product => product.StationId));
+                        //cập nhật lại pack station
                         foreach (var stationId in listStationId)
                         {
                             var stationPackage = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == stationId && x.IsShipperAssign == false);
@@ -486,8 +485,6 @@ namespace FINE.Service.Service
                                 {
                                     order.IsFinishPrepare = true;
                                     productInOrder.IsReady = true;
-
-
                                 }
                                 else if (productInOrder != null) { }
                                 productInOrder.ErrorQuantity -= (int)numberConfirm;
