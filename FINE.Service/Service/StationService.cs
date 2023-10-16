@@ -50,7 +50,7 @@ namespace FINE.Service.Service
                        StationErrorEnums.NOT_FOUND.GetDisplayName());
 
                 var stations = _unitOfWork.Repository<Station>().GetAll()
-                                .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true)
+                                .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true && x.IsAvailable == true)
                                 .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
                                 .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
