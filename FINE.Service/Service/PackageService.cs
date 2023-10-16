@@ -322,6 +322,7 @@ namespace FINE.Service.Service
                             }
                         }
                         //cập nhật lại pack station
+                        packageResponse.PackageStations = new List<PackageStationResponse>();
                         foreach (var stationId in listStationId)
                         {
                             var stationPackage = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == stationId && x.IsShipperAssign == false);
