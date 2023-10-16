@@ -24,6 +24,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
         Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
+        Task<BaseResponseViewModel<PackageResponse>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
     }
     public class PackageService : IPackageService
     {
@@ -36,6 +37,45 @@ namespace FINE.Service.Service
             _mapper = mapper;
         }
 
+        public async Task<BaseResponseViewModel<PackageResponse>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId)
+        {
+            try
+            {
+                List<PackageShipperResponse> packageResponse = new List<PackageShipperResponse>();
+
+                var staff = await _unitOfWork.Repository<Staff>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
+
+                var key = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+
+                if (redisShipperValue.HasValue == true)
+                {
+                    packageResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                }
+                packageResponse.FirstOrDefault(x => x.StoreId == Guid.Parse(storeId) && x.IsTaken == false).IsTaken = true;
+
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
+
+                return new BaseResponseViewModel<PackageResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
         public async Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId)
         {
             try
@@ -160,8 +200,7 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    var result = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
-                    packageResponse = result.ToList();
+                    packageResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
                 }
 
                 return new BaseResponseViewModel<List<PackageShipperResponse>>()
@@ -313,12 +352,13 @@ namespace FINE.Service.Service
                                                                                                    ProductTotal = productTotal,
                                                                                                    ProductDetail = productDetail
                                                                                                }))
+                                                                                               .GroupBy(x => x.ProductTotal)
                                                                                                .Select(x => new PackageDetailResponse()
                                                                                                {
-                                                                                                   ProductId = x.ProductTotal.ProductId,
-                                                                                                   ProductName = x.ProductTotal.ProductName,
-                                                                                                   Quantity = x.ProductDetail.Quantity
-                                                                                               }).ToList();
+                                                                                                   ProductId = x.Key.ProductId,
+                                                                                                   ProductName = x.Key.ProductName,
+                                                                                                   Quantity = x.Key.ProductDetails.Select(x => x.Quantity).Sum()
+                                                                                               });
 
                             var listProductMissingByStation = packageResponse.ProductTotalDetails.SelectMany(productTotal => productTotal.ProductDetails
                                                                                                .Where(productDetail => productDetail.StationId == stationId && productDetail.IsFinishPrepare == false)
@@ -327,12 +367,13 @@ namespace FINE.Service.Service
                                                                                                    ProductTotal = productTotal,
                                                                                                    ProductDetail = productDetail
                                                                                                }))
+                                                                                                .GroupBy(x => x.ProductTotal)
                                                                                                .Select(x => new PackageDetailResponse()
                                                                                                {
-                                                                                                   ProductId = x.ProductTotal.ProductId,
-                                                                                                   ProductName = x.ProductTotal.ProductName,
-                                                                                                   Quantity = x.ProductDetail.Quantity
-                                                                                               }).ToList();
+                                                                                                   ProductId = x.Key.ProductId,
+                                                                                                   ProductName = x.Key.ProductName,
+                                                                                                   Quantity = x.Key.ProductDetails.Select(x => x.Quantity).Sum()
+                                                                                               });
 
                             stationPackage.ReadyQuantity = listProductReadyByStation.Select(x => x.Quantity).Sum();
                             stationPackage.TotalQuantity = stationPackage.ReadyQuantity + listProductMissingByStation.Select(x => x.Quantity).Sum();
