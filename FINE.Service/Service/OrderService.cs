@@ -1650,7 +1650,10 @@ namespace FINE.Service.Service
 
                             if (packageResponse.PackageStations is null || packageResponse.PackageStations.Find(x => x.StationId == order.StationId && x.IsShipperAssign == false) is null)
                             {
-                                packageResponse.PackageStations = new List<PackageStationResponse>();
+                                if (packageResponse.PackageStations is null)
+                                {
+                                    packageResponse.PackageStations = new List<PackageStationResponse>();
+                                }
 
                                 var station = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == order.StationId);
                                 var stationPackage = new PackageStationResponse()
