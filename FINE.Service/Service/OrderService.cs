@@ -1647,6 +1647,49 @@ namespace FINE.Service.Service
                             }
                             packageResponse.TotalProductInDay += orderDetail.Quantity;
                             packageResponse.TotalProductPending += orderDetail.Quantity;
+
+                            if (packageResponse.PackageStations is null || packageResponse.PackageStations.Find(x => x.StationId == order.StationId && x.IsShipperAssign == false) is null)
+                            {
+                                packageResponse.PackageStations = new List<PackageStationResponse>();
+
+                                var station = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == order.StationId);
+                                var stationPackage = new PackageStationResponse()
+                                {
+                                    StationId = station.Id,
+                                    StationName = station.Name,
+                                    TotalQuantity = 0,
+                                    ReadyQuantity = 0,
+                                    IsShipperAssign = false,
+                                    PackageStationDetails = new List<PackageDetailResponse>(),
+                                    ListPackageMissing = new List<PackageDetailResponse>(),
+                                };
+                                stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
+                                {
+                                    ProductId = productInMenu.ProductId,
+                                    ProductName = productInMenu.Product.Name,
+                                    Quantity = orderDetail.Quantity,
+                                });
+                                stationPackage.TotalQuantity += orderDetail.Quantity;
+                            }
+                            else
+                            {
+                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
+                                var productMissing = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
+                                if (productMissing is null)
+                                {
+                                    stationPack.ListPackageMissing.Add(new PackageDetailResponse()
+                                    {
+                                        ProductId = productInMenu.ProductId,
+                                        ProductName = productInMenu.Product.Name,
+                                        Quantity = orderDetail.Quantity,
+                                    });
+                                }
+                                else
+                                {
+                                    productMissing.Quantity += orderDetail.Quantity;
+                                }
+                                stationPack.TotalQuantity += orderDetail.Quantity;
+                            }
                         }
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
 

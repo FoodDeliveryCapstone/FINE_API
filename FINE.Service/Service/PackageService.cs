@@ -278,13 +278,10 @@ namespace FINE.Service.Service
                 switch (request.Type)
                 {
                     case PackageUpdateTypeEnum.Confirm:
-                        HashSet<Guid> listStationId = new HashSet<Guid>();
                         foreach (var item in request.ProductsUpdate)
                         {
                             //cập nhật lại số lượng từng stage
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
-
-                            var numberOfConfirm = product.PendingQuantity;
 
                             packageResponse.TotalProductPending -= product.PendingQuantity;
                             packageResponse.TotalProductReady += product.PendingQuantity;
@@ -294,6 +291,7 @@ namespace FINE.Service.Service
 
                             //lấy các order chưa xác nhận để cập nhật
                             var listOrder = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderBy(x => x.CheckInDate);
+                            var numberConfirmStation = 0;
                             foreach (var order in listOrder)
                             {
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
@@ -301,11 +299,16 @@ namespace FINE.Service.Service
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if (numberOfConfirm >= productInOrder.Quantity)
+                                if (product.PendingQuantity >= productInOrder.Quantity)
                                 {
-                                    numberOfConfirm -= productInOrder.Quantity;
+                                    numberConfirmStation = productInOrder.Quantity;
+                                    product.PendingQuantity -= productInOrder.Quantity;
                                     productInOrder.IsReady = true;
                                     order.IsFinishPrepare = true;
+                                }
+                                else
+                                {
+                                    numberConfirmStation = product.PendingQuantity;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
 
@@ -317,70 +320,31 @@ namespace FINE.Service.Service
 
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                 }
-                                listStationId.Add(order.StationId);
-                            }
-                        }
-                        //cập nhật lại pack station
-                        if (packageResponse.PackageStations is null)
-                        {
-                            packageResponse.PackageStations = new List<PackageStationResponse>();
-                        }
-                        foreach (var stationId in listStationId)
-                        {
-                            var stationPackage = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == stationId && x.IsShipperAssign == false);
-                            if (stationPackage == null)
-                            {
-                                var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == stationId);
-                                stationPackage = new PackageStationResponse()
+
+                                //cập nhật lại pack station
+                                var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
+
+                                var readyPack = packStation.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                var missingPack = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+
+                                if(readyPack is null)
                                 {
-                                    StationId = stationId,
-                                    StationName = station.Name,
-                                    TotalQuantity = 0,
-                                    ReadyQuantity = 0,
-                                    IsShipperAssign = false,
-                                    PackageStationDetails = new List<PackageDetailResponse>(),
-                                    ListPackageMissing = new List<PackageDetailResponse>(),
-                                };
+                                    readyPack = missingPack;
+                                    readyPack.Quantity = numberConfirmStation;
+                                }
+                                else
+                                {
+                                    readyPack.Quantity += numberConfirmStation;
+                                }
+
+                                missingPack.Quantity -= numberConfirmStation;
+                                if(missingPack.Quantity == 0)
+                                {
+                                    packStation.ListPackageMissing.Remove(missingPack);
+                                }
                             }
-                            var listProductReadyByStation = packageResponse.ProductTotalDetails.SelectMany(productTotal => productTotal.ProductDetails
-                                                                                               .Where(productDetail => productDetail.StationId == stationId && productDetail.IsFinishPrepare == true && productDetail.IsAssignToShipper == false)
-                                                                                               .Select(productDetail => new
-                                                                                               {
-                                                                                                   ProductTotal = productTotal,
-                                                                                                   ProductDetail = productDetail
-                                                                                               }))
-                                                                                               .GroupBy(x => x.ProductTotal)
-                                                                                               .Select(x => new PackageDetailResponse()
-                                                                                               {
-                                                                                                   ProductId = x.Key.ProductId,
-                                                                                                   ProductName = x.Key.ProductName,
-                                                                                                   Quantity = x.Key.ProductDetails.Select(x => x.Quantity).Sum()
-                                                                                               });
-
-                            var listProductMissingByStation = packageResponse.ProductTotalDetails.SelectMany(productTotal => productTotal.ProductDetails
-                                                                                               .Where(productDetail => productDetail.StationId == stationId && productDetail.IsFinishPrepare == false)
-                                                                                               .Select(productDetail => new
-                                                                                               {
-                                                                                                   ProductTotal = productTotal,
-                                                                                                   ProductDetail = productDetail
-                                                                                               }))
-                                                                                                .GroupBy(x => x.ProductTotal)
-                                                                                               .Select(x => new PackageDetailResponse()
-                                                                                               {
-                                                                                                   ProductId = x.Key.ProductId,
-                                                                                                   ProductName = x.Key.ProductName,
-                                                                                                   Quantity = x.Key.ProductDetails.Select(x => x.Quantity).Sum()
-                                                                                               });
-
-                            stationPackage.ReadyQuantity = listProductReadyByStation.Select(x => x.Quantity).Sum();
-                            stationPackage.TotalQuantity = stationPackage.ReadyQuantity + listProductMissingByStation.Select(x => x.Quantity).Sum();
-
-                            stationPackage.PackageStationDetails.AddRange(listProductReadyByStation);
-                            stationPackage.ListPackageMissing.AddRange(listProductMissingByStation);
-
-                            packageResponse.PackageStations.Add(stationPackage);
                         }
-                        await _unitOfWork.CommitAsync();
+                        _unitOfWork.CommitAsync();
                         break;
 
                     case PackageUpdateTypeEnum.Error:
