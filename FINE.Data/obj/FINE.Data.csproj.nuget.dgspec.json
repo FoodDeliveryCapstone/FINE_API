@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Data\\FINE.Data.csproj": {}
+    "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {}
   },
   "projects": {
-    "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Data\\FINE.Data.csproj": {
+    "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Data\\FINE.Data.csproj",
+        "projectUniqueName": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj",
         "projectName": "FINE.Data",
-        "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Data\\FINE.Data.csproj",
+        "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj",
         "packagesPath": "C:\\Users\\denwi\\.nuget\\packages\\",
-        "outputPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Data\\obj\\",
+        "outputPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

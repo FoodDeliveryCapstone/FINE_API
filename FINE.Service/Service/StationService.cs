@@ -16,13 +16,14 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
 {
     public interface IStationService
     {
-        Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
+        Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
@@ -38,7 +39,7 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging)
+        public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode)
         {
             try
             {
@@ -47,20 +48,24 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
                        StationErrorEnums.NOT_FOUND.GetDisplayName());
 
+                //get các station còn available kể cả box lock
                 var stations = _unitOfWork.Repository<Station>().GetAll()
                                 .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true)
-                                .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
-                                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+                                .ProjectTo<StationResponse>(_mapper.ConfigurationProvider).ToList();
+                //foreach(var station in stations)
+                //{
+                //    var keyStation = RedisDbEnum.Station.GetDisplayName() + ":" +
+                //}
 
-                return new BaseResponsePagingViewModel<StationResponse>()
+                return new BaseResponseViewModel<List<StationResponse>>()
                 {
-                    Metadata = new PagingsMetadata()
+                    Status = new StatusViewModel()
                     {
-                        Page = paging.Page,
-                        Size = paging.PageSize,
-                        Total = stations.Item1
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
                     },
-                    Data = stations.Item2.ToList()
+                    Data = stations
                 };
             }
             catch (ErrorResponse ex)

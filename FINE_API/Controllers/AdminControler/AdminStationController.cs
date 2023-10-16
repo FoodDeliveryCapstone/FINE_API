@@ -37,23 +37,23 @@ namespace FINE.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Get Stations
-        /// </summary>
-        [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
-        [HttpGet("destination/{destinationId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<StationResponse>>> GetStationByDestination(string destinationId, [FromQuery] PagingRequest paging)
-        {
-            try
-            {
-                var result = await _stationService.GetStationByDestination(destinationId, paging);
-                return Ok(result);
-            }
-            catch (ErrorResponse ex)
-            {
-                return BadRequest(ex.Error);
-            }
-        }
+        ///// <summary>
+        ///// Get Stations
+        ///// </summary>
+        //[Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
+        //[HttpGet("destination/{destinationId}")]
+        //public async Task<ActionResult<BaseResponsePagingViewModel<StationResponse>>> GetStationByDestination(string destinationId, [FromQuery] PagingRequest paging)
+        //{
+        //    try
+        //    {
+        //        var result = await _stationService.GetStationByDestination(destinationId, paging);
+        //        return Ok(result);
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        return BadRequest(ex.Error);
+        //    }
+        //}
 
         /// <summary>
         /// Create Station

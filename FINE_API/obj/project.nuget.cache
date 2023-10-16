@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "QYDi6aLnxH7sOTV8X+RuiCN9ngo29l/Kspe5G1EPtWoUBk+uJQ+RDHC16Pv2EbJksxKWlgisrdL7f3uCImzdnQ==",
+  "dgSpecHash": "C+YzdeJ4mCKpNEfKjz6B1at0AkV6V2VYogsLhVol1UwcweY+7cm0Ooht1Z795E7hxJBPN4qdEeXJi/7NaQ/IYg==",
   "success": true,
-  "projectFilePath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE_API\\FINE.API.csproj",
+  "projectFilePath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\denwi\\.nuget\\packages\\autofac\\7.0.1\\autofac.7.0.1.nupkg.sha512",
     "C:\\Users\\denwi\\.nuget\\packages\\autofac.extensions.dependencyinjection\\8.0.0\\autofac.extensions.dependencyinjection.8.0.0.nupkg.sha512",

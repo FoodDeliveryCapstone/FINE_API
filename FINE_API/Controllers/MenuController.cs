@@ -22,22 +22,6 @@ namespace FINE.API.Controllers
         }
 
         ///// <summary>
-        ///// Get List Menu
-        ///// </summary>
-        //[HttpGet]
-        //public async Task<ActionResult<BaseResponsePagingViewModel<MenuWithoutProductResponse>>> GetMenus([FromQuery] MenuWithoutProductResponse request, [FromQuery] PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        return await _menuService.GetMenus(request, paging);
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        return BadRequest(ex.Error);
-        //    }
-        //}
-
-        ///// <summary>
         ///// Get Menu By Id
         ///// </summary>
 

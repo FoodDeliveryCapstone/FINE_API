@@ -285,7 +285,6 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     OrderCode = DateTime.Now.ToString("ddMM_HHmm") + "-" + Utils.GenerateRandomCode(4),
-                    NumberBox = 1,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
@@ -298,18 +297,18 @@ namespace FINE.Service.Service
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
                                             .FirstOrDefaultAsync();
 
-                if(request.PartyCode.IsNullOrEmpty())
-                {
-                    var prefixesPartyCode = request.PartyCode.Substring(0, 3);
-                    if(prefixesPartyCode.Contains("CPO"))
-                    {
-                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+                //if(request.PartyCode.IsNullOrEmpty())
+                //{
+                //    var prefixesPartyCode = request.PartyCode.Substring(0, 3);
+                //    if(prefixesPartyCode.Contains("CPO"))
+                //    {
+                //        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
+                //        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
 
-                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-                        order.NumberBox = coOrder.NumberBox;
-                    }
-                }
+                //        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                //        order.NumberBox = coOrder.NumberBox;
+                //    }
+                //}
 
                 order.OrderDetails = new List<OrderDetailResponse>();
                 foreach (var orderDetail in request.OrderDetails)
@@ -633,8 +632,7 @@ namespace FINE.Service.Service
                     Id = Guid.NewGuid(),
                     PartyCode = Constants.PARTYORDER_LINKED + Utils.GenerateRandomCode(6),
                     PartyType = (int)PartyOrderType.LinkedOrder,
-                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
-                    NumberBox = 0
+                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot)
                 };
 
                 var party = new Party()
@@ -1109,49 +1107,48 @@ namespace FINE.Service.Service
                 //    throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
                 //       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
 
-                List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
+                //List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
 
-                if (!orderCard.OrderDetails.IsNullOrEmpty())
-                {
-                    foreach (var productCardParty in orderCard.OrderDetails)
-                    {
-                        var productAtt = await _unitOfWork.Repository<ProductAttribute>().GetAll()
-                                        .FirstOrDefaultAsync(x => x.Id == productCardParty.ProductId);
-                        listProductInCard.Add(new CheckFixBoxRequest()
-                        {
-                            Product = productAtt,
-                            Quantity = productCardParty.Quantity,
-                        });
-                    }
-                }
-                var productAttRequest = requestProductInMenu.GroupBy(x => x.Product)
-                                                            .Select(x => x.Key)
-                                                            .FirstOrDefault();
-                listProductInCard.Add(new CheckFixBoxRequest()
-                {
-                    Product = productAttRequest,
-                    Quantity = request.Quantity
-                });
-                while (isFinishCheck == false)
-                {
-                    var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(productAttRequest, request.Quantity, listProductInCard);
+                //if (!orderCard.OrderDetails.IsNullOrEmpty())
+                //{
+                //    foreach (var productCardParty in orderCard.OrderDetails)
+                //    {
+                //        var productAtt = await _unitOfWork.Repository<ProductAttribute>().GetAll()
+                //                        .FirstOrDefaultAsync(x => x.Id == productCardParty.ProductId);
+                //        listProductInCard.Add(new CheckFixBoxRequest()
+                //        {
+                //            Product = productAtt,
+                //            Quantity = productCardParty.Quantity,
+                //        });
+                //    }
+                //}
+                //var productAttRequest = requestProductInMenu.GroupBy(x => x.Product)
+                //                                            .Select(x => x.Key)
+                //                                            .FirstOrDefault();
+                //listProductInCard.Add(new CheckFixBoxRequest()
+                //{
+                //    Product = productAttRequest,
+                //    Quantity = request.Quantity
+                //});
+                //while (isFinishCheck == false)
+                //{
+                //    var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(productAttRequest, request.Quantity, listProductInCard);
 
-                    if (addToBoxResult.QuantitySuccess == request.Quantity)
-                    {
-                        coOrder.NumberBox += 1;
+                //    if (addToBoxResult.QuantitySuccess == request.Quantity)
+                //    {
+                //        coOrder.NumberBox += 1;
 
-                    }
-                    else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess != 0)
-                    {
+                //    }
+                //    else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess != 0)
+                //    {
 
-                    }
-                    else
-                    {
+                //    }
+                //    else
+                //    {
 
-                    }
-                }
+                //    }
+                //}
                 var productInMenu = requestProductInMenu.FirstOrDefault();
-                ;
                 var product = new CoOrderDetailResponse()
                 {
                     ProductInMenuId = productInMenu.Id,

@@ -15,8 +15,6 @@ namespace FINE.Service.DTO.Response
 
         public string OrderCode { get; set; } = null!;
 
-        public int NumberBox { get; set; }
-
         public CustomerOrderResponse Customer { get; set; }
 
         public DateTime CheckInDate { get; set; }

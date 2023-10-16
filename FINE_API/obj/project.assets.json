@@ -6517,11 +6517,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE_API\\FINE.API.csproj",
+      "projectUniqueName": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
       "projectName": "FINE.API",
-      "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE_API\\FINE.API.csproj",
+      "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\FINE.API.csproj",
       "packagesPath": "C:\\Users\\denwi\\.nuget\\packages\\",
-      "outputPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE_API\\obj\\",
+      "outputPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE_API\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -6543,11 +6543,11 @@
         "net7.0": {
           "targetAlias": "net7.0",
           "projectReferences": {
-            "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Data\\FINE.Data.csproj": {
-              "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Data\\FINE.Data.csproj"
+            "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj": {
+              "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Data\\FINE.Data.csproj"
             },
-            "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Service\\FINE.Service.csproj": {
-              "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API_Main\\FINE.Service\\FINE.Service.csproj"
+            "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj": {
+              "projectPath": "D:\\RepoCode\\FINE Repo\\FINE_Product_API\\FINE.Service\\FINE.Service.csproj"
             }
           }
         }
