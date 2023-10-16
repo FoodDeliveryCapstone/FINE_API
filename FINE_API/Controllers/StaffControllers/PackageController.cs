@@ -81,14 +81,14 @@ namespace FINE.API.Controllers.StaffControllers
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (staffId == null)
-                //{
-                //    return Unauthorized();
-                //}
-                var staffId = "719840C7-5EA9-4A34-81ED-22E52F474CD1";
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                //var staffId = "719840C7-5EA9-4A34-81ED-22E52F474CD1";
                 return await _packageService.GetPackageGroupByStation(staffId, timeSlotId);
             }
             catch (ErrorResponse ex)
@@ -151,7 +151,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// </summary>
         [Authorize(Roles = "Shipper")]
         [HttpPut("cofirmTaken")]
-        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> ConfirmTakenPackage(string timeslotId, string storeId)
+        public async Task<ActionResult<BaseResponseViewModel<List<PackageShipperResponse>>>> ConfirmTakenPackage(string timeslotId, string storeId)
         {
             try
             {
