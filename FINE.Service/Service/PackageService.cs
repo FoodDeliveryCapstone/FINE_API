@@ -280,13 +280,14 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.Confirm:
                         foreach (var item in request.ProductsUpdate)
                         {
-                            //cập nhật lại số lượng từng stage
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
-                            packageResponse.TotalProductPending -= product.PendingQuantity;
-                            packageResponse.TotalProductReady += product.PendingQuantity;
+                            var numberConfirm = product.PendingQuantity;
+                            //cập nhật lại số lượng từng stage
+                            packageResponse.TotalProductPending -= numberConfirm;
+                            packageResponse.TotalProductReady += numberConfirm;
 
-                            product.ReadyQuantity += product.PendingQuantity;
+                            product.ReadyQuantity += numberConfirm;
                             product.PendingQuantity = 0;
 
                             //lấy các order chưa xác nhận để cập nhật
@@ -299,16 +300,16 @@ namespace FINE.Service.Service
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if (product.PendingQuantity >= productInOrder.Quantity)
+                                if (numberConfirm >= productInOrder.Quantity)
                                 {
                                     numberConfirmStation = productInOrder.Quantity;
-                                    product.PendingQuantity -= productInOrder.Quantity;
+                                    numberConfirm -= productInOrder.Quantity;
                                     productInOrder.IsReady = true;
                                     order.IsFinishPrepare = true;
                                 }
                                 else
                                 {
-                                    numberConfirmStation = product.PendingQuantity;
+                                    numberConfirmStation = numberConfirm;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
 
@@ -328,7 +329,13 @@ namespace FINE.Service.Service
                                 var readyPack = packStation.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                                 var missingPack = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
 
-                                if(readyPack is null)
+                                missingPack.Quantity -= numberConfirmStation;
+                                if (missingPack.Quantity == 0)
+                                {
+                                    packStation.ListPackageMissing.Remove(missingPack);
+                                }
+
+                                if (readyPack is null)
                                 {
                                     readyPack = missingPack;
                                     readyPack.Quantity = numberConfirmStation;
@@ -337,12 +344,6 @@ namespace FINE.Service.Service
                                 else
                                 {
                                     readyPack.Quantity += numberConfirmStation;
-                                }
-
-                                missingPack.Quantity -= numberConfirmStation;
-                                if(missingPack.Quantity == 0)
-                                {
-                                    packStation.ListPackageMissing.Remove(missingPack);
                                 }
                             }
                         }
