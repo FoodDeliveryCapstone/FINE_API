@@ -324,6 +324,7 @@ namespace FINE.Service.Service
                                 //cập nhật lại pack station
                                 var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
 
+                                packStation.ReadyQuantity += numberConfirmStation;
                                 var readyPack = packStation.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                                 var missingPack = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
 
@@ -331,6 +332,7 @@ namespace FINE.Service.Service
                                 {
                                     readyPack = missingPack;
                                     readyPack.Quantity = numberConfirmStation;
+                                    packStation.PackageStationDetails.Add(readyPack);
                                 }
                                 else
                                 {
@@ -474,6 +476,7 @@ namespace FINE.Service.Service
 
                                 //cập nhật lại pack station
                                 var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
+                                stationPack.ReadyQuantity += numberUpdateAtStation;
 
                                 var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                                 missingPack.Quantity -= (int)numberUpdateAtStation;
@@ -487,12 +490,12 @@ namespace FINE.Service.Service
                                 {
                                     readyPack = missingPack;
                                     readyPack.Quantity = numberUpdateAtStation;
+                                    stationPack.PackageStationDetails.Add(readyPack);
                                 }
                                 else
                                 {
                                     readyPack.Quantity += numberUpdateAtStation;
                                 }
-                                stationPack.TotalQuantity = readyPack.Quantity + missingPack.Quantity;
                             }
                         }
                         await _unitOfWork.CommitAsync();
