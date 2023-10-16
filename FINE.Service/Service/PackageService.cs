@@ -472,12 +472,12 @@ namespace FINE.Service.Service
                             product.ErrorQuantity -= (int)request.Quantity;
 
                             //cập nhật lại order
-                            HashSet<Guid> listIdStation = new HashSet<Guid>();
                             var listOrder = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
 
                             var numberConfirm = request.Quantity;
                             foreach (var order in listOrder)
                             {
+                                var numberUpdateAtStation = 0;
                                 if (numberConfirm == 0) break;
 
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
@@ -485,13 +485,20 @@ namespace FINE.Service.Service
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                productInOrder.ErrorQuantity -= (int)numberConfirm;
+
                                 if (order.Quantity <= numberConfirm)
                                 {
                                     order.IsFinishPrepare = true;
                                     productInOrder.IsReady = true;
+                                    numberUpdateAtStation = order.Quantity;
+                                    numberConfirm -= order.Quantity;
                                 }
-                                else if (productInOrder != null) { }
-                                productInOrder.ErrorQuantity -= (int)numberConfirm;
+                                else if (order.Quantity > numberConfirm)
+                                {
+                                    numberUpdateAtStation = (int)numberConfirm;
+                                    numberConfirm = 0;
+                                }
 
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
@@ -499,18 +506,13 @@ namespace FINE.Service.Service
                                     orderDb.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
 
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
-                                    await _unitOfWork.CommitAsync();
                                 }
-                                listIdStation.Add(order.StationId);
-                            }
 
-                            //cập nhật lại pack station
-                            foreach (var stationId in listIdStation)
-                            {
-                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == stationId);
+                                //cập nhật lại pack station
+                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
 
                                 var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                missingPack.Quantity -= (int)request.Quantity;
+                                missingPack.Quantity -= (int)numberUpdateAtStation;
                                 if (missingPack.Quantity == 0)
                                 {
                                     stationPack.ListPackageMissing.Remove(missingPack);
@@ -520,16 +522,16 @@ namespace FINE.Service.Service
                                 if (readyPack is null)
                                 {
                                     readyPack = missingPack;
-                                    readyPack.Quantity = (int)request.Quantity;
+                                    readyPack.Quantity = numberUpdateAtStation;
                                 }
                                 else
                                 {
-                                    readyPack.Quantity += (int)request.Quantity;
+                                    readyPack.Quantity += numberUpdateAtStation;
                                 }
                                 stationPack.TotalQuantity = readyPack.Quantity + missingPack.Quantity;
                             }
-                           
                         }
+                        await _unitOfWork.CommitAsync();
                         break;
                 }
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
