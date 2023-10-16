@@ -80,6 +80,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid StoreId { get; set; }
         public string StoreName { get; set; }
+        public bool IsTaken { get; set; } 
         public List<PackageDetailResponse> PackageShipperDetails { get; set; }
     }
 }

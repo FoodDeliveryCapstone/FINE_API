@@ -63,24 +63,25 @@ namespace FINE.Service.Service
                 var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + ":" + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyShipper, null);
 
-                PackageShipperResponse packageShipper = new PackageShipperResponse();
+                List<PackageShipperResponse> packageShipper = new List<PackageShipperResponse>();
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageShipper = JsonConvert.DeserializeObject<PackageShipperResponse>(redisValue);
+                    packageShipper = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisValue);
                 }
-                else
+                if (redisShipperValue.HasValue == false || packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false) is null)
                 {
-                    packageShipper = new PackageShipperResponse()
+                    packageShipper.Add(new PackageShipperResponse()
                     {
                         StoreId = (Guid)staff.StoreId,
                         StoreName = staff.Store.StoreName,
+                        IsTaken = false,
                         PackageShipperDetails = new List<PackageDetailResponse>()
-                    };
+                    });
                 }
                 foreach (var pack in packageStation.PackageStationDetails)
                 {
-                    packageShipper.PackageShipperDetails.Add(new PackageDetailResponse()
+                    packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false).PackageShipperDetails.Add(new PackageDetailResponse()
                     {
                         ProductId = pack.ProductId,
                         ProductName = pack.ProductName,
@@ -159,7 +160,7 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    PackageShipperResponse[] result = JsonConvert.DeserializeObject<PackageShipperResponse[]>(redisShipperValue);
+                    var result = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
                     packageResponse = result.ToList();
                 }
 
@@ -422,10 +423,16 @@ namespace FINE.Service.Service
                             product.ErrorQuantity -= (int)request.Quantity;
 
                             var listOrder = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
-
+                            var numberOfRequest = request.Quantity;
                             var numberOfConfirm = request.Quantity + product.WaitingQuantity;
                             foreach (var order in listOrder)
                             {
+                                if (numberOfRequest == 0) break;
+                                if(order.Quantity < numberOfRequest)
+                                {
+                                    order.IsFinishPrepare = true;
+                                }
+                                
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
@@ -447,14 +454,21 @@ namespace FINE.Service.Service
                                 }
                                 var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
 
-                                var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                readyPack.Quantity += (int)request.Quantity;
-
                                 var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                                 missingPack.Quantity -= (int)request.Quantity;
                                 if (missingPack.Quantity == 0)
                                 {
                                     stationPack.ListPackageMissing.Remove(missingPack);
+                                }
+
+                                var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                if(readyPack is null)
+                                {
+                                    readyPack = missingPack;
+                                    readyPack.Quantity = (int)request.Quantity;
+                                }else
+                                {
+                                    readyPack.Quantity += (int)request.Quantity;
                                 }
                                 stationPack.TotalQuantity = readyPack.Quantity + missingPack.Quantity;
                             }
