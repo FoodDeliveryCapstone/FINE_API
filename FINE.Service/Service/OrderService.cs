@@ -1095,9 +1095,9 @@ namespace FINE.Service.Service
 
                 List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
 
-                if(orderCard.OrderDetails is not null)
+                if (orderCard.OrderDetails is not null)
                 {
-                    foreach(var productCardParty in orderCard.OrderDetails)
+                    foreach (var productCardParty in orderCard.OrderDetails)
                     {
                         var productAtt = await _unitOfWork.Repository<ProductAttribute>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == productCardParty.ProductId);
@@ -1135,7 +1135,7 @@ namespace FINE.Service.Service
                     }
                 }
                 var productInMenu = requestProductInMenu.FirstOrDefault();
-;
+                ;
                 var product = new CoOrderDetailResponse()
                 {
                     ProductInMenuId = productInMenu.Id,
@@ -1650,26 +1650,20 @@ namespace FINE.Service.Service
 
         public void UpdatePartyOrderStatus(string code)
         {
-            try
+            var parties = _unitOfWork.Repository<Party>().GetAll()
+                        .Where(x => x.PartyCode == code).ToList();
+            if (parties != null)
             {
-                var parties = _unitOfWork.Repository<Party>().GetAll()
-                            .Where(x => x.PartyCode == code).ToList();
-                if (parties != null)
+                foreach (var party in parties)
                 {
-                    foreach (var party in parties)
-                    {
-                        party.Status = (int)PartyOrderStatus.OutOfTimeslot;
-                        party.IsActive = false;
-                        party.UpdateAt = DateTime.Now;
-                        _unitOfWork.Repository<Party>().UpdateDetached(party);
-                    }
-                    _unitOfWork.Commit();
-                    var keyCoOrder = RedisDbEnum.CoOrder + ":" + code;
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyCoOrder, null);
+                    party.Status = (int)PartyOrderStatus.OutOfTimeslot;
+                    party.IsActive = false;
+                    party.UpdateAt = DateTime.Now;
+                    _unitOfWork.Repository<Party>().UpdateDetached(party);
                 }
-            }
-            catch (ErrorResponse ex)
-            {
+                _unitOfWork.Commit();
+                var keyCoOrder = RedisDbEnum.CoOrder + ":" + code;
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyCoOrder, null);
             }
         }
         #endregion

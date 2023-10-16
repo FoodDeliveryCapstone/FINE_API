@@ -45,6 +45,7 @@ namespace FINE.Service.DTO.Response
         public Guid ProductInMenuId { get; set; }
         public string ProductName { get; set; }
         public int Quantity { get; set; }
+        public int ReConfirmQuantity { get; set; }
         public Guid? StationId { get; set; }
         public int ReportMemType { get; set; }
     }

@@ -24,7 +24,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
         Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
-        Task<BaseResponseViewModel<PackageResponse>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
+        Task<BaseResponseViewModel<List<PackageShipperResponse>>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
     }
     public class PackageService : IPackageService
     {
@@ -37,7 +37,7 @@ namespace FINE.Service.Service
             _mapper = mapper;
         }
 
-        public async Task<BaseResponseViewModel<PackageResponse>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId)
+        public async Task<BaseResponseViewModel<List<PackageShipperResponse>>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId)
         {
             try
             {
@@ -61,7 +61,7 @@ namespace FINE.Service.Service
 
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
 
-                return new BaseResponseViewModel<PackageResponse>()
+                return new BaseResponseViewModel<List<PackageShipperResponse>>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -145,7 +145,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
         public async Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId)
         {
             try
@@ -181,7 +180,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
         public async Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId)
         {
             try
@@ -219,7 +217,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
         public async Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId)
         {
             try
@@ -259,7 +256,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
         public async Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request)
         {
             try
@@ -413,6 +409,7 @@ namespace FINE.Service.Service
                                             ProductInMenuId = product.ProductInMenuId,
                                             ProductName = product.ProductName,
                                             Quantity = (int)request.Quantity,
+                                            ReConfirmQuantity = 0,
                                             ReportMemType = (int)SystemRoleTypeEnum.StoreManager,
                                         });
                                     }
@@ -441,6 +438,7 @@ namespace FINE.Service.Service
                                             ProductName = product.ProductName,
                                             Quantity = (int)request.Quantity,
                                             StationId = staff.StationId,
+                                            ReConfirmQuantity = 0,
                                             ReportMemType = (int)SystemRoleTypeEnum.Shipper,
                                         });
                                     }
@@ -453,7 +451,14 @@ namespace FINE.Service.Service
                         foreach (var item in request.ProductsUpdate)
                         {
                             var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(item)).FirstOrDefault();
-                            packageResponse.ErrorProducts.Remove(packageError);
+                            if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
+                            {
+                                packageResponse.ErrorProducts.Remove(packageError);
+                            }
+                            else
+                            {
+                                packageError.ReConfirmQuantity += (int)request.Quantity;
+                            }
 
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
