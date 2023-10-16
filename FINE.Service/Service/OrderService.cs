@@ -23,6 +23,7 @@ using ZXing;
 using FINE.Service.DTO.Request.Box;
 using Newtonsoft.Json;
 using System.Collections.Specialized;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FINE.Service.Service
 {
@@ -284,6 +285,7 @@ namespace FINE.Service.Service
                 {
                     Id = Guid.NewGuid(),
                     OrderCode = DateTime.Now.ToString("ddMM_HHmm") + "-" + Utils.GenerateRandomCode(4),
+                    NumberBox = 1,
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
@@ -295,6 +297,19 @@ namespace FINE.Service.Service
                                             .Where(x => x.Id == Guid.Parse(customerId))
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
                                             .FirstOrDefaultAsync();
+
+                if(request.PartyCode.IsNullOrEmpty())
+                {
+                    var prefixesPartyCode = request.PartyCode.Substring(0, 3);
+                    if(prefixesPartyCode.Contains("CPO"))
+                    {
+                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                        order.NumberBox = coOrder.NumberBox;
+                    }
+                }
 
                 order.OrderDetails = new List<OrderDetailResponse>();
                 foreach (var orderDetail in request.OrderDetails)
@@ -470,7 +485,7 @@ namespace FINE.Service.Service
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
                 #region Party (if have)
-                if (request.PartyCode is not null)
+                if (!request.PartyCode.IsNullOrEmpty())
                 {
                     var checkCode = await _unitOfWork.Repository<Party>().GetAll()
                                     .Where(x => x.PartyCode == request.PartyCode)
@@ -733,7 +748,6 @@ namespace FINE.Service.Service
         {
             try
             {
-                var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
                 var checkJoin = await _unitOfWork.Repository<Party>().GetAll()
                                                 .FirstOrDefaultAsync(x => x.CustomerId == Guid.Parse(customerId)
                                                     && x.PartyCode != partyCode
@@ -781,7 +795,9 @@ namespace FINE.Service.Service
                 switch (listpartyOrder.FirstOrDefault().PartyType)
                 {
                     case (int)PartyOrderType.CoOrder:
+                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
                         var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+
                         CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                         if (listpartyOrder.FirstOrDefault().PartyType is (int)PartyOrderType.CoOrder)
@@ -1095,7 +1111,7 @@ namespace FINE.Service.Service
 
                 List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
 
-                if (orderCard.OrderDetails is not null)
+                if (!orderCard.OrderDetails.IsNullOrEmpty())
                 {
                     foreach (var productCardParty in orderCard.OrderDetails)
                     {
@@ -1362,7 +1378,7 @@ namespace FINE.Service.Service
 
                     case PartyOrderType.CoOrder:
                         var customerToken = "";
-                        if (memberId is not null) { customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token; }
+                        if (!memberId.IsNullOrEmpty()) { customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(memberId)).Token; }
 
                         var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
                         var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);

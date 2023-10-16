@@ -282,7 +282,7 @@ namespace FINE.Service.Service
                         {
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
-                            var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
+                            var numberOfConfirm = product.PendingQuantity;
 
                             packageResponse.TotalProductPending -= product.PendingQuantity;
                             packageResponse.TotalProductReady += product.PendingQuantity;
@@ -317,7 +317,6 @@ namespace FINE.Service.Service
                                     await _unitOfWork.CommitAsync();
                                 }
                             }
-                            product.WaitingQuantity = numberOfConfirm;
                         }
 
                         packageResponse.PackageStations = new List<PackageStationResponse>();
@@ -450,6 +449,7 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.ReConfirm:
                         foreach (var item in request.ProductsUpdate)
                         {
+                            //cập nhật error pack
                             var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(item)).FirstOrDefault();
                             if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
                             {
@@ -468,27 +468,29 @@ namespace FINE.Service.Service
                             product.ReadyQuantity += (int)request.Quantity;
                             product.ErrorQuantity -= (int)request.Quantity;
 
+                            //cập nhật lại order
+                            HashSet<Guid> listIdStation = new HashSet<Guid>();
                             var listOrder = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
-                            var numberOfRequest = request.Quantity;
-                            var numberOfConfirm = request.Quantity + product.WaitingQuantity;
+
+                            var numberConfirm = request.Quantity;
                             foreach (var order in listOrder)
                             {
-                                if (numberOfRequest == 0) break;
-                                if(order.Quantity < numberOfRequest)
-                                {
-                                    order.IsFinishPrepare = true;
-                                }
-                                
+                                if (numberConfirm == 0) break;
+
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if (numberOfConfirm >= productInOrder.Quantity)
+                                if (order.Quantity <= numberConfirm)
                                 {
-                                    numberOfConfirm -= productInOrder.Quantity;
+                                    order.IsFinishPrepare = true;
                                     productInOrder.IsReady = true;
+
+
                                 }
+                                else if (productInOrder != null) { }
+                                productInOrder.ErrorQuantity -= (int)numberConfirm;
 
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
@@ -498,7 +500,13 @@ namespace FINE.Service.Service
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                     await _unitOfWork.CommitAsync();
                                 }
-                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
+                                listIdStation.Add(order.StationId);
+                            }
+
+                            //cập nhật lại pack station
+                            foreach (var stationId in listIdStation)
+                            {
+                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == stationId);
 
                                 var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                                 missingPack.Quantity -= (int)request.Quantity;
@@ -508,17 +516,18 @@ namespace FINE.Service.Service
                                 }
 
                                 var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if(readyPack is null)
+                                if (readyPack is null)
                                 {
                                     readyPack = missingPack;
                                     readyPack.Quantity = (int)request.Quantity;
-                                }else
+                                }
+                                else
                                 {
                                     readyPack.Quantity += (int)request.Quantity;
                                 }
                                 stationPack.TotalQuantity = readyPack.Quantity + missingPack.Quantity;
                             }
-                            product.WaitingQuantity = (int)numberOfConfirm;
+                           
                         }
                         break;
                 }
