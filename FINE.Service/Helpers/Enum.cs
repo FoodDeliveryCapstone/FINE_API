@@ -9,12 +9,18 @@ namespace FINE.Service.Helpers
         {
             [Display(Name = "CoOrder")]
             CoOrder = 1,
+
             [Display(Name = "Staff")]
             Staff = 2,
+
             [Display(Name = "Order")]
             OrderOperation = 3,
+
             [Display(Name = "Shipper")]
-            Shipper = 4
+            Shipper = 4,
+
+            [Display(Name = "Station")]
+            Station = 4,
         }
         public enum RedisSetUpType
         {

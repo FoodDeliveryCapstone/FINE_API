@@ -12,7 +12,10 @@ namespace FINE.Service.DTO.Response
     public class OrderResponse
     {
         public Guid Id { get; set; }
+
         public string OrderCode { get; set; } = null!;
+
+        public int NumberBox { get; set; }
 
         public CustomerOrderResponse Customer { get; set; }
 
