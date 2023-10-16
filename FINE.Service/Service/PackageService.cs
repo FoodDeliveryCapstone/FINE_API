@@ -316,13 +316,15 @@ namespace FINE.Service.Service
                                     orderDb.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
 
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
-                                    await _unitOfWork.CommitAsync();
                                 }
                                 listStationId.Add(order.StationId);
                             }
                         }
                         //cập nhật lại pack station
-                        packageResponse.PackageStations = new List<PackageStationResponse>();
+                        if (packageResponse.PackageStations is null)
+                        {
+                            packageResponse.PackageStations = new List<PackageStationResponse>();
+                        }
                         foreach (var stationId in listStationId)
                         {
                             var stationPackage = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == stationId && x.IsShipperAssign == false);
@@ -378,6 +380,7 @@ namespace FINE.Service.Service
 
                             packageResponse.PackageStations.Add(stationPackage);
                         }
+                        await _unitOfWork.CommitAsync();
                         break;
 
                     case PackageUpdateTypeEnum.Error:
