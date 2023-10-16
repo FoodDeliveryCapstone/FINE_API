@@ -1670,6 +1670,7 @@ namespace FINE.Service.Service
                                     Quantity = orderDetail.Quantity,
                                 });
                                 stationPackage.TotalQuantity += orderDetail.Quantity;
+                                packageResponse.PackageStations.Add(stationPackage);
                             }
                             else
                             {
