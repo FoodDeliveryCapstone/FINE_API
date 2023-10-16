@@ -329,16 +329,19 @@ namespace FINE.Service.Service
                                 var readyPack = packStation.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                                 var missingPack = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
 
-                                missingPack.Quantity -= numberConfirmStation;
+                                missingPack.Quantity -= (int)numberConfirmStation;
                                 if (missingPack.Quantity == 0)
                                 {
                                     packStation.ListPackageMissing.Remove(missingPack);
                                 }
-
                                 if (readyPack is null)
                                 {
-                                    readyPack = missingPack;
-                                    readyPack.Quantity = numberConfirmStation;
+                                    readyPack = new PackageDetailResponse()
+                                    {
+                                        ProductId = missingPack.ProductId,
+                                        ProductName = missingPack.ProductName,
+                                        Quantity = numberConfirmStation
+                                    };
                                     packStation.PackageStationDetails.Add(readyPack);
                                 }
                                 else
@@ -489,8 +492,12 @@ namespace FINE.Service.Service
                                 var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                                 if (readyPack is null)
                                 {
-                                    readyPack = missingPack;
-                                    readyPack.Quantity = numberUpdateAtStation;
+                                    readyPack = new PackageDetailResponse()
+                                    {
+                                        ProductId = missingPack.ProductId,
+                                        ProductName = missingPack.ProductName,
+                                        Quantity = numberUpdateAtStation
+                                    };
                                     stationPack.PackageStationDetails.Add(readyPack);
                                 }
                                 else
