@@ -23,7 +23,8 @@ namespace FINE.Service.Service
 {
     public interface IStationService
     {
-        Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode);
+        Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
+        //Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
@@ -39,7 +40,7 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode)
+        public async Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging)
         {
             try
             {
@@ -48,24 +49,20 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
                        StationErrorEnums.NOT_FOUND.GetDisplayName());
 
-                //get các station còn available kể cả box lock
                 var stations = _unitOfWork.Repository<Station>().GetAll()
                                 .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true)
-                                .ProjectTo<StationResponse>(_mapper.ConfigurationProvider).ToList();
-                //foreach(var station in stations)
-                //{
-                //    var keyStation = RedisDbEnum.Station.GetDisplayName() + ":" +
-                //}
+                                .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
+                                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-                return new BaseResponseViewModel<List<StationResponse>>()
+                return new BaseResponsePagingViewModel<StationResponse>()
                 {
-                    Status = new StatusViewModel()
+                    Metadata = new PagingsMetadata()
                     {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = stations.Item1
                     },
-                    Data = stations
+                    Data = stations.Item2.ToList()
                 };
             }
             catch (ErrorResponse ex)
@@ -73,6 +70,41 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
+        //public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode)
+        //{
+        //    try
+        //    {
+        //        var checkDestination = _unitOfWork.Repository<Destination>().GetAll().Any(x => x.Id == Guid.Parse(destinationId));
+        //        if (checkDestination == false)
+        //            throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
+        //               StationErrorEnums.NOT_FOUND.GetDisplayName());
+
+        //        //get các station còn available kể cả box lock
+        //        var stations = _unitOfWork.Repository<Station>().GetAll()
+        //                        .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true)
+        //                        .ProjectTo<StationResponse>(_mapper.ConfigurationProvider).ToList();
+        //        //foreach(var station in stations)
+        //        //{
+        //        //    var keyStation = RedisDbEnum.Station.GetDisplayName() + ":" +
+        //        //}
+
+        //        return new BaseResponseViewModel<List<StationResponse>>()
+        //        {
+        //            Status = new StatusViewModel()
+        //            {
+        //                Message = "Success",
+        //                Success = true,
+        //                ErrorCode = 0
+        //            },
+        //            Data = stations
+        //        };
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
         public async Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId)
         {

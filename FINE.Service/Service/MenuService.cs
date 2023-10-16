@@ -48,18 +48,14 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
                                         MenuErrorEnums.NOT_FOUND.GetDisplayName());
 
-                //var listProduct = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                //                            .Include(x => x.Product)
-                //                            .ThenInclude(x => x.Product)
-                //                            .Where(x => x.MenuId == menu.Id)
-                //                            .GroupBy(x => x.Product.Product)
-                //                            .Select(x => new
-                //                            {
-                //                                Pro
-                //                            })
-                //                            .ToList();
+                menu.Products = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                            .Include(x => x.Product)
+                                            .ThenInclude(x => x.Product)
+                                            .Where(x => x.MenuId == menu.Id)
+                                            .GroupBy(x => x.Product.Product)
+                                            .Select(x => _mapper.Map<ProductResponse>(x.Key))
+                                            .ToList();
 
-                //menu.Products = _mapper.Map<List<ProductResponse>>(listProduct); 
                 return new BaseResponseViewModel<MenuResponse>()
                 {
                     Status = new StatusViewModel()

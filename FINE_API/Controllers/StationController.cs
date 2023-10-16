@@ -17,21 +17,40 @@ namespace FINE.API.Controllers
             _stationService = stationService;
         }
 
-        /// <summary>
-        /// lấy thông tin khách hàng bằng token
-        /// </summary>
-        [HttpGet("destination/{destinationId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<List<StationResponse>>>> GetStationByDestination(string destinationId, string orderCode)
+        ///// <summary>
+        ///// lấy thông tin khách hàng bằng token
+        ///// </summary>
+        //[HttpGet("destination/{destinationId}")]
+        //public async Task<ActionResult<BaseResponsePagingViewModel<List<StationResponse>>>> GetStationByDestination(string destinationId, string orderCode)
+        //{
+        //    try
+        //    {
+        //        var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+        //        var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+        //        if (customerId == null)
+        //        {
+        //            return Unauthorized();
+        //        }
+        //        var result = await _stationService.GetStationByDestinationForOrder(destinationId, orderCode);
+        //        return Ok(result);
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        return BadRequest(ex.Error);
+        //    }
+        //}
+
+        public async Task<ActionResult<BaseResponsePagingViewModel<StationResponse>>> GetStationByDestination(string destinationId, [FromQuery] PagingRequest paging)
         {
             try
             {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
-                var result = await _stationService.GetStationByDestinationForOrder(destinationId, orderCode);
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                //if (customerId == null)
+                //{
+                //    return Unauthorized();
+                //}
+                var result = await _stationService.GetStationByDestination(destinationId, paging);
                 return Ok(result);
             }
             catch (ErrorResponse ex)

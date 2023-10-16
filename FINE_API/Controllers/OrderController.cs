@@ -173,14 +173,14 @@ namespace FINE.API.Controllers
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (customerId == null)
-                //{
-                //    return Unauthorized();
-                //}
-                var customerId = "6E9C0199-44E4-4A60-9037-4B04CBE2D12D";
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "6E9C0199-44E4-4A60-9037-4B04CBE2D12D";
                 return await _orderService.CreateOrder(customerId, request);
             }
             catch (ErrorResponse ex)
