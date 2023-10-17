@@ -280,40 +280,54 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.Confirm:
                         foreach (var item in request.ProductsUpdate)
                         {
-                            var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
-
-                            //numberOfConfirm là số lượng confirm bao gồm đã confirm và sắp confirm
-                            var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
-                            //cập nhật lại số lượng từng stage
-                            packageResponse.TotalProductPending -= product.PendingQuantity;
-                            packageResponse.TotalProductReady += product.PendingQuantity;
-
-                            product.ReadyQuantity += product.PendingQuantity;
-                            product.PendingQuantity = 0;
-
-                            //lấy các order chưa xác nhận để cập nhật
-                            var listOrder = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderBy(x => x.CheckInDate);
+                            //số lượng sẽ cập nhật tại pack station
                             var numberConfirmStation = 0;
+                            //numberHasConfirm là số lượng confirm bao gồm đã confirm và sắp confirm
+                            var numberHasConfirm = 0;
+
+                            var productTotal = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+
+                            #region update pack staff                            
+                            numberHasConfirm = productTotal.PendingQuantity + productTotal.WaitingQuantity;
+
+                            //cập nhật lại tổng số lượng từng stage
+                            packageResponse.TotalProductPending -= productTotal.PendingQuantity;
+                            packageResponse.TotalProductReady += productTotal.PendingQuantity;
+
+                            //cập nhật lại số lượng trong productTotal
+                            productTotal.ReadyQuantity += productTotal.PendingQuantity;
+                            productTotal.PendingQuantity = 0;
+                            productTotal.WaitingQuantity = numberHasConfirm;
+
+                            //cập nhật lại productTotal.ReadyQuantity += productTotal.PendingQuantity;
+                            #endregion
+
+                            #region update pack order và update order trên db (nếu có)
+                            //lấy các order id chưa xác nhận order by đặt sớm để lấy ra cập nhật
+                            var listOrder = productTotal.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderBy(x => x.CheckInDate);
                             foreach (var order in listOrder)
                             {
+                                //cập nhật trong pack staff trước
+
+
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if (numberOfConfirm >= productInOrder.Quantity)
+                                if (numberHasConfirm >= productInOrder.Quantity)
                                 {
                                     numberConfirmStation = productInOrder.Quantity;
-                                    numberOfConfirm -= productInOrder.Quantity;
+
+                                    numberHasConfirm -= productInOrder.Quantity;
                                     productInOrder.IsReady = true;
                                     order.IsFinishPrepare = true;
                                 }
                                 else
                                 {
-                                    numberConfirmStation = product.PendingQuantity;
+                                    numberConfirmStation = productTotal.PendingQuantity;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
-
                                 //cập nhật lại trên db
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
                                 {
@@ -322,9 +336,9 @@ namespace FINE.Service.Service
 
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                 }
-                                product.WaitingQuantity = numberOfConfirm;
+                                #endregion
 
-                                //cập nhật lại pack station
+                                #region update pack station
                                 var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
 
                                 packStation.ReadyQuantity += numberConfirmStation;
@@ -351,6 +365,7 @@ namespace FINE.Service.Service
                                     readyPack.Quantity += numberConfirmStation;
                                 }
                             }
+                            #endregion
                         }
                         _unitOfWork.CommitAsync();
                         break;
