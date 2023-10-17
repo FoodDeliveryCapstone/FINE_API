@@ -278,14 +278,14 @@ namespace FINE.Service.Service
                 switch (request.Type)
                 {
                     case PackageUpdateTypeEnum.Confirm:
-                        foreach (var item in request.ProductsUpdate)
+                        foreach (var productRequest in request.ProductsUpdate)
                         {
                             //số lượng sẽ cập nhật tại pack station
                             var numberConfirmStation = 0;
                             //numberHasConfirm là số lượng confirm bao gồm đã confirm và sắp confirm
                             var numberHasConfirm = 0;
 
-                            var productTotal = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
+                            var productTotal = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(productRequest));
 
                             #region update pack staff                            
                             numberHasConfirm = productTotal.PendingQuantity + productTotal.WaitingQuantity;
@@ -297,24 +297,19 @@ namespace FINE.Service.Service
                             //cập nhật lại số lượng trong productTotal
                             productTotal.ReadyQuantity += productTotal.PendingQuantity;
                             productTotal.PendingQuantity = 0;
-                            productTotal.WaitingQuantity = numberHasConfirm;
-
-                            //cập nhật lại productTotal.ReadyQuantity += productTotal.PendingQuantity;
                             #endregion
 
                             #region update pack order và update order trên db (nếu có)
                             //lấy các order id chưa xác nhận order by đặt sớm để lấy ra cập nhật
-                            var listOrder = productTotal.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderBy(x => x.CheckInDate);
-                            foreach (var order in listOrder)
+                            var listOrderInPack = productTotal.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderBy(x => x.CheckInDate);
+                            foreach (var order in listOrderInPack)
                             {
                                 //cập nhật trong pack staff trước
-
-
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
-                                var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequest));
                                 if (numberHasConfirm >= productInOrder.Quantity)
                                 {
                                     numberConfirmStation = productInOrder.Quantity;
@@ -342,8 +337,8 @@ namespace FINE.Service.Service
                                 var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
 
                                 packStation.ReadyQuantity += numberConfirmStation;
-                                var readyPack = packStation.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                var missingPack = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                                var readyPack = packStation.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequest));
+                                var missingPack = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequest));
 
                                 missingPack.Quantity -= (int)numberConfirmStation;
                                 if (missingPack.Quantity == 0)
@@ -364,166 +359,169 @@ namespace FINE.Service.Service
                                 {
                                     readyPack.Quantity += numberConfirmStation;
                                 }
-                            }
-                            #endregion
+                                #endregion
+                            }                       
+                            productTotal.WaitingQuantity = numberHasConfirm;
                         }
                         _unitOfWork.CommitAsync();
                         break;
 
                     case PackageUpdateTypeEnum.Error:
+                        var item = request.ProductsUpdate.FirstOrDefault();
+                        var product = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
                         switch (staff.RoleType)
                         {
                             case (int)SystemRoleTypeEnum.StoreManager:
-                                foreach (var item in request.ProductsUpdate)
+                                packageResponse.TotalProductError += (int)request.Quantity;
+                                packageResponse.TotalProductPending -= (int)request.Quantity;
+
+                                product.PendingQuantity -= (int)request.Quantity;
+                                product.ErrorQuantity += (int)request.Quantity;
+
+                                if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
+                                                                                                && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
                                 {
-                                    var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
-
-                                    packageResponse.TotalProductError += (int)request.Quantity;
-                                    packageResponse.TotalProductPending -= (int)request.Quantity;
-
-                                    product.PendingQuantity -= (int)request.Quantity;
-                                    product.ErrorQuantity += (int)request.Quantity;
-
-                                    if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
-                                                                                                    && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
+                                    packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.Quantity;
+                                }
+                                else
+                                {
+                                    packageResponse.ErrorProducts = new List<ErrorProduct>();
+                                    packageResponse.ErrorProducts.Add(new ErrorProduct()
                                     {
-                                        packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.Quantity;
-                                    }
-                                    else
-                                    {
-                                        packageResponse.ErrorProducts = new List<ErrorProduct>();
-                                        packageResponse.ErrorProducts.Add(new ErrorProduct()
-                                        {
-                                            ProductId = product.ProductId,
-                                            ProductInMenuId = product.ProductInMenuId,
-                                            ProductName = product.ProductName,
-                                            Quantity = (int)request.Quantity,
-                                            ReConfirmQuantity = 0,
-                                            ReportMemType = (int)SystemRoleTypeEnum.StoreManager,
-                                        });
-                                    }
+                                        ProductId = product.ProductId,
+                                        ProductInMenuId = product.ProductInMenuId,
+                                        ProductName = product.ProductName,
+                                        Quantity = (int)request.Quantity,
+                                        ReConfirmQuantity = 0,
+                                        ReportMemType = (int)SystemRoleTypeEnum.StoreManager,
+                                    });
                                 }
                                 break;
 
                             case (int)SystemRoleTypeEnum.Shipper:
-                                foreach (var item in request.ProductsUpdate)
+                                packageResponse.TotalProductError += (int)request.Quantity;
+                                product.ErrorQuantity += (int)request.Quantity;
+
+                                if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
+                                                                                               && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
                                 {
-                                    var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
-
-                                    packageResponse.TotalProductError += (int)request.Quantity;
-                                    product.ErrorQuantity += (int)request.Quantity;
-
-                                    if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
-                                                                                                   && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
+                                    packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
+                                }
+                                else
+                                {
+                                    packageResponse.ErrorProducts.Add(new ErrorProduct()
                                     {
-                                        packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
-                                    }
-                                    else
-                                    {
-                                        packageResponse.ErrorProducts.Add(new ErrorProduct()
-                                        {
-                                            ProductId = product.ProductId,
-                                            ProductInMenuId = product.ProductInMenuId,
-                                            ProductName = product.ProductName,
-                                            Quantity = (int)request.Quantity,
-                                            StationId = staff.StationId,
-                                            ReConfirmQuantity = 0,
-                                            ReportMemType = (int)SystemRoleTypeEnum.Shipper,
-                                        });
-                                    }
+                                        ProductId = product.ProductId,
+                                        ProductInMenuId = product.ProductInMenuId,
+                                        ProductName = product.ProductName,
+                                        Quantity = (int)request.Quantity,
+                                        StationId = staff.StationId,
+                                        ReConfirmQuantity = 0,
+                                        ReportMemType = (int)SystemRoleTypeEnum.Shipper,
+                                    });
                                 }
                                 break;
                         }
                         break;
 
                     case PackageUpdateTypeEnum.ReConfirm:
-                        foreach (var item in request.ProductsUpdate)
+                        //numberOfConfirm là số lượng confirm bao gồm đã confirm và sắp confirm
+                        var numberOfConfirm = 0;
+                        //số lượng sẽ cập nhật tại pack station
+                        var numberUpdateAtStation = 0;
+
+                        var productRequestId = request.ProductsUpdate.FirstOrDefault();
+                        var productTotalPack = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
+                        //cập nhật error pack
+                        var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(productRequestId)).FirstOrDefault();
+                        if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
                         {
-                            //cập nhật error pack
-                            var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(item)).FirstOrDefault();
-                            if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
+                            packageResponse.ErrorProducts.Remove(packageError);
+                        }
+                        else
+                        {
+                            packageError.ReConfirmQuantity += (int)request.Quantity;
+                        }
+
+                        numberOfConfirm =(int)request.Quantity + productTotalPack.WaitingQuantity;
+
+                        //cập nhật lại tổng số lượng từng stage
+                        packageResponse.TotalProductError -= (int)request.Quantity;
+                        packageResponse.TotalProductReady += (int)request.Quantity;
+
+                        //cập nhật lại số lượng trong productTotal
+                        productTotalPack.ReadyQuantity += (int)request.Quantity;
+                        productTotalPack.ErrorQuantity -= (int)request.Quantity;
+
+                        #region update pack order và update order trên db (nếu có)
+                        //lấy các order id chưa xác nhận order by đặt sớm để lấy ra cập nhật
+                        var listOrder = productTotalPack.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
+
+                        var numberConfirmRequest = request.Quantity;
+                        foreach (var order in listOrder)
+                        {
+                            if (numberConfirmRequest == 0) break;
+                            //cập nhật trong pack staff trước
+                            var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+                            var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                            List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
+
+                            var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
+                            productInOrder.ErrorQuantity -= (int)numberConfirmRequest;
+
+                            if (numberOfConfirm >= productInOrder.Quantity)
                             {
-                                packageResponse.ErrorProducts.Remove(packageError);
+                                order.IsFinishPrepare = true;
+                                productInOrder.IsReady = true;
+                                numberUpdateAtStation = order.Quantity;
+                                numberConfirmRequest -= order.Quantity;
+                            }
+                            else if (order.Quantity > numberConfirmRequest)
+                            {
+                                numberUpdateAtStation = (int)numberConfirmRequest;
+                                numberConfirmRequest = 0;
+                            }
+
+                            if (packageOrderDetail.All(x => x.IsReady) is true)
+                            {
+                                var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
+                                orderDb.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
+
+                                await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
+                            }
+                            ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
+                            #endregion
+
+                            #region update pack station
+                            var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
+                            
+                            stationPack.ReadyQuantity += numberUpdateAtStation;
+                            var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
+                            var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
+
+                            missingPack.Quantity -= (int)numberUpdateAtStation;
+                            if (missingPack.Quantity == 0)
+                            {
+                                stationPack.ListPackageMissing.Remove(missingPack);
+                            }
+  
+                            if (readyPack is null)
+                            {
+                                readyPack = new PackageDetailResponse()
+                                {
+                                    ProductId = missingPack.ProductId,
+                                    ProductName = missingPack.ProductName,
+                                    Quantity = numberUpdateAtStation
+                                };
+                                stationPack.PackageStationDetails.Add(readyPack);
                             }
                             else
                             {
-                                packageError.ReConfirmQuantity += (int)request.Quantity;
+                                readyPack.Quantity += numberUpdateAtStation;
                             }
-
-                            var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
-
-                            var numberOfConfirm = request.Quantity + product.WaitingQuantity;
-                            packageResponse.TotalProductError -= (int)request.Quantity;
-                            packageResponse.TotalProductReady += (int)request.Quantity;
-
-                            product.ReadyQuantity += (int)request.Quantity;
-                            product.ErrorQuantity -= (int)request.Quantity;
-
-                            //cập nhật lại order
-                            var listOrder = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
-
-                            var numberConfirmRequest = request.Quantity;
-                            foreach (var order in listOrder)
-                            {
-                                var numberUpdateAtStation = 0;
-                                if (numberConfirmRequest == 0) break;
-
-                                var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
-                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-                                List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
-
-                                var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                productInOrder.ErrorQuantity -= (int)numberConfirmRequest;
-
-                                if (order.Quantity <= numberOfConfirm)
-                                {
-                                    order.IsFinishPrepare = true;
-                                    productInOrder.IsReady = true;
-                                    numberUpdateAtStation = order.Quantity;
-                                    numberConfirmRequest -= order.Quantity;
-                                }
-                                else if (order.Quantity > numberConfirmRequest)
-                                {
-                                    numberUpdateAtStation = (int)numberConfirmRequest;
-                                    numberConfirmRequest = 0;
-                                }
-
-                                if (packageOrderDetail.All(x => x.IsReady) is true)
-                                {
-                                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
-                                    orderDb.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
-
-                                    await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
-                                }
-
-                                //cập nhật lại pack station
-                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
-                                stationPack.ReadyQuantity += numberUpdateAtStation;
-
-                                var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                missingPack.Quantity -= (int)numberUpdateAtStation;
-                                if (missingPack.Quantity == 0)
-                                {
-                                    stationPack.ListPackageMissing.Remove(missingPack);
-                                }
-
-                                var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if (readyPack is null)
-                                {
-                                    readyPack = new PackageDetailResponse()
-                                    {
-                                        ProductId = missingPack.ProductId,
-                                        ProductName = missingPack.ProductName,
-                                        Quantity = numberUpdateAtStation
-                                    };
-                                    stationPack.PackageStationDetails.Add(readyPack);
-                                }
-                                else
-                                {
-                                    readyPack.Quantity += numberUpdateAtStation;
-                                }
-                            }
+                            #endregion
                         }
+                        productTotalPack.WaitingQuantity = numberOfConfirm;
                         await _unitOfWork.CommitAsync();
                         break;
                 }
