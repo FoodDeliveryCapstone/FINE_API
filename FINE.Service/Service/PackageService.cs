@@ -360,7 +360,7 @@ namespace FINE.Service.Service
                                     readyPack.Quantity += numberConfirmStation;
                                 }
                                 #endregion
-                            }                       
+                            }
                             productTotal.WaitingQuantity = numberHasConfirm;
                         }
                         _unitOfWork.CommitAsync();
@@ -369,6 +369,10 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.Error:
                         var item = request.ProductsUpdate.FirstOrDefault();
                         var product = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+                        if (packageResponse.ErrorProducts is null)
+                        {
+                            packageResponse.ErrorProducts = new List<ErrorProduct>();
+                        }
                         switch (staff.RoleType)
                         {
                             case (int)SystemRoleTypeEnum.StoreManager:
@@ -378,14 +382,13 @@ namespace FINE.Service.Service
                                 product.PendingQuantity -= (int)request.Quantity;
                                 product.ErrorQuantity += (int)request.Quantity;
 
-                                if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
-                                                                                                && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
+                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
+                                                                                            && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
                                 {
                                     packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.Quantity;
                                 }
                                 else
                                 {
-                                    packageResponse.ErrorProducts = new List<ErrorProduct>();
                                     packageResponse.ErrorProducts.Add(new ErrorProduct()
                                     {
                                         ProductId = product.ProductId,
@@ -401,9 +404,7 @@ namespace FINE.Service.Service
                             case (int)SystemRoleTypeEnum.Shipper:
                                 packageResponse.TotalProductError += (int)request.Quantity;
                                 product.ErrorQuantity += (int)request.Quantity;
-
-                                if (packageResponse.ErrorProducts is not null && packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
-                                                                                               && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
+                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
                                 {
                                     packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
                                 }
@@ -443,7 +444,7 @@ namespace FINE.Service.Service
                             packageError.ReConfirmQuantity += (int)request.Quantity;
                         }
 
-                        numberOfConfirm =(int)request.Quantity + productTotalPack.WaitingQuantity;
+                        numberOfConfirm = (int)request.Quantity + productTotalPack.WaitingQuantity;
 
                         //cập nhật lại tổng số lượng từng stage
                         packageResponse.TotalProductError -= (int)request.Quantity;
@@ -494,7 +495,7 @@ namespace FINE.Service.Service
 
                             #region update pack station
                             var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
-                            
+
                             stationPack.ReadyQuantity += numberUpdateAtStation;
                             var readyPack = stationPack.PackageStationDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
                             var missingPack = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
@@ -504,7 +505,7 @@ namespace FINE.Service.Service
                             {
                                 stationPack.ListPackageMissing.Remove(missingPack);
                             }
-  
+
                             if (readyPack is null)
                             {
                                 readyPack = new PackageDetailResponse()
