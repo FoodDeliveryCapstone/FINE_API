@@ -24,6 +24,8 @@ namespace FINE.Service.DTO.Response
         public int PendingQuantity { get; set; }
         public int ReadyQuantity { get; set; }
         public int ErrorQuantity { get; set; }
+        //số product chờ. Ví dụ: order nhỏ có 3 mà sau khi cập nhật hết 1 vòng líst,
+        //số lượng xác nhận còn lẻ 1 => không đủ để cập nhật order 3 => để lẻ 1 ở waiting
         public int WaitingQuantity { get; set; }
         public List<ProductDetail> ProductDetails { get; set; }
     }

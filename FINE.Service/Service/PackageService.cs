@@ -304,6 +304,7 @@ namespace FINE.Service.Service
                             var listOrderInPack = productTotal.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderBy(x => x.CheckInDate);
                             foreach (var order in listOrderInPack)
                             {
+                                if (numberHasConfirm == 0) break;
                                 //cập nhật trong pack staff trước
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
@@ -318,8 +319,9 @@ namespace FINE.Service.Service
                                     productInOrder.IsReady = true;
                                     order.IsFinishPrepare = true;
                                 }
-                                else
+                                else if(numberHasConfirm < productInOrder.Quantity)
                                 {
+                                    numberHasConfirm = 0;
                                     numberConfirmStation = productTotal.PendingQuantity;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
@@ -369,6 +371,36 @@ namespace FINE.Service.Service
                     case PackageUpdateTypeEnum.Error:
                         var item = request.ProductsUpdate.FirstOrDefault();
                         var product = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+
+                        packageResponse.TotalProductError += (int)request.Quantity;
+                        product.ErrorQuantity += (int)request.Quantity;
+
+                        //cập nhật số errorProduct trong order pack
+                        var errorNum = request.Quantity;
+                        var orderList = packageResponse.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
+
+                        foreach (var order in orderList)
+                        {
+                            if (errorNum == 0) break;
+
+                            var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+                            var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                            List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
+
+                            var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
+
+                            if (errorNum > productInOrder.Quantity)
+                            {
+                                product.ErrorQuantity = productInOrder.Quantity;
+                                errorNum -= productInOrder.Quantity;
+                            }
+                            else
+                            {
+                                productInOrder.ErrorQuantity = (int)errorNum;
+                                errorNum = 0;
+                            }
+                        }
+                        //cập nhật số errorProduct trong staff pack
                         if (packageResponse.ErrorProducts is null)
                         {
                             packageResponse.ErrorProducts = new List<ErrorProduct>();
@@ -376,11 +408,9 @@ namespace FINE.Service.Service
                         switch (staff.RoleType)
                         {
                             case (int)SystemRoleTypeEnum.StoreManager:
-                                packageResponse.TotalProductError += (int)request.Quantity;
                                 packageResponse.TotalProductPending -= (int)request.Quantity;
 
                                 product.PendingQuantity -= (int)request.Quantity;
-                                product.ErrorQuantity += (int)request.Quantity;
 
                                 if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                                             && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
@@ -402,8 +432,6 @@ namespace FINE.Service.Service
                                 break;
 
                             case (int)SystemRoleTypeEnum.Shipper:
-                                packageResponse.TotalProductError += (int)request.Quantity;
-                                product.ErrorQuantity += (int)request.Quantity;
                                 if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
                                 {
                                     packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
@@ -426,7 +454,7 @@ namespace FINE.Service.Service
                         break;
 
                     case PackageUpdateTypeEnum.ReConfirm:
-                        //numberOfConfirm là số lượng confirm bao gồm đã confirm và sắp confirm
+                        //số lượng confirm bao gồm đã confirm còn dư và sắp confirm
                         var numberOfConfirm = 0;
                         //số lượng sẽ cập nhật tại pack station
                         var numberUpdateAtStation = 0;
@@ -457,30 +485,30 @@ namespace FINE.Service.Service
                         #region update pack order và update order trên db (nếu có)
                         //lấy các order id chưa xác nhận order by đặt sớm để lấy ra cập nhật
                         var listOrder = productTotalPack.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
-
-                        var numberConfirmRequest = request.Quantity;
                         foreach (var order in listOrder)
                         {
-                            if (numberConfirmRequest == 0) break;
-                            //cập nhật trong pack staff trước
+                            if (numberOfConfirm == 0) break;
+
                             var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                             var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                             List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                             var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
-                            productInOrder.ErrorQuantity -= (int)numberConfirmRequest;
 
-                            if (numberOfConfirm >= productInOrder.Quantity)
+                            if (request.Quantity >= productInOrder.ErrorQuantity)
                             {
                                 order.IsFinishPrepare = true;
                                 productInOrder.IsReady = true;
-                                numberUpdateAtStation = order.Quantity;
-                                numberConfirmRequest -= order.Quantity;
+
+                                numberOfConfirm -= productInOrder.Quantity;
+                                numberUpdateAtStation = productInOrder.ErrorQuantity;
+                                request.Quantity -= productInOrder.ErrorQuantity;
                             }
-                            else if (order.Quantity > numberConfirmRequest)
+                            else if (request.Quantity < productInOrder.ErrorQuantity)
                             {
-                                numberUpdateAtStation = (int)numberConfirmRequest;
-                                numberConfirmRequest = 0;
+                                productInOrder.ErrorQuantity -= (int)request.Quantity;
+                                numberUpdateAtStation = (int)request.Quantity;
+                                numberOfConfirm = 0;
                             }
 
                             if (packageOrderDetail.All(x => x.IsReady) is true)
