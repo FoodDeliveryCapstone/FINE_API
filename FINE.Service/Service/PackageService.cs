@@ -282,12 +282,13 @@ namespace FINE.Service.Service
                         {
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
-                            var numberConfirm = product.PendingQuantity;
+                            //numberOfConfirm là số lượng confirm bao gồm đã confirm và sắp confirm
+                            var numberOfConfirm = product.PendingQuantity + product.WaitingQuantity;
                             //cập nhật lại số lượng từng stage
-                            packageResponse.TotalProductPending -= numberConfirm;
-                            packageResponse.TotalProductReady += numberConfirm;
+                            packageResponse.TotalProductPending -= product.PendingQuantity;
+                            packageResponse.TotalProductReady += product.PendingQuantity;
 
-                            product.ReadyQuantity += numberConfirm;
+                            product.ReadyQuantity += product.PendingQuantity;
                             product.PendingQuantity = 0;
 
                             //lấy các order chưa xác nhận để cập nhật
@@ -300,16 +301,16 @@ namespace FINE.Service.Service
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                if (numberConfirm >= productInOrder.Quantity)
+                                if (numberOfConfirm >= productInOrder.Quantity)
                                 {
                                     numberConfirmStation = productInOrder.Quantity;
-                                    numberConfirm -= productInOrder.Quantity;
+                                    numberOfConfirm -= productInOrder.Quantity;
                                     productInOrder.IsReady = true;
                                     order.IsFinishPrepare = true;
                                 }
                                 else
                                 {
-                                    numberConfirmStation = numberConfirm;
+                                    numberConfirmStation = product.PendingQuantity;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
 
@@ -321,6 +322,7 @@ namespace FINE.Service.Service
 
                                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                                 }
+                                product.WaitingQuantity = numberOfConfirm;
 
                                 //cập nhật lại pack station
                                 var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
@@ -435,6 +437,7 @@ namespace FINE.Service.Service
 
                             var product = packageResponse.ProductTotalDetails.Find(x => x.ProductId == Guid.Parse(item));
 
+                            var numberOfConfirm = request.Quantity + product.WaitingQuantity;
                             packageResponse.TotalProductError -= (int)request.Quantity;
                             packageResponse.TotalProductReady += (int)request.Quantity;
 
@@ -444,30 +447,30 @@ namespace FINE.Service.Service
                             //cập nhật lại order
                             var listOrder = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
 
-                            var numberConfirm = request.Quantity;
+                            var numberConfirmRequest = request.Quantity;
                             foreach (var order in listOrder)
                             {
                                 var numberUpdateAtStation = 0;
-                                if (numberConfirm == 0) break;
+                                if (numberConfirmRequest == 0) break;
 
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                                 List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
                                 var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-                                productInOrder.ErrorQuantity -= (int)numberConfirm;
+                                productInOrder.ErrorQuantity -= (int)numberConfirmRequest;
 
-                                if (order.Quantity <= numberConfirm)
+                                if (order.Quantity <= numberOfConfirm)
                                 {
                                     order.IsFinishPrepare = true;
                                     productInOrder.IsReady = true;
                                     numberUpdateAtStation = order.Quantity;
-                                    numberConfirm -= order.Quantity;
+                                    numberConfirmRequest -= order.Quantity;
                                 }
-                                else if (order.Quantity > numberConfirm)
+                                else if (order.Quantity > numberConfirmRequest)
                                 {
-                                    numberUpdateAtStation = (int)numberConfirm;
-                                    numberConfirm = 0;
+                                    numberUpdateAtStation = (int)numberConfirmRequest;
+                                    numberConfirmRequest = 0;
                                 }
 
                                 if (packageOrderDetail.All(x => x.IsReady) is true)
