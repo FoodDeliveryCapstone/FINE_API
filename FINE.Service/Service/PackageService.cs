@@ -475,6 +475,16 @@ namespace FINE.Service.Service
                         productTotalPack.ReadyQuantity += (int)request.Quantity;
                         productTotalPack.ErrorQuantity -= (int)request.Quantity;
 
+                        //cập nhật error pack
+                        var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(productRequestId)).FirstOrDefault();
+                        if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
+                        {
+                            packageResponse.ErrorProducts.Remove(packageError);
+                        }
+                        else
+                        {
+                            packageError.ReConfirmQuantity += (int)request.Quantity;
+                        }
                         #region update pack order và update order trên db (nếu có)
                         //lấy các order id chưa xác nhận order by đặt sớm để lấy ra cập nhật
                         var listOrder = productTotalPack.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
@@ -542,16 +552,6 @@ namespace FINE.Service.Service
                                 readyPack.Quantity += numberUpdateAtStation;
                             }
                             #endregion
-                        }
-                        //cập nhật error pack
-                        var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(productRequestId)).FirstOrDefault();
-                        if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
-                        {
-                            packageResponse.ErrorProducts.Remove(packageError);
-                        }
-                        else
-                        {
-                            packageError.ReConfirmQuantity += (int)request.Quantity;
                         }
                         productTotalPack.WaitingQuantity = numberOfConfirm;
                         await _unitOfWork.CommitAsync();
