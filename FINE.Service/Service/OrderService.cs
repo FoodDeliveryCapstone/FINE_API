@@ -298,7 +298,7 @@ namespace FINE.Service.Service
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
                                             .FirstOrDefaultAsync();
 
-                if (request.PartyCode.IsNullOrEmpty())
+                if (!request.PartyCode.IsNullOrEmpty())
                 {
                     var prefixesPartyCode = request.PartyCode.Substring(0, 3);
                     if (prefixesPartyCode.Contains("CPO"))
