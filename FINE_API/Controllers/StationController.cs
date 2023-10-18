@@ -67,7 +67,7 @@ namespace FINE.API.Controllers
         /// <summary>
         /// lock box cho order
         /// </summary>
-        [HttpPut("orderBox")]
+        [HttpPost("orderBox")]
         public async Task<ActionResult<BaseResponseViewModel<int>>> LockBox(string stationId, string orderCode ,int numberBox)
         {
             try
