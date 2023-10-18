@@ -1533,6 +1533,7 @@ namespace FINE.Service.Service
                 {
                     var listBox = _unitOfWork.Repository<Box>().GetAll()
                                      .Where(x => x.StationId == order.StationId
+                                             && x.IsActive == true
                                              && x.OrderBoxes.Any(z => z.BoxId == x.Id
                                                                 && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
                                      .ToList();

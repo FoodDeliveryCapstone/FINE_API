@@ -20,7 +20,10 @@ namespace FINE.Service.Helpers
             Shipper = 4,
 
             [Display(Name = "Station")]
-            Station = 4,
+            Station = 5,
+
+            [Display(Name = "Box")]
+            Box = 6,
         }
         public enum RedisSetUpType
         {

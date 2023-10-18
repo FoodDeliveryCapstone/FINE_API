@@ -7,6 +7,7 @@ using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Station;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -24,7 +25,7 @@ namespace FINE.Service.Service
     public interface IStationService
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
-        Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode);
+        Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, int numberBox);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
@@ -73,7 +74,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode)
+        public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, int numberBox)
         {
             try
             {
@@ -82,11 +83,45 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
                        StationErrorEnums.NOT_FOUND.GetDisplayName());
 
-                //get các station còn available kể cả box lock
-                var stations = _unitOfWork.Repository<Station>().GetAll()
-                                .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true)
-                                .ProjectTo<StationResponse>(_mapper.ConfigurationProvider).ToList();
+                var listStation = _unitOfWork.Repository<Station>().GetAll()
+                                .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId)
+                                           && x.IsActive == true
+                                           && x.IsAvailable == true);
 
+                var result = new List<StationResponse>();
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
+
+                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                if (redisValue.HasValue == true)
+                {
+                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisValue);
+                }
+                else
+                {
+                    listStationLockBox = listStation.Select(x => new LockBoxinStationModel
+                    {
+                        StationName = x.Name,
+                        StationId = x.Id,
+                        NumberBoxLockPending = 0
+                    }).ToList();
+                }
+                foreach (var stationLock in listStationLockBox)
+                {
+                    //get các station còn available kể cả box lock
+                    var stationFit = await listStation.Where(x => x.Id == stationLock.StationId
+                                                && x.Boxes.Where(x => x.IsActive == true
+                                                && x.OrderBoxes.Any(y => y.Status != (int)OrderBoxStatusEnum.Picked) == false).Count()
+                                                - stationLock.NumberBoxLockPending >= numberBox)
+                                    .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
+                                    .FirstOrDefaultAsync();
+                    if (stationFit is not null)
+                    {
+                        stationLock.NumberBoxLockPending += numberBox;
+                        result.Add(stationFit);
+                    }
+                }
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
 
                 return new BaseResponseViewModel<List<StationResponse>>()
                 {
@@ -96,10 +131,36 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = stations
+                    Data = result
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<StationResponse>> LockBox(string stationId, string orderCode, int numberBox)
+        {
+            try
+            {
+                var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(stationId));
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station:" + station.Code;
+
+
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, null);
+
+                return new BaseResponseViewModel<StationResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }
@@ -152,7 +213,7 @@ namespace FINE.Service.Service
                 var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString);
                 var allAreaCode = jsonObject["AreaCodes"];
                 var areaCode = allAreaCode.FirstOrDefault(x => x == request.AreaCode);
-                if(areaCode == null)
+                if (areaCode == null)
                     throw new ErrorResponse(404, (int)AreaErrorEnums.NOT_FOUND_CODE,
                        AreaErrorEnums.NOT_FOUND_CODE.GetDisplayName());
 
@@ -178,7 +239,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<StationResponse>(station)
                 };
             }
-            catch(ErrorResponse ex) 
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
@@ -234,28 +295,7 @@ namespace FINE.Service.Service
                     Data = _mapper.Map<StationResponse>(updateStation)
                 };
             }
-            catch(ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<StationResponse>> LockBox(string stationId, string orderId, int numberBox)
-        {
-            try
-            {
-
-                return new BaseResponseViewModel<StationResponse>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    }                   
-                };
-            }
-            catch (Exception ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
