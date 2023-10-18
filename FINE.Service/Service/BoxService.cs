@@ -19,6 +19,7 @@ using FINE.Service.DTO.Request.Order;
 using Microsoft.EntityFrameworkCore;
 using FINE.Service.DTO.Request.Station;
 using System.Net.NetworkInformation;
+using StackExchange.Redis;
 
 namespace FINE.Service.Service
 {
@@ -153,25 +154,43 @@ namespace FINE.Service.Service
         {
             try
             {
+                List<AvailableBoxResponse> availableBoxes = new List<AvailableBoxResponse>();
                 var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
                                             .Where(x => x.StationId == Guid.Parse(stationId)
                                             && x.IsActive == true)
                                             .OrderBy(x => x.CreateAt)
-                                            .ProjectTo<AvailableBoxResponse>(_mapper.ConfigurationProvider)
                                             .ToListAsync();
 
-                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
-                                  .Include(x => x.Order)
-                                  .Include(x => x.Box)
-                                  .Where(x => x.Order.TimeSlotId == Guid.Parse(timeslotId)
-                                      && x.Box.StationId == Guid.Parse(stationId)
-                                      && x.Order.CheckInDate.Date == Utils.GetCurrentDatetime().Date)
-                                  .ToListAsync();
-                var availableBoxes = getAllBoxInStation.Where(x => !getOrderBox.Any(a => a.BoxId == x.Id)).ToList();
+                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
 
-                if (availableBoxes.Count == 0)
-                    throw new ErrorResponse(400, (int)StationErrorEnums.UNAVAILABLE,
-                                            StationErrorEnums.UNAVAILABLE.GetDisplayName());
+                foreach (var box in getAllBoxInStation)
+                {
+                    var getBoxStatus = getOrderBox.Where(x => x.BoxId == box.Id)
+                                            .OrderByDescending(x => x.CreateAt)
+                                            .FirstOrDefault();
+                    if (getBoxStatus == null)
+                    {
+                        var availablebox = new AvailableBoxResponse
+                        {
+                            Id = box.Id,
+                            Code = box.Code,
+                            Status = (int)OrderBoxStatusEnum.Picked,
+                            IsHeat = box.IsHeat,
+                        };
+                        availableBoxes.Add(availablebox);
+                    }
+                    else
+                    {
+                        var availablebox = new AvailableBoxResponse
+                        {
+                            Id = box.Id,
+                            Code = box.Code,
+                            Status = getBoxStatus.Status,
+                            IsHeat = box.IsHeat,
+                        };
+                        availableBoxes.Add(availablebox);
+                    }
+                }
 
                 return new BaseResponsePagingViewModel<AvailableBoxResponse>()
                 {

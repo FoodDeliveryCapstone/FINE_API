@@ -14,6 +14,7 @@ using FirebaseAdmin.Messaging;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -69,6 +70,7 @@ namespace FINE.Service.Service
                 {
                     var listBox = _unitOfWork.Repository<Box>().GetAll()
                                      .Where(x => x.StationId == order.StationId
+                                             && x.IsActive == true
                                              && x.OrderBoxes.Any(z => z.BoxId == x.Id
                                                                 && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
                                      .ToList();
@@ -148,7 +150,7 @@ namespace FINE.Service.Service
                                 {
                                     ProductId = productInMenu.ProductId,
                                     ProductInMenuId = productInMenu.Id,
-                                    ProductName = productInMenu.Product.Product.ProductName,
+                                    ProductName = productInMenu.Product.Name,
                                     PendingQuantity = orderDetail.Quantity,
                                     ReadyQuantity = 0,
                                     ErrorQuantity = 0,
@@ -163,7 +165,8 @@ namespace FINE.Service.Service
                                     BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
                                     Quantity = orderDetail.Quantity,
-                                    IsFinishPrepare = false
+                                    IsFinishPrepare = false,
+                                    IsAssignToShipper = false
                                 });
                                 packageResponse.ProductTotalDetails.Add(productTotalDetail);
                             }
@@ -183,6 +186,53 @@ namespace FINE.Service.Service
                             }
                             packageResponse.TotalProductInDay += orderDetail.Quantity;
                             packageResponse.TotalProductPending += orderDetail.Quantity;
+
+                            if (packageResponse.PackageStations is null || packageResponse.PackageStations.Find(x => x.StationId == order.StationId && x.IsShipperAssign == false) is null)
+                            {
+                                if (packageResponse.PackageStations is null)
+                                {
+                                    packageResponse.PackageStations = new List<PackageStationResponse>();
+                                }
+
+                                var station = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == order.StationId);
+                                var stationPackage = new PackageStationResponse()
+                                {
+                                    StationId = station.Id,
+                                    StationName = station.Name,
+                                    TotalQuantity = 0,
+                                    ReadyQuantity = 0,
+                                    IsShipperAssign = false,
+                                    PackageStationDetails = new List<PackageDetailResponse>(),
+                                    ListPackageMissing = new List<PackageDetailResponse>(),
+                                };
+                                stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
+                                {
+                                    ProductId = productInMenu.ProductId,
+                                    ProductName = productInMenu.Product.Name,
+                                    Quantity = orderDetail.Quantity,
+                                });
+                                stationPackage.TotalQuantity += orderDetail.Quantity;
+                                packageResponse.PackageStations.Add(stationPackage);
+                            }
+                            else
+                            {
+                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
+                                var productMissing = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
+                                if (productMissing is null)
+                                {
+                                    stationPack.ListPackageMissing.Add(new PackageDetailResponse()
+                                    {
+                                        ProductId = productInMenu.ProductId,
+                                        ProductName = productInMenu.Product.Name,
+                                        Quantity = orderDetail.Quantity,
+                                    });
+                                }
+                                else
+                                {
+                                    productMissing.Quantity += orderDetail.Quantity;
+                                }
+                                stationPack.TotalQuantity += orderDetail.Quantity;
+                            }
                         }
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
 
@@ -235,7 +285,7 @@ namespace FINE.Service.Service
                 order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
 
                 #region Party (if have)
-                if (request.PartyCode is not null)
+                if (!request.PartyCode.IsNullOrEmpty())
                 {
                     var checkCode = await _unitOfWork.Repository<Party>().GetAll()
                                     .Where(x => x.PartyCode == request.PartyCode)
@@ -349,26 +399,17 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
                        TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
 
-                var timeslotResponse = new TimeSlotOrderResponse()
-                {
-                    Id = timeslot.Id.ToString(),
-                    CloseTime = timeslot.CloseTime,
-                    ArriveTime = timeslot.ArriveTime,
-                    CheckoutTime = timeslot.CheckoutTime,
-                };
-
                 SimulateResponse response = new SimulateResponse()
                 {
-                    Timeslot = timeslotResponse,
                     SingleOrderResult = new SimulateSingleOrderResponse()
                     {
-                        OrderSuccess = new List<OrderSuccess>(),
-                        OrderFailed = new List<OrderFailed>()
+                        OrderSuccess = new List<OrderSimulateResponse>(),
+                        OrderFailed = new List<OrderSimulateResponse>()
                     },
                     CoOrderOrderResult = new SimulateCoOrderResponse()
                     {
-                        OrderSuccess = new List<OrderSuccess>(),
-                        OrderFailed = new List<OrderFailed>()
+                        OrderSuccess = new List<OrderSimulateResponse>(),
+                        OrderFailed = new List<OrderSimulateResponse>()
                     }
                 };
 
@@ -384,6 +425,7 @@ namespace FINE.Service.Service
                                             .ToListAsync();
                 getAllCustomer = getAllCustomer.OrderBy(x => rand.Next()).ToList();
                 int customerIndex = 0;
+                var store = await _unitOfWork.Repository<Store>().GetAll().ToListAsync();
 
                 #region Single Order
                 if (request.SingleOrder is not null)
@@ -413,7 +455,7 @@ namespace FINE.Service.Service
                             .ToList();
                         try
                         {
-                            var rs = _orderService.CreatePreOrder(customer.Id.ToString(), payload).Result.Data;
+                            var rs = await _orderService.CreatePreOrder(customer.Id.ToString(), payload);
                             //var rs = _orderService.CreatePreOrder("4873582B-52AF-4D9E-96D0-0C461018CF81", payload).Result.Data;
                             var stationId = station
                                                 .OrderBy(x => rand.Next())
@@ -422,21 +464,21 @@ namespace FINE.Service.Service
 
                             var payloadCreateOrder = new CreateOrderRequest()
                             {
-                                Id = rs.Id,
-                                OrderCode = rs.OrderCode,
+                                Id = rs.Data.Id,
+                                OrderCode = rs.Data.OrderCode,
                                 PartyCode = null,
-                                TotalAmount = rs.TotalAmount,
-                                FinalAmount = rs.FinalAmount,
-                                TotalOtherAmount = rs.TotalOtherAmount,
-                                OrderType = (OrderTypeEnum)rs.OrderType,
+                                TotalAmount = rs.Data.TotalAmount,
+                                FinalAmount = rs.Data.FinalAmount,
+                                TotalOtherAmount = rs.Data.TotalOtherAmount,
+                                OrderType = (OrderTypeEnum)rs.Data.OrderType,
                                 TimeSlotId = Guid.Parse(request.TimeSlotId),
                                 StationId = stationId.ToString(),
                                 //StationId = "CF42E4AF-F08F-4CC7-B83F-DA449857B2D3",
                                 PaymentType = PaymentTypeEnum.FineWallet,
                                 IsPartyMode = false,
-                                ItemQuantity = rs.ItemQuantity,
-                                Point = rs.Point,
-                                OrderDetails = rs.OrderDetails.Select(detail => new CreateOrderDetail()
+                                ItemQuantity = rs.Data.ItemQuantity,
+                                Point = rs.Data.Point,
+                                OrderDetails = rs.Data.OrderDetails.Select(detail => new CreateOrderDetail()
                                 {
                                     Id = detail.Id,
                                     OrderId = detail.Id,
@@ -451,62 +493,54 @@ namespace FINE.Service.Service
                                     Note = detail.Note
 
                                 }).ToList(),
-                                OtherAmounts = rs.OtherAmounts
+                                OtherAmounts = rs.Data.OtherAmounts
                             };
 
                             try
                             {
-                                var result = CreateOrderForSimulate(customer.Id.ToString(), payloadCreateOrder).Result.Data;
+                                var result = await CreateOrderForSimulate(customer.Id.ToString(), payloadCreateOrder);
                                 //var result = _orderService.CreateOrder("4873582B-52AF-4D9E-96D0-0C461018CF81", payloadCreateOrder).Result.Data;
-                                var orderSuccess = new OrderSuccess
+                                var orderSuccess = new OrderSimulateResponse
                                 {
-                                    Id = result.Id,
-                                    OrderCode = result.OrderCode,
-                                    Customer = result.Customer,
-                                    //OrderDetails = result.OrderDetails,
-                                    OrderDetails = _mapper.Map<List<OrderDetailResponse>, List<OrderSuccessOrderDetail>>
-                                                (result.OrderDetails.ToList())
+                                    CustomerName = result.Data.Customer.Name,
+                                    Message = "Success",
                                 };
+                                var listOrderDetails = _mapper.Map<List<OrderDetailResponse>, List<OrderSuccessOrderDetail>>
+                                                (result.Data.OrderDetails.ToList());
+                                var groupedDetails = listOrderDetails
+                                   .GroupBy(detail => detail.StoreId)
+                                   .Select(group => new GroupedOrderDetail
+                                   {
+                                       StoreId = group.Key,
+                                       StoreName = store.FirstOrDefault(x => x.Id == group.Key).StoreName,
+                                       ProductAndQuantity = group.Select(detail => new ProductAndQuantity
+                                       {
+                                           ProductName = detail.ProductName,
+                                           Quantity = detail.Quantity
+                                       }).ToList()
+                                   }).ToList();
+
+                                orderSuccess.OrderDetails = groupedDetails;
+
                                 response.SingleOrderResult.OrderSuccess.Add(orderSuccess);
                             }
-                            catch (Exception ex)
+                            catch (ErrorResponse ex)
                             {
-                                ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                var orderFail = new OrderFailed
+                                var orderFail = new OrderSimulateResponse
                                 {
-                                    OrderCode = rs.OrderCode,
-                                    Customer = rs.Customer,
-                                    Status = new StatusViewModel
-                                    {
-                                        Message = err.Error.Message,
-                                        Success = false,
-                                        ErrorCode = err.Error.ErrorCode,
-                                    }
+                                    CustomerName = rs.Data.Customer.Name,
+                                    Message = ex.Error.Message
                                 };
                                 response.SingleOrderResult.OrderFailed.Add(orderFail);
                             }
                         }
-                        catch (Exception ex)
+                        catch (ErrorResponse ex)
                         {
                             var randomCustomer = getAllCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                            ErrorResponse err = (ErrorResponse)ex.InnerException;
-                            var orderFail = new OrderFailed
+                            var orderFail = new OrderSimulateResponse
                             {
-                                OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                Customer = new CustomerOrderResponse
-                                {
-                                    Id = randomCustomer.Id,
-                                    CustomerCode = randomCustomer.Name,
-                                    Email = randomCustomer.Email,
-                                    Name = randomCustomer.Name,
-                                    Phone = randomCustomer.Phone,
-                                },
-                                Status = new StatusViewModel
-                                {
-                                    Message = err.Error.Message,
-                                    Success = false,
-                                    ErrorCode = err.Error.ErrorCode,
-                                }
+                                CustomerName = randomCustomer.Name,
+                                Message = ex.Error.Message
                             };
                             response.SingleOrderResult.OrderFailed.Add(orderFail);
                         }
@@ -523,7 +557,7 @@ namespace FINE.Service.Service
                        .OrderBy(x => rand.Next())
                        .Take((int)request.CoOrder.CustomerEach)
                        .ToList();
-                        var openCoOrderCustomer = listCustomer.Take(1).FirstOrDefault();
+                        var openCoOrderCustomer = listCustomer.FirstOrDefault();
                         var restCustomers = listCustomer.Skip(1).ToList();
 
                         var payloadPreOrder = new CreatePreOrderRequest
@@ -533,10 +567,9 @@ namespace FINE.Service.Service
                             PartyType = PartyOrderType.CoOrder
                         };
 
-                        int numberProductTake = rand.Next(1, 4);
                         payloadPreOrder.OrderDetails = productInMenu
                             .OrderBy(x => rand.Next())
-                            .Take(numberProductTake)
+                            .Take(1)
                             .Select(x => new CreatePreOrderDetailRequest
                             {
                                 ProductId = x.Id,
@@ -551,24 +584,40 @@ namespace FINE.Service.Service
                             foreach (var cus in restCustomers)
                             {
                                 var joinCoOrder = await _orderService.JoinPartyOrder(cus.Id.ToString(), timeslot.Id.ToString(), openCoOrder.Data.PartyCode);
+                                //var cusPayloadPreOrder = new AddProductToCardRequest
+                                //{
+                                //    TimeSlotId = request.TimeSlotId,
+                                //    ProductId = productInMenu.FirstOrDefault().Id.ToString(),
+                                //    Quantity = 1
+                                //};
+
+                                //cusPayloadPreOrder.Card = productInMenu
+                                //    //.OrderBy(x => rand.Next())
+                                //    .Take(1)
+                                //    .Select(x => new ProductInCardRequest
+                                //    {
+                                //        ProductId = x.Id.ToString(),
+                                //        Quantity = 1
+                                //    })
+                                //    .ToList();
                                 var cusPayloadPreOrder = new CreatePreOrderRequest
                                 {
-                                    OrderType = OrderTypeEnum.OrderToday,
                                     TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                    PartyType = PartyOrderType.CoOrder
+                                    OrderType = OrderTypeEnum.OrderToday,
+                                    PartyType = PartyOrderType.CoOrder,
+                                    PartyCode = openCoOrder.Data.PartyCode
                                 };
 
-                                int newNumberProductTake = rand.Next(1, 4);
                                 cusPayloadPreOrder.OrderDetails = productInMenu
                                     .OrderBy(x => rand.Next())
-                                    .Take(newNumberProductTake)
+                                    .Take(1)
                                     .Select(x => new CreatePreOrderDetailRequest
                                     {
                                         ProductId = x.Id,
                                         Quantity = 1
                                     })
                                     .ToList();
-                                //var addProduct = await _orderService.AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Data.PartyCode, cusPayloadPreOrder);
+                                var addProduct = await _orderService.AddProductIntoPartyCode(cus.Id.ToString(), openCoOrder.Data.PartyCode, cusPayloadPreOrder);
                                 var confirmCoOrder = await _orderService.FinalConfirmCoOrder(cus.Id.ToString(), openCoOrder.Data.PartyCode);
                             }
 
@@ -591,6 +640,7 @@ namespace FINE.Service.Service
                                 OrderType = (OrderTypeEnum)preCoOrder.Data.OrderType,
                                 TimeSlotId = Guid.Parse(request.TimeSlotId),
                                 StationId = stationId.ToString(),
+                                //StationId = "CF42E4AF-F08F-4CC7-B83F-DA449857B2D3",
                                 PaymentType = PaymentTypeEnum.FineWallet,
                                 IsPartyMode = true,
                                 ItemQuantity = preCoOrder.Data.ItemQuantity,
@@ -616,79 +666,49 @@ namespace FINE.Service.Service
                             {
                                 var result = await CreateOrderForSimulate(openCoOrderCustomer.Id.ToString(), payloadCreateOrder);
 
-                                var orderSuccess = new OrderSuccess
+                                var orderSuccess = new OrderSimulateResponse
                                 {
-                                    Id = result.Data.Id,
-                                    OrderCode = result.Data.OrderCode,
-                                    Customer = result.Data.Customer,
+                                    CustomerName = result.Data.Customer.Name,
+                                    Message = "Success",
                                 };
+                                var listOrderDetails = _mapper.Map<List<OrderDetailResponse>, List<OrderSuccessOrderDetail>>
+                                                (result.Data.OrderDetails.ToList());
+                                var groupedDetails = listOrderDetails
+                                   .GroupBy(detail => detail.StoreId)
+                                   .Select(group => new GroupedOrderDetail
+                                   {
+                                       StoreId = group.Key,
+                                       StoreName = store.FirstOrDefault(x => x.Id == group.Key).StoreName,
+                                       ProductAndQuantity = group.Select(detail => new ProductAndQuantity
+                                       {
+                                           ProductName = detail.ProductName,
+                                           Quantity = detail.Quantity
+                                       }).ToList()
+                                   }).ToList();
+
+                                orderSuccess.OrderDetails = groupedDetails;
+
                                 response.CoOrderOrderResult.OrderSuccess.Add(orderSuccess);
                             }
-                            catch (Exception ex)
+                            catch (ErrorResponse ex)
                             {
-                                ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                var orderFail = new OrderFailed
+                                var orderFail = new OrderSimulateResponse
                                 {
-                                    OrderCode = preCoOrder.Data.OrderCode,
-                                    Customer = preCoOrder.Data.Customer,
-                                    Status = new StatusViewModel
-                                    {
-                                        Message = err.Error.Message,
-                                        Success = false,
-                                        ErrorCode = err.Error.ErrorCode,
-                                    }
+                                    CustomerName = preCoOrder.Data.Customer.Name,
+                                    Message = ex.Error.Message
                                 };
                                 response.CoOrderOrderResult.OrderFailed.Add(orderFail);
                             }
                         }
-                        catch (Exception ex)
+                        catch (ErrorResponse ex)
                         {
                             var randomCustomer = listCustomer.OrderBy(x => rand.Next()).FirstOrDefault();
-                            if (ex is ErrorResponse errorResponse)
+                            var orderFail = new OrderSimulateResponse
                             {
-                                ErrorResponse err = (ErrorResponse)ex.InnerException;
-                                var orderFail = new OrderFailed
-                                {
-                                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + randomCustomer.Id,
-                                    Customer = new CustomerOrderResponse
-                                    {
-                                        Id = randomCustomer.Id,
-                                        CustomerCode = randomCustomer.Name,
-                                        Email = randomCustomer.Email,
-                                        Name = randomCustomer.Name,
-                                        Phone = randomCustomer.Phone,
-                                    },
-                                    Status = new StatusViewModel
-                                    {
-                                        Message = err.Error.Message,
-                                        Success = false,
-                                        ErrorCode = err.Error.ErrorCode,
-                                    }
-                                };
-                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                            }
-                            else
-                            {
-                                var orderFail = new OrderFailed
-                                {
-                                    OrderCode = "",
-                                    Customer = new CustomerOrderResponse
-                                    {
-                                        Id = randomCustomer.Id,
-                                        CustomerCode = randomCustomer.Name,
-                                        Email = randomCustomer.Email,
-                                        Name = randomCustomer.Name,
-                                        Phone = randomCustomer.Phone,
-                                    },
-                                    Status = new StatusViewModel
-                                    {
-                                        Message = ex.Message,
-                                        Success = false,
-                                        ErrorCode = 400
-                                    }
-                                };
-                                response.CoOrderOrderResult.OrderFailed.Add(orderFail);
-                            }
+                                CustomerName = randomCustomer.Name,
+                                Message = ex.Error.Message
+                            };
+                            response.CoOrderOrderResult.OrderFailed.Add(orderFail);
                         }
 
                     }
@@ -764,8 +784,8 @@ namespace FINE.Service.Service
                 var getAllStaff = await _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StoreId != null).ToListAsync();
                 SimulateOrderForStaffResponse response = new SimulateOrderForStaffResponse()
                 {
-                    OrderSuccess = new List<SimulateOrderForStaffSuccess>(),
-                    OrderFailed = new List<SimulateOrderForStaffFailed>()
+                    OrderSuccess = new List<SimulateOrderForStaff>(),
+                    OrderFailed = new List<SimulateOrderForStaff>()
                 };
                 foreach (var staff in getAllStaff)
                 {
@@ -798,19 +818,14 @@ namespace FINE.Service.Service
 
                                 var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
 
-                                var orderFail = new SimulateOrderForStaffFailed()
+                                var orderFail = new SimulateOrderForStaff()
                                 {
                                     StoreId = staff.StoreId,
                                     StaffName = staff.Name,
                                     ProductName = product.ProductName,
                                     Quantity = product.PendingQuantity,
-                                    Status = new StatusViewModel
-                                    {
-                                        Message = "This product is not avaliable!",
-                                        Success = false,
-                                        ErrorCode = 4002,
-
-                                    }
+                                    Message = "This product is not avaliable!",
+ 
                                 };
 
                                 response.OrderFailed.Add(orderFail);
@@ -837,8 +852,9 @@ namespace FINE.Service.Service
 
                                     var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
 
-                                    var orderSuccess = new SimulateOrderForStaffSuccess()
+                                    var orderSuccess = new SimulateOrderForStaff()
                                     {
+                                        Message = "Success",
                                         StoreId = staff.StoreId,
                                         StaffName = staff.Name,
                                         ProductName = product.ProductName,

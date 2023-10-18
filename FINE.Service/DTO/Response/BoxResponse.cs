@@ -21,7 +21,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid? Id { get; set; }
         public string? Code { get; set; }
-        public bool? IsActive { get; set; }
+        public int Status { get; set; }
         public bool? IsHeat { get; set; }
     }
 }
