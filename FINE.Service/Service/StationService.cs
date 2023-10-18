@@ -162,7 +162,7 @@ namespace FINE.Service.Service
                                             .Select(x => x.Id);
                 listBoxOrder.AddRange(orderBox);
 
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listBoxOrder);
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, listBoxOrder);
 
                 int countDount = Int32.Parse(_configuration["CountDownPayment"]);
                 return new BaseResponseViewModel<int>()
