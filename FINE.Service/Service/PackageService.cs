@@ -400,6 +400,7 @@ namespace FINE.Service.Service
                                 productInOrder.ErrorQuantity = (int)errorNum;
                                 errorNum = 0;
                             }
+                            ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
                         }
                         //cập nhật số errorProduct trong staff pack
                         if (packageResponse.ErrorProducts is null)
