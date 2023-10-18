@@ -131,7 +131,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-
+                //var customerId = "6E9C0199-44E4-4A60-9037-4B04CBE2D12D";
                 return await _orderService.CreatePreOrder(customerId, request);
             }
             catch (ErrorResponse ex)
@@ -241,7 +241,7 @@ namespace FINE.API.Controllers
         /// Join CoOrder
         /// </summary>
         [HttpPut("coOrder/party")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string timeSlotId ,string partyCode)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> JoinCoOrder(string timeSlotId, string partyCode)
         {
             try
             {
@@ -253,7 +253,7 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
 
-                return await _orderService.JoinPartyOrder(customerId, timeSlotId ,partyCode);
+                return await _orderService.JoinPartyOrder(customerId, timeSlotId, partyCode);
             }
             catch (ErrorResponse ex)
             {
@@ -265,7 +265,7 @@ namespace FINE.API.Controllers
         /// Add product into CoOrder
         /// </summary>
         [HttpPost("coOrder/card")]
-        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> AddProductIntoPartyCode(string partyCode, [FromBody] AddProductToCardRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<CoOrderResponse>>> AddProductIntoPartyCode(string partyCode, [FromBody] CreatePreOrderRequest request)
         {
             try
             {
