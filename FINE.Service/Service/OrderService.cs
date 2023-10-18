@@ -1056,10 +1056,6 @@ namespace FINE.Service.Service
                 if (timeSlot == null || timeSlot.IsActive == false)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
                         TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
-
-                //if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
-                //    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                //        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
 
                 var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;

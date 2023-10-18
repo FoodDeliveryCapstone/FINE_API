@@ -3,6 +3,7 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.API.Controllers
 {
@@ -78,6 +79,29 @@ namespace FINE.API.Controllers
                     return Unauthorized();
                 }
                 var result = await _stationService.LockBox(stationId, orderCode ,numberBox);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// update lock box cho order
+        /// </summary>
+        [HttpPut("orderBox")]
+        public async Task<ActionResult<BaseResponseViewModel<int>>> UpdateLockBox(LockBoxUpdateTypeEnum type, string orderCode, string stationId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var result = await _stationService.UpdateLockBox(type, orderCode, stationId);
                 return Ok(result);
             }
             catch (ErrorResponse ex)

@@ -212,5 +212,11 @@ namespace FINE.Service.Helpers
 
             ReConfirm = 3
         }
+
+        public enum LockBoxUpdateTypeEnum
+        {
+            Delete = 1,
+            Change = 2
+        }
     }
 }

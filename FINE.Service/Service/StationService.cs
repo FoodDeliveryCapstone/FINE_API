@@ -25,6 +25,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
         Task<BaseResponseViewModel<int>> LockBox(string stationId, string orderCode, int numberBox);
+        Task<BaseResponseViewModel<dynamic>> UpdateLockBox(LockBoxUpdateTypeEnum type, string orderCode, string? stationId = null);
 
     }
 
@@ -173,6 +174,70 @@ namespace FINE.Service.Service
                         ErrorCode = 0
                     },
                     Data = countDount
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<dynamic>> UpdateLockBox(LockBoxUpdateTypeEnum type, string orderCode, string? stationId = null)
+        {
+            try
+            {
+                var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + orderCode;
+                List<Guid> listLockOrder = new List<Guid>();
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                if (redisValue.HasValue == true)
+                {
+                    listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisValue);
+                }
+                var numberBox = listLockOrder.Count();
+
+                switch (type)
+                {
+                    case LockBoxUpdateTypeEnum.Delete:
+                        var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
+
+                        List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                        var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                        if (redisStationValue.HasValue == true)
+                        {
+                            listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
+                        }
+
+                        listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                        {
+                            StationName = x.StationName,
+                            StationId = x.StationId,    
+                            NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
+                        }).ToList();
+
+                        await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                        await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
+                        break;
+
+                    case LockBoxUpdateTypeEnum.Change:
+                        var orderBox = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(stationId))
+                                                                                .Boxes.Where(x => x.IsActive == true
+                                                                                 && x.OrderBoxes.Any(z => z.BoxId == x.Id
+                                                                                 && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
+                                                                        .Take(listLockOrder.Count())
+                                                                        .Select(x => x.Id);
+                        listLockOrder.Clear();
+                        listLockOrder.AddRange(orderBox);
+                        await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, listLockOrder);
+                        break;
+                }
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
                 };
             }
             catch (Exception ex)
