@@ -109,19 +109,22 @@ namespace FINE.Service.Service
                 {
                     packageShipper = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisValue);
                 }
-                if (redisShipperValue.HasValue == false || packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false) is null)
+                var packShipperStore = packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
+                if (redisShipperValue.HasValue == false || packShipperStore is null)
                 {
                     packageShipper.Add(new PackageShipperResponse()
                     {
                         StoreId = (Guid)staff.StoreId,
                         StoreName = staff.Store.StoreName,
                         IsTaken = false,
+                        TotalQuantity = 0,
                         PackageShipperDetails = new List<PackageDetailResponse>()
                     });
                 }
                 foreach (var pack in packageStation.PackageStationDetails)
                 {
-                    packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false).PackageShipperDetails.Add(new PackageDetailResponse()
+                    packShipperStore.TotalQuantity += pack.Quantity;
+                    packShipperStore.PackageShipperDetails.Add(new PackageDetailResponse()
                     {
                         ProductId = pack.ProductId,
                         ProductName = pack.ProductName,
