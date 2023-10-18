@@ -169,7 +169,7 @@ namespace FINE.API.Controllers
         /// Create Order
         /// </summary>
         [HttpPost]
-       public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreateOrder([FromBody] CreateOrderRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<OrderResponse>>> CreateOrder([FromBody] CreateOrderRequest request)
         {
             try
             {
