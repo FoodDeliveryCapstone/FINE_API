@@ -91,7 +91,7 @@ namespace FINE.API.Controllers
         /// update lock box cho order
         /// </summary>
         [HttpPut("orderBox")]
-        public async Task<ActionResult<BaseResponseViewModel<int>>> UpdateLockBox(LockBoxUpdateTypeEnum type, string orderCode, string stationId)
+        public async Task<ActionResult<BaseResponseViewModel<int>>> UpdateLockBox(LockBoxUpdateTypeEnum type, string orderCode, string? stationId = null)
         {
             try
             {
