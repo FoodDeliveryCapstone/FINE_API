@@ -10,13 +10,8 @@ using FINE.Service.Exceptions;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
-using System.Threading.Tasks;
 using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -29,7 +24,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
-        Task<BaseResponseViewModel<StationResponse>> LockBox(string stationId, string orderId, int numberBox);
+        Task<BaseResponseViewModel<int>> LockBox(string stationId, string orderCode, int numberBox);
 
     }
 
@@ -37,10 +32,12 @@ namespace FINE.Service.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public StationService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IConfiguration _configuration;
+        public StationService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _configuration = configuration;
         }
 
         public async Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging)
@@ -140,24 +137,42 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<StationResponse>> LockBox(string stationId, string orderCode, int numberBox)
+        public async Task<BaseResponseViewModel<int>> LockBox(string stationId, string orderCode, int numberBox)
         {
             try
             {
                 var station = await _unitOfWork.Repository<Station>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(stationId));
-                var key = RedisDbEnum.Box.GetDisplayName() + ":Station:" + station.Code;
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
 
+                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                if (redisValue.HasValue == true)
+                {
+                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisValue);
+                }
 
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, null);
+                var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + orderCode;
+                List<Guid> listBoxOrder = new List<Guid>();
 
-                return new BaseResponseViewModel<StationResponse>()
+                var orderBox = station.Boxes.Where(x => x.IsActive == true
+                                                     && x.OrderBoxes.Any(z => z.BoxId == x.Id
+                                                     && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
+                                            .Take(numberBox)
+                                            .Select(x => x.Id);
+                listBoxOrder.AddRange(orderBox);
+
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listBoxOrder);
+
+                int countDount = Int32.Parse(_configuration["CountDownPayment"]);
+                return new BaseResponseViewModel<int>()
                 {
                     Status = new StatusViewModel()
                     {
                         Message = "Success",
                         Success = true,
                         ErrorCode = 0
-                    }
+                    },
+                    Data = countDount
                 };
             }
             catch (Exception ex)

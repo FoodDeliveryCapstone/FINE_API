@@ -62,6 +62,29 @@ namespace FINE.API.Controllers
                 return BadRequest(ex.Error);
             }
         }
+
+        /// <summary>
+        /// lock box cho order
+        /// </summary>
+        [HttpPut("orderBox")]
+        public async Task<ActionResult<BaseResponseViewModel<int>>> LockBox(string stationId, string orderCode ,int numberBox)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                var result = await _stationService.LockBox(stationId, orderCode ,numberBox);
+                return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
     }
 }
 
