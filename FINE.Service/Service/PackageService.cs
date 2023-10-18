@@ -462,16 +462,7 @@ namespace FINE.Service.Service
 
                         var productRequestId = request.ProductsUpdate.FirstOrDefault();
                         var productTotalPack = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
-                        //cập nhật error pack
-                        var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(productRequestId)).FirstOrDefault();
-                        if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
-                        {
-                            packageResponse.ErrorProducts.Remove(packageError);
-                        }
-                        else
-                        {
-                            packageError.ReConfirmQuantity += (int)request.Quantity;
-                        }
+
 
                         numberOfConfirm = (int)request.Quantity + productTotalPack.WaitingQuantity;
 
@@ -550,6 +541,16 @@ namespace FINE.Service.Service
                                 readyPack.Quantity += numberUpdateAtStation;
                             }
                             #endregion
+                        }
+                        //cập nhật error pack
+                        var packageError = packageResponse.ErrorProducts.Where(x => x.ProductId == Guid.Parse(productRequestId)).FirstOrDefault();
+                        if (request.Quantity + packageError.ReConfirmQuantity == packageError.Quantity)
+                        {
+                            packageResponse.ErrorProducts.Remove(packageError);
+                        }
+                        else
+                        {
+                            packageError.ReConfirmQuantity += (int)request.Quantity;
                         }
                         productTotalPack.WaitingQuantity = numberOfConfirm;
                         await _unitOfWork.CommitAsync();
