@@ -35,6 +35,8 @@ namespace FINE.Service.DTO.Response
 
         public StationOrderResponse StationOrder { get; set; }
 
+        public int BoxQuantity { get; set; }
+
         public int Point { get; set; }
 
         public bool IsConfirm { get; set; }

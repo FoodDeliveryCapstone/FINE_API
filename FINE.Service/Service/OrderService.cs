@@ -289,6 +289,7 @@ namespace FINE.Service.Service
                     OrderType = (int)request.OrderType,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
                     StationOrder = null,
+                    BoxQuantity = 1,
                     IsConfirm = false,
                     IsPartyMode = false
                 };
@@ -297,18 +298,18 @@ namespace FINE.Service.Service
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
                                             .FirstOrDefaultAsync();
 
-                //if(request.PartyCode.IsNullOrEmpty())
-                //{
-                //    var prefixesPartyCode = request.PartyCode.Substring(0, 3);
-                //    if(prefixesPartyCode.Contains("CPO"))
-                //    {
-                //        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
-                //        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+                if (request.PartyCode.IsNullOrEmpty())
+                {
+                    var prefixesPartyCode = request.PartyCode.Substring(0, 3);
+                    if (prefixesPartyCode.Contains("CPO"))
+                    {
+                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
 
-                //        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-                //        order.NumberBox = coOrder.NumberBox;
-                //    }
-                //}
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                        order.BoxQuantity = coOrder.BoxQuantity;
+                    }
+                }
 
                 order.OrderDetails = new List<OrderDetailResponse>();
                 foreach (var orderDetail in request.OrderDetails)
@@ -452,7 +453,7 @@ namespace FINE.Service.Service
                 #region Timeslot
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot) && timeSlot.Id != Guid.Parse("E8D529D4-6A51-4FDB-B9DB-E29F54C0486E"))
+                if (timeSlot.Id != Guid.Parse("E8D529D4-6A51-4FDB-B9DB-E29F54C0486E") || request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -892,7 +893,7 @@ namespace FINE.Service.Service
                                             && x.OrderStatus != (int)OrderStatusEnum.Finished
                                             && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
                                         .ToListAsync();
-                if (request.TimeSlotId != "E8D529D4-6A51-4FDB-B9DB-E29F54C0486E" && customerOrder.Count() >= 2)
+                if (request.TimeSlotId != "E8D529D4-6A51-4FDB-B9DB-E29F54C0486E" || customerOrder.Count() >= 2)
                 {
                     var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
 

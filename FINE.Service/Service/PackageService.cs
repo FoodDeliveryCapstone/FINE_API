@@ -296,7 +296,6 @@ namespace FINE.Service.Service
 
                             //cập nhật lại số lượng trong productTotal
                             productTotal.ReadyQuantity += productTotal.PendingQuantity;
-                            productTotal.PendingQuantity = 0;
                             #endregion
 
                             #region update pack order và update order trên db (nếu có)
@@ -321,8 +320,8 @@ namespace FINE.Service.Service
                                 }
                                 else if(numberHasConfirm < productInOrder.Quantity)
                                 {
-                                    numberHasConfirm = 0;
                                     numberConfirmStation = productTotal.PendingQuantity;
+                                    numberHasConfirm = 0;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
                                 //cập nhật lại trên db
@@ -353,7 +352,7 @@ namespace FINE.Service.Service
                                     {
                                         ProductId = missingPack.ProductId,
                                         ProductName = missingPack.ProductName,
-                                        Quantity = numberConfirmStation
+                                        Quantity = numberConfirmStation 
                                     };
                                     packStation.PackageStationDetails.Add(readyPack);
                                 }
@@ -363,7 +362,9 @@ namespace FINE.Service.Service
                                 }
                                 #endregion
                             }
+                            // những giá trị cập nhật sau cuối
                             productTotal.WaitingQuantity = numberHasConfirm;
+                            productTotal.PendingQuantity = 0;
                         }
                         _unitOfWork.CommitAsync();
                         break;

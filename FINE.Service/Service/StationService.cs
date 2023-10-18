@@ -24,10 +24,12 @@ namespace FINE.Service.Service
     public interface IStationService
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
-        //Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode);
+        Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
+        Task<BaseResponseViewModel<StationResponse>> LockBox(string stationId, string orderId, int numberBox);
+
     }
 
     public class StationService : IStationService
@@ -71,40 +73,37 @@ namespace FINE.Service.Service
             }
         }
 
-        //public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode)
-        //{
-        //    try
-        //    {
-        //        var checkDestination = _unitOfWork.Repository<Destination>().GetAll().Any(x => x.Id == Guid.Parse(destinationId));
-        //        if (checkDestination == false)
-        //            throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
-        //               StationErrorEnums.NOT_FOUND.GetDisplayName());
+        public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, string orderCode)
+        {
+            try
+            {
+                var checkDestination = _unitOfWork.Repository<Destination>().GetAll().Any(x => x.Id == Guid.Parse(destinationId));
+                if (checkDestination == false)
+                    throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
+                       StationErrorEnums.NOT_FOUND.GetDisplayName());
 
-        //        //get các station còn available kể cả box lock
-        //        var stations = _unitOfWork.Repository<Station>().GetAll()
-        //                        .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true)
-        //                        .ProjectTo<StationResponse>(_mapper.ConfigurationProvider).ToList();
-        //        //foreach(var station in stations)
-        //        //{
-        //        //    var keyStation = RedisDbEnum.Station.GetDisplayName() + ":" +
-        //        //}
+                //get các station còn available kể cả box lock
+                var stations = _unitOfWork.Repository<Station>().GetAll()
+                                .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId) && x.IsActive == true)
+                                .ProjectTo<StationResponse>(_mapper.ConfigurationProvider).ToList();
 
-        //        return new BaseResponseViewModel<List<StationResponse>>()
-        //        {
-        //            Status = new StatusViewModel()
-        //            {
-        //                Message = "Success",
-        //                Success = true,
-        //                ErrorCode = 0
-        //            },
-        //            Data = stations
-        //        };
-        //    }
-        //    catch (ErrorResponse ex)
-        //    {
-        //        throw ex;
-        //    }
-        //}
+
+                return new BaseResponseViewModel<List<StationResponse>>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = stations
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
 
         public async Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId)
         {
@@ -236,6 +235,27 @@ namespace FINE.Service.Service
                 };
             }
             catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<StationResponse>> LockBox(string stationId, string orderId, int numberBox)
+        {
+            try
+            {
+
+                return new BaseResponseViewModel<StationResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }                   
+                };
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }
