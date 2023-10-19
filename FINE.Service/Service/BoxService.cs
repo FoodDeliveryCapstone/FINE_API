@@ -166,37 +166,31 @@ namespace FINE.Service.Service
                                   .Include(x => x.Order)
                                   .Where(x => x.Order.TimeSlotId == Guid.Parse(timeslotId))
                                   .ToListAsync();
-                var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
-                                  .Where(x => x.TimeSlotId == Guid.Parse(timeslotId))
-                                  .OrderByDescending(x => x.CheckInDate)
-                                  .ToListAsync();
+                var station = await _unitOfWork.Repository<Station>().GetAll().ToListAsync();
+
                 List<Guid> listLockBox = new List<Guid>();
 
-                //lấy tất cả lockbox trên redis
-                foreach (var order in getAllOrder)
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
+
+                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                if (redisValue.HasValue == true)
                 {
-                    var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
-                    List<Guid> listLockOrder = new List<Guid>();
-                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-                    if (redisValue.HasValue == true)
-                    {
-                        listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisValue);
-                    }
-                    listLockBox.AddRange(listLockOrder);
+                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisValue);
                 }
 
                 foreach (var box in getAllBoxInStation)
                 {
                     var getBoxStatus = getOrderBox.Where(x => x.BoxId == box.Id)
-                                            .OrderByDescending(x => x.CreateAt)
-                                            .FirstOrDefault();
-                    if (listLockBox.Any(x => x == box.Id))
+                        .OrderByDescending(x => x.CreateAt)
+                        .FirstOrDefault();                  
+                    if (getBoxStatus == null)
                     {
                         var availablebox = new AvailableBoxResponse
                         {
                             Id = box.Id,
                             Code = box.Code,
-                            Status = (int)OrderBoxStatusEnum.LockBox,
+                            Status = (int)OrderBoxStatusEnum.Picked,
                             IsHeat = box.IsHeat,
                             StationId = box.StationId,
                         };
@@ -204,34 +198,39 @@ namespace FINE.Service.Service
                     }
                     else
                     {
-                        if (getBoxStatus == null)
+                        var availablebox = new AvailableBoxResponse
                         {
+                            Id = box.Id,
+                            Code = box.Code,
+                            Status = getBoxStatus.Status,
+                            IsHeat = box.IsHeat,
+                            StationId = box.StationId,
+                        };
+                        availableBoxes.Add(availablebox);
+                    }
+
+                }
+
+                foreach (var pendingBox in listStationLockBox)
+                {
+                    if (pendingBox.NumberBoxLockPending > 0)
+                    {
+                        for (int i = 0; i < pendingBox.NumberBoxLockPending; i++)
+                        {
+                            var getPendingBox = availableBoxes.FirstOrDefault(x => x.StationId == pendingBox.StationId && x.Status != (int)OrderBoxStatusEnum.NotPicked);
                             var availablebox = new AvailableBoxResponse
                             {
-                                Id = box.Id,
-                                Code = box.Code,
-                                Status = (int)OrderBoxStatusEnum.Picked,
-                                IsHeat = box.IsHeat,
-                                StationId = box.StationId,
-                            };
-                            availableBoxes.Add(availablebox);
-                        }
-                        else
-                        {
-                            var availablebox = new AvailableBoxResponse
-                            {
-                                Id = box.Id,
-                                Code = box.Code,
-                                Status = getBoxStatus.Status,
-                                IsHeat = box.IsHeat,
-                                StationId = box.StationId,
+                                Id = getPendingBox.Id,
+                                Code = getPendingBox.Code,
+                                Status = (int)OrderBoxStatusEnum.LockBox,
+                                IsHeat = getPendingBox.IsHeat,
+                                StationId = getPendingBox.StationId,
                             };
                             availableBoxes.Add(availablebox);
                         }
                     }
                 }
-
-                var station = await _unitOfWork.Repository<Station>().GetAll().ToListAsync();
+               
                 var availableBoxInStation = availableBoxes
                                             .GroupBy(stationId => stationId.StationId)
                                             .Select(group => new AvailableBoxInStationResponse
