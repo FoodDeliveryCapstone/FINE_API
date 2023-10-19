@@ -112,7 +112,7 @@ namespace FINE.API.Controllers.StaffControllers
                 {
                     return Unauthorized();
                 }
-                var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
+                //var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
                 return await _packageService.UpdatePackage(staffId, request);
             }
             catch (ErrorResponse ex)
