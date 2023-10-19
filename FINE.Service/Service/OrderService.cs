@@ -301,7 +301,7 @@ namespace FINE.Service.Service
                         var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
 
                         CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-                        order.BoxQuantity = coOrder.BoxQuantity;
+
                     }
                 }
 
@@ -1118,7 +1118,7 @@ namespace FINE.Service.Service
                     orderCard.TotalAmount += product.TotalAmount;
                 }
 
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, partyCode, coOrder);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyCoOrder, coOrder);
 
                 return new BaseResponseViewModel<CoOrderResponse>()
                 {
@@ -1478,40 +1478,30 @@ namespace FINE.Service.Service
         {
             try
             {
-
+                var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
+                List<Guid> listLockOrder = new List<Guid>();
+                var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                if (redisLockValue.HasValue == true)
+                {
+                    listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
+                }
                 if (order.IsPartyMode == true)
                 {
 
                 }
                 else
                 {
-                    var listBox = _unitOfWork.Repository<Box>().GetAll()
-                                     .Where(x => x.StationId == order.StationId
-                                             && x.IsActive == true
-                                             && x.OrderBoxes.Any(z => z.BoxId == x.Id
-                                                                && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
-                                     .ToList();
-
+                    var boxId = listLockOrder.FirstOrDefault();
                     var orderBox = new OrderBox()
                     {
                         Id = Guid.NewGuid(),
                         OrderId = order.Id,
-                        BoxId = listBox.FirstOrDefault().Id,
+                        BoxId = boxId,
                         Key = Utils.GenerateRandomCode(10),
                         Status = (int)OrderBoxStatusEnum.NotPicked,
                         CreateAt = DateTime.Now
                     };
                     _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
-
-                    if (listBox.Count() == 1)
-                    {
-                        var station = _unitOfWork.Repository<Station>().GetAll()
-                                            .FirstOrDefault(x => x.Id == order.StationId);
-                        station.IsAvailable = false;
-
-                        _unitOfWork.Repository<Station>().UpdateDetached(station);
-                    }
-                    _unitOfWork.Commit();
 
                     List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                     PackageResponse packageResponse;
@@ -1652,8 +1642,6 @@ namespace FINE.Service.Service
                             }
                         }
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-
-                        var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetails);
                     }
                 }
