@@ -1486,12 +1486,16 @@ namespace FINE.Service.Service
             try
             {
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
+                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + order.OrderCode;
+
                 List<Guid> listLockOrder = new List<Guid>();
                 var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                 if (redisLockValue.HasValue == true)
                 {
                     listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
                 }
+
+
                 if (order.IsPartyMode == true)
                 {
 
@@ -1649,7 +1653,7 @@ namespace FINE.Service.Service
                             }
                         }
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetails);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrderDetails);
                     }
                 }
             }
