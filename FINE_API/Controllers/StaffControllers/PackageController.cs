@@ -105,13 +105,13 @@ namespace FINE.API.Controllers.StaffControllers
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (staffId == null)
-                //{
-                //    return Unauthorized();
-                //}
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
                 var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
                 return await _packageService.UpdatePackage(staffId, request);
             }
