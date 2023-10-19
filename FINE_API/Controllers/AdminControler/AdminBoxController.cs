@@ -79,11 +79,11 @@ namespace FINE.API.Controllers
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpGet("availableBoxes")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<AvailableBoxResponse>>> GetAvailableBoxInStation([FromQuery] string stationId, string timeslotId)
+        public async Task<ActionResult<BaseResponsePagingViewModel<AvailableBoxInStationResponse>>> GetAvailableBoxInStation([FromQuery] string timeslotId)
         {
             try
             {
-                return await _boxService.GetAvailableBoxInStation(stationId, timeslotId);
+                return await _boxService.GetAvailableBoxInStation(timeslotId);
             }
             catch(ErrorResponse ex)
             {

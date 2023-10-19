@@ -21,7 +21,15 @@ namespace FINE.Service.DTO.Response
     {
         public Guid? Id { get; set; }
         public string? Code { get; set; }
-        public bool? IsActive { get; set; }
+        public int Status { get; set; }
         public bool? IsHeat { get; set; }
+        public Guid StationId { get; set; }
+    }
+
+    public class AvailableBoxInStationResponse
+    {
+        public Guid StationId { get; set; }
+        public string? StationName { get; set; }
+        public List<AvailableBoxResponse> ListBox { get; set; }
     }
 }

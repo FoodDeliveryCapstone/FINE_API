@@ -19,6 +19,7 @@ using FINE.Service.DTO.Request.Order;
 using Microsoft.EntityFrameworkCore;
 using FINE.Service.DTO.Request.Station;
 using System.Net.NetworkInformation;
+using StackExchange.Redis;
 
 namespace FINE.Service.Service
 {
@@ -27,7 +28,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<BoxResponse>> GetBoxByStation(string stationId, BoxResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<BoxResponse>> CreateBox(CreateBoxRequest request);
         Task<BaseResponseViewModel<BoxResponse>> UpdateBox(string boxId, UpdateBoxRequest request);
-        Task<BaseResponsePagingViewModel<AvailableBoxResponse>> GetAvailableBoxInStation(string stationId, string timeslotId);
+        Task<BaseResponsePagingViewModel<AvailableBoxInStationResponse>> GetAvailableBoxInStation(string timeslotId);
 
     }
 
@@ -149,37 +150,77 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<AvailableBoxResponse>> GetAvailableBoxInStation(string stationId, string timeslotId)
+        public async Task<BaseResponsePagingViewModel<AvailableBoxInStationResponse>> GetAvailableBoxInStation(string timeslotId)
         {
             try
             {
+                List<AvailableBoxResponse> availableBoxes = new List<AvailableBoxResponse>();
                 var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
-                                            .Where(x => x.StationId == Guid.Parse(stationId)
-                                            && x.IsActive == true)
+                                            .Where(x => x.IsActive == true)
                                             .OrderBy(x => x.CreateAt)
-                                            .ProjectTo<AvailableBoxResponse>(_mapper.ConfigurationProvider)
                                             .ToListAsync();
 
                 var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
                                   .Include(x => x.Order)
-                                  .Include(x => x.Box)
-                                  .Where(x => x.Order.TimeSlotId == Guid.Parse(timeslotId)
-                                      && x.Box.StationId == Guid.Parse(stationId)
-                                      && x.Order.CheckInDate.Date == Utils.GetCurrentDatetime().Date)
+                                  .Where(x => x.Order.TimeSlotId == Guid.Parse(timeslotId))
                                   .ToListAsync();
-                var availableBoxes = getAllBoxInStation.Where(x => !getOrderBox.Any(a => a.BoxId == x.Id)).ToList();
 
-                if (availableBoxes.Count == 0)
-                    throw new ErrorResponse(400, (int)StationErrorEnums.UNAVAILABLE,
-                                            StationErrorEnums.UNAVAILABLE.GetDisplayName());
+                foreach (var box in getAllBoxInStation)
+                {
+                    var getBoxStatus = getOrderBox.Where(x => x.BoxId == box.Id)
+                                            .OrderByDescending(x => x.CreateAt)
+                                            .FirstOrDefault();
+                    if (getBoxStatus == null)
+                    {
+                        var availablebox = new AvailableBoxResponse
+                        {
+                            Id = box.Id,
+                            Code = box.Code,
+                            Status = (int)OrderBoxStatusEnum.Picked,
+                            IsHeat = box.IsHeat,
+                            StationId = box.StationId,
+                        };
+                        availableBoxes.Add(availablebox);
+                    }
+                    else
+                    {
+                        var availablebox = new AvailableBoxResponse
+                        {
+                            Id = box.Id,
+                            Code = box.Code,
+                            Status = getBoxStatus.Status,
+                            IsHeat = box.IsHeat,
+                            StationId = box.StationId,
+                        };
+                        availableBoxes.Add(availablebox);
+                    }
+                }
 
-                return new BaseResponsePagingViewModel<AvailableBoxResponse>()
+                var station = await _unitOfWork.Repository<Station>().GetAll().ToListAsync();
+                var availableBoxInStation = availableBoxes
+                                            .GroupBy(stationId => stationId.StationId)
+                                            .Select(group => new AvailableBoxInStationResponse
+                                            {
+                                                StationId = group.Key,
+                                                StationName = station.FirstOrDefault(x => x.Id == group.Key).Name,
+                                                ListBox = group.Select(detail => new AvailableBoxResponse
+                                                {
+                                                    Id= detail.Id,
+                                                    Code = detail.Code,
+                                                    Status = detail.Status,
+                                                    IsHeat = detail.IsHeat,
+                                                    StationId = detail.StationId,
+                                                }).ToList(),
+                                            }).ToList();
+
+
+                return new BaseResponsePagingViewModel<AvailableBoxInStationResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {
-                        Total = availableBoxes.Count
+                        Total = availableBoxInStation.Count
                     },
-                    Data = availableBoxes
+                    Data = availableBoxInStation
                 };
             }
             catch (ErrorResponse ex)
