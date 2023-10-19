@@ -1622,7 +1622,7 @@ namespace FINE.Service.Service
                                     IsShipperAssign = false,
                                     PackageStationDetails = new List<PackageDetailResponse>(),
                                     ListPackageMissing = new List<PackageDetailResponse>(),
-                                    ListOrderId = new List<Guid>()
+                                    ListOrdeBox = new List<OrderBoxModel>()
                                 };
                                 stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
                                 {
