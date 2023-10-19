@@ -218,7 +218,7 @@ namespace FINE.Service.Service
                 {
                     Metadata = new PagingsMetadata()
                     {
-                        Total = availablebox.Count
+                        Total = availableBoxInStation.Count
                     },
                     Data = availableBoxInStation
                 };
