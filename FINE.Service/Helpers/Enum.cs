@@ -121,7 +121,8 @@ namespace FINE.Service.Helpers
             Picked = 2,
             AboutToExpire = 3,
 
-            StaffPicked = 4
+            StaffPicked = 4,
+            LockBox = 5
         }
 
         public enum PartyOrderStatus

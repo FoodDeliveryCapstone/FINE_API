@@ -196,7 +196,7 @@ namespace FINE.Service.Service
                         {
                             Id = box.Id,
                             Code = box.Code,
-                            Status = (int)OrderBoxStatusEnum.NotPicked,
+                            Status = (int)OrderBoxStatusEnum.LockBox,
                             IsHeat = box.IsHeat,
                             StationId = box.StationId,
                         };
