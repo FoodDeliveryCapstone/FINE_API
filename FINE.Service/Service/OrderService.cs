@@ -1486,7 +1486,7 @@ namespace FINE.Service.Service
             try
             {
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
-                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + order.OrderCode;
+                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName()+ ":" + order.OrderCode;
 
                 List<Guid> listLockOrder = new List<Guid>();
                 var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
@@ -1622,6 +1622,7 @@ namespace FINE.Service.Service
                                     IsShipperAssign = false,
                                     PackageStationDetails = new List<PackageDetailResponse>(),
                                     ListPackageMissing = new List<PackageDetailResponse>(),
+                                    ListOrderId = new List<Guid>()
                                 };
                                 stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
                                 {
@@ -1629,6 +1630,7 @@ namespace FINE.Service.Service
                                     ProductName = productInMenu.Product.Name,
                                     Quantity = orderDetail.Quantity,
                                 });
+
                                 stationPackage.TotalQuantity += orderDetail.Quantity;
                                 packageResponse.PackageStations.Add(stationPackage);
                             }
