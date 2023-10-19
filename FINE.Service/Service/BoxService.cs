@@ -217,16 +217,10 @@ namespace FINE.Service.Service
                     {
                         for (int i = 0; i < pendingBox.NumberBoxLockPending; i++)
                         {
-                            var getPendingBox = availableBoxes.FirstOrDefault(x => x.StationId == pendingBox.StationId && x.Status != (int)OrderBoxStatusEnum.NotPicked);
-                            var availablebox = new AvailableBoxResponse
-                            {
-                                Id = getPendingBox.Id,
-                                Code = getPendingBox.Code,
-                                Status = (int)OrderBoxStatusEnum.LockBox,
-                                IsHeat = getPendingBox.IsHeat,
-                                StationId = getPendingBox.StationId,
-                            };
-                            availableBoxes.Add(availablebox);
+                            var getPendingBox = availableBoxes.FirstOrDefault(x => x.StationId == pendingBox.StationId 
+                                                                                && x.Status != (int)OrderBoxStatusEnum.NotPicked
+                                                                                && x.Status != (int)OrderBoxStatusEnum.LockBox);
+                            getPendingBox.Status = (int)OrderBoxStatusEnum.LockBox;
                         }
                     }
                 }
