@@ -113,7 +113,7 @@ namespace FINE.Service.Helpers
             }
         }
 
-        public static FixBoxResponse CheckProductFixTheBox(ProductAttribute product, int quantity, List<CheckFixBoxRequest> card)
+        public static FixBoxResponse CheckProductFixTheBox(List<CheckFixBoxRequest> card, ProductAttribute? product = null, int? quantity = 0)
         {
             try
             {
@@ -136,8 +136,8 @@ namespace FINE.Service.Helpers
                     RemainingWidthSpace = boxSize,
                     VolumeOccupied = null
                 };
-                // tính thể tích bị chiếm bởi các product trong card trước
 
+                // tính thể tích bị chiếm bởi các product trong card trước
                 card.OrderByDescending(x => (x.Product.Length * x.Product.Width));
                 foreach (var item in card)
                 {
@@ -161,15 +161,18 @@ namespace FINE.Service.Helpers
                                 VolumeLengthOccupied = calculateCardResult.VolumeLengthOccupied,
                                 VolumeWidthOccupied = calculateCardResult.VolumeWidthOccupied
                             };
-                            if (item.Product.Id == product.Id)
+                            if (product is not null)
                             {
-                                if (successCase == turnCard)
+                                if (item.Product.Id == product.Id)
                                 {
-                                    fillBoxResponse.QuantitySuccess = quantity;
-                                }
-                                else
-                                {
-                                    fillBoxResponse.QuantitySuccess = pairingCardResult.QuantityCanAdd * successCase;
+                                    if (successCase == turnCard)
+                                    {
+                                        fillBoxResponse.QuantitySuccess = (int)quantity;
+                                    }
+                                    else
+                                    {
+                                        fillBoxResponse.QuantitySuccess = pairingCardResult.QuantityCanAdd * successCase;
+                                    }
                                 }
                             }
                         }

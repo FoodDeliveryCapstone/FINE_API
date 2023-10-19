@@ -18,6 +18,7 @@ using Hangfire;
 using FirebaseAdmin.Messaging;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
+using NetTopologySuite.Index.HPRtree;
 
 namespace FINE.Service.Service
 {
@@ -302,6 +303,12 @@ namespace FINE.Service.Service
 
                         CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
+                        var numberMember = coOrder.PartyOrder.Count();
+                        List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
+
+                        var listProductInCoOrder = coOrder.PartyOrder.SelectMany(x => x.OrderDetails);
+
+                        order.BoxQuantity = (int)Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
                     }
                 }
 
@@ -965,7 +972,7 @@ namespace FINE.Service.Service
                 };
                 listProductInCard.Add(productWillAdd);
 
-                var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(productRequest, request.Quantity, listProductInCard);
+                var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(listProductInCard, productRequest, request.Quantity);
 
                 if (addToBoxResult.QuantitySuccess == request.Quantity)
                 {
