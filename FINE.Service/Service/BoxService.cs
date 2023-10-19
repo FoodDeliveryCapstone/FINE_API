@@ -28,7 +28,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<BoxResponse>> GetBoxByStation(string stationId, BoxResponse filter, PagingRequest paging);
         Task<BaseResponseViewModel<BoxResponse>> CreateBox(CreateBoxRequest request);
         Task<BaseResponseViewModel<BoxResponse>> UpdateBox(string boxId, UpdateBoxRequest request);
-        Task<BaseResponsePagingViewModel<AvailableBoxResponse>> GetAvailableBoxInStation(string stationId, string timeslotId);
+        Task<BaseResponsePagingViewModel<AvailableBoxInStationResponse>> GetAvailableBoxInStation(string timeslotId);
 
     }
 
@@ -150,18 +150,20 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponsePagingViewModel<AvailableBoxResponse>> GetAvailableBoxInStation(string stationId, string timeslotId)
+        public async Task<BaseResponsePagingViewModel<AvailableBoxInStationResponse>> GetAvailableBoxInStation(string timeslotId)
         {
             try
             {
                 List<AvailableBoxResponse> availableBoxes = new List<AvailableBoxResponse>();
                 var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
-                                            .Where(x => x.StationId == Guid.Parse(stationId)
-                                            && x.IsActive == true)
+                                            .Where(x => x.IsActive == true)
                                             .OrderBy(x => x.CreateAt)
                                             .ToListAsync();
 
-                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
+                var getOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                  .Include(x => x.Order)
+                                  .Where(x => x.Order.TimeSlotId == Guid.Parse(timeslotId))
+                                  .ToListAsync();
 
                 foreach (var box in getAllBoxInStation)
                 {
@@ -176,6 +178,7 @@ namespace FINE.Service.Service
                             Code = box.Code,
                             Status = (int)OrderBoxStatusEnum.Picked,
                             IsHeat = box.IsHeat,
+                            StationId = box.StationId,
                         };
                         availableBoxes.Add(availablebox);
                     }
@@ -187,18 +190,37 @@ namespace FINE.Service.Service
                             Code = box.Code,
                             Status = getBoxStatus.Status,
                             IsHeat = box.IsHeat,
+                            StationId = box.StationId,
                         };
                         availableBoxes.Add(availablebox);
                     }
                 }
 
-                return new BaseResponsePagingViewModel<AvailableBoxResponse>()
+                var station = await _unitOfWork.Repository<Station>().GetAll().ToListAsync();
+                var availableBoxInStation = availableBoxes
+                                            .GroupBy(stationId => stationId.StationId)
+                                            .Select(group => new AvailableBoxInStationResponse
+                                            {
+                                                StationId = group.Key,
+                                                StationName = station.FirstOrDefault(x => x.Id == group.Key).Name,
+                                                ListBox = group.Select(detail => new AvailableBoxResponse
+                                                {
+                                                    Id= detail.Id,
+                                                    Code = detail.Code,
+                                                    Status = detail.Status,
+                                                    IsHeat = detail.IsHeat,
+                                                    StationId = detail.StationId,
+                                                }).ToList(),
+                                            }).ToList();
+
+
+                return new BaseResponsePagingViewModel<AvailableBoxInStationResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {
-                        Total = availableBoxes.Count
+                        Total = availablebox.Count
                     },
-                    Data = availableBoxes
+                    Data = availableBoxInStation
                 };
             }
             catch (ErrorResponse ex)
