@@ -20,6 +20,8 @@ using Microsoft.EntityFrameworkCore;
 using FINE.Service.DTO.Request.Station;
 using System.Net.NetworkInformation;
 using StackExchange.Redis;
+using Newtonsoft.Json;
+using Hangfire.Server;
 
 namespace FINE.Service.Service
 {
@@ -164,19 +166,37 @@ namespace FINE.Service.Service
                                   .Include(x => x.Order)
                                   .Where(x => x.Order.TimeSlotId == Guid.Parse(timeslotId))
                                   .ToListAsync();
+                var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
+                                  .Where(x => x.TimeSlotId == Guid.Parse(timeslotId))
+                                  .OrderByDescending(x => x.CheckInDate)
+                                  .ToListAsync();
+                List<Guid> listLockBox = new List<Guid>();
+
+                //lấy tất cả lockbox trên redis
+                foreach (var order in getAllOrder)
+                {
+                    var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
+                    List<Guid> listLockOrder = new List<Guid>();
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                    if (redisValue.HasValue == true)
+                    {
+                        listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisValue);
+                    }
+                    listLockBox.AddRange(listLockOrder);
+                }
 
                 foreach (var box in getAllBoxInStation)
                 {
                     var getBoxStatus = getOrderBox.Where(x => x.BoxId == box.Id)
                                             .OrderByDescending(x => x.CreateAt)
                                             .FirstOrDefault();
-                    if (getBoxStatus == null)
+                    if (listLockBox.Any(x => x == box.Id))
                     {
                         var availablebox = new AvailableBoxResponse
                         {
                             Id = box.Id,
                             Code = box.Code,
-                            Status = (int)OrderBoxStatusEnum.Picked,
+                            Status = (int)OrderBoxStatusEnum.NotPicked,
                             IsHeat = box.IsHeat,
                             StationId = box.StationId,
                         };
@@ -184,15 +204,30 @@ namespace FINE.Service.Service
                     }
                     else
                     {
-                        var availablebox = new AvailableBoxResponse
+                        if (getBoxStatus == null)
                         {
-                            Id = box.Id,
-                            Code = box.Code,
-                            Status = getBoxStatus.Status,
-                            IsHeat = box.IsHeat,
-                            StationId = box.StationId,
-                        };
-                        availableBoxes.Add(availablebox);
+                            var availablebox = new AvailableBoxResponse
+                            {
+                                Id = box.Id,
+                                Code = box.Code,
+                                Status = (int)OrderBoxStatusEnum.Picked,
+                                IsHeat = box.IsHeat,
+                                StationId = box.StationId,
+                            };
+                            availableBoxes.Add(availablebox);
+                        }
+                        else
+                        {
+                            var availablebox = new AvailableBoxResponse
+                            {
+                                Id = box.Id,
+                                Code = box.Code,
+                                Status = getBoxStatus.Status,
+                                IsHeat = box.IsHeat,
+                                StationId = box.StationId,
+                            };
+                            availableBoxes.Add(availablebox);
+                        }
                     }
                 }
 
