@@ -112,10 +112,9 @@ namespace FINE.Service.Service
                 var packageOrder = packageResponse.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == true && x.IsAssignToShipper == false).ToList();
                 packageOrder.ForEach(x => x.IsAssignToShipper = true);
 
-                var packShipperStore = packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
-                if (redisShipperValue.HasValue == false || packShipperStore is null)
+                if (redisShipperValue.HasValue == false || packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false) is null)
                 {
-                    packageShipper.Add(new PackageShipperResponse()
+                    var newPackShipperStore = new PackageShipperResponse()
                     {
                         StoreId = (Guid)staff.StoreId,
                         StoreName = staff.Store.StoreName,
@@ -123,8 +122,10 @@ namespace FINE.Service.Service
                         TotalQuantity = 0,
                         PackageShipperDetails = new List<PackageDetailResponse>(),
                         ListOrderBox = new HashSet<OrderBoxModel>()
-                    });
+                    };
+                    packageShipper.Add(newPackShipperStore);
                 }
+                var packShipperStore = packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
                 foreach (var pack in packageStation.PackageStationDetails)
                 {
                     packShipperStore.ListOrderBox = packShipperStore.ListOrderBox.Concat(packageStation.ListOrderBox).ToHashSet();
