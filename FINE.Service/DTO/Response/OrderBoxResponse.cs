@@ -7,12 +7,10 @@ using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.DTO.Response
 {
-    public class OrderBoxResponse
+    public class QROrderBoxResponse
     {
-        public Guid? OrderId { get; set; }
-        public Guid? BoxId { get; set; }
-        public OrderBoxStatusEnum? Status { get; set; }
-        public DateTime? CreateAt { get; set; }
-        public DateTime? UpdateAt { get; set; }
+        public string Key { get; set; }
+        public List<Guid>? ListBox { get; set; }
+
     }
 }

@@ -1508,7 +1508,6 @@ namespace FINE.Service.Service
                         Id = Guid.NewGuid(),
                         OrderId = order.Id,
                         BoxId = boxId,
-                        Key = Utils.GenerateRandomCode(10),
                         Status = (int)OrderBoxStatusEnum.NotPicked,
                         CreateAt = DateTime.Now
                     };
@@ -1622,7 +1621,7 @@ namespace FINE.Service.Service
                                     IsShipperAssign = false,
                                     PackageStationDetails = new List<PackageDetailResponse>(),
                                     ListPackageMissing = new List<PackageDetailResponse>(),
-                                    ListOrdeBox = new List<OrderBoxModel>()
+                                    ListOrderBox = new HashSet<OrderBoxModel>()
                                 };
                                 stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
                                 {

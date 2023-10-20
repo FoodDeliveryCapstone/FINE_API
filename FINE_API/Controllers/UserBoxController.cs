@@ -53,6 +53,37 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Get order by Id
+        /// </summary>
+        [HttpGet("qrCodeShipper")]
+        public IActionResult GetQRCodeShipper(string timeSlotId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+
+                var qrCodeBitmap = _qrCodeService.GenerateShipperQrCode(staffId, timeSlotId).Result;
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    qrCodeBitmap.Save(stream, ImageFormat.Png);
+                    byte[] imageBytes = stream.ToArray();
+
+                    return File(imageBytes, "image/png");
+                }
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
         /// Receive Box Result
         /// </summary>
         [HttpPost("return")]
@@ -61,6 +92,22 @@ namespace FINE.API.Controllers
             try
             {
                 return Ok(_qrCodeService.ReceiveBoxResult(boxId, key));
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Get box and key for IOT system
+        /// </summary>
+        [HttpGet("boxKey")]
+        public async Task<ActionResult<BaseResponseViewModel<QROrderBoxResponse>>> GetListBoxAndKey(string staffId, string timeslotId)
+        {
+            try
+            {
+                return await _qrCodeService.GetListBoxAndKey(staffId, timeslotId);
             }
             catch (ErrorResponse ex)
             {

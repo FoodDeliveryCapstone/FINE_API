@@ -61,13 +61,14 @@ namespace FINE.Service.DTO.Response
         public bool IsShipperAssign { get; set; }
         public List<PackageDetailResponse> PackageStationDetails { get; set; }
         public List<PackageDetailResponse> ListPackageMissing { get; set; }
-        public List<OrderBoxModel> ListOrdeBox { get; set; }
+        public HashSet<OrderBoxModel> ListOrderBox { get; set; }
     }
 
     public class OrderBoxModel
     {
         public Guid OrderId { get; set; }
         public Guid BoxId { get; set; }
+        public bool IsInBox { get; set; } = false;
     }
 
     public class PackageDetailResponse
@@ -92,7 +93,9 @@ namespace FINE.Service.DTO.Response
         public string StoreName { get; set; }
         public int TotalQuantity { get; set; }
         public bool IsTaken { get; set; }
+        public bool IsInBox { get; set; } = false;
         public List<PackageDetailResponse> PackageShipperDetails { get; set; }
+        public HashSet<OrderBoxModel> ListOrderBox { get; set; }
     }
 
     public class OrderStationDetail

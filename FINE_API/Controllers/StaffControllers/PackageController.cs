@@ -63,7 +63,7 @@ namespace FINE.API.Controllers.StaffControllers
                 {
                     return Unauthorized();
                 }
-                //var staffId = "397B0394-6755-45C4-BBA1-A9DB156C3A76";
+
                 return await _packageService.GetPackageForShipper(staffId, timeSlotId);
             }
             catch (ErrorResponse ex)
@@ -88,7 +88,7 @@ namespace FINE.API.Controllers.StaffControllers
                 {
                     return Unauthorized();
                 }
-                //var staffId = "719840C7-5EA9-4A34-81ED-22E52F474CD1";
+ 
                 return await _packageService.GetPackageGroupByStation(staffId, timeSlotId);
             }
             catch (ErrorResponse ex)
@@ -112,7 +112,7 @@ namespace FINE.API.Controllers.StaffControllers
                 {
                     return Unauthorized();
                 }
-                //var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
+
                 return await _packageService.UpdatePackage(staffId, request);
             }
             catch (ErrorResponse ex)
@@ -137,7 +137,7 @@ namespace FINE.API.Controllers.StaffControllers
                 {
                     return Unauthorized();
                 }
-                //var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
+
                 return await _packageService.ConfirmReadyToDelivery(staffId, timeslotId ,stationId);
             }
             catch (ErrorResponse ex)
@@ -162,9 +162,33 @@ namespace FINE.API.Controllers.StaffControllers
                 {
                     return Unauthorized();
                 }
-                //var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
 
                 return await _packageService.ConfirmTakenPackage(staffId, timeslotId, storeId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật package mà shipper đã bỏ vào box
+        /// </summary>
+        [Authorize(Roles = "Shipper")]
+        [HttpPut("confirmAllBox")]
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ConfirmAllInBox(string timeslotId, string storeId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+
+                return await _packageService.ConfirmAllInBox(staffId, timeslotId);
             }
             catch (ErrorResponse ex)
             {

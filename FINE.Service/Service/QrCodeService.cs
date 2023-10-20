@@ -14,14 +14,19 @@ using FINE.Service.DTO.Request.Box;
 using NetTopologySuite.Index.HPRtree;
 using FirebaseAdmin.Messaging;
 using Hangfire;
+using FINE.Service.DTO.Response;
+using FINE.Service.Helpers;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace FINE.Service.Service
 {
     public interface IQrCodeService
     {
         Task<dynamic> GenerateQrCode(string customerId, string boxId);
-        Task<dynamic> GenerateShipperQrCode(List<AddOrderToBoxRequest> request);
+        Task<dynamic> GenerateShipperQrCode(string staffId, string timeSlotId);
         Task ReceiveBoxResult(string boxId, string key);
+        Task<BaseResponseViewModel<QROrderBoxResponse>> GetListBoxAndKey(string staffId, string timeSlotId);
     }
 
     public class QrCodeService : IQrCodeService
@@ -30,12 +35,14 @@ namespace FINE.Service.Service
         private readonly IMapper _mapper;
         private readonly IFirebaseMessagingService _fm;
         private readonly IPaymentService _paymentService;
-        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm, IPaymentService paymentService)
+        private readonly IConfiguration _configuration;
+        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm, IPaymentService paymentService, IConfiguration configuration)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _fm = fm;
             _paymentService = paymentService;
+            _configuration = configuration;
         }
 
 
@@ -127,37 +134,10 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<dynamic> GenerateShipperQrCode(List<AddOrderToBoxRequest> request)
+        public async Task<dynamic> GenerateShipperQrCode(string staffId, string timeSlotId)
         {
             try
             {
-                var listOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll().ToListAsync();
-
-                var key = listOrderBox.FirstOrDefault().Key;
-                var newListOrderBox = new List<OrderBox>();
-
-                foreach (var item in listOrderBox)
-                {
-                    if(request.FirstOrDefault(x => x.BoxId == item.BoxId && x.OrderId == item.OrderId) != null)
-                    {
-                        newListOrderBox.Add(item);
-                        key = item.Key;
-                    }                  
-                }
-
-                foreach (var orderBox in newListOrderBox)
-                {
-                    if (orderBox.Key != key)
-                        throw new ErrorResponse(400, (int)BoxErrorEnums.BOX_NOT_AVAILABLE,
-                            BoxErrorEnums.BOX_NOT_AVAILABLE.GetDisplayName());
-                    if (orderBox.Status == (int)OrderBoxStatusEnum.Picked)
-                        throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_TAKEN,
-                            BoxErrorEnums.ORDER_TAKEN.GetDisplayName());
-                    if (orderBox.Status == (int)OrderBoxStatusEnum.StaffPicked)
-                        throw new ErrorResponse(400, (int)BoxErrorEnums.STAFF_TAKEN,
-                             BoxErrorEnums.STAFF_TAKEN.GetDisplayName());
-                   
-                }
                 QrCodeEncodingOptions options = new()
                 {
                     DisableECI = true,
@@ -165,20 +145,8 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                //Driver là 2, customer là 1
-                string content = "2" + "." + key.ToUpper() + "." + Utils.GenerateRandomCode(10) + ".";
-
-                foreach (var item in newListOrderBox)
-                {
-                    if(item == newListOrderBox.LastOrDefault())
-                    {
-                        content += item.BoxId.ToString().ToUpper();
-                    }
-                    else 
-                    {
-                        content += item.BoxId.ToString().ToUpper() + ","; 
-                    }
-                };
+                
+                var content = _configuration["UrlIotCallBox"] + $"boxKey?staffId={staffId}&timeslotId={timeSlotId}";
 
                 BarcodeWriter writer = new()
                 {
@@ -191,6 +159,61 @@ namespace FINE.Service.Service
 
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<QROrderBoxResponse>> GetListBoxAndKey(string staffId, string timeSlotId)
+        {
+            try
+            {
+                List<PackageShipperResponse> packageShipperResponse = new List<PackageShipperResponse>();
+                QROrderBoxResponse result = new QROrderBoxResponse()
+                {
+                    Key = Utils.GenerateRandomCode(5),
+                    ListBox = new List<Guid>()
+                };
+
+                var staff = await _unitOfWork.Repository<Staff>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
+
+                var key = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+
+                if (redisShipperValue.HasValue == true)
+                {
+                    packageShipperResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                }
+                HashSet<OrderBoxModel> newSet = new HashSet<OrderBoxModel>();
+
+                newSet = newSet.Concat(packageShipperResponse.SelectMany(x => x.ListOrderBox)).ToHashSet();
+                foreach (var orderBoxModel in newSet)
+                {
+                    result.ListBox.Add(orderBoxModel.BoxId);
+
+                    var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll().FirstOrDefaultAsync(x => x.OrderId == orderBoxModel.OrderId);
+                    orderBox.Key = result.Key;
+
+                    await _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
+                }
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<QROrderBoxResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
+
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }
