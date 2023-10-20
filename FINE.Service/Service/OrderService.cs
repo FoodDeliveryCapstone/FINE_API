@@ -1656,8 +1656,9 @@ namespace FINE.Service.Service
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrderDetails);
                     }
+
+                    _unitOfWork.Commit();
                 }
-                await _unitOfWork.CommitAsync();
             }
             catch (ErrorResponse ex)
             {
