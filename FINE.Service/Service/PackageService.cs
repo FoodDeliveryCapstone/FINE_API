@@ -26,7 +26,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
         Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
         Task<BaseResponseViewModel<List<PackageShipperResponse>>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
-        Task<BaseResponseViewModel<dynamic>> ConfirmAllInBox(string staffId, string timeSlotId;
+        Task<BaseResponseViewModel<dynamic>> ConfirmAllInBox(string staffId, string timeSlotId);
     }
     public class PackageService : IPackageService
     {
@@ -622,7 +622,7 @@ namespace FINE.Service.Service
                 foreach (var pack in packageShipperResponse)
                 {
                     pack.IsInBox = true;
-                    q
+
                     pack.ListOrderBox = pack.ListOrderBox.Select(x => new OrderBoxModel()
                                         {
                                             OrderId = x.OrderId,
