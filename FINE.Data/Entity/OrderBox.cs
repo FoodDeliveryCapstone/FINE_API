@@ -11,7 +11,7 @@ public partial class OrderBox
 
     public Guid BoxId { get; set; }
 
-    public string Key { get; set; } = null!;
+    public string? Key { get; set; }
 
     public int Status { get; set; }
 
