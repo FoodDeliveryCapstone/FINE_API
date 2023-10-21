@@ -19,6 +19,7 @@ using FirebaseAdmin.Messaging;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using NetTopologySuite.Index.HPRtree;
+using ZXing;
 
 namespace FINE.Service.Service
 {
@@ -888,13 +889,14 @@ namespace FINE.Service.Service
         {
             try
             {
+                var result = new AddProductToCardResponse();
                 //check xem customer đã hết lượt đặt đơn hay chưa
                 var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
                                         .Where(x => x.CustomerId == Guid.Parse(customerId)
                                             && x.OrderStatus != (int)OrderStatusEnum.Finished
                                             && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
                                         .ToListAsync();
-                if (request.TimeSlotId != "E8D529D4-6A51-4FDB-B9DB-E29F54C0486E" && customerOrder.Count() >= 2)
+                if (customerOrder.Count() >= 2)
                 {
                     var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
 
@@ -914,90 +916,9 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
                                             OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
                 }
+                var maxQuantity = Int32.Parse(_configuration["MaxQuantityInBox"]);
 
-                var existInCard = request.Card.Find(x => x.ProductId == request.ProductId);
-                if (existInCard is not null)
-                {
-                    request.Quantity += existInCard.Quantity;
-                    request.Card.Remove(existInCard);
-                }
-
-                var productRequest = await _unitOfWork.Repository<ProductInMenu>().GetAll()
-                                        .Include(x => x.Product)
-                                        .Where(x => x.ProductId == Guid.Parse(request.ProductId)
-                                            && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
-                                        .GroupBy(x => x.Product)
-                                        .Select(x => x.Key)
-                                        .FirstOrDefaultAsync();
-
-                var result = new AddProductToCardResponse
-                {
-                    Product = _mapper.Map<ProductInCardResponse>(productRequest),
-                    Card = new List<ProductInCardResponse>(),
-                    ProductsRecommend = new List<ProductRecommend>()
-                };
-                result.Product.Quantity = request.Quantity;
-
-                List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
-                if (request.Card is not null)
-                {
-                    foreach (var product in request.Card)
-                    {
-                        var productAttInCard = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                                                        .Include(x => x.Product)
-                                                        .Where(x => x.ProductId == Guid.Parse(product.ProductId)
-                                                            && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
-                                                        .GroupBy(x => x.Product)
-                                                        .AsQueryable();
-
-                        var responseProduct = productAttInCard.Select(x => x.Key).ProjectTo<ProductInCardResponse>(_mapper.ConfigurationProvider).FirstOrDefaultAsync().Result;
-                        responseProduct.Quantity = product.Quantity;
-                        result.Card.Add(responseProduct);
-
-                        CheckFixBoxRequest productRequestFill = productAttInCard.Select(x => new CheckFixBoxRequest()
-                        {
-                            Product = x.Key,
-                            Quantity = product.Quantity
-                        })
-                        .FirstOrDefaultAsync().Result;
-
-                        listProductInCard.Add(productRequestFill);
-                    }
-                }
-
-                var productWillAdd = new CheckFixBoxRequest()
-                {
-                    Product = productRequest,
-                    Quantity = request.Quantity
-                };
-                listProductInCard.Add(productWillAdd);
-
-                var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(listProductInCard, productRequest, request.Quantity);
-
-                if (addToBoxResult.QuantitySuccess == request.Quantity)
-                {
-                    result.Status = new StatusViewModel()
-                    {
-                        Success = true,
-                        Message = "Success",
-                        ErrorCode = 200
-                    };
-
-                    result.Card.Add(result.Product);
-                }
-                else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess != 0)
-                {
-                    var quantityCanAdd = addToBoxResult.QuantitySuccess;
-                    result.Status = new StatusViewModel()
-                    {
-                        Success = true,
-                        Message = String.Format($"Only {quantityCanAdd} items can be added to the card"),
-                        ErrorCode = 2001
-                    };
-                    result.Product.Quantity = quantityCanAdd;
-                    result.Card.Add(result.Product);
-                }
-                else
+                if (request.Card.Count() >= maxQuantity)
                 {
                     result.Status = new StatusViewModel()
                     {
@@ -1006,27 +927,121 @@ namespace FINE.Service.Service
                         ErrorCode = 400
                     };
                 }
+                else
+                {
+                    var existInCard = request.Card.Find(x => x.ProductId == request.ProductId);
+                    if (existInCard is not null)
+                    {
+                        request.Quantity += existInCard.Quantity;
+                        request.Card.Remove(existInCard);
+                    }
 
-                var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                                                   .Include(x => x.Menu)
-                                                   .Include(x => x.Product)
-                                                   .Where(x => x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
-                                                   .Select(x => x.Product)
-                                                   .AsQueryable();
+                    var productRequest = await _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                            .Include(x => x.Product)
+                                            .Where(x => x.ProductId == Guid.Parse(request.ProductId)
+                                                && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                            .GroupBy(x => x.Product)
+                                            .Select(x => x.Key)
+                                            .FirstOrDefaultAsync();
 
-                result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingLengthSpace.Height
-                                                             && x.Width <= addToBoxResult.RemainingLengthSpace.Width
-                                                             && x.Length <= addToBoxResult.RemainingLengthSpace.Length)
-                                                            .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
-                                                            .ToListAsync();
+                    result = new AddProductToCardResponse
+                    {
+                        Product = _mapper.Map<ProductInCardResponse>(productRequest),
+                        Card = new List<ProductInCardResponse>(),
+                        ProductsRecommend = new List<ProductRecommend>()
+                    };
+                    result.Product.Quantity = request.Quantity;
 
-                var listRecommendWidth = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
-                                                             && x.Width <= addToBoxResult.RemainingWidthSpace.Width
-                                                             && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
-                                                            .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
-                                                            .ToListAsync();
+                    List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
+                    if (request.Card is not null)
+                    {
+                        foreach (var product in request.Card)
+                        {
+                            var productAttInCard = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                            .Include(x => x.Product)
+                                                            .Where(x => x.ProductId == Guid.Parse(product.ProductId)
+                                                                && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                            .GroupBy(x => x.Product)
+                                                            .AsQueryable();
 
-                result.ProductsRecommend.AddRange(listRecommendWidth);
+                            var responseProduct = productAttInCard.Select(x => x.Key).ProjectTo<ProductInCardResponse>(_mapper.ConfigurationProvider).FirstOrDefaultAsync().Result;
+                            responseProduct.Quantity = product.Quantity;
+                            result.Card.Add(responseProduct);
+
+                            CheckFixBoxRequest productRequestFill = productAttInCard.Select(x => new CheckFixBoxRequest()
+                            {
+                                Product = x.Key,
+                                Quantity = product.Quantity
+                            })
+                            .FirstOrDefaultAsync().Result;
+
+                            listProductInCard.Add(productRequestFill);
+                        }
+                    }
+
+                    var productWillAdd = new CheckFixBoxRequest()
+                    {
+                        Product = productRequest,
+                        Quantity = request.Quantity
+                    };
+                    listProductInCard.Add(productWillAdd);
+
+                    var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(listProductInCard, productRequest, request.Quantity);
+
+                    if (addToBoxResult.QuantitySuccess == request.Quantity)
+                    {
+                        result.Status = new StatusViewModel()
+                        {
+                            Success = true,
+                            Message = "Success",
+                            ErrorCode = 200
+                        };
+
+                        result.Card.Add(result.Product);
+                    }
+                    else if (addToBoxResult.QuantitySuccess < request.Quantity && addToBoxResult.QuantitySuccess != 0)
+                    {
+                        var quantityCanAdd = addToBoxResult.QuantitySuccess;
+                        result.Status = new StatusViewModel()
+                        {
+                            Success = true,
+                            Message = String.Format($"Only {quantityCanAdd} items can be added to the card"),
+                            ErrorCode = 2001
+                        };
+                        result.Product.Quantity = quantityCanAdd;
+                        result.Card.Add(result.Product);
+                    }
+                    else
+                    {
+                        result.Status = new StatusViewModel()
+                        {
+                            Success = false,
+                            Message = String.Format("Error"),
+                            ErrorCode = 400
+                        };
+                    }
+
+                    var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                       .Include(x => x.Menu)
+                                                       .Include(x => x.Product)
+                                                       .Where(x => x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                       .Select(x => x.Product)
+                                                       .AsQueryable();
+
+                    result.ProductsRecommend = await products.Where(x => x.Height <= addToBoxResult.RemainingLengthSpace.Height
+                                                                 && x.Width <= addToBoxResult.RemainingLengthSpace.Width
+                                                                 && x.Length <= addToBoxResult.RemainingLengthSpace.Length)
+                                                                .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                                .ToListAsync();
+
+                    var listRecommendWidth = await products.Where(x => x.Height <= addToBoxResult.RemainingWidthSpace.Height
+                                                                 && x.Width <= addToBoxResult.RemainingWidthSpace.Width
+                                                                 && x.Length <= addToBoxResult.RemainingWidthSpace.Length)
+                                                                .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                                .ToListAsync();
+
+                    result.ProductsRecommend.AddRange(listRecommendWidth);
+                }
 
                 return new BaseResponseViewModel<AddProductToCardResponse>()
                 {
