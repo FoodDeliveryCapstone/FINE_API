@@ -45,8 +45,9 @@ namespace FINE.Service.Service
         private readonly IPaymentService _paymentService;
         private readonly IBoxService _boxService;
         private readonly IPackageService _packageService;
+        private readonly IStationService _stationService;
 
-        public SimulateService(IMapper mapper, IUnitOfWork unitOfWork, IOrderService orderService, IStaffService staffService, IPaymentService paymentService, IBoxService boxService, IPackageService packageService)
+        public SimulateService(IMapper mapper, IUnitOfWork unitOfWork, IOrderService orderService, IStaffService staffService, IPaymentService paymentService, IBoxService boxService, IPackageService packageService, IStationService stationService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
@@ -55,19 +56,24 @@ namespace FINE.Service.Service
             _paymentService = paymentService;
             _boxService = boxService;
             _packageService = packageService;
+            _stationService = stationService;
         }
         #region Simulate CreateOrder
-        public async void SplitOrderAndCreateOrderBox(Order order)
+        public async Task SplitOrderAndCreateOrderBox(Order order)
         {
             try
             {
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
+                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+
                 List<Guid> listLockOrder = new List<Guid>();
                 var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                 if (redisLockValue.HasValue == true)
                 {
                     listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
                 }
+
+
                 if (order.IsPartyMode == true)
                 {
 
@@ -80,11 +86,10 @@ namespace FINE.Service.Service
                         Id = Guid.NewGuid(),
                         OrderId = order.Id,
                         BoxId = boxId,
-                        Key = Utils.GenerateRandomCode(10),
                         Status = (int)OrderBoxStatusEnum.NotPicked,
                         CreateAt = DateTime.Now
                     };
-                    _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
+                    await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
 
                     List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                     PackageResponse packageResponse;
@@ -194,6 +199,7 @@ namespace FINE.Service.Service
                                     IsShipperAssign = false,
                                     PackageStationDetails = new List<PackageDetailResponse>(),
                                     ListPackageMissing = new List<PackageDetailResponse>(),
+                                    ListOrderBox = new HashSet<OrderBoxModel>()
                                 };
                                 stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
                                 {
@@ -201,6 +207,7 @@ namespace FINE.Service.Service
                                     ProductName = productInMenu.Product.Name,
                                     Quantity = orderDetail.Quantity,
                                 });
+
                                 stationPackage.TotalQuantity += orderDetail.Quantity;
                                 packageResponse.PackageStations.Add(stationPackage);
                             }
@@ -225,8 +232,10 @@ namespace FINE.Service.Service
                             }
                         }
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetails);
+                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrderDetails);
                     }
+
+                    _unitOfWork.Commit();
                 }
             }
             catch (ErrorResponse ex)
@@ -241,7 +250,7 @@ namespace FINE.Service.Service
                 #region Timeslot
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
-                if (request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot) && timeSlot.Id != Guid.Parse("E8D529D4-6A51-4FDB-B9DB-E29F54C0486E"))
+                if (timeSlot.Id != Guid.Parse("E8D529D4-6A51-4FDB-B9DB-E29F54C0486E") && request.OrderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
                     throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
                         TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
                 #endregion
@@ -351,7 +360,7 @@ namespace FINE.Service.Service
                                                 .FirstOrDefault();
 
                 #region split order + create order box
-                SplitOrderAndCreateOrderBox(order);
+                await SplitOrderAndCreateOrderBox(order);
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -460,8 +469,8 @@ namespace FINE.Service.Service
                                 TotalOtherAmount = rs.Data.TotalOtherAmount,
                                 OrderType = (OrderTypeEnum)rs.Data.OrderType,
                                 TimeSlotId = Guid.Parse(request.TimeSlotId),
-                                //StationId = stationId.ToString(),
-                                StationId = "C0AB11B3-7B05-41DF-9B23-1427481415F4",
+                                StationId = stationId.ToString(),
+                                //StationId = "C0AB11B3-7B05-41DF-9B23-1427481415F4",
                                 PaymentType = PaymentTypeEnum.FineWallet,
                                 IsPartyMode = false,
                                 ItemQuantity = rs.Data.ItemQuantity,
@@ -483,6 +492,8 @@ namespace FINE.Service.Service
                                 }).ToList(),
                                 OtherAmounts = rs.Data.OtherAmounts
                             };
+
+                            var lockBox = await _stationService.LockBox(stationId.ToString(), rs.Data.OrderCode, 1); 
 
                             try
                             {
