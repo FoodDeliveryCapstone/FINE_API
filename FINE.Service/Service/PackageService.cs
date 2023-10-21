@@ -59,8 +59,17 @@ namespace FINE.Service.Service
                 {
                     packageResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
                 }
-                packageResponse.FirstOrDefault(x => x.StoreId == Guid.Parse(storeId) && x.IsTaken == false).IsTaken = true;
+                var packStore = packageResponse.FirstOrDefault(x => x.StoreId == Guid.Parse(storeId) && x.IsTaken == false);
 
+                foreach(var order in packStore.ListOrderBox)
+                {
+                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
+                    orderDb.OrderStatus = (int)OrderStatusEnum.Delivering;
+
+                    await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
+                }
+                packStore.IsTaken = true;
+                await _unitOfWork.CommitAsync();
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
 
                 return new BaseResponseViewModel<List<PackageShipperResponse>>()
