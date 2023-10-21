@@ -333,7 +333,7 @@ namespace FINE.Service.Service
                                 }
                                 else if (numberHasConfirm < productInOrder.Quantity)
                                 {
-                                    numberConfirmStation = productTotal.PendingQuantity;
+                                    numberConfirmStation = numberHasConfirm;
                                     numberHasConfirm = 0;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
@@ -579,7 +579,6 @@ namespace FINE.Service.Service
                         break;
                 }
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
-
                 return new BaseResponseViewModel<PackageResponse>()
                 {
                     Status = new StatusViewModel()
