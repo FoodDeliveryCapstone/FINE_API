@@ -83,8 +83,6 @@ public partial class FineDevDbV2Context : DbContext
 
     public virtual DbSet<Store> Stores { get; set; }
 
-    public virtual DbSet<SystemConfig> SystemConfigs { get; set; }
-
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
     public virtual DbSet<Transaction> Transactions { get; set; }
@@ -622,13 +620,6 @@ public partial class FineDevDbV2Context : DbContext
                 .HasForeignKey(d => d.DestinationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Store_Destination");
-        });
-
-        modelBuilder.Entity<SystemConfig>(entity =>
-        {
-            entity.ToTable("SystemConfig");
-
-            entity.Property(e => e.Id).ValueGeneratedNever();
         });
 
         modelBuilder.Entity<TimeSlot>(entity =>
