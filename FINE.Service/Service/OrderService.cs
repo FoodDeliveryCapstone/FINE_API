@@ -118,8 +118,8 @@ namespace FINE.Service.Service
                                         .FirstOrDefault();
 
                 var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
-                                    .Where(x => x.OrderId == order.Id)
-                                    .FirstOrDefaultAsync();
+                                    .FirstOrDefaultAsync(x => x.OrderId == Guid.Parse(id));
+
                 if (orderBox is not null)
                     resultOrder.BoxId = orderBox.BoxId;
 
@@ -1485,6 +1485,7 @@ namespace FINE.Service.Service
         {
             try
             {
+                //lấy boxId đã lock
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
                 var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName()+ ":" + order.OrderCode;
 
@@ -1495,6 +1496,23 @@ namespace FINE.Service.Service
                     listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
                 }
 
+                //nhả lại số box đã lock
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
+
+                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                if (redisStationValue.HasValue == true)
+                {
+                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
+                }
+
+                listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                {
+                    StationName = x.StationName,
+                    StationId = x.StationId,
+                    NumberBoxLockPending = x.NumberBoxLockPending - listLockOrder.Count(),
+                }).ToList();
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
 
                 if (order.IsPartyMode == true)
                 {
