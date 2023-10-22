@@ -106,14 +106,14 @@ namespace FINE.API.Controllers.StaffControllers
             try
             {
 
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (staffId == null)
-                //{
-                //    return Unauthorized();
-                //}
-                var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                //var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
                 return await _packageService.UpdatePackage(staffId, request);
             }
             catch (ErrorResponse ex)
@@ -131,14 +131,14 @@ namespace FINE.API.Controllers.StaffControllers
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (staffId == null)
-                //{
-                //    return Unauthorized();
-                //}
-                var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                //var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
                 return await _packageService.ConfirmReadyToDelivery(staffId, timeslotId ,stationId);
             }
             catch (ErrorResponse ex)
@@ -177,7 +177,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// </summary>
         [Authorize(Roles = "Shipper")]
         [HttpPut("confirmAllBox")]
-        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ConfirmAllInBox(string timeslotId, string storeId)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ConfirmAllInBox(string timeslotId)
         {
             try
             {

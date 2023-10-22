@@ -28,14 +28,14 @@ namespace FINE.API.Controllers
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (customerId == null)
-                //{
-                //    return Unauthorized();
-                //}
-                var customerId = "6E9C0199-44E4-4A60-9037-4B04CBE2D12D";
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+                //var customerId = "6E9C0199-44E4-4A60-9037-4B04CBE2D12D";
                 return await _orderService.GetOrderById(customerId, orderId);
             }
             catch (ErrorResponse ex)
@@ -293,15 +293,15 @@ namespace FINE.API.Controllers
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (customerId == null)
-                //{
-                //    return Unauthorized();
-                //}
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
 
-                var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
+                //var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
 
                 return Ok(await _orderService.AddProductToCard(customerId, request));
             }
