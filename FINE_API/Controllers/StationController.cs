@@ -22,7 +22,7 @@ namespace FINE.API.Controllers
         /// lấy list station cho order
         /// </summary>
         [HttpGet("order")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<List<StationResponse>>>> GetStationByDestination(string destinationId, int numberBox)
+        public async Task<ActionResult<BaseResponsePagingViewModel<dynamic>>> GetStationByDestination(string destinationId, int numberBox)
         {
             try
             {

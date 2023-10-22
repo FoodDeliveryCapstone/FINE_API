@@ -20,13 +20,12 @@ namespace FINE.Service.Service
     public interface IStationService
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
-        Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, int numberBox);
+        Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, int numberBox);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
         Task<BaseResponseViewModel<int>> LockBox(string stationId, string orderCode, int numberBox);
         Task<BaseResponseViewModel<dynamic>> UpdateLockBox(LockBoxUpdateTypeEnum type, string orderCode, string? stationId = null);
-
     }
 
     public class StationService : IStationService
@@ -72,7 +71,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<List<StationResponse>>> GetStationByDestinationForOrder(string destinationId, int numberBox)
+        public async Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, int numberBox)
         {
             try
             {
@@ -119,9 +118,10 @@ namespace FINE.Service.Service
                         result.Add(stationFit);
                     }
                 }
+                int countDount = Int32.Parse(_configuration["CountDownPayment"]);
                 await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
 
-                return new BaseResponseViewModel<List<StationResponse>>()
+                return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -129,7 +129,11 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = result
+                    Data = new
+                    {
+                        CountDown = countDount,
+                        ListStation = result
+                    }
                 };
             }
             catch (ErrorResponse ex)
@@ -163,8 +167,6 @@ namespace FINE.Service.Service
                 listBoxOrder.AddRange(orderBox);
 
                 await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, listBoxOrder);
-
-                int countDount = Int32.Parse(_configuration["CountDownPayment"]);
                 return new BaseResponseViewModel<int>()
                 {
                     Status = new StatusViewModel()
@@ -172,8 +174,7 @@ namespace FINE.Service.Service
                         Message = "Success",
                         Success = true,
                         ErrorCode = 0
-                    },
-                    Data = countDount
+                    }
                 };
             }
             catch (Exception ex)
