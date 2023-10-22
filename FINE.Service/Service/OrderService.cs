@@ -918,7 +918,7 @@ namespace FINE.Service.Service
                 }
                 var maxQuantity = Int32.Parse(_configuration["MaxQuantityInBox"]);
 
-                if (request.Card.Count() >= maxQuantity)
+                if (request.Card.Select(x => x.Quantity).Sum() >= maxQuantity)
                 {
                     result.Status = new StatusViewModel()
                     {
