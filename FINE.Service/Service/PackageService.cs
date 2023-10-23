@@ -111,7 +111,7 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageShipper = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisValue);
+                    packageShipper = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
                 }
                 packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
 
