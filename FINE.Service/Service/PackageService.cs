@@ -485,7 +485,7 @@ namespace FINE.Service.Service
                             {
                                 if (numberHasConfirm == 0) break;
 
-                                var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
+                                var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
 
                                 //cập nhật trong pack staff trước
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
@@ -681,7 +681,7 @@ namespace FINE.Service.Service
                             PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
                             packageOrder.NumberHasConfirm += 1;
 
-                            var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
+                            var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
 
                             if (request.Quantity >= order.ErrorQuantity)
                             {
