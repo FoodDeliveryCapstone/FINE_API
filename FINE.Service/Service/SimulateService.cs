@@ -64,7 +64,7 @@ namespace FINE.Service.Service
             try
             {
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
-                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+                //var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
 
                 List<Guid> listLockOrder = new List<Guid>();
                 var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
@@ -157,9 +157,9 @@ namespace FINE.Service.Service
                                     OrderId = order.Id,
                                     OrderCode = order.OrderCode,
                                     StationId = (Guid)order.StationId,
-                                    BoxId = orderBox.BoxId,
+                                    //BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
-                                    Quantity = orderDetail.Quantity,
+                                    QuantityOfProduct = orderDetail.Quantity,
                                     IsFinishPrepare = false,
                                     IsAssignToShipper = false
                                 });
@@ -172,9 +172,9 @@ namespace FINE.Service.Service
                                     OrderId = order.Id,
                                     OrderCode = order.OrderCode,
                                     StationId = (Guid)order.StationId,
-                                    BoxId = orderBox.BoxId,
+                                    //BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
-                                    Quantity = orderDetail.Quantity,
+                                    QuantityOfProduct = orderDetail.Quantity,
                                     IsFinishPrepare = false
                                 });
                                 productTotalDetail.PendingQuantity += orderDetail.Quantity;
@@ -232,7 +232,7 @@ namespace FINE.Service.Service
                             }
                         }
                         ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrderDetails);
+                        //ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrderDetails);
                     }
 
                     _unitOfWork.Commit();

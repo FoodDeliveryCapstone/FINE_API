@@ -34,9 +34,9 @@ namespace FINE.Service.DTO.Response
         public Guid OrderId { get; set; }
         public string OrderCode { get; set; }
         public Guid StationId { get; set; }
-        public Guid BoxId { get; set; }
         public DateTime CheckInDate { get; set; }
-        public int Quantity { get; set; }
+        public int QuantityOfProduct { get; set; }
+        public int ErrorQuantity { get; set; }
         public bool IsFinishPrepare { get; set; }
         public bool IsAssignToShipper { get; set; }
     }
@@ -67,8 +67,7 @@ namespace FINE.Service.DTO.Response
     public class OrderBoxModel
     {
         public Guid OrderId { get; set; }
-        public Guid BoxId { get; set; }
-        public bool IsInBox { get; set; } = false;
+        public bool IsInBox { get; set; } 
     }
 
     public class PackageDetailResponse
@@ -76,6 +75,18 @@ namespace FINE.Service.DTO.Response
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public int Quantity { get; set; }
+    }
+    public class PackageOrderModel
+    {
+        public int TotalConfirm { get; set; }
+        public int NumberHasConfirm { get; set; }        
+        public List<PackageOrderBoxModel> PackageOrderBoxes { get; set; }
+    }
+
+    public class PackageOrderBoxModel
+    {
+        public Guid BoxId { get; set; }
+        public List<PackageOrderDetailModel> PackageOrderDetailModels { get; set; }
     }
 
     public class PackageOrderDetailModel
@@ -89,13 +100,19 @@ namespace FINE.Service.DTO.Response
 
     public class PackageShipperResponse
     {
+        public List<PackStationDetailGroupByBox> PackStationDetailGroupByBoxes { get; set; }
+
+        public List<PackageStoreShipperResponse> PackageStoreShipperResponses { get; set; }
+    }
+    public class PackageStoreShipperResponse
+    {
         public Guid StoreId { get; set; }
         public string StoreName { get; set; }
         public int TotalQuantity { get; set; }
         public bool IsTaken { get; set; }
         public bool IsInBox { get; set; } = false;
-        public List<PackageDetailResponse> PackageShipperDetails { get; set; }
-        public HashSet<OrderBoxModel> ListOrderBox { get; set; }
+        public List<PackStationDetailGroupByProduct> PackStationDetailGroupByProducts { get; set; }
+        public List<Guid> ListOrderId { get; set; }
     }
 
     public class OrderStationDetail
@@ -111,6 +128,24 @@ namespace FINE.Service.DTO.Response
         public Guid OrderId { get; set; }
 
         public List<PackageDetailResponse> StationOrderDetails { get; set; }
+    }
+
+    public class PackStationDetailGroupByProduct
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
+        public int TotalQuantity { get; set; }
+        public HashSet<Guid> BoxCode { get; set; }
+    }
+
+    public class PackStationDetailGroupByBox
+    {
+        public Guid BoxId { get; set; }
+        public string BoxCode { get; set; }
+
+        public bool IsInBox { get; set; }
+
+        public List<PackageDetailResponse> ListProduct { get; set; }
     }
 }
 

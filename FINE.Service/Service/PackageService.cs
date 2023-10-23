@@ -21,7 +21,6 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
-        Task<BaseResponseViewModel<List<PackageStationResponse>>> GetDetailBoxAtStation(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
         Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
@@ -43,7 +42,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                List<PackageShipperResponse> packageResponse = new List<PackageShipperResponse>();
+                PackageShipperResponse packageResponse = new PackageShipperResponse();
 
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
@@ -57,13 +56,13 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                    packageResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
                 }
-                var packStore = packageResponse.FirstOrDefault(x => x.StoreId == Guid.Parse(storeId) && x.IsTaken == false);
+                var packStore = packageResponse.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == Guid.Parse(storeId) && x.IsTaken == false);
 
-                foreach(var order in packStore.ListOrderBox)
+                foreach (var order in packStore.ListOrderId)
                 {
-                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
+                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order);
                     orderDb.OrderStatus = (int)OrderStatusEnum.Delivering;
 
                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
@@ -92,7 +91,7 @@ namespace FINE.Service.Service
             try
             {
                 PackageResponse packageResponse = new PackageResponse();
-                List<PackageShipperResponse> packageShipper = new List<PackageShipperResponse>();
+                PackageShipperResponse packageShipper = new PackageShipperResponse();
 
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                          .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
@@ -106,14 +105,15 @@ namespace FINE.Service.Service
                 var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
 
+                packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+
                 var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + ":" + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyShipper, null);
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageShipper = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                    packageShipper = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
                 }
-                packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
 
                 var packageStation = packageResponse.PackageStations.Where(x => x.StationId == Guid.Parse(stationId) && x.IsShipperAssign == false).FirstOrDefault();
                 packageStation.IsShipperAssign = true;
@@ -121,30 +121,33 @@ namespace FINE.Service.Service
                 var packageOrder = packageResponse.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == true && x.IsAssignToShipper == false).ToList();
                 packageOrder.ForEach(x => x.IsAssignToShipper = true);
 
-                if (redisShipperValue.HasValue == false || packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false) is null)
+                if (redisShipperValue.HasValue == false)
                 {
-                    var newPackShipperStore = new PackageShipperResponse()
+                    packageShipper.PackStationDetailGroupByBoxes = new List<PackStationDetailGroupByBox>();
+                    if (packageShipper.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false) is null)
                     {
-                        StoreId = (Guid)staff.StoreId,
-                        StoreName = staff.Store.StoreName,
-                        IsTaken = false,
-                        TotalQuantity = 0,
-                        PackageShipperDetails = new List<PackageDetailResponse>(),
-                        ListOrderBox = new HashSet<OrderBoxModel>()
-                    };
-                    packageShipper.Add(newPackShipperStore);
+                        packageShipper.PackageStoreShipperResponses.Add(new PackageStoreShipperResponse
+                        {
+                            StoreId = (Guid)staff.StoreId,
+                            StoreName = staff.Store.StoreName,
+                            IsTaken = false,
+                            TotalQuantity = 0,
+                            PackStationDetailGroupByProducts = new List<PackStationDetailGroupByProduct>(),
+                            ListOrderId = new List<Guid>()
+                        });
+                    }
                 }
-                var packShipperStore = packageShipper.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
+                var packShipperStore = packageShipper.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
+
                 foreach (var pack in packageStation.PackageStationDetails)
                 {
-                    packShipperStore.ListOrderBox = packShipperStore.ListOrderBox.Concat(packageStation.ListOrderBox).ToHashSet();
-
                     packShipperStore.TotalQuantity += pack.Quantity;
-                    packShipperStore.PackageShipperDetails.Add(new PackageDetailResponse()
+                    packShipperStore.PackStationDetailGroupByProducts.Add(new PackStationDetailGroupByProduct()
                     {
                         ProductId = pack.ProductId,
                         ProductName = pack.ProductName,
-                        Quantity = pack.Quantity,
+                        TotalQuantity = pack.Quantity,
+                        BoxCode = new HashSet<Guid>()
                     });
                 }
 
@@ -324,35 +327,37 @@ namespace FINE.Service.Service
                             foreach (var order in listOrderInPack)
                             {
                                 if (numberHasConfirm == 0) break;
-                                //cập nhật trong pack staff trước
-                                var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
-                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
 
                                 var packStation = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
-                                List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
 
-                                var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequest));
-                                if (numberHasConfirm >= productInOrder.Quantity)
+                                //cập nhật trong pack staff trước
+                                var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+
+                                var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                                PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
+
+                                if (numberHasConfirm >= order.QuantityOfProduct)
                                 {
-                                    numberConfirmStation = productInOrder.Quantity;
+                                    numberConfirmStation = order.QuantityOfProduct;
 
-                                    numberHasConfirm -= productInOrder.Quantity;
-                                    productInOrder.IsReady = true;
+                                    numberHasConfirm -= order.QuantityOfProduct;
                                     order.IsFinishPrepare = true;
+                                    packageOrder.NumberHasConfirm += 1;
                                 }
-                                else if (numberHasConfirm < productInOrder.Quantity)
+                                else if (numberHasConfirm < order.QuantityOfProduct)
                                 {
                                     numberConfirmStation = numberHasConfirm;
                                     numberHasConfirm = 0;
                                 }
-                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
+                                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrder);
+
                                 //cập nhật lại trên db
-                                if (packageOrderDetail.All(x => x.IsReady) is true)
+                                if (packageOrder.TotalConfirm == packageOrder.NumberHasConfirm)
                                 {
                                     packStation.ListOrderBox.Add(new OrderBoxModel
                                     {
                                         OrderId = order.OrderId,
-                                        BoxId = order.BoxId,
+                                        IsInBox = false
                                     });
 
                                     var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
@@ -409,24 +414,16 @@ namespace FINE.Service.Service
                         foreach (var order in orderList)
                         {
                             if (errorNum == 0) break;
-
-                            var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
-                            var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-                            List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
-
-                            var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(item));
-
-                            if (errorNum > productInOrder.Quantity)
+                            if (errorNum > order.QuantityOfProduct)
                             {
-                                product.ErrorQuantity = productInOrder.Quantity;
-                                errorNum -= productInOrder.Quantity;
+                                product.ErrorQuantity = order.QuantityOfProduct;
+                                errorNum -= order.QuantityOfProduct;
                             }
                             else
                             {
-                                productInOrder.ErrorQuantity = (int)errorNum;
+                                order.ErrorQuantity = (int)errorNum;
                                 errorNum = 0;
                             }
-                            ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
                         }
                         //cập nhật số errorProduct trong staff pack
                         if (packageResponse.ErrorProducts is null)
@@ -520,40 +517,37 @@ namespace FINE.Service.Service
 
                             var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                             var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-                            List<PackageOrderDetailModel> packageOrderDetail = JsonConvert.DeserializeObject<List<PackageOrderDetailModel>>(orderValue);
+                            PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
 
                             var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
-                            var productInOrder = packageOrderDetail.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
 
-                            if (request.Quantity >= productInOrder.ErrorQuantity)
+                            if (request.Quantity >= order.ErrorQuantity)
                             {
                                 order.IsFinishPrepare = true;
-                                productInOrder.IsReady = true;
 
-                                numberOfConfirm -= productInOrder.Quantity;
-                                numberUpdateAtStation = productInOrder.ErrorQuantity;
-                                request.Quantity -= productInOrder.ErrorQuantity;
+                                numberOfConfirm -= order.QuantityOfProduct;
+                                numberUpdateAtStation = order.ErrorQuantity;
+                                request.Quantity -= order.ErrorQuantity;
                             }
-                            else if (request.Quantity < productInOrder.ErrorQuantity)
+                            else if (request.Quantity < order.ErrorQuantity)
                             {
-                                productInOrder.ErrorQuantity -= (int)request.Quantity;
+                                order.ErrorQuantity -= (int)request.Quantity;
                                 numberUpdateAtStation = (int)request.Quantity;
                                 numberOfConfirm = 0;
                             }
 
-                            if (packageOrderDetail.All(x => x.IsReady) is true)
+                            if (packageOrder.TotalConfirm == packageOrder.NumberHasConfirm)
                             {
                                 stationPack.ListOrderBox.Add(new OrderBoxModel
                                 {
                                     OrderId = order.OrderId,
-                                    BoxId = order.BoxId,
                                 });
                                 var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
                                 orderDb.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
 
                                 await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                             }
-                            ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrderDetail);
+                            ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrder);
                             #endregion
 
                             #region update pack station
@@ -604,15 +598,11 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public Task<BaseResponseViewModel<List<PackageStationResponse>>> GetDetailBoxAtStation(string staffId, string timeSlotId)
-        {
-            throw new NotImplementedException();
-        }
         public async Task<BaseResponseViewModel<dynamic>> ConfirmAllInBox(string staffId, string timeSlotId)
         {
             try
             {
-                List<PackageShipperResponse> packageShipperResponse = new List<PackageShipperResponse>();
+                PackageShipperResponse packageShipperResponse = new PackageShipperResponse();
 
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
@@ -626,20 +616,13 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageShipperResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                    packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
                 }
-                foreach (var pack in packageShipperResponse)
+                foreach (var pack in packageShipperResponse.PackStationDetailGroupByBoxes)
                 {
                     pack.IsInBox = true;
-
-                    pack.ListOrderBox = pack.ListOrderBox.Select(x => new OrderBoxModel()
-                                        {
-                                            OrderId = x.OrderId,
-                                            BoxId = x.BoxId,
-                                            IsInBox = true
-                                        }).ToHashSet();
                 }
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageShipperResponse);
                 return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()

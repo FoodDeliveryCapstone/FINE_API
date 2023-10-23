@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using NetTopologySuite.Index.HPRtree;
 using ZXing;
+using Azure.Core;
 
 namespace FINE.Service.Service
 {
@@ -452,6 +453,7 @@ namespace FINE.Service.Service
         {
             try
             {
+                string partyCode;
                 #region Timeslot
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().FindAsync(x => x.Id == request.TimeSlotId);
 
@@ -516,6 +518,7 @@ namespace FINE.Service.Service
                         party.UpdateAt = DateTime.Now;
 
                         await _unitOfWork.Repository<Party>().UpdateDetached(party);
+                        partyCode = request.PartyCode;
                     }
                     else
                     {
@@ -1500,9 +1503,20 @@ namespace FINE.Service.Service
         {
             try
             {
+                PackageOrderModel packageOrder = new PackageOrderModel()
+                {
+                    TotalConfirm = 0,
+                    NumberHasConfirm = 0,
+                    PackageOrderBoxes = new List<PackageOrderBoxModel>()
+                };
+                HashSet<KeyValuePair<Guid, string>> listBox = new HashSet<KeyValuePair<Guid, string>>();
+                HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
+                List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
+                PackageResponse packageResponse;
+
                 //lấy boxId đã lock
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
-                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName()+ ":" + order.OrderCode;
+                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
 
                 List<Guid> listLockOrder = new List<Guid>();
                 var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
@@ -1511,7 +1525,7 @@ namespace FINE.Service.Service
                     listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
                 }
 
-                //nhả lại số box đã lock
+                #region nhả lại số box đã lock
                 var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
 
                 List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
@@ -1527,171 +1541,212 @@ namespace FINE.Service.Service
                     StationId = x.StationId,
                     NumberBoxLockPending = x.NumberBoxLockPending - listLockOrder.Count(),
                 }).ToList();
+
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                #endregion
 
-                if (order.IsPartyMode == true)
+                #region lưu đơn vào tủ
+                foreach (var item in listLockOrder)
                 {
+                    var box = _unitOfWork.Repository<Box>().GetAll().FirstOrDefault(x => x.Id == item);
 
-                }
-                else
-                {
-                    var boxId = listLockOrder.FirstOrDefault();
+                    //add Orderbox
                     var orderBox = new OrderBox()
                     {
                         Id = Guid.NewGuid(),
                         OrderId = order.Id,
-                        BoxId = boxId,
+                        BoxId = item,
                         Status = (int)OrderBoxStatusEnum.NotPicked,
                         CreateAt = DateTime.Now
                     };
                     _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
-
-                    List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
-                    PackageResponse packageResponse;
-
-                    HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
-                    foreach (var od in order.OrderDetails)
+                    listBox.Add(new KeyValuePair<Guid, string>(box.Id, box.Code));
+                    packageOrder.PackageOrderBoxes.Add(new PackageOrderBoxModel
                     {
-                        var store = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == od.StoreId);
-                        listStoreId.Add(new KeyValuePair<Guid, string>(store.Id, store.StoreName));
+                        BoxId = item,
+                        PackageOrderDetailModels = new List<PackageOrderDetailModel>()
+                    });
+                }
+                #endregion
+
+                #region Ghi nhận cac product trong tủ
+                if (order.IsPartyMode == true)
+                {
+                    var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
+                    if (party.PartyType == (int)PartyOrderType.CoOrder)
+                    {
+                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + party.PartyCode;
+
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                        foreach (var partyOrder in coOrder.PartyOrder)
+                        {
+                            for (int index = 0; index <= packageOrder.PackageOrderBoxes.Count(); index++)
+                            {
+                                var item = packageOrder.PackageOrderBoxes[index];
+                                item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
+                                {
+                                    ProductId = x.ProductId,
+                                    ProductInMenuId = x.ProductInMenuId,
+                                    Quantity = x.Quantity,
+                                    ErrorQuantity = 0,
+                                    IsReady = false
+                                }).ToList();
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var item = packageOrder.PackageOrderBoxes.FirstOrDefault();
+                    foreach (var product in order.OrderDetails)
+                    {
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == product.ProductInMenuId);
+                        item.PackageOrderDetailModels.Add(new PackageOrderDetailModel
+                        {
+                            ProductId = productInMenu.ProductId,
+                            ProductInMenuId = productInMenu.Id,
+                            Quantity = product.Quantity,
+                            ErrorQuantity = 0,
+                            IsReady = false
+                        });
+                    }
+                }
+                #endregion
+
+                //xử lý đơn 
+                foreach (var od in order.OrderDetails)
+                {
+                    var store = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == od.StoreId);
+                    listStoreId.Add(new KeyValuePair<Guid, string>(store.Id, store.StoreName));
+                }
+
+                foreach (var storeId in listStoreId)
+                {
+                    var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                    var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
+
+                    if (redisValue.HasValue == false)
+                    {
+                        packageResponse = new PackageResponse()
+                        {
+                            TotalProductInDay = 0,
+                            TotalProductPending = 0,
+                            TotalProductError = 0,
+                            TotalProductReady = 0,
+                            ProductTotalDetails = new List<ProductTotalDetail>()
+                        };
+                    }
+                    else
+                    {
+                        packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
                     }
 
-                    foreach (var storeId in listStoreId)
+                    // xử lý ProductTotalDetail
+                    foreach (var orderDetail in listOdByStore)
                     {
-                        var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                        packageOrder.TotalConfirm += 1;
+                        var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
+                        var productTotalDetail = packageResponse.ProductTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
 
-                        var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
-
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
-
-                        if (redisValue.HasValue == false)
+                        packageOrderDetails.Add(new PackageOrderDetailModel()
                         {
-                            packageResponse = new PackageResponse()
+                            ProductId = productInMenu.ProductId,
+                            ProductInMenuId = orderDetail.ProductInMenuId,
+                            Quantity = orderDetail.Quantity,
+                            ErrorQuantity = 0,
+                            IsReady = false
+                        });
+
+                        if (productTotalDetail is null)
+                        {
+                            productTotalDetail = new ProductTotalDetail()
                             {
-                                TotalProductInDay = 0,
-                                TotalProductPending = 0,
-                                TotalProductError = 0,
-                                TotalProductReady = 0,
-                                ProductTotalDetails = new List<ProductTotalDetail>()
+                                ProductId = productInMenu.ProductId,
+                                ProductInMenuId = productInMenu.Id,
+                                ProductName = productInMenu.Product.Name,
+                                PendingQuantity = orderDetail.Quantity,
+                                ReadyQuantity = 0,
+                                ErrorQuantity = 0,
+                                WaitingQuantity = 0,
+                                ProductDetails = new List<ProductDetail>()
                             };
+                            packageResponse.ProductTotalDetails.Add(productTotalDetail);
+                        }
+                        productTotalDetail = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
+
+                        productTotalDetail.ProductDetails.Add(new ProductDetail()
+                        {
+                            OrderId = order.Id,
+                            OrderCode = order.OrderCode,
+                            StationId = (Guid)order.StationId,
+                            CheckInDate = order.CheckInDate,
+                            QuantityOfProduct = orderDetail.Quantity,
+                            IsFinishPrepare = false,
+                            IsAssignToShipper = false
+
+                        });
+                        productTotalDetail.PendingQuantity += orderDetail.Quantity;
+                        packageResponse.TotalProductInDay += orderDetail.Quantity;
+                        packageResponse.TotalProductPending += orderDetail.Quantity;
+
+                        //xử lý PackageStationResponse
+                        if (packageResponse.PackageStations is null || packageResponse.PackageStations.Find(x => x.StationId == order.StationId && x.IsShipperAssign == false) is null)
+                        {
+                            if (packageResponse.PackageStations is null)
+                            {
+                                packageResponse.PackageStations = new List<PackageStationResponse>();
+                            }
+
+                            var station = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == order.StationId);
+                            var stationPackage = new PackageStationResponse()
+                            {
+                                StationId = station.Id,
+                                StationName = station.Name,
+                                TotalQuantity = 0,
+                                ReadyQuantity = 0,
+                                IsShipperAssign = false,
+                                PackageStationDetails = new List<PackageDetailResponse>(),
+                                ListPackageMissing = new List<PackageDetailResponse>(),
+                                ListOrderBox = new HashSet<OrderBoxModel>()
+                            };
+                            stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
+                            {
+                                ProductId = productInMenu.ProductId,
+                                ProductName = productInMenu.Product.Name,
+                                Quantity = orderDetail.Quantity,
+                            });
+
+                            stationPackage.TotalQuantity += orderDetail.Quantity;
+                            packageResponse.PackageStations.Add(stationPackage);
                         }
                         else
                         {
-                            packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
-                        }
-
-                        foreach (var orderDetail in listOdByStore)
-                        {
-                            var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
-                            var productTotalDetail = packageResponse.ProductTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
-
-                            packageOrderDetails.Add(new PackageOrderDetailModel()
+                            var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
+                            var productMissing = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
+                            if (productMissing is null)
                             {
-                                ProductId = productInMenu.ProductId,
-                                ProductInMenuId = orderDetail.ProductInMenuId,
-                                Quantity = orderDetail.Quantity,
-                                ErrorQuantity = 0,
-                                IsReady = false
-                            });
-
-                            if (productTotalDetail is null)
-                            {
-                                productTotalDetail = new ProductTotalDetail()
-                                {
-                                    ProductId = productInMenu.ProductId,
-                                    ProductInMenuId = productInMenu.Id,
-                                    ProductName = productInMenu.Product.Name,
-                                    PendingQuantity = orderDetail.Quantity,
-                                    ReadyQuantity = 0,
-                                    ErrorQuantity = 0,
-                                    WaitingQuantity = 0,
-                                    ProductDetails = new List<ProductDetail>()
-                                };
-                                productTotalDetail.ProductDetails.Add(new ProductDetail()
-                                {
-                                    OrderId = order.Id,
-                                    OrderCode = order.OrderCode,
-                                    StationId = (Guid)order.StationId,
-                                    BoxId = orderBox.BoxId,
-                                    CheckInDate = order.CheckInDate,
-                                    Quantity = orderDetail.Quantity,
-                                    IsFinishPrepare = false,
-                                    IsAssignToShipper = false
-                                });
-                                packageResponse.ProductTotalDetails.Add(productTotalDetail);
-                            }
-                            else
-                            {
-                                productTotalDetail.ProductDetails.Add(new ProductDetail()
-                                {
-                                    OrderId = order.Id,
-                                    OrderCode = order.OrderCode,
-                                    StationId = (Guid)order.StationId,
-                                    BoxId = orderBox.BoxId,
-                                    CheckInDate = order.CheckInDate,
-                                    Quantity = orderDetail.Quantity,
-                                    IsFinishPrepare = false
-                                });
-                                productTotalDetail.PendingQuantity += orderDetail.Quantity;
-                            }
-                            packageResponse.TotalProductInDay += orderDetail.Quantity;
-                            packageResponse.TotalProductPending += orderDetail.Quantity;
-
-                            if (packageResponse.PackageStations is null || packageResponse.PackageStations.Find(x => x.StationId == order.StationId && x.IsShipperAssign == false) is null)
-                            {
-                                if (packageResponse.PackageStations is null)
-                                {
-                                    packageResponse.PackageStations = new List<PackageStationResponse>();
-                                }
-
-                                var station = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == order.StationId);
-                                var stationPackage = new PackageStationResponse()
-                                {
-                                    StationId = station.Id,
-                                    StationName = station.Name,
-                                    TotalQuantity = 0,
-                                    ReadyQuantity = 0,
-                                    IsShipperAssign = false,
-                                    PackageStationDetails = new List<PackageDetailResponse>(),
-                                    ListPackageMissing = new List<PackageDetailResponse>(),
-                                    ListOrderBox = new HashSet<OrderBoxModel>()
-                                };
-                                stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
+                                stationPack.ListPackageMissing.Add(new PackageDetailResponse()
                                 {
                                     ProductId = productInMenu.ProductId,
                                     ProductName = productInMenu.Product.Name,
                                     Quantity = orderDetail.Quantity,
                                 });
-
-                                stationPackage.TotalQuantity += orderDetail.Quantity;
-                                packageResponse.PackageStations.Add(stationPackage);
                             }
                             else
                             {
-                                var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
-                                var productMissing = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
-                                if (productMissing is null)
-                                {
-                                    stationPack.ListPackageMissing.Add(new PackageDetailResponse()
-                                    {
-                                        ProductId = productInMenu.ProductId,
-                                        ProductName = productInMenu.Product.Name,
-                                        Quantity = orderDetail.Quantity,
-                                    });
-                                }
-                                else
-                                {
-                                    productMissing.Quantity += orderDetail.Quantity;
-                                }
-                                stationPack.TotalQuantity += orderDetail.Quantity;
+                                productMissing.Quantity += orderDetail.Quantity;
                             }
+                            stationPack.TotalQuantity += orderDetail.Quantity;
                         }
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-                        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrderDetails);
                     }
-
-                    _unitOfWork.Commit();
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
                 }
+                _unitOfWork.Commit();
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrder);
             }
             catch (ErrorResponse ex)
             {
