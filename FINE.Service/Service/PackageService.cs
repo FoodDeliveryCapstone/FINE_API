@@ -21,7 +21,7 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
-        Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId);
+        Task<BaseResponseViewModel<PackageShipperResponse>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
         Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
         Task<BaseResponseViewModel<List<PackageShipperResponse>>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
@@ -230,11 +230,11 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<List<PackageShipperResponse>>> GetPackageForShipper(string staffId, string timeSlotId)
+        public async Task<BaseResponseViewModel<PackageShipperResponse>> GetPackageForShipper(string staffId, string timeSlotId)
         {
             try
             {
-                List<PackageShipperResponse> packageShipperResponse = new List<PackageShipperResponse>();
+                PackageShipperResponse packageShipperResponse = new PackageShipperResponse();
 
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
@@ -248,10 +248,10 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageShipperResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                    packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
                 }
 
-                return new BaseResponseViewModel<List<PackageShipperResponse>>()
+                return new BaseResponseViewModel<PackageShipperResponse>()
                 {
                     Status = new StatusViewModel()
                     {
