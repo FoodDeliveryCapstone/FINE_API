@@ -75,6 +75,14 @@ namespace FINE.Service.DTO.Response
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public int Quantity { get; set; }
+        public List<BoxProduct> BoxProducts { get; set; }
+    }
+
+    public class BoxProduct
+    {
+        public Guid BoxId { get; set; }
+        public string BoxCode { get; set; }
+        public int Quantity { get; set; }
     }
     public class PackageOrderModel
     {
@@ -135,7 +143,7 @@ namespace FINE.Service.DTO.Response
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public int TotalQuantity { get; set; }
-        public HashSet<Guid> BoxCode { get; set; }
+        public List<BoxProduct> BoxProducts { get; set; }
     }
 
     public class PackStationDetailGroupByBox

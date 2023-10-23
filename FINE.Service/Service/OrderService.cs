@@ -19,8 +19,6 @@ using FirebaseAdmin.Messaging;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using NetTopologySuite.Index.HPRtree;
-using ZXing;
-using Azure.Core;
 
 namespace FINE.Service.Service
 {
@@ -1228,7 +1226,10 @@ namespace FINE.Service.Service
 
                 var listProductInCoOrder = coOrder.PartyOrder.SelectMany(x => x.OrderDetails);
 
-                order.BoxQuantity = (int)Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
+                //order.BoxQuantity = (int)Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
+                var boxQuantity = Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
+
+                order.BoxQuantity = (int)boxQuantity;
 
                 order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
                                             .Where(x => x.Id == Guid.Parse(customerId))
@@ -1460,7 +1461,6 @@ namespace FINE.Service.Service
         {
             try
             {
-
                 var order = _unitOfWork.Repository<Order>().GetAll()
                                         .OrderByDescending(x => x.CheckInDate)
                                         .ProjectTo<OrderForStaffResponse>(_mapper.ConfigurationProvider)

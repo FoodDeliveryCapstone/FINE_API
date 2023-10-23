@@ -143,6 +143,7 @@ namespace FINE.Service.Service
                     });
                 }
                 var packShipperStore = packageShipper.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
+                packShipperStore.ListOrderId.AddRange(packageStation.ListOrder.Select(x => x.Key));
 
                 foreach (var pack in packageStation.PackageStationDetails)
                 {
@@ -152,7 +153,7 @@ namespace FINE.Service.Service
                         ProductId = pack.ProductId,
                         ProductName = pack.ProductName,
                         TotalQuantity = pack.Quantity,
-                        BoxCode = new HashSet<Guid>()
+                        BoxProducts = pack.BoxProducts
                     });
                 }
                 #endregion
@@ -406,7 +407,8 @@ namespace FINE.Service.Service
                                     {
                                         ProductId = missingPack.ProductId,
                                         ProductName = missingPack.ProductName,
-                                        Quantity = numberConfirmStation
+                                        Quantity = numberConfirmStation,
+                                        BoxProducts = new List<BoxProduct>()
                                     };
                                     packStation.PackageStationDetails.Add(readyPack);
                                 }
@@ -414,6 +416,13 @@ namespace FINE.Service.Service
                                 {
                                     readyPack.Quantity += numberConfirmStation;
                                 }
+                                var findBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productRequest))).ToList();
+                                readyPack.BoxProducts = findBox.Select(x => new BoxProduct()
+                                {
+                                    BoxId = x.BoxId,
+                                    BoxCode = x.BoxCode,
+                                    Quantity = x.PackageOrderDetailModels.Select(x => x.Quantity).Sum()
+                                }).ToList();
                                 #endregion
                             }
                             // những giá trị cập nhật sau cuối
@@ -596,6 +605,13 @@ namespace FINE.Service.Service
                             {
                                 readyPack.Quantity += numberUpdateAtStation;
                             }
+                            var findBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productRequestId))).ToList();
+                            readyPack.BoxProducts = findBox.Select(x => new BoxProduct()
+                            {
+                                BoxId = x.BoxId,
+                                BoxCode = x.BoxCode,
+                                Quantity = x.PackageOrderDetailModels.Select(x => x.Quantity).Sum()
+                            }).ToList();
                             #endregion
                         }
                         productTotalPack.WaitingQuantity = numberOfConfirm;
