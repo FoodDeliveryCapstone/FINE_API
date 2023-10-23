@@ -232,6 +232,7 @@ namespace FINE.Service.Service
                         ListPackageMissing = packageStation.ListPackageMissing,
                         ListOrder = new HashSet<KeyValuePair<Guid, string>>()
                     };
+                    packageResponse.PackageStations.Add(packageMissingProduct);
                     packageStation.TotalQuantity = packageStation.ReadyQuantity;
                     packageStation.ListPackageMissing.Clear();
                 }
