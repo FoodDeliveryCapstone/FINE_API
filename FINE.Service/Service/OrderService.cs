@@ -873,30 +873,33 @@ namespace FINE.Service.Service
             {
                 var result = new AddProductToCardResponse();
                 //check xem customer đã hết lượt đặt đơn hay chưa
-                var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
-                                        .Where(x => x.CustomerId == Guid.Parse(customerId)
-                                            && x.OrderStatus != (int)OrderStatusEnum.Finished
-                                            && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
-                                        .ToListAsync();
-                if (customerOrder.Count() >= 2)
+                if (!request.TimeSlotId.Contains("E8D529D4-6A51-4FDB-B9DB-E29F54C0486E"))
                 {
-                    var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
-
-                    Notification notification = new Notification
+                    var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
+                                            .Where(x => x.CustomerId == Guid.Parse(customerId)
+                                                && x.OrderStatus != (int)OrderStatusEnum.Finished
+                                                && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                            .ToListAsync();
+                    if (customerOrder.Count() >= 2)
                     {
-                        Title = Constants.OUT_OF_LIMIT_ORDER,
-                        Body = String.Format("Bạn chỉ 2 lượt đặt đơn trong cùng 1 khung giờ, vui lòng chờ các đơn bạn đã đặt được giao tới nhé!!!")
-                    };
+                        var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
 
-                    var data = new Dictionary<string, string>()
+                        Notification notification = new Notification
+                        {
+                            Title = Constants.OUT_OF_LIMIT_ORDER,
+                            Body = String.Format("Bạn chỉ 2 lượt đặt đơn trong cùng 1 khung giờ, vui lòng chờ các đơn bạn đã đặt được giao tới nhé!!!")
+                        };
+
+                        var data = new Dictionary<string, string>()
                     {
                         { "type", NotifyTypeEnum.ForPopup.ToString()}
                     };
 
-                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+                        BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
 
-                    throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
-                                            OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
+                        throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
+                                                OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
+                    }
                 }
                 var maxQuantity = Int32.Parse(_configuration["MaxQuantityInBox"]);
 
