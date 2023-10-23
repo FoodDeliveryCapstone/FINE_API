@@ -61,7 +61,7 @@ namespace FINE.Service.DTO.Response
         public bool IsShipperAssign { get; set; }
         public List<PackageDetailResponse> PackageStationDetails { get; set; }
         public List<PackageDetailResponse> ListPackageMissing { get; set; }
-        public HashSet<OrderBoxModel> ListOrderBox { get; set; }
+        public HashSet<KeyValuePair<Guid, string>> ListOrder { get; set; }
     }
 
     public class OrderBoxModel
@@ -86,12 +86,14 @@ namespace FINE.Service.DTO.Response
     public class PackageOrderBoxModel
     {
         public Guid BoxId { get; set; }
+        public string BoxCode { get; set; }
         public List<PackageOrderDetailModel> PackageOrderDetailModels { get; set; }
     }
 
     public class PackageOrderDetailModel
     {
         public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
         public Guid ProductInMenuId { get; set; }
         public int Quantity { get; set; }
     }
@@ -113,20 +115,20 @@ namespace FINE.Service.DTO.Response
         public List<Guid> ListOrderId { get; set; }
     }
 
-    public class OrderStationDetail
-    {
-        public Guid BoxId { get; set; }
-        public Guid OrderId { get; set; }
-        public string OrderCode { get; set; }
-        public List<PackageOrderDetailModel> PackageOrderDetails { get; set; }
-    }
+    //public class OrderStationDetail
+    //{
+    //    public Guid BoxId { get; set; }
+    //    public Guid OrderId { get; set; }
+    //    public string OrderCode { get; set; }
+    //    public List<PackageOrderDetailModel> PackageOrderDetails { get; set; }
+    //}
 
-    public class StationOrderModel
-    {
-        public Guid OrderId { get; set; }
+    //public class StationOrderModel
+    //{
+    //    public Guid OrderId { get; set; }
 
-        public List<PackageDetailResponse> StationOrderDetails { get; set; }
-    }
+    //    public List<PackageDetailResponse> StationOrderDetails { get; set; }
+    //}
 
     public class PackStationDetailGroupByProduct
     {

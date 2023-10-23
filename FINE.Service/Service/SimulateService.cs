@@ -196,7 +196,7 @@ namespace FINE.Service.Service
                                     IsShipperAssign = false,
                                     PackageStationDetails = new List<PackageDetailResponse>(),
                                     ListPackageMissing = new List<PackageDetailResponse>(),
-                                    ListOrderBox = new HashSet<OrderBoxModel>()
+                                    //ListOrderBox = new HashSet<OrderBoxModel>()
                                 };
                                 stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
                                 {

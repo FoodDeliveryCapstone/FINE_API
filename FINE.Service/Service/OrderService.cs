@@ -1564,6 +1564,7 @@ namespace FINE.Service.Service
                     packageOrder.PackageOrderBoxes.Add(new PackageOrderBoxModel
                     {
                         BoxId = item,
+                        BoxCode = box.Code,
                         PackageOrderDetailModels = new List<PackageOrderDetailModel>()
                     });
                 }
@@ -1588,6 +1589,7 @@ namespace FINE.Service.Service
                                 item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
                                 {
                                     ProductId = x.ProductId,
+                                    ProductName = x.ProductName,
                                     ProductInMenuId = x.ProductInMenuId,
                                     Quantity = x.Quantity
                                 }).ToList();
@@ -1605,6 +1607,7 @@ namespace FINE.Service.Service
                         item.PackageOrderDetailModels.Add(new PackageOrderDetailModel
                         {
                             ProductId = productInMenu.ProductId,
+                            ProductName = productInMenu.Product.Name,
                             ProductInMenuId = productInMenu.Id,
                             Quantity = product.Quantity
                         });
@@ -1651,6 +1654,7 @@ namespace FINE.Service.Service
                         packageOrderDetails.Add(new PackageOrderDetailModel()
                         {
                             ProductId = productInMenu.ProductId,
+                            ProductName = productInMenu.Product.Name,
                             ProductInMenuId = orderDetail.ProductInMenuId,
                             Quantity = orderDetail.Quantity
                         });
@@ -1708,7 +1712,7 @@ namespace FINE.Service.Service
                                 IsShipperAssign = false,
                                 PackageStationDetails = new List<PackageDetailResponse>(),
                                 ListPackageMissing = new List<PackageDetailResponse>(),
-                                ListOrderBox = new HashSet<OrderBoxModel>()
+                                ListOrder = new HashSet<KeyValuePair<Guid, string>>()
                             };
                             stationPackage.ListPackageMissing.Add(new PackageDetailResponse()
                             {
