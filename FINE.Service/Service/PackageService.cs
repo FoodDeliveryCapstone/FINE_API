@@ -229,9 +229,10 @@ namespace FINE.Service.Service
                         ReadyQuantity = 0,
                         IsShipperAssign = false,
                         PackageStationDetails = new List<PackageDetailResponse>(),
-                        ListPackageMissing = packageStation.ListPackageMissing,
+                        ListPackageMissing = new List<PackageDetailResponse>(),
                         ListOrder = new HashSet<KeyValuePair<Guid, string>>()
                     };
+                    packageMissingProduct.ListPackageMissing.AddRange(packageStation.ListPackageMissing);
                     packageResponse.PackageStations.Add(packageMissingProduct);
                     packageStation.TotalQuantity = packageStation.ReadyQuantity;
                     packageStation.ListPackageMissing.Clear();
