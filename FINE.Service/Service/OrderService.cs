@@ -1676,6 +1676,10 @@ namespace FINE.Service.Service
                             };
                             packageResponse.ProductTotalDetails.Add(productTotalDetail);
                         }
+                        else
+                        {
+                            productTotalDetail.PendingQuantity += orderDetail.Quantity;
+                        }
                         productTotalDetail = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
 
                         productTotalDetail.ProductDetails.Add(new ProductDetail()
@@ -1689,7 +1693,6 @@ namespace FINE.Service.Service
                             IsAssignToShipper = false
 
                         });
-                        productTotalDetail.PendingQuantity += orderDetail.Quantity;
                         packageResponse.TotalProductInDay += orderDetail.Quantity;
                         packageResponse.TotalProductPending += orderDetail.Quantity;
 
