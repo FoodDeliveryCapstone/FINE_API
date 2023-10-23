@@ -295,25 +295,6 @@ namespace FINE.Service.Service
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
                                             .FirstOrDefaultAsync();
 
-                if (!request.PartyCode.IsNullOrEmpty())
-                {
-                    var prefixesPartyCode = request.PartyCode.Substring(0, 3);
-                    if (prefixesPartyCode.Contains("CPO"))
-                    {
-                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
-
-                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-
-                        var numberMember = coOrder.PartyOrder.Count();
-                        List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
-
-                        var listProductInCoOrder = coOrder.PartyOrder.SelectMany(x => x.OrderDetails);
-
-                        order.BoxQuantity = (int)Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
-                    }
-                }
-
                 order.OrderDetails = new List<OrderDetailResponse>();
                 foreach (var orderDetail in request.OrderDetails)
                 {
@@ -1241,6 +1222,13 @@ namespace FINE.Service.Service
                     IsConfirm = false,
                     IsPartyMode = true
                 };
+
+                var numberMember = coOrder.PartyOrder.Count();
+                List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
+
+                var listProductInCoOrder = coOrder.PartyOrder.SelectMany(x => x.OrderDetails);
+
+                order.BoxQuantity = (int)Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
 
                 order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
                                             .Where(x => x.Id == Guid.Parse(customerId))
