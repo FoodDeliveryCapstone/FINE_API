@@ -134,9 +134,7 @@ namespace FINE.Service.Service
                             {
                                 ProductId = productInMenu.ProductId,
                                 ProductInMenuId = orderDetail.ProductInMenuId,
-                                Quantity = orderDetail.Quantity,
-                                ErrorQuantity = 0,
-                                IsReady = false
+                                Quantity = orderDetail.Quantity
                             });
 
                             if (productTotalDetail is null)
@@ -172,7 +170,6 @@ namespace FINE.Service.Service
                                     OrderId = order.Id,
                                     OrderCode = order.OrderCode,
                                     StationId = (Guid)order.StationId,
-                                    //BoxId = orderBox.BoxId,
                                     CheckInDate = order.CheckInDate,
                                     QuantityOfProduct = orderDetail.Quantity,
                                     IsFinishPrepare = false

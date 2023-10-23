@@ -518,6 +518,7 @@ namespace FINE.Service.Service
                             var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                             var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                             PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
+                            packageOrder.NumberHasConfirm += 1;
 
                             var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId);
 
@@ -525,7 +526,7 @@ namespace FINE.Service.Service
                             {
                                 order.IsFinishPrepare = true;
 
-                                numberOfConfirm -= order.QuantityOfProduct;
+                                numberOfConfirm -= order.ErrorQuantity;
                                 numberUpdateAtStation = order.ErrorQuantity;
                                 request.Quantity -= order.ErrorQuantity;
                             }

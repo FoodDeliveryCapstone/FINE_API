@@ -1589,9 +1589,7 @@ namespace FINE.Service.Service
                                 {
                                     ProductId = x.ProductId,
                                     ProductInMenuId = x.ProductInMenuId,
-                                    Quantity = x.Quantity,
-                                    ErrorQuantity = 0,
-                                    IsReady = false
+                                    Quantity = x.Quantity
                                 }).ToList();
                                 break;
                             }
@@ -1608,9 +1606,7 @@ namespace FINE.Service.Service
                         {
                             ProductId = productInMenu.ProductId,
                             ProductInMenuId = productInMenu.Id,
-                            Quantity = product.Quantity,
-                            ErrorQuantity = 0,
-                            IsReady = false
+                            Quantity = product.Quantity
                         });
                     }
                 }
@@ -1656,9 +1652,7 @@ namespace FINE.Service.Service
                         {
                             ProductId = productInMenu.ProductId,
                             ProductInMenuId = orderDetail.ProductInMenuId,
-                            Quantity = orderDetail.Quantity,
-                            ErrorQuantity = 0,
-                            IsReady = false
+                            Quantity = orderDetail.Quantity
                         });
 
                         if (productTotalDetail is null)

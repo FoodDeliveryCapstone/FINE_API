@@ -94,8 +94,6 @@ namespace FINE.Service.DTO.Response
         public Guid ProductId { get; set; }
         public Guid ProductInMenuId { get; set; }
         public int Quantity { get; set; }
-        public int ErrorQuantity { get; set; }
-        public bool IsReady { get; set; }
     }
 
     public class PackageShipperResponse
