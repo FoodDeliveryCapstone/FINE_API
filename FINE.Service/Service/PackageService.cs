@@ -67,7 +67,19 @@ namespace FINE.Service.Service
 
                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
                 }
-                packStore.IsTaken = true;
+                var existPack = packageResponse.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == Guid.Parse(storeId) && x.IsTaken == true && x.IsInBox == false);
+                if (existPack is not null)
+                {
+                    existPack.TotalQuantity += packStore.TotalQuantity;
+                    existPack.PackStationDetailGroupByProducts.AddRange(packStore.PackStationDetailGroupByProducts);
+
+                    packageResponse.PackageStoreShipperResponses.Remove(packStore);
+                }
+                else
+                {
+                    packStore.IsTaken = true;
+                }
+
                 await _unitOfWork.CommitAsync();
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
 
@@ -550,7 +562,7 @@ namespace FINE.Service.Service
                                 {
                                     BoxId = x.BoxId,
                                     BoxCode = x.BoxCode,
-                                    Quantity = x.PackageOrderDetailModels.Select(x => x.Quantity).Sum()
+                                    Quantity = x.PackageOrderDetailModels.Where(x => x.ProductId == readyPack.ProductId).Select(x => x.Quantity).Sum()
                                 }).ToList();
                                 #endregion
                             }
@@ -739,7 +751,7 @@ namespace FINE.Service.Service
                             {
                                 BoxId = x.BoxId,
                                 BoxCode = x.BoxCode,
-                                Quantity = x.PackageOrderDetailModels.Select(x => x.Quantity).Sum()
+                                Quantity = x.PackageOrderDetailModels.Where(x => x.ProductId == readyPack.ProductId).Select(x => x.Quantity).Sum()
                             }).ToList();
                             #endregion
                         }

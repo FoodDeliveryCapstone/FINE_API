@@ -123,21 +123,6 @@ namespace FINE.Service.DTO.Response
         public List<Guid> ListOrderId { get; set; }
     }
 
-    //public class OrderStationDetail
-    //{
-    //    public Guid BoxId { get; set; }
-    //    public Guid OrderId { get; set; }
-    //    public string OrderCode { get; set; }
-    //    public List<PackageOrderDetailModel> PackageOrderDetails { get; set; }
-    //}
-
-    //public class StationOrderModel
-    //{
-    //    public Guid OrderId { get; set; }
-
-    //    public List<PackageDetailResponse> StationOrderDetails { get; set; }
-    //}
-
     public class PackStationDetailGroupByProduct
     {
         public Guid ProductId { get; set; }
@@ -150,9 +135,7 @@ namespace FINE.Service.DTO.Response
     {
         public Guid BoxId { get; set; }
         public string BoxCode { get; set; }
-
         public bool IsInBox { get; set; }
-
         public List<PackageDetailResponse> ListProduct { get; set; }
     }
 }
