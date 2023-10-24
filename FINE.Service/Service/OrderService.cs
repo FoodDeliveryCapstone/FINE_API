@@ -1229,7 +1229,7 @@ namespace FINE.Service.Service
 
                 var listProductInCoOrder = coOrder.PartyOrder.SelectMany(x => x.OrderDetails).Select(x => x.Quantity).Sum();
 
-                var numberbox = listProductInCoOrder/ Int32.Parse(_configuration["MaxQuantityInBox"]);
+                var numberbox = listProductInCoOrder / Int32.Parse(_configuration["MaxQuantityInBox"]);
                 var boxQuantity = Math.Ceiling((double)numberbox);
 
                 order.BoxQuantity = (int)boxQuantity;
@@ -1494,20 +1494,9 @@ namespace FINE.Service.Service
         {
             try
             {
-                PackageOrderModel packageOrder = new PackageOrderModel()
-                {
-                    TotalConfirm = 0,
-                    NumberHasConfirm = 0,
-                    PackageOrderBoxes = new List<PackageOrderBoxModel>()
-                };
-                HashSet<KeyValuePair<Guid, string>> listBox = new HashSet<KeyValuePair<Guid, string>>();
-                HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
-                List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
-                PackageResponse packageResponse;
 
-                //lấy boxId đã lock
+                #region lấy boxId đã lock
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
-                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
 
                 List<Guid> listLockOrder = new List<Guid>();
                 var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
@@ -1515,6 +1504,7 @@ namespace FINE.Service.Service
                 {
                     listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
                 }
+                #endregion
 
                 #region nhả lại số box đã lock
                 var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
@@ -1537,6 +1527,14 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region lưu đơn vào tủ
+                //mỗi order có 1 package order riêng
+                PackageOrderModel packageOrder = new PackageOrderModel()
+                {
+                    TotalConfirm = 0,
+                    NumberHasConfirm = 0,
+                    PackageOrderBoxes = new List<PackageOrderBoxModel>()
+                };
+                HashSet<KeyValuePair<Guid, string>> listBox = new HashSet<KeyValuePair<Guid, string>>();
                 foreach (var item in listLockOrder)
                 {
                     var box = _unitOfWork.Repository<Box>().GetAll().FirstOrDefault(x => x.Id == item);
@@ -1561,31 +1559,29 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-                #region Ghi nhận cac product trong tủ
-                if (order.IsPartyMode == true)
+                #region Ghi nhận order và cac product trong tủ
+                if (order.IsPartyMode == true && order.Parties.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
                 {
                     var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
-                    if (party.PartyType == (int)PartyOrderType.CoOrder)
+
+                    var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + party.PartyCode;
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+                    CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                    foreach (var partyOrder in coOrder.PartyOrder)
                     {
-                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + party.PartyCode;
-
-                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
-                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
-
-                        foreach (var partyOrder in coOrder.PartyOrder)
+                        for (int index = 0; index <= packageOrder.PackageOrderBoxes.Count(); index++)
                         {
-                            for (int index = 0; index <= packageOrder.PackageOrderBoxes.Count(); index++)
+                            var item = packageOrder.PackageOrderBoxes[index];
+                            item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
                             {
-                                var item = packageOrder.PackageOrderBoxes[index];
-                                item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
-                                {
-                                    ProductId = x.ProductId,
-                                    ProductName = x.ProductName,
-                                    ProductInMenuId = x.ProductInMenuId,
-                                    Quantity = x.Quantity
-                                }).ToList();
-                                break;
-                            }
+                                ProductId = x.ProductId,
+                                ProductName = x.ProductName,
+                                ProductInMenuId = x.ProductInMenuId,
+                                Quantity = x.Quantity,
+                                IsInBox = false
+                            }).ToList();
+                            break;
                         }
                     }
                 }
@@ -1600,13 +1596,19 @@ namespace FINE.Service.Service
                             ProductId = productInMenu.ProductId,
                             ProductName = productInMenu.Product.Name,
                             ProductInMenuId = productInMenu.Id,
-                            Quantity = product.Quantity
+                            Quantity = product.Quantity,
+                            IsInBox = false
                         });
                     }
                 }
                 #endregion
 
                 //xử lý đơn 
+                HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
+                //List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
+                PackageStaffResponse packageStaffResponse;
+
+                //lấy list storeId từ orderdetail
                 foreach (var od in order.OrderDetails)
                 {
                     var store = _unitOfWork.Repository<Store>().GetAll().FirstOrDefault(x => x.Id == od.StoreId);
@@ -1616,12 +1618,11 @@ namespace FINE.Service.Service
                 foreach (var storeId in listStoreId)
                 {
                     var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + storeId.Value + ":" + order.TimeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-                    var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
                     var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
 
                     if (redisValue.HasValue == false)
                     {
-                        packageResponse = new PackageResponse()
+                        packageStaffResponse = new PackageStaffResponse()
                         {
                             TotalProductInDay = 0,
                             TotalProductPending = 0,
@@ -1632,24 +1633,16 @@ namespace FINE.Service.Service
                     }
                     else
                     {
-                        packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                        packageStaffResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
                     }
 
-                    // xử lý ProductTotalDetail
+                    var listOdByStore = order.OrderDetails.Where(x => x.StoreId == storeId.Key).ToList();
+                    // xử lý ProductTotalDetail trong packageStaffResponse
                     foreach (var orderDetail in listOdByStore)
                     {
-                        packageOrder.TotalConfirm += 1;
                         var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll().FirstOrDefault(x => x.Id == orderDetail.ProductInMenuId);
-                        var productTotalDetail = packageResponse.ProductTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
 
-                        packageOrderDetails.Add(new PackageOrderDetailModel()
-                        {
-                            ProductId = productInMenu.ProductId,
-                            ProductName = productInMenu.Product.Name,
-                            ProductInMenuId = orderDetail.ProductInMenuId,
-                            Quantity = orderDetail.Quantity
-                        });
-
+                        var productTotalDetail = packageStaffResponse.ProductTotalDetails.Find(x => x.ProductInMenuId == orderDetail.ProductInMenuId);
                         if (productTotalDetail is null)
                         {
                             productTotalDetail = new ProductTotalDetail()
@@ -1663,14 +1656,16 @@ namespace FINE.Service.Service
                                 WaitingQuantity = 0,
                                 ProductDetails = new List<ProductDetail>()
                             };
-                            packageResponse.ProductTotalDetails.Add(productTotalDetail);
+                            packageStaffResponse.ProductTotalDetails.Add(productTotalDetail);
                         }
                         else
                         {
                             productTotalDetail.PendingQuantity += orderDetail.Quantity;
                         }
-                        productTotalDetail = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
 
+                        productTotalDetail = packageStaffResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
+
+                        //xử lý tới product này có trong những order nào số lượng là bao nhiêu
                         productTotalDetail.ProductDetails.Add(new ProductDetail()
                         {
                             OrderId = order.Id,
@@ -1680,20 +1675,20 @@ namespace FINE.Service.Service
                             QuantityOfProduct = orderDetail.Quantity,
                             IsFinishPrepare = false,
                             IsAssignToShipper = false
-
                         });
-                        packageResponse.TotalProductInDay += orderDetail.Quantity;
-                        packageResponse.TotalProductPending += orderDetail.Quantity;
+                        packageStaffResponse.TotalProductInDay += orderDetail.Quantity;
+                        packageStaffResponse.TotalProductPending += orderDetail.Quantity;
 
                         //xử lý PackageStationResponse
-                        if (packageResponse.PackageStations is null || packageResponse.PackageStations.Find(x => x.StationId == order.StationId && x.IsShipperAssign == false) is null)
+                        if (packageStaffResponse.PackageStations is null)
                         {
-                            if (packageResponse.PackageStations is null)
-                            {
-                                packageResponse.PackageStations = new List<PackageStationResponse>();
-                            }
-
+                            packageStaffResponse.PackageStations = new List<PackageStationResponse>();
+                        }
+                        var stationPack = packageStaffResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
+                        if (stationPack is null)
+                        {
                             var station = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == order.StationId);
+
                             var stationPackage = new PackageStationResponse()
                             {
                                 StationId = station.Id,
@@ -1713,11 +1708,10 @@ namespace FINE.Service.Service
                             });
 
                             stationPackage.TotalQuantity += orderDetail.Quantity;
-                            packageResponse.PackageStations.Add(stationPackage);
+                            packageStaffResponse.PackageStations.Add(stationPackage);
                         }
                         else
                         {
-                            var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
                             var productMissing = stationPack.ListPackageMissing.FirstOrDefault(x => x.ProductId == productInMenu.ProductId);
                             if (productMissing is null)
                             {
@@ -1734,10 +1728,12 @@ namespace FINE.Service.Service
                             }
                             stationPack.TotalQuantity += orderDetail.Quantity;
                         }
+                        packageOrder.TotalConfirm += 1;
                     }
-                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaffResponse);
                 }
                 _unitOfWork.Commit();
+                var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrder);
             }
             catch (ErrorResponse ex)
