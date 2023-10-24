@@ -903,13 +903,13 @@ namespace FINE.Service.Service
                 }
                 var maxQuantity = Int32.Parse(_configuration["MaxQuantityInBox"]);
 
-                if (request.Card.Select(x => x.Quantity).Sum() >= maxQuantity)
+                if (request.Card.Select(x => x.Quantity).Sum() + request.Quantity >= maxQuantity)
                 {
                     result.Status = new StatusViewModel()
                     {
                         Success = false,
                         Message = String.Format("Error"),
-                        ErrorCode = 400
+                        ErrorCode = 4002
                     };
                 }
                 else
@@ -1229,8 +1229,8 @@ namespace FINE.Service.Service
 
                 var listProductInCoOrder = coOrder.PartyOrder.SelectMany(x => x.OrderDetails);
 
-                //order.BoxQuantity = (int)Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
-                var boxQuantity = Math.Ceiling((decimal)((double)listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"])));
+                var numberbox = listProductInCoOrder.Count() / Int32.Parse(_configuration["MaxQuantityInBox"]);
+                var boxQuantity = Math.Ceiling((double)numberbox);
 
                 order.BoxQuantity = (int)boxQuantity;
 
