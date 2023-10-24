@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
-    public class PackageResponse
+    public class PackageStaffResponse
     {
         public int TotalProductInDay { get; set; }
         public int TotalProductPending { get; set; }
@@ -104,6 +104,7 @@ namespace FINE.Service.DTO.Response
         public string ProductName { get; set; }
         public Guid ProductInMenuId { get; set; }
         public int Quantity { get; set; }
+        public bool IsInBox { get; set; }
     }
 
     public class PackageShipperResponse
