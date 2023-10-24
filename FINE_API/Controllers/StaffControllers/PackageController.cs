@@ -28,7 +28,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// </summary>
         [Authorize(Roles = "StoreManager")]
         [HttpGet]
-        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> GetPackage(string timeSlotId)
+        public async Task<ActionResult<BaseResponseViewModel<PackageStaffResponse>>> GetPackage(string timeSlotId)
         {
             try
             {
@@ -101,7 +101,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// Cập nhật tình trạng sp của package
         /// </summary>
         [HttpPut]
-        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> UpdatePackage([FromBody]UpdateProductPackageRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<PackageStaffResponse>>> UpdatePackage([FromBody]UpdateProductPackageRequest request)
         {
             try
             {
@@ -127,7 +127,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// </summary>
         //[Authorize(Roles = "StoreManager")]
         [HttpPut("cofirmDelivery")]
-        public async Task<ActionResult<BaseResponseViewModel<PackageResponse>>> ConfirmReadyToDelivery(string timeslotId, string stationId)
+        public async Task<ActionResult<BaseResponseViewModel<PackageStaffResponse>>> ConfirmReadyToDelivery(string timeslotId, string stationId)
         {
             try
             {
