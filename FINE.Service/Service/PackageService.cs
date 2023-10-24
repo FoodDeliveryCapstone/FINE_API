@@ -19,11 +19,11 @@ namespace FINE.Service.Service
 {
     public interface IPackageService
     {
-        Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId);
+        Task<BaseResponseViewModel<PackageStaffResponse>> GetPackage(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageShipperResponse>> GetPackageForShipper(string staffId, string timeSlotId);
-        Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
-        Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
+        Task<BaseResponseViewModel<PackageStaffResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
+        Task<BaseResponseViewModel<PackageStaffResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
         Task<BaseResponseViewModel<List<PackageShipperResponse>>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
         Task<BaseResponseViewModel<dynamic>> ConfirmAllInBox(string staffId, string timeSlotId);
     }
@@ -208,12 +208,11 @@ namespace FINE.Service.Service
         //        throw ex;
         //    }
         //}
-
-        public async Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId)
+        public async Task<BaseResponseViewModel<PackageStaffResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId)
         {
             try
             {
-                PackageResponse packageResponse = new PackageResponse();
+                PackageStaffResponse packageResponse = new PackageStaffResponse();
                 PackageShipperResponse packageShipper = new PackageShipperResponse();
 
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
@@ -227,7 +226,7 @@ namespace FINE.Service.Service
 
                 var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
-                packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                packageResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
 
                 var packageStation = packageResponse.PackageStations.Where(x => x.StationId == Guid.Parse(stationId) && x.IsShipperAssign == false).FirstOrDefault();
 
@@ -322,7 +321,7 @@ namespace FINE.Service.Service
 
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyShipper, packageShipper);
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-                return new BaseResponseViewModel<PackageResponse>()
+                return new BaseResponseViewModel<PackageStaffResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -337,11 +336,11 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<PackageResponse>> GetPackage(string staffId, string timeSlotId)
+        public async Task<BaseResponseViewModel<PackageStaffResponse>> GetPackage(string staffId, string timeSlotId)
         {
             try
             {
-                PackageResponse packageResponse = new PackageResponse();
+                PackageStaffResponse packageResponse = new PackageStaffResponse();
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                          .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
 
@@ -353,10 +352,10 @@ namespace FINE.Service.Service
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
                 {
-                    packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                    packageResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
                 }
 
-                return new BaseResponseViewModel<PackageResponse>()
+                return new BaseResponseViewModel<PackageStaffResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -414,7 +413,7 @@ namespace FINE.Service.Service
             try
             {
                 var result = new List<PackageStationResponse>();
-                PackageResponse packageResponse = new PackageResponse();
+                PackageStaffResponse packageResponse = new PackageStaffResponse();
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                          .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
 
@@ -426,7 +425,7 @@ namespace FINE.Service.Service
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
                 {
-                    packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                    packageResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
                     if (packageResponse.PackageStations is not null)
                     {
                         result.AddRange(packageResponse.PackageStations);
@@ -448,11 +447,11 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<PackageResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request)
+        public async Task<BaseResponseViewModel<PackageStaffResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request)
         {
             try
             {
-                PackageResponse packageResponse = new PackageResponse();
+                PackageStaffResponse packageResponse = new PackageStaffResponse();
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                          .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
 
@@ -464,7 +463,7 @@ namespace FINE.Service.Service
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
                 {
-                    packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                    packageResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
                 }
 
                 switch (request.Type)
@@ -760,7 +759,7 @@ namespace FINE.Service.Service
                         break;
                 }
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
-                return new BaseResponseViewModel<PackageResponse>()
+                return new BaseResponseViewModel<PackageStaffResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -796,10 +795,16 @@ namespace FINE.Service.Service
                 {
                     packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
                 }
-                foreach (var pack in packageShipperResponse.PackStationDetailGroupByBoxes)
+                HashSet<Guid> listOrder = new HashSet<Guid>();
+                listOrder = listOrder.Concat(packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false).SelectMany(x => x.ListOrderId)).ToHashSet();
+
+                foreach(var orderId in listOrder)
                 {
-                    pack.IsInBox = true;
-                }
+                    var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == orderId);
+                    order.OrderStatus = (int)OrderStatusEnum.BoxStored;
+                } 
+
+                packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false).Select(x => x.IsInBox = true);
                 await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageShipperResponse);
                 return new BaseResponseViewModel<dynamic>()
                 {

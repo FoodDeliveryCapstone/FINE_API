@@ -92,7 +92,7 @@ namespace FINE.Service.Service
                     await _unitOfWork.Repository<OrderBox>().InsertAsync(orderBox);
 
                     List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
-                    PackageResponse packageResponse;
+                    PackageStaffResponse packageResponse;
 
                     HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
                     foreach (var od in order.OrderDetails)
@@ -111,7 +111,7 @@ namespace FINE.Service.Service
 
                         if (redisValue.HasValue == false)
                         {
-                            packageResponse = new PackageResponse()
+                            packageResponse = new PackageStaffResponse()
                             {
                                 TotalProductInDay = 0,
                                 TotalProductPending = 0,
@@ -122,7 +122,7 @@ namespace FINE.Service.Service
                         }
                         else
                         {
-                            packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
+                            packageResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
                         }
 
                         foreach (var orderDetail in listOdByStore)
