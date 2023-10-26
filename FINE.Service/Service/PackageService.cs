@@ -99,7 +99,7 @@ namespace FINE.Service.Service
 
                     var otherAmount = new OtherAmount()
                     {
-                        Id = new Guid(),
+                        Id = Guid.NewGuid(),
                         OrderId = order.Id,
                         Amount = refundAmount,
                         Type = (int)OtherAmountTypeEnum.Refund,
