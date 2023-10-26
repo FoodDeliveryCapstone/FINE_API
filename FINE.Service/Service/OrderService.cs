@@ -18,7 +18,6 @@ using Hangfire;
 using FirebaseAdmin.Messaging;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
-using NetTopologySuite.Index.HPRtree;
 
 namespace FINE.Service.Service
 {
@@ -51,7 +50,6 @@ namespace FINE.Service.Service
         private readonly IConfiguration _configuration;
         private readonly INotifyService _notifyService;
         private readonly IFirebaseMessagingService _fm;
-        private readonly IBoxService _boxService;
 
         public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService, IFirebaseMessagingService fm, IBoxService boxService)
         {
@@ -61,7 +59,6 @@ namespace FINE.Service.Service
             _paymentService = paymentService;
             _notifyService = notifyService;
             _fm = fm;
-            _boxService = boxService;
         }
 
         #region User
@@ -1528,7 +1525,7 @@ namespace FINE.Service.Service
 
                 #region lưu đơn vào tủ
                 //mỗi order có 1 package order riêng
-                PackageOrderModel packageOrder = new PackageOrderModel()
+                PackageOrderResponse packageOrder = new PackageOrderResponse()
                 {
                     TotalConfirm = 0,
                     NumberHasConfirm = 0,

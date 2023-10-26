@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
+    #region staff
     public class PackageStaffResponse
     {
         public int TotalProductInDay { get; set; }
@@ -15,6 +16,42 @@ namespace FINE.Service.DTO.Response
         public List<ProductTotalDetail> ProductTotalDetails { get; set; }
         public List<ErrorProduct> ErrorProducts { get; set; }
         public List<PackageStationResponse> PackageStations { get; set; }
+    }
+    public class PackageStationResponse
+    {
+        public Guid StationId { get; set; }
+        public string StationName { get; set; } = null!;
+        public int TotalQuantity { get; set; }
+        public int ReadyQuantity { get; set; }
+        public bool IsShipperAssign { get; set; }
+        public List<PackageDetailResponse> PackageStationDetails { get; set; }
+        public List<PackageDetailResponse> ListPackageMissing { get; set; }
+        public HashSet<KeyValuePair<Guid, string>> ListOrder { get; set; }
+    }
+    public class PackageDetailResponse
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
+        public int Quantity { get; set; }
+        public List<BoxProduct> BoxProducts { get; set; }
+    }
+    public class BoxProduct
+    {
+        public Guid BoxId { get; set; }
+        public string BoxCode { get; set; }
+        public int Quantity { get; set; }
+    }
+    public class ErrorProduct
+    {
+        public Guid ProductId { get; set; }
+        public Guid ProductInMenuId { get; set; }
+        public string ProductName { get; set; }
+        public int Quantity { get; set; }
+        public int ReConfirmQuantity { get; set; }
+        public Guid? StationId { get; set; }
+        public List<Guid>? ListBox { get; set; }
+        public int ReportMemType { get; set; }
+        public bool IsRefuse { get; set; }
     }
     public class ProductTotalDetail
     {
@@ -40,78 +77,21 @@ namespace FINE.Service.DTO.Response
         public bool IsFinishPrepare { get; set; }
         public bool IsAssignToShipper { get; set; }
     }
+    #endregion
 
-    public class ErrorProduct
-    {
-        public Guid ProductId { get; set; }
-        public Guid ProductInMenuId { get; set; }
-        public string ProductName { get; set; }
-        public int Quantity { get; set; }
-        public int ReConfirmQuantity { get; set; }
-        public Guid? StationId { get; set; }
-        public int ReportMemType { get; set; }
-    }
-
-    public class PackageStationResponse
-    {
-        public Guid StationId { get; set; }
-        public string StationName { get; set; } = null!;
-        public int TotalQuantity { get; set; }
-        public int ReadyQuantity { get; set; }
-        public bool IsShipperAssign { get; set; }
-        public List<PackageDetailResponse> PackageStationDetails { get; set; }
-        public List<PackageDetailResponse> ListPackageMissing { get; set; }
-        public HashSet<KeyValuePair<Guid, string>> ListOrder { get; set; }
-    }
-
-    public class OrderBoxModel
-    {
-        public Guid OrderId { get; set; }
-        public bool IsInBox { get; set; } 
-    }
-
-    public class PackageDetailResponse
-    {
-        public Guid ProductId { get; set; }
-        public string ProductName { get; set; }
-        public int Quantity { get; set; }
-        public List<BoxProduct> BoxProducts { get; set; }
-    }
-
-    public class BoxProduct
-    {
-        public Guid BoxId { get; set; }
-        public string BoxCode { get; set; }
-        public int Quantity { get; set; }
-    }
-    public class PackageOrderModel
-    {
-        public int TotalConfirm { get; set; }
-        public int NumberHasConfirm { get; set; }        
-        public List<PackageOrderBoxModel> PackageOrderBoxes { get; set; }
-    }
-
-    public class PackageOrderBoxModel
-    {
-        public Guid BoxId { get; set; }
-        public string BoxCode { get; set; }
-        public List<PackageOrderDetailModel> PackageOrderDetailModels { get; set; }
-    }
-
-    public class PackageOrderDetailModel
-    {
-        public Guid ProductId { get; set; }
-        public string ProductName { get; set; }
-        public Guid ProductInMenuId { get; set; }
-        public int Quantity { get; set; }
-        public bool IsInBox { get; set; }
-    }
-
+    #region shipper
     public class PackageShipperResponse
     {
         public List<PackStationDetailGroupByBox> PackStationDetailGroupByBoxes { get; set; }
 
         public List<PackageStoreShipperResponse> PackageStoreShipperResponses { get; set; }
+    }
+    public class PackStationDetailGroupByBox
+    {
+        public Guid BoxId { get; set; }
+        public string BoxCode { get; set; }
+        public bool IsInBox { get; set; }
+        public List<PackageDetailResponse> ListProduct { get; set; }
     }
     public class PackageStoreShipperResponse
     {
@@ -121,6 +101,8 @@ namespace FINE.Service.DTO.Response
         public bool IsTaken { get; set; }
         public bool IsInBox { get; set; } = false;
         public List<PackStationDetailGroupByProduct> PackStationDetailGroupByProducts { get; set; }
+
+        //chỉ được thêm vào khi toàn bộ product trong order đc confirm
         public List<Guid> ListOrderId { get; set; }
     }
 
@@ -131,13 +113,29 @@ namespace FINE.Service.DTO.Response
         public int TotalQuantity { get; set; }
         public List<BoxProduct> BoxProducts { get; set; }
     }
+    #endregion
 
-    public class PackStationDetailGroupByBox
+    #region Order operation
+    public class PackageOrderResponse
+    {
+        public int TotalConfirm { get; set; }
+        public int NumberHasConfirm { get; set; }
+        public List<PackageOrderBoxModel> PackageOrderBoxes { get; set; }
+    }
+    public class PackageOrderBoxModel
     {
         public Guid BoxId { get; set; }
         public string BoxCode { get; set; }
-        public bool IsInBox { get; set; }
-        public List<PackageDetailResponse> ListProduct { get; set; }
+        public List<PackageOrderDetailModel> PackageOrderDetailModels { get; set; }
     }
+    public class PackageOrderDetailModel
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
+        public Guid ProductInMenuId { get; set; }
+        public int Quantity { get; set; }
+        public bool IsInBox { get; set; }
+    }
+    #endregion
 }
 

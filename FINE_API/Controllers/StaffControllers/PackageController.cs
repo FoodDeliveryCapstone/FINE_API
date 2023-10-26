@@ -125,9 +125,9 @@ namespace FINE.API.Controllers.StaffControllers
         /// <summary>
         /// Cập nhật package đã sẵn sàng để giao
         /// </summary>
-        //[Authorize(Roles = "StoreManager")]
+        [Authorize(Roles = "StoreManager")]
         [HttpPut("cofirmDelivery")]
-        public async Task<ActionResult<BaseResponseViewModel<PackageStaffResponse>>> ConfirmReadyToDelivery(string timeslotId, string stationId)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ConfirmReadyToDelivery(string timeslotId, string stationId)
         {
             try
             {
@@ -152,7 +152,7 @@ namespace FINE.API.Controllers.StaffControllers
         /// </summary>
         [Authorize(Roles = "Shipper")]
         [HttpPut("cofirmTaken")]
-        public async Task<ActionResult<BaseResponseViewModel<List<PackageShipperResponse>>>> ConfirmTakenPackage(string timeslotId, string storeId)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ConfirmTakenPackage(string timeslotId, string storeId)
         {
             try
             {
@@ -190,6 +190,27 @@ namespace FINE.API.Controllers.StaffControllers
                 }
 
                 return await _packageService.ConfirmAllInBox(staffId, timeslotId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        [HttpPut("reportProductCannotRepair")]
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ConfirmAllInBox(string timeslotId, string productId, SystemRoleTypeEnum memType)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+
+                return await _packageService.ReportProductCannotRepair(staffId, timeslotId, productId, memType);
             }
             catch (ErrorResponse ex)
             {

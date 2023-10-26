@@ -1,18 +1,17 @@
 ﻿using AutoMapper;
 using Azure.Core;
+using Castle.Core.Resource;
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
+using FINE.Service.Attributes;
 using FINE.Service.DTO.Request.Package;
 using FINE.Service.DTO.Response;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
+using FirebaseAdmin.Messaging;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.Service
@@ -23,22 +22,111 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageShipperResponse>> GetPackageForShipper(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageStaffResponse>> UpdatePackage(string staffId, UpdateProductPackageRequest request);
-        Task<BaseResponseViewModel<PackageStaffResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
-        Task<BaseResponseViewModel<List<PackageShipperResponse>>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
+        Task<BaseResponseViewModel<dynamic>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId);
+        Task<BaseResponseViewModel<dynamic>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId);
         Task<BaseResponseViewModel<dynamic>> ConfirmAllInBox(string staffId, string timeSlotId);
+        Task<BaseResponseViewModel<dynamic>> ReportProductCannotRepair(string staffId, string timeslotId, string productId, SystemRoleTypeEnum memReport);
     }
     public class PackageService : IPackageService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
+        private readonly IMapper _mapper; 
+        private readonly IFirebaseMessagingService _fm;
 
-        public PackageService(IUnitOfWork unitOfWork, IMapper mapper)
+        public PackageService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _fm = fm;
         }
 
-        public async Task<BaseResponseViewModel<List<PackageShipperResponse>>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId)
+        public async Task<BaseResponseViewModel<dynamic>> ReportProductCannotRepair(string staffId, string timeslotId, string productId, SystemRoleTypeEnum memReport)
+        {
+            try
+            {
+                PackageStaffResponse packageStaff = new PackageStaffResponse();
+
+                var staff = await _unitOfWork.Repository<Staff>().GetAll()
+                                       .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeslotId));
+
+                var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
+                packageStaff = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
+
+                var productError = packageStaff.ErrorProducts.FirstOrDefault(x => x.ReportMemType == (int)memReport && x.ProductId == Guid.Parse(productId) && x.IsRefuse == false);
+                productError.IsRefuse = true;
+                var productTotalPack = packageStaff.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
+
+                var listOrder = productTotalPack.ProductDetails.Where(x => x.ErrorQuantity > 0).OrderByDescending(x => x.CheckInDate);
+
+                var productDb = _unitOfWork.Repository<ProductAttribute>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(productId));
+
+                var errorNum = productError.Quantity;
+                foreach (var errorOrder in listOrder)
+                {
+                    if (errorNum == 0) break;
+                    int quantityErrorInOrder = 0;
+                    var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == errorOrder.OrderId);
+
+                    if(errorNum >= errorOrder.ErrorQuantity)
+                    {
+                        quantityErrorInOrder = errorOrder.ErrorQuantity;
+                        errorNum -= errorOrder.ErrorQuantity;
+                    }
+                    else
+                    {
+                        quantityErrorInOrder = errorNum;
+                        errorNum = 0;
+                    }
+
+                    var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId).Token;
+
+                    var refundAmount = productDb.Price * quantityErrorInOrder;
+
+                    Notification notification = new Notification
+                    {
+                        Title = Constants.REPORT_ERROR_PACK,
+                        Body = String.Format($"Có {quantityErrorInOrder} món {productError.ProductName} đã hết hàng. Hệ thống sẽ hoàn lại {refundAmount} vào ví của bạn sau khi đơn hàng hoàn tất nhé! Cảm ơn bạn đã thông cảm cho FINE!")
+                    };
+
+                    var data = new Dictionary<string, string>()
+                    {
+                        { "type", NotifyTypeEnum.ForPopup.ToString()}
+                    };
+
+                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+
+                    var otherAmount = new OtherAmount()
+                    {
+                        Id = new Guid(),
+                        OrderId = order.Id,
+                        Amount = refundAmount,
+                        Type = (int)OtherAmountTypeEnum.Refund,
+                        Note = $"Hoàn lại {refundAmount}. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng."
+                    };
+                    _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);
+                    _unitOfWork.Commit();
+                }
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<dynamic>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId)
         {
             try
             {
@@ -83,7 +171,7 @@ namespace FINE.Service.Service
                 await _unitOfWork.CommitAsync();
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageResponse);
 
-                return new BaseResponseViewModel<List<PackageShipperResponse>>()
+                return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -98,121 +186,11 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        //public async Task<BaseResponseViewModel<PackageResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId)
-        //{
-        //    try
-        //    {
-        //        PackageResponse packageResponse = new PackageResponse();
-        //        PackageShipperResponse packageShipper = new PackageShipperResponse();
-
-        //        var staff = await _unitOfWork.Repository<Staff>().GetAll()
-        //                                 .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
-
-        //        var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
-        //                                .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
-
-        //        var station = await _unitOfWork.Repository<Station>().GetAll()
-        //                                .FirstOrDefaultAsync(x => x.Id == Guid.Parse(stationId));
-
-        //        var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-        //        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
-
-        //        packageResponse = JsonConvert.DeserializeObject<PackageResponse>(redisValue);
-
-        //        var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + ":" + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
-        //        var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyShipper, null);
-
-        //        var packageStation = packageResponse.PackageStations.Where(x => x.StationId == Guid.Parse(stationId) && x.IsShipperAssign == false).FirstOrDefault();
-        //        packageStation.IsShipperAssign = true;
-
-        //        var packageTotalOrder = packageResponse.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == true && x.IsAssignToShipper == false).ToList();
-        //        packageTotalOrder.ForEach(x => x.IsAssignToShipper = true);
-
-        //        if (redisShipperValue.HasValue == true)
-        //        {
-        //            packageShipper = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
-        //        }
-        //        else
-        //        {
-        //            packageShipper = new PackageShipperResponse()
-        //            {
-        //                PackageStoreShipperResponses = new List<PackageStoreShipperResponse>(),
-        //                PackStationDetailGroupByBoxes = new List<PackStationDetailGroupByBox>()
-        //            };
-        //        }
-
-        //        #region PackageStoreShipperResponses
-        //        if (packageShipper.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false) is null)
-        //        {
-        //            packageShipper.PackageStoreShipperResponses.Add(new PackageStoreShipperResponse
-        //            {
-        //                StoreId = (Guid)staff.StoreId,
-        //                StoreName = staff.Store.StoreName,
-        //                IsTaken = false,
-        //                TotalQuantity = 0,
-        //                PackStationDetailGroupByProducts = new List<PackStationDetailGroupByProduct>(),
-        //                ListOrderId = new List<Guid>()
-        //            });
-        //        }
-        //        var packShipperStore = packageShipper.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
-        //        packShipperStore.ListOrderId.AddRange(packageStation.ListOrder.Select(x => x.Key));
-
-        //        foreach (var pack in packageStation.PackageStationDetails)
-        //        {
-        //            packShipperStore.TotalQuantity += pack.Quantity;
-        //            packShipperStore.PackStationDetailGroupByProducts.Add(new PackStationDetailGroupByProduct()
-        //            {
-        //                ProductId = pack.ProductId,
-        //                ProductName = pack.ProductName,
-        //                TotalQuantity = pack.Quantity,
-        //                BoxProducts = pack.BoxProducts
-        //            });
-        //        }
-        //        #endregion
-
-        //        foreach(var order in packageStation.ListOrder)
-        //        {
-        //            var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.Value;
-
-        //            var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-        //            PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
-
-        //            packageShipper.PackStationDetailGroupByBoxes =  packageOrder.PackageOrderBoxes.Select(x => new PackStationDetailGroupByBox()
-        //            {
-        //                BoxId = x.BoxId,
-        //                BoxCode = x.BoxCode,
-        //                IsInBox = false,
-        //                ListProduct = x.PackageOrderDetailModels.Select(x => new PackageDetailResponse()
-        //                {
-        //                    ProductId = x.ProductId,
-        //                    ProductName = x.ProductName,
-        //                    Quantity = x.Quantity
-        //                }).ToList()
-        //            }).ToList();
-        //        }
-
-        //        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyShipper, packageShipper);
-        //        ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-        //        return new BaseResponseViewModel<PackageResponse>()
-        //        {
-        //            Status = new StatusViewModel()
-        //            {
-        //                Message = "Success",
-        //                Success = true,
-        //                ErrorCode = 0
-        //            }
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw ex;
-        //    }
-        //}
-        public async Task<BaseResponseViewModel<PackageStaffResponse>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId)
+        public async Task<BaseResponseViewModel<dynamic>> ConfirmReadyToDelivery(string staffId, string timeSlotId, string stationId)
         {
             try
             {
-                PackageStaffResponse packageResponse = new PackageStaffResponse();
+                PackageStaffResponse packageStaff = new PackageStaffResponse();
                 PackageShipperResponse packageShipper = new PackageShipperResponse();
 
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
@@ -226,9 +204,9 @@ namespace FINE.Service.Service
 
                 var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
-                packageResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
+                packageStaff = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
 
-                var packageStation = packageResponse.PackageStations.Where(x => x.StationId == Guid.Parse(stationId) && x.IsShipperAssign == false).FirstOrDefault();
+                var packageStation = packageStaff.PackageStations.Where(x => x.StationId == Guid.Parse(stationId) && x.IsShipperAssign == false).FirstOrDefault();
 
                 if (packageStation.TotalQuantity > packageStation.ReadyQuantity)
                 {
@@ -244,14 +222,14 @@ namespace FINE.Service.Service
                         ListOrder = new HashSet<KeyValuePair<Guid, string>>()
                     };
                     packageMissingProduct.ListPackageMissing.AddRange(packageStation.ListPackageMissing);
-                    packageResponse.PackageStations.Add(packageMissingProduct);
+                    packageStaff.PackageStations.Add(packageMissingProduct);
                     packageStation.TotalQuantity = packageStation.ReadyQuantity;
                     packageStation.ListPackageMissing.Clear();
                 }
 
                 packageStation.IsShipperAssign = true;
 
-                var packageTotalOrder = packageResponse.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == true && x.IsAssignToShipper == false).ToList();
+                var packageTotalOrder = packageStaff.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == true && x.IsAssignToShipper == false).ToList();
                 packageTotalOrder.ForEach(x => x.IsAssignToShipper = true);
 
                 var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + ":" + station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
@@ -303,7 +281,7 @@ namespace FINE.Service.Service
                     var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.Value;
 
                     var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-                    PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
+                    PackageOrderResponse packageOrder = JsonConvert.DeserializeObject<PackageOrderResponse>(orderValue);
 
                     packageShipper.PackStationDetailGroupByBoxes = packageOrder.PackageOrderBoxes.Select(x => new PackStationDetailGroupByBox()
                     {
@@ -320,8 +298,8 @@ namespace FINE.Service.Service
                 }
 
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyShipper, packageShipper);
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageResponse);
-                return new BaseResponseViewModel<PackageStaffResponse>()
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaff);
+                return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -502,7 +480,7 @@ namespace FINE.Service.Service
                                 var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
 
                                 var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-                                PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
+                                PackageOrderResponse packageOrder = JsonConvert.DeserializeObject<PackageOrderResponse>(orderValue);
 
                                 if (numberHasConfirm >= order.QuantityOfProduct)
                                 {
@@ -624,14 +602,17 @@ namespace FINE.Service.Service
                                         Quantity = (int)request.Quantity,
                                         ReConfirmQuantity = 0,
                                         ReportMemType = (int)SystemRoleTypeEnum.StoreManager,
+                                        IsRefuse = false
                                     });
                                 }
                                 break;
 
                             case (int)SystemRoleTypeEnum.Shipper:
-                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper) is true)
+                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false) is true)
                                 {
-                                    packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper).Quantity += (int)request.Quantity;
+                                    var errorPack = packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false);
+                                    errorPack.Quantity += (int)request.Quantity;
+                                    errorPack.ListBox.AddRange(request.ListBox);
                                 }
                                 else
                                 {
@@ -644,6 +625,8 @@ namespace FINE.Service.Service
                                         StationId = staff.StationId,
                                         ReConfirmQuantity = 0,
                                         ReportMemType = (int)SystemRoleTypeEnum.Shipper,
+                                        ListBox = request.ListBox,
+                                        IsRefuse = false
                                     });
                                 }
                                 break;
@@ -689,7 +672,7 @@ namespace FINE.Service.Service
 
                             var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                             var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
-                            PackageOrderModel packageOrder = JsonConvert.DeserializeObject<PackageOrderModel>(orderValue);
+                            PackageOrderResponse packageOrder = JsonConvert.DeserializeObject<PackageOrderResponse>(orderValue);
                             packageOrder.NumberHasConfirm += 1;
 
                             var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);

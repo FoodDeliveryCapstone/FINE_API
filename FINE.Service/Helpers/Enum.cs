@@ -74,7 +74,8 @@ namespace FINE.Service.Helpers
         public enum OtherAmountTypeEnum
         {
             ShippingFee = 1,
-            Discount = 2
+            Discount = 2,
+            Refund = 3
         }
 
         public enum UpdateOrderTypeEnum
