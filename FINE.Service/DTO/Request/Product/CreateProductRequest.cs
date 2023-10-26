@@ -1,31 +1,40 @@
 ﻿using FINE.Service.Attributes;
 using FINE.Service.DTO.Request.ProductInMenu;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.DTO.Request.Product
 {
     public class CreateProductRequest
     {
-        [String]
-        public string ProductCode { get; set; }
-        [String]
-        public string ProductName { get; set; }
-        [Int]
-        public int CategoryId { get; set; }
-        [Int]
-        public int StoreId { get; set; }
-        public double BasePrice { get; set; }
-        public string? ImageUrl { get; set; }
-        public bool IsActive { get; set; }
-        public int? ProductType { get; set; }
-        public string? Description { get; set; }
+        public Guid StoreId { get; set; }
 
-        public List<CreateExtraProductRequest>? extraProducts { get; set; }
+        public Guid CategoryId { get; set; }
+
+        public string ProductCode { get; set; } = null!;
+
+        public string ProductName { get; set; } = null!;
+
+        public int ProductType { get; set; }
+
+        public bool? IsStackable { get; set; }
+
+        public string ImageUrl { get; set; } = null!;
+
+        public List<CreateProductAttributeRequest>? ProductAttribute { get; set; }
     }
 
-    public class CreateExtraProductRequest
+    public class CreateProductAttributeRequest
     {
-        public double? SizePrice { get; set; }
         public string? Size { get; set; }
+
+        public double Price { get; set; }
+        public ProductRotationTypeEnum RotationType { get; set; }
+
+        public double Height { get; set; }
+
+        public double Width { get; set; }
+
+        public double Length { get; set; }
     }
 
     public class CreateProductPassio

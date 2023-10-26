@@ -25,7 +25,7 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
 
-        public List<ProductAttributeResponse> ProductAttributes { get; set; }
+        public List<ProductAttributeResponse>? ProductAttributes { get; set; }
 
     }
 }

@@ -245,5 +245,19 @@ namespace FINE.Service.Helpers
             [Display(Name = "This order already in box!")]
             ORDER_BOX_EXISTED = 4001,
         }
+
+        public enum ProductAttributeErrorEnums
+        {
+            //404
+            [Display(Name = "Not found this product attribute!")]
+            NOT_FOUND = 4041,
+
+            [Display(Name = "Not found this product attribute code!")]
+            NOT_FOUND_CODE = 4042,
+
+            //400
+            [Display(Name = "This product attribute code already exsist!")]
+            PRODUCT_CODE_EXIST = 4001,
+        }
     }
 }
