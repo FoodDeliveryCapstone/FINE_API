@@ -786,10 +786,14 @@ namespace FINE.Service.Service
                 {
                     var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == orderId);
                     order.OrderStatus = (int)OrderStatusEnum.BoxStored;
+                    _unitOfWork.Repository<Order>().UpdateDetached(order);
                 } 
 
                 packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false).Select(x => x.IsInBox = true);
+
+                _unitOfWork.Commit();
                 await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageShipperResponse);
+
                 return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
