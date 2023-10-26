@@ -44,8 +44,6 @@ namespace FINE.Service.Service
         {
             try
             {
-                PackageStaffResponse packageStaff = new PackageStaffResponse();
-
                 var staff = await _unitOfWork.Repository<Staff>().GetAll()
                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
 
@@ -54,7 +52,7 @@ namespace FINE.Service.Service
 
                 var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
-                packageStaff = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
+                PackageStaffResponse packageStaff = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
 
                 var productError = packageStaff.ErrorProducts.FirstOrDefault(x => x.ReportMemType == (int)memReport && x.ProductId == Guid.Parse(productId) && x.IsRefuse == false);
                 productError.IsRefuse = true;
@@ -110,6 +108,7 @@ namespace FINE.Service.Service
                     _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);
                     _unitOfWork.Commit();
                 }
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaff);
                 return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
@@ -125,7 +124,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
         public async Task<BaseResponseViewModel<dynamic>> ConfirmTakenPackage(string staffId, string timeSlotId, string storeId)
         {
             try
