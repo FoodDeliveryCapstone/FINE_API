@@ -18,25 +18,25 @@ public class AdminProductController : Controller
         _productService = productService;
     }
 
-    ///// <summary>
-    ///// Get List Product
-    ///// </summary>
-    //[Authorize(Roles = "SystemAdmin")]
-    //[HttpGet]
-    //public async Task<ActionResult<BaseResponsePagingViewModel<ProductResponse>>> GetProducts([FromQuery] ProductResponse request, [FromQuery] PagingRequest paging)
-    //{
-    //    return await _productService.GetProducts(request, paging);
-    //}
+    /// <summary>
+    /// Get List Product
+    /// </summary>
+    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpGet]
+    public async Task<ActionResult<BaseResponsePagingViewModel<ProductWithoutAttributeResponse>>> GetProducts([FromQuery] PagingRequest paging)
+    {
+        return await _productService.GetAllProduct(paging);
+    }
 
-    ///// <summary>
-    ///// Get Product By Id
-    ///// </summary>
-    //[Authorize(Roles = "SystemAdmin, StoreManager")]
-    //[HttpGet("{productId}")]
-    //public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> GetProductById([FromRoute] int productId)
-    //{
-    //    return await _productService.GetProductById(productId);
-    //}
+    /// <summary>
+    /// Get Product By Id
+    /// </summary>
+    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpGet("{productId}")]
+    public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> GetProductById([FromRoute] string productId)
+    {
+        return await _productService.GetProductById(productId);
+    }
 
     ///// <summary>
     ///// Get Passio Product from DB Passio 

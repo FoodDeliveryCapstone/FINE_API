@@ -72,6 +72,7 @@ namespace FINE.API.Mapper
 
             #region Product
             CreateMap<Product, ProductResponse>().ReverseMap();
+            CreateMap<Product, ProductWithoutAttributeResponse>().ReverseMap();
 
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();

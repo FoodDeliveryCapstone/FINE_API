@@ -231,6 +231,8 @@ namespace FINE.Service.Service
                                             {
                                                 StationId = group.Key,
                                                 StationName = station.FirstOrDefault(x => x.Id == group.Key).Name,
+                                                IsActive = station.FirstOrDefault(x => x.Id == group.Key).IsActive,
+                                                IsAvailable = station.FirstOrDefault(x => x.Id == group.Key).IsAvailable,
                                                 ListBox = group.Select(detail => new AvailableBoxResponse
                                                 {
                                                     Id= detail.Id,

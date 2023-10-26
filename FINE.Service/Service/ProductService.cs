@@ -28,6 +28,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<ProductResponse>> GetProductById(string productId);
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(string productId, UpdateProductRequest request);
+        Task<BaseResponsePagingViewModel<ProductWithoutAttributeResponse>> GetAllProduct(PagingRequest paging);
     }
 
     public class ProductService : IProductService
@@ -185,6 +186,31 @@ namespace FINE.Service.Service
                 };
             }               
             catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<ProductWithoutAttributeResponse>> GetAllProduct(PagingRequest paging)
+        {
+            try
+            {
+                var products = _unitOfWork.Repository<Product>().GetAll()
+                                .ProjectTo<ProductWithoutAttributeResponse>(_mapper.ConfigurationProvider)
+                                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<ProductWithoutAttributeResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = products.Item1
+                    },
+                    Data = products.Item2.ToList()
+                };
+            }
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }
