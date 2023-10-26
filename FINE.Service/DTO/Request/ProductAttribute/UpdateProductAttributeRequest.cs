@@ -3,35 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 
-namespace FINE.Service.DTO.Response
+namespace FINE.Service.DTO.Request.ProductAttribute
 {
-    public class ProductAttributeResponse
+    public class UpdateProductAttributeRequest
     {
-        public Guid Id { get; set; }
-
-        public Guid ProductId { get; set; }
-
         public string Name { get; set; } = null!;
 
         public string Code { get; set; } = null!;
-
         public string? Size { get; set; }
 
         public double Price { get; set; }
-
-        public bool IsActive { get; set; }
-
-        public int RotationType { get; set; }
+        public ProductRotationTypeEnum RotationType { get; set; }
 
         public double Height { get; set; }
 
         public double Width { get; set; }
 
         public double Length { get; set; }
-
-        public DateTime CreateAt { get; set; }
-
-        public DateTime? UpdateAt { get; set; }
+        public bool IsActive { get; set; }
     }
 }

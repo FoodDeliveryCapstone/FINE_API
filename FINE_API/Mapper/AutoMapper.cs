@@ -16,6 +16,7 @@ using FINE.API.Controllers;
 using FINE.Service.Helpers;
 using FINE.Service.DTO.Request.Station;
 using FINE.Service.DTO.Request.Box;
+using FINE.Service.DTO.Request.ProductAttribute;
 
 namespace FINE.API.Mapper
 {
@@ -71,6 +72,7 @@ namespace FINE.API.Mapper
 
             #region Product
             CreateMap<Product, ProductResponse>().ReverseMap();
+            CreateMap<Product, ProductWithoutAttributeResponse>().ReverseMap();
 
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
@@ -139,6 +141,11 @@ namespace FINE.API.Mapper
 
             #region Transaction
             CreateMap<Transaction, CustomerTransactionResponse>().ReverseMap();
+            #endregion
+
+            #region Product Attribute
+            CreateMap<CreateProductAttributeRequest, ProductAttribute>();
+            CreateMap<UpdateProductAttributeRequest, ProductAttribute>();
             #endregion
         }
     }

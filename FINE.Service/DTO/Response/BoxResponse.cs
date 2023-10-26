@@ -30,6 +30,8 @@ namespace FINE.Service.DTO.Response
     {
         public Guid StationId { get; set; }
         public string? StationName { get; set; }
+        public bool IsAvailable { get; set; }
+        public bool IsActive { get; set; }
         public List<AvailableBoxResponse> ListBox { get; set; }
     }
 }
