@@ -1221,13 +1221,7 @@ namespace FINE.Service.Service
                     IsPartyMode = true
                 };
 
-                var numberMember = coOrder.PartyOrder.Count();
-                List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
-
-                var listProductInCoOrder = coOrder.PartyOrder.SelectMany(x => x.OrderDetails).Select(x => x.Quantity).Sum();
-
-                var numberbox = listProductInCoOrder / Int32.Parse(_configuration["MaxQuantityInBox"]);
-                var boxQuantity = Math.Ceiling((double)numberbox);
+                var boxQuantity = Math.Ceiling((double)coOrder.PartyOrder.Select(x => x.ItemQuantity).Sum() / Int32.Parse(_configuration["MaxQuantityInBox"]));
 
                 order.BoxQuantity = (int)boxQuantity;
 
