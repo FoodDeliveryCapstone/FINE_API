@@ -432,9 +432,11 @@ namespace FINE.Service.Service
                                          .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
 
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
-                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.timeSlotId));
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.TimeSlotId));
 
-                var key = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var store =  await _unitOfWork.Repository<Store>().GetAll()
+                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StoreId));
+                var key = RedisDbEnum.Staff.GetDisplayName() + ":" + store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
                 if (redisValue.HasValue == true)
@@ -581,12 +583,9 @@ namespace FINE.Service.Service
                         switch (staff.RoleType)
                         {
                             case (int)SystemRoleTypeEnum.StoreManager:
-                                packageResponse.TotalProductPending -= (int)request.Quantity;
-
-                                product.PendingQuantity -= (int)request.Quantity;
 
                                 if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
-                                                                                            && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager) is true)
+                                                                        && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager && x.IsRefuse == false) is true)
                                 {
                                     packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager).Quantity += (int)request.Quantity;
                                 }
@@ -606,7 +605,8 @@ namespace FINE.Service.Service
                                 break;
 
                             case (int)SystemRoleTypeEnum.Shipper:
-                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false) is true)
+                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item) 
+                                                                        && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false) is true)
                                 {
                                     var errorPack = packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false);
                                     errorPack.Quantity += (int)request.Quantity;
