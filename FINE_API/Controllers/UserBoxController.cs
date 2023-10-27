@@ -21,7 +21,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Get order by Id
+        /// Get user qrcode
         /// </summary>
         [HttpGet("qrCode")]
         public IActionResult GetQRCode(string boxId)
@@ -53,7 +53,7 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
-        /// Get order by Id
+        /// Get shipper qrcode
         /// </summary>
         [HttpGet("qrCodeShipper")]
         public IActionResult GetQRCodeShipper(string timeSlotId)

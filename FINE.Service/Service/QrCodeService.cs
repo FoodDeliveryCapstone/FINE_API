@@ -47,7 +47,6 @@ namespace FINE.Service.Service
             _configuration = configuration;
         }
 
-
         public async Task<dynamic> GenerateQrCode(string customerId, string boxId)
         {
             try
@@ -169,7 +168,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
         public async Task<BaseResponseViewModel<QROrderBoxResponse>> GetListBoxAndKey(string staffId, string timeSlotId)
         {
             try
