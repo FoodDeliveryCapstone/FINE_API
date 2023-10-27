@@ -30,7 +30,8 @@ namespace FINE.Service.Service
         Task CreatePayment(Order orderId, int point, PaymentTypeEnum type);
         Task<BaseResponseViewModel<string>> TopUpWalletRequest(string customerId, double amount);
         Task<bool> PaymentExecute(IQueryCollection collections);
-        Task RefundPartialLinkedFee(string partyCode, Guid customerId);
+        Task<BaseResponseViewModel<dynamic>> RefundPartialLinkedFee(string partyCode, Guid customerId);
+        Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(OtherAmount otherAmount);
     }
     public class PaymentService : IPaymentService
     {
@@ -155,7 +156,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task RefundPartialLinkedFee(string partyCode, Guid customerId)
+        public async Task<BaseResponseViewModel<dynamic>> RefundPartialLinkedFee(string partyCode, Guid customerId)
         {
             try
             {
@@ -206,7 +207,6 @@ namespace FINE.Service.Service
 
                     var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
                     _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
-                    _unitOfWork.Commit();
 
                     Notification notification = new Notification()
                     {
@@ -217,8 +217,55 @@ namespace FINE.Service.Service
                         {
                             { "type", NotifyTypeEnum.ForPopup.ToString()}
                         };
+
+                    _unitOfWork.Commit();
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
                 }
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(OtherAmount otherAmount)
+        {
+            try
+            {
+                var note = $"Hoàn {otherAmount.Amount} VND cho đơn hàng {otherAmount.Order.OrderCode}";
+                _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, otherAmount.Amount, otherAmount.Order.CustomerId, TransactionStatusEnum.Finish, note);
+                var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == otherAmount.Order.CustomerId);
+                Notification notification = new Notification()
+                {
+                    Title = "Thông báo!!!",
+                    Body = note
+                };
+                Dictionary<string, string> data = new Dictionary<string, string>()
+                            {
+                                { "type", NotifyTypeEnum.ForPopup.ToString()}
+                            };
+
+                _unitOfWork.Commit();
+                BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
+
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
             }
             catch (ErrorResponse ex)
             {

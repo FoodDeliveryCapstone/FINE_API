@@ -1212,7 +1212,7 @@ namespace FINE.Service.Service
                 var order = new OrderResponse()
                 {
                     Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(5) + "-" + customerId,
+                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(4),
                     OrderStatus = (int)OrderStatusEnum.PreOrder,
                     OrderType = (int)OrderTypeEnum.OrderToday,
                     TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),

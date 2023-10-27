@@ -18,6 +18,8 @@ using FINE.Service.DTO.Response;
 using FINE.Service.Helpers;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.Linq;
 
 namespace FINE.Service.Service
 {
@@ -87,7 +89,6 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-
         public async Task ReceiveBoxResult(string boxId, string key)
         {
             try
@@ -120,20 +121,25 @@ namespace FINE.Service.Service
                 {
                     { "type", NotifyTypeEnum.ForPopup.ToString()}
                 };
-                BackgroundJob.Enqueue(() => _fm.SendToToken(token, notification, data));
 
-                var party = orderBox.Order.Parties.FirstOrDefault(x => x.PartyType == (int)PartyOrderType.LinkedOrder);
+                var party = order.Parties.FirstOrDefault(x => x.PartyType == (int)PartyOrderType.LinkedOrder);
                 if (party is not null)
                 {
                     _paymentService.RefundPartialLinkedFee(party.PartyCode, party.CustomerId);
                 }
+                var otherAmount = order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.Refund);
+                if(otherAmount is not null)
+                {
+                    _paymentService.RefundRefuseAmount(otherAmount);
+                }
+
+                BackgroundJob.Enqueue(() => _fm.SendToToken(token, notification, data));
             }
             catch (ErrorResponse ex)
             {
                 throw ex;
             }
         }
-
         public async Task<dynamic> GenerateShipperQrCode(string staffId, string timeSlotId)
         {
             try
@@ -168,38 +174,43 @@ namespace FINE.Service.Service
         {
             try
             {
-                //List<PackageShipperResponse> packageShipperResponse = new List<PackageShipperResponse>();
-                //QROrderBoxResponse result = new QROrderBoxResponse()
-                //{
-                //    Key = Utils.GenerateRandomCode(5),
-                //    ListBox = new List<Guid>()
-                //};
+                List<PackageShipperResponse> packageShipperResponse = new List<PackageShipperResponse>();
+                QROrderBoxResponse result = new QROrderBoxResponse()
+                {
+                    Key = Utils.GenerateRandomCode(5),
+                    ListBox = new List<Guid>()
+                };
 
-                //var staff = await _unitOfWork.Repository<Staff>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+                var staff = await _unitOfWork.Repository<Staff>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
 
-                //var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
 
-                //var key = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                var key = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                //var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
 
-                //if (redisShipperValue.HasValue == true)
-                //{
-                //    packageShipperResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
-                //}
-                //HashSet<OrderBoxModel> newSet = new HashSet<OrderBoxModel>();
+                if (redisShipperValue.HasValue == true)
+                {
+                    packageShipperResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                }
+                HashSet<Guid> setOrderId = new HashSet<Guid>();
 
-                //newSet = newSet.Concat(packageShipperResponse.SelectMany(x => x.ListOrderBox)).ToHashSet();
-                //foreach (var orderBoxModel in newSet)
-                //{
-                //    result.ListBox.Add(orderBoxModel.ListBox);
+                foreach (var pack in packageShipperResponse.SelectMany(x => x.PackageStoreShipperResponses))
+                {
+                    setOrderId = setOrderId.Concat(pack.ListOrderId).ToHashSet();
+                }
+                foreach(var id in setOrderId)
+                {
+                    var orderBox = _unitOfWork.Repository<OrderBox>().GetAll().Where(x => x.OrderId == id).AsQueryable();
 
-                //    var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll().FirstOrDefaultAsync(x => x.OrderId == orderBoxModel.OrderId);
-                //    orderBox.Key = result.Key;
-
-                //    await _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
-                //}
-                //await _unitOfWork.CommitAsync();
+                    foreach(var box in orderBox)
+                    {
+                        box.Key = result.Key;
+                        result.ListBox.Add(box.BoxId);
+                    }
+                    _unitOfWork.Repository<OrderBox>().UpdateRange(orderBox);
+                }
+                _unitOfWork.Commit();
 
                 return new BaseResponseViewModel<QROrderBoxResponse>()
                 {
@@ -208,8 +219,8 @@ namespace FINE.Service.Service
                         Message = "Success",
                         Success = true,
                         ErrorCode = 0
-                    }
-                    //Data = result
+                    },
+                    Data = result
                 };
 
             }

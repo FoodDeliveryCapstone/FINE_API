@@ -583,6 +583,8 @@ namespace FINE.Service.Service
                         switch (staff.RoleType)
                         {
                             case (int)SystemRoleTypeEnum.StoreManager:
+                                packageResponse.TotalProductPending -= (int)request.Quantity;
+                                product.PendingQuantity -= (int)request.Quantity;
 
                                 if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                         && x.ReportMemType == (int)SystemRoleTypeEnum.StoreManager && x.IsRefuse == false) is true)

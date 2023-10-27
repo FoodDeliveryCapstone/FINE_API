@@ -227,6 +227,7 @@ namespace FINE.Service.Service
                 Data = _mapper.Map<StaffResponse>(staffMappingResult)
             };
         }
+        
         public async Task<BaseResponseViewModel<OrderResponse>> UpdateOrderStatus(string orderId, UpdateOrderStatusRequest request)
         {
             try
