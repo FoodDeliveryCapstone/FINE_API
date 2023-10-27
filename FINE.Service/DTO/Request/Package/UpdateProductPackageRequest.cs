@@ -9,7 +9,8 @@ namespace FINE.Service.DTO.Request.Package
 {
     public class UpdateProductPackageRequest
     {
-        public string timeSlotId { get; set; }
+        public string TimeSlotId { get; set; }
+        public string? StoreId { get; set; }
         public PackageUpdateTypeEnum Type { get; set; }
         public List<string> ProductsUpdate { get; set; }
         public int? Quantity { get; set; } = 0;
