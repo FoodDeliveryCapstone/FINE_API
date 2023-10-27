@@ -806,7 +806,7 @@ namespace FINE.Service.Service
 
                                 var updatePackagePayload = new UpdateProductPackageRequest
                                 {
-                                    timeSlotId = request.TimeSlotId.ToString(),
+                                    TimeSlotId = request.TimeSlotId.ToString(),
                                     Type = PackageUpdateTypeEnum.Error,
                                     Quantity = product.PendingQuantity,
                                     ProductsUpdate = listProductId
@@ -840,7 +840,7 @@ namespace FINE.Service.Service
 
                                     var updatePackagePayload = new UpdateProductPackageRequest
                                     {
-                                        timeSlotId = request.TimeSlotId.ToString(),
+                                        TimeSlotId = request.TimeSlotId.ToString(),
                                         Type = PackageUpdateTypeEnum.Confirm,
                                         Quantity = product.PendingQuantity,
                                         ProductsUpdate = listProductId
