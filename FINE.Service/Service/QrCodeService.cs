@@ -172,7 +172,7 @@ namespace FINE.Service.Service
         {
             try
             {
-                List<PackageShipperResponse> packageShipperResponse = new List<PackageShipperResponse>();
+                PackageShipperResponse packageShipperResponse = new PackageShipperResponse();
                 QROrderBoxResponse result = new QROrderBoxResponse()
                 {
                     Key = Utils.GenerateRandomCode(5),
@@ -189,14 +189,12 @@ namespace FINE.Service.Service
 
                 if (redisShipperValue.HasValue == true)
                 {
-                    packageShipperResponse = JsonConvert.DeserializeObject<List<PackageShipperResponse>>(redisShipperValue);
+                    packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
                 }
                 HashSet<Guid> setOrderId = new HashSet<Guid>();
 
-                foreach (var pack in packageShipperResponse.SelectMany(x => x.PackageStoreShipperResponses))
-                {
-                    setOrderId = setOrderId.Concat(pack.ListOrderId).ToHashSet();
-                }
+                setOrderId = setOrderId.Concat(packageShipperResponse.PackageStoreShipperResponses.SelectMany(x => x.ListOrderId)).ToHashSet();
+
                 foreach(var id in setOrderId)
                 {
                     var orderBox = _unitOfWork.Repository<OrderBox>().GetAll().Where(x => x.OrderId == id).AsQueryable();
