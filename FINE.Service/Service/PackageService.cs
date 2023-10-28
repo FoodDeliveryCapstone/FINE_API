@@ -30,7 +30,7 @@ namespace FINE.Service.Service
     public class PackageService : IPackageService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper; 
+        private readonly IMapper _mapper;
         private readonly IFirebaseMessagingService _fm;
 
         public PackageService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm)
@@ -44,21 +44,21 @@ namespace FINE.Service.Service
         {
             try
             {
-                var staff = await _unitOfWork.Repository<Staff>().GetAll()
-                                       .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+                var staff = await _unitOfWork.Repository<Staff>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeslotId));
 
-                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
-                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeslotId));
-
+                #region get redis
                 var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
                 PackageStaffResponse packageStaff = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
+                #endregion
 
                 var productError = packageStaff.ErrorProducts.FirstOrDefault(x => x.ReportMemType == (int)memReport && x.ProductId == Guid.Parse(productId) && x.IsRefuse == false);
                 productError.IsRefuse = true;
-                var productTotalPack = packageStaff.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
 
-                var listOrder = productTotalPack.ProductDetails.Where(x => x.ErrorQuantity > 0).OrderByDescending(x => x.CheckInDate);
+                //var productTotalPack = packageStaff.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
+                var listOrder = packageStaff.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId))
+                                            .ProductDetails.Where(x => x.ErrorQuantity > 0).OrderByDescending(x => x.CheckInDate);
 
                 var productDb = _unitOfWork.Repository<ProductAttribute>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(productId));
 
@@ -69,7 +69,7 @@ namespace FINE.Service.Service
                     int quantityErrorInOrder = 0;
                     var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == errorOrder.OrderId);
 
-                    if(errorNum >= errorOrder.ErrorQuantity)
+                    if (errorNum >= errorOrder.ErrorQuantity)
                     {
                         quantityErrorInOrder = errorOrder.ErrorQuantity;
                         errorNum -= errorOrder.ErrorQuantity;
@@ -78,6 +78,20 @@ namespace FINE.Service.Service
                     {
                         quantityErrorInOrder = errorNum;
                         errorNum = 0;
+                    }
+
+                    if (memReport == SystemRoleTypeEnum.StoreManager)
+                    {
+                        var packStation = packageStaff.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
+                        packStation.TotalQuantity -= quantityErrorInOrder;
+
+                        var packMissing = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
+                        packMissing.Quantity -= quantityErrorInOrder;
+
+                        if (packMissing.Quantity == 0)
+                        {
+                            packStation.ListPackageMissing.Remove(packMissing);
+                        }
                     }
 
                     var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId).Token;
@@ -434,7 +448,7 @@ namespace FINE.Service.Service
                 var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.TimeSlotId));
 
-                var store =  await _unitOfWork.Repository<Store>().GetAll()
+                var store = await _unitOfWork.Repository<Store>().GetAll()
                                          .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StoreId));
                 var key = RedisDbEnum.Staff.GetDisplayName() + ":" + store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
@@ -607,7 +621,7 @@ namespace FINE.Service.Service
                                 break;
 
                             case (int)SystemRoleTypeEnum.Shipper:
-                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item) 
+                                if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                         && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false) is true)
                                 {
                                     var errorPack = packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false);
@@ -784,12 +798,12 @@ namespace FINE.Service.Service
                 HashSet<Guid> listOrder = new HashSet<Guid>();
                 listOrder = listOrder.Concat(packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false).SelectMany(x => x.ListOrderId)).ToHashSet();
 
-                foreach(var orderId in listOrder)
+                foreach (var orderId in listOrder)
                 {
                     var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == orderId);
                     order.OrderStatus = (int)OrderStatusEnum.BoxStored;
                     _unitOfWork.Repository<Order>().UpdateDetached(order);
-                } 
+                }
 
                 packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false).Select(x => x.IsInBox = true);
 
