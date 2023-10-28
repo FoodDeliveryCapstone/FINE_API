@@ -51,4 +51,18 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
     }
+
+
+    public class ReportProduct
+    {
+        public string? StoreName { get; set; }
+        public Guid ProductAttributeId { get; set; }
+        public string? ProductName { get; set; }
+    }
+
+    public class ReportProductResponse
+    {
+        public string? StoreName { get; set; }
+        public List<ReportProduct> Products { get; set; }
+    }
 }

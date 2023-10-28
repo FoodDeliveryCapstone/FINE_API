@@ -4,6 +4,7 @@ using FINE.Service.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Reso.Core.Custom;
 
 namespace FINE.API.Controllers.AdminControler
 {
@@ -25,7 +26,14 @@ namespace FINE.API.Controllers.AdminControler
         [HttpGet]
         public async Task<ActionResult<BaseResponsePagingViewModel<TransactionResponse>>> GetAllTransaction([FromQuery] PagingRequest paging)
         {
-            return await _transactionService.GetAllTransaction(paging);
+            try
+            {
+                return await _transactionService.GetAllTransaction(paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

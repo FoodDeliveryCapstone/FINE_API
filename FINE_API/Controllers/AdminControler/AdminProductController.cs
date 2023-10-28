@@ -25,7 +25,14 @@ public class AdminProductController : Controller
     [HttpGet]
     public async Task<ActionResult<BaseResponsePagingViewModel<ProductWithoutAttributeResponse>>> GetProducts([FromQuery] PagingRequest paging)
     {
-        return await _productService.GetAllProduct(paging);
+        try
+        {
+            return await _productService.GetAllProduct(paging);
+        }
+        catch(ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
     }
 
     /// <summary>
@@ -35,7 +42,14 @@ public class AdminProductController : Controller
     [HttpGet("{productId}")]
     public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> GetProductById([FromRoute] string productId)
     {
-        return await _productService.GetProductById(productId);
+        try
+        {
+            return await _productService.GetProductById(productId);
+        }
+        catch(ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
     }
 
     ///// <summary>
@@ -112,6 +126,35 @@ public class AdminProductController : Controller
             return BadRequest(ex.Error);
         }
     }
+
+
+    /// <summary>
+    /// Get all Report product cannot repair
+    /// </summary>
+    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpGet("reportProduct")]
+    public async Task<ActionResult<BaseResponsePagingViewModel<ReportProductResponse>>> GetAllReportProductCannotRepair()
+    {
+        return await _productService.GetReportProductCannotPrepare();
+    }
+
+    /// <summary>
+    /// Get Product By product attribute id
+    /// </summary>
+    [Authorize(Roles = "SystemAdmin, StoreManager")]
+    [HttpGet("productAttributeId")]
+    public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> GetProductByProductAttribute(string productAttributeId)
+    {
+        try
+        {
+            return await _productService.GetProductByProductAttribute(productAttributeId);
+        }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
 
     ///// <summary>
     ///// Add Product to Menu

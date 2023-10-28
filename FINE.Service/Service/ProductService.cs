@@ -14,11 +14,13 @@ using FINE.Service.DTO.Request.Product;
 using FINE.Service.DTO.Request.ProductInMenu;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Algorithm;
 using Newtonsoft.Json;
+using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
@@ -29,6 +31,8 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<ProductResponse>> CreateProduct(CreateProductRequest request);
         Task<BaseResponseViewModel<ProductResponse>> UpdateProduct(string productId, UpdateProductRequest request);
         Task<BaseResponsePagingViewModel<ProductWithoutAttributeResponse>> GetAllProduct(PagingRequest paging);
+        Task<BaseResponsePagingViewModel<ReportProductResponse>> GetReportProductCannotPrepare();
+        Task<BaseResponseViewModel<ProductResponse>> GetProductByProductAttribute(string productAttributeId);
     }
 
     public class ProductService : IProductService
@@ -211,6 +215,105 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<ReportProductResponse>> GetReportProductCannotPrepare()
+        {
+            try
+            {
+                List<ReportProduct> reportProducts = new List<ReportProduct>();
+
+                var getAllStaff = await _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StoreId != null).ToListAsync();
+                var getAllTimeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().ToListAsync();
+                var getAllProduct = await _unitOfWork.Repository<Product>().GetAll().ToListAsync();
+                var getAllStore = await _unitOfWork.Repository<Store>().GetAll().ToListAsync();
+
+                foreach (var staff in getAllStaff)
+                {
+                    foreach (var timeSlot in getAllTimeSlot)
+                    {
+                        var key = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                        if (redisValue.HasValue == true)
+                        {
+                            PackageStaffResponse packageResponse = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
+                            if (packageResponse.ErrorProducts is not null)
+                            {
+                                foreach (var product in packageResponse.ErrorProducts)
+                                {
+                                    if (product.IsRefuse == true)
+                                    {
+                                        ReportProduct reportProduct = new ReportProduct()
+                                        {
+                                            ProductName = product.ProductName,
+                                            StoreName = getAllStore.FirstOrDefault(x => x.Id == staff.StoreId).StoreName,
+                                            ProductAttributeId = product.ProductId
+                                        };
+                                        reportProducts.Add(reportProduct);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                var reportProductResponse = reportProducts.GroupBy(store => store.StoreName)
+                                                      .Select(group => new ReportProductResponse
+                                                      {
+                                                          StoreName = group.Key,
+                                                          Products = group.Select(store => new ReportProduct
+                                                          {
+                                                              StoreName = store.StoreName,
+                                                              ProductName = store.ProductName,
+                                                              ProductAttributeId = store.ProductAttributeId
+                                                          }).ToList()
+                                                      }).ToList();
+
+                return new BaseResponsePagingViewModel<ReportProductResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Total = reportProductResponse.Count()
+                    },
+                    Data = reportProductResponse
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<ProductResponse>> GetProductByProductAttribute(string productAttributeId)
+        {
+            try
+            {
+                var productAttribute = await _unitOfWork.Repository<ProductAttribute>().GetAll()
+                  .FirstOrDefaultAsync(x => x.Id == Guid.Parse(productAttributeId));
+
+                if (productAttribute == null)
+                    throw new ErrorResponse(404, (int)ProductAttributeErrorEnums.NOT_FOUND,
+                        ProductAttributeErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var product = await _unitOfWork.Repository<Product>().GetAll()
+                  .FirstOrDefaultAsync(x => x.Id == productAttribute.ProductId);
+
+                return new BaseResponseViewModel<ProductResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<ProductResponse>(product)
+                };
+            }
+            catch(ErrorResponse ex)
             {
                 throw ex;
             }
