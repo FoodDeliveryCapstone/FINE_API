@@ -141,6 +141,7 @@ namespace FINE.API.Mapper
 
             #region Transaction
             CreateMap<Transaction, CustomerTransactionResponse>().ReverseMap();
+            CreateMap<Transaction, TransactionResponse>().ReverseMap();
             #endregion
 
             #region Product Attribute
