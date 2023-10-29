@@ -626,7 +626,7 @@ namespace FINE.Service.Service
                                 {
                                     var errorPack = packageResponse.ErrorProducts.Find(x => x.ProductId == Guid.Parse(item) && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false);
                                     errorPack.Quantity += (int)request.Quantity;
-                                    errorPack.ListBox.Add(request.BoxId);
+                                    errorPack.ListBox.Add((Guid)request.BoxId);
                                 }
                                 else
                                 {
@@ -641,7 +641,7 @@ namespace FINE.Service.Service
                                         ReportMemType = (int)SystemRoleTypeEnum.Shipper,
                                         ListBox = new List<Guid>()
                                         {
-                                            request.BoxId
+                                            (Guid)request.BoxId
                                         },
                                         IsRefuse = false
                                     });
