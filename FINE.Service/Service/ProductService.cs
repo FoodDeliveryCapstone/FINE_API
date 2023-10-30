@@ -169,9 +169,9 @@ namespace FINE.Service.Service
                         }
                         foreach (var productInMenu in productsInMenus)
                         {
-                            if (productInMenu.IsActive == true)
+                            if (productInMenu.Status == (int)ProductInMenuStatusEnum.Avaliable)
                             {
-                                productInMenu.IsActive = false;
+                                productInMenu.Status = (int)ProductInMenuStatusEnum.OutOfStock;
                                 productInMenu.UpdatedAt = DateTime.Now;
                             }
                         }
@@ -189,9 +189,9 @@ namespace FINE.Service.Service
                         }
                         foreach (var productInMenu in productsInMenus)
                         {
-                            if (productInMenu.IsActive == false)
+                            if (productInMenu.Status == (int)ProductInMenuStatusEnum.OutOfStock)
                             {
-                                productInMenu.IsActive = true;
+                                productInMenu.Status = (int)ProductInMenuStatusEnum.Avaliable;
                                 productInMenu.UpdatedAt = DateTime.Now;
                             }
                         }
@@ -370,9 +370,9 @@ namespace FINE.Service.Service
                         }
                         foreach (var productInMenu in productsInMenus)
                         {
-                            if (productInMenu.IsActive == true)
+                            if (productInMenu.Status == (int)ProductInMenuStatusEnum.Avaliable)
                             {
-                                productInMenu.IsActive = false;
+                                productInMenu.Status = (int)ProductInMenuStatusEnum.OutOfStock;
                                 productInMenu.UpdatedAt = DateTime.Now;
                             }
                         }
@@ -390,9 +390,9 @@ namespace FINE.Service.Service
                         }
                         foreach (var productInMenu in productsInMenus)
                         {
-                            if (productInMenu.IsActive == true)
+                            if (productInMenu.Status == (int)ProductInMenuStatusEnum.OutOfStock)
                             {
-                                productInMenu.IsActive = false;
+                                productInMenu.Status = (int)ProductInMenuStatusEnum.Avaliable;
                                 productInMenu.UpdatedAt = DateTime.Now;
                             }
                         }
