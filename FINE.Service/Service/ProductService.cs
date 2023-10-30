@@ -156,22 +156,44 @@ namespace FINE.Service.Service
 
                 updateProduct.UpdateAt = DateTime.Now;
                 var productAttribute = await _unitOfWork.Repository<ProductAttribute>().GetAll().Where(x => x.ProductId == Guid.Parse(productId)).ToListAsync();
+                var getAllProductInMenu = await _unitOfWork.Repository<ProductInMenu>().GetAll().ToListAsync();
                 if (request.IsActive == false)
-                {                   
-                    foreach(var attribute in productAttribute)
+                {
+                    foreach (var attribute in productAttribute)
                     {
-                        attribute.IsActive = false;
-                        attribute.UpdateAt = DateTime.Now;
+                        var productsInMenus = getAllProductInMenu.Where(x => x.ProductId == attribute.Id);
+                        if (attribute.IsActive == true)
+                        { 
+                            attribute.IsActive = false;
+                            attribute.UpdateAt = DateTime.Now;
+                        }
+                        foreach (var productInMenu in productsInMenus)
+                        {
+                            if (productInMenu.IsActive == true)
+                            {
+                                productInMenu.IsActive = false;
+                                productInMenu.UpdatedAt = DateTime.Now;
+                            }
+                        }
                     }
                 }
                 else if (request.IsActive == true)
                 {
                     foreach (var attribute in productAttribute)
                     {
+                        var productsInMenus = getAllProductInMenu.Where(x => x.ProductId == attribute.Id);
                         if (attribute.IsActive == false)
                         {
                             attribute.IsActive = true;
                             attribute.UpdateAt = DateTime.Now;
+                        }
+                        foreach (var productInMenu in productsInMenus)
+                        {
+                            if (productInMenu.IsActive == false)
+                            {
+                                productInMenu.IsActive = true;
+                                productInMenu.UpdatedAt = DateTime.Now;
+                            }
                         }
                     }
                 }
@@ -335,22 +357,44 @@ namespace FINE.Service.Service
                 updateProduct.UpdateAt = DateTime.Now;
                 var productAttribute = await _unitOfWork.Repository<ProductAttribute>().GetAll().Where(x => x.ProductId == Guid.Parse(productId)).ToListAsync();
                 var getAllTimeslot = await _unitOfWork.Repository<TimeSlot>().GetAll().ToListAsync();
+                var getAllProductInMenu = await _unitOfWork.Repository<ProductInMenu>().GetAll().ToListAsync();
                 if (request.IsActive == false)
                 {
                     foreach (var attribute in productAttribute)
                     {
-                        attribute.IsActive = false;
-                        attribute.UpdateAt = DateTime.Now;
+                        var productsInMenus = getAllProductInMenu.Where(x => x.ProductId == attribute.Id);
+                        if (attribute.IsActive == true)
+                        {
+                            attribute.IsActive = false;
+                            attribute.UpdateAt = DateTime.Now;
+                        }
+                        foreach (var productInMenu in productsInMenus)
+                        {
+                            if (productInMenu.IsActive == true)
+                            {
+                                productInMenu.IsActive = false;
+                                productInMenu.UpdatedAt = DateTime.Now;
+                            }
+                        }
                     }
                 }
                 else if (request.IsActive == true)
                 {
                     foreach (var attribute in productAttribute)
                     {
+                        var productsInMenus = getAllProductInMenu.Where(x => x.ProductId == attribute.Id);
                         if (attribute.IsActive == false)
                         {
                             attribute.IsActive = true;
                             attribute.UpdateAt = DateTime.Now;
+                        }
+                        foreach (var productInMenu in productsInMenus)
+                        {
+                            if (productInMenu.IsActive == true)
+                            {
+                                productInMenu.IsActive = false;
+                                productInMenu.UpdatedAt = DateTime.Now;
+                            }
                         }
                         foreach (var timeSlot in getAllTimeslot)
                         {
