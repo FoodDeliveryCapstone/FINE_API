@@ -132,6 +132,7 @@ namespace FINE.Service.Service
                         Note = $"Hoàn lại {refundAmount}. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng."
                     };
                     _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);
+                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrder);
                 }
                 _unitOfWork.Commit();
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaff);
@@ -519,6 +520,8 @@ namespace FINE.Service.Service
                                 else if (numberHasConfirm < order.QuantityOfProduct)
                                 {
                                     numberConfirmStation = numberHasConfirm;
+                                    packageOrder.NumberHasConfirm += numberHasConfirm;
+
                                     numberHasConfirm = 0;
                                 }
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrder);
@@ -717,6 +720,8 @@ namespace FINE.Service.Service
                             {
                                 order.ErrorQuantity -= (int)request.Quantity;
                                 numberUpdateAtStation = (int)request.Quantity;
+                                packageOrder.NumberHasConfirm += (int)request.Quantity;
+
                                 numberOfConfirm = 0;
                             }
 
