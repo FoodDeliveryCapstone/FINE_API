@@ -33,6 +33,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<ProductWithoutAttributeResponse>> GetAllProduct(PagingRequest paging);
         Task<BaseResponsePagingViewModel<ReportProductResponse>> GetReportProductCannotPrepare();
         Task<BaseResponseViewModel<ProductResponse>> GetProductByProductAttribute(string productAttributeId);
+        Task<BaseResponseViewModel<ProductResponse>> UpdateProductCannotRepair(string productId, UpdateProductActiveRequest request);
     }
 
     public class ProductService : IProductService
@@ -314,6 +315,79 @@ namespace FINE.Service.Service
                 };
             }
             catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<ProductResponse>> UpdateProductCannotRepair(string productId, UpdateProductActiveRequest request)
+        {
+            try
+            {
+                var getAllProduct = _unitOfWork.Repository<Product>().GetAll();
+                var product = getAllProduct.FirstOrDefault(x => x.Id == Guid.Parse(productId));
+                if (product == null)
+                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND,
+                        ProductErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var updateProduct = _mapper.Map<UpdateProductActiveRequest, Product>(request, product);
+
+                updateProduct.UpdateAt = DateTime.Now;
+                var productAttribute = await _unitOfWork.Repository<ProductAttribute>().GetAll().Where(x => x.ProductId == Guid.Parse(productId)).ToListAsync();
+                var getAllTimeslot = await _unitOfWork.Repository<TimeSlot>().GetAll().ToListAsync();
+                if (request.IsActive == false)
+                {
+                    foreach (var attribute in productAttribute)
+                    {
+                        attribute.IsActive = false;
+                        attribute.UpdateAt = DateTime.Now;
+                    }
+                }
+                else if (request.IsActive == true)
+                {
+                    foreach (var attribute in productAttribute)
+                    {
+                        if (attribute.IsActive == false)
+                        {
+                            attribute.IsActive = true;
+                            attribute.UpdateAt = DateTime.Now;
+                        }
+                        foreach (var timeSlot in getAllTimeslot)
+                        {
+                            var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + product.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");                           
+                            var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
+                            if (redisValue.HasValue == true)
+                            {
+                                PackageStaffResponse packageStaff = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
+
+                                var productError = packageStaff.ErrorProducts.FirstOrDefault(x => x.ProductId == attribute.Id && x.IsRefuse == true);
+                                if (productError != null)
+                                {
+                                    //packageStaff.ErrorProducts.Remove(productError);
+                                    productError.IsRefuse = false;
+                                    ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaff);
+                                }
+                                
+                            }
+                        }
+                    }                
+                }
+
+                await _unitOfWork.Repository<Product>().UpdateDetached(updateProduct);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<ProductResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<ProductResponse>(updateProduct)
+                };
+            }
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }

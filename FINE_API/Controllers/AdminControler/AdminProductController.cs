@@ -155,6 +155,23 @@ public class AdminProductController : Controller
         }
     }
 
+    /// <summary>
+    /// Update Product cannot repair
+    /// </summary>    
+    [Authorize(Roles = "SystemAdmin")]
+    [HttpPut("reportProduct/{productId}")]
+    public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> UpdateProductCannotRepair([FromRoute] string productId, [FromBody] UpdateProductActiveRequest request)
+    {
+        try
+        {
+            return await _productService.UpdateProductCannotRepair(productId, request);
+        }
+        catch (ErrorResponse ex)
+        {
+            return BadRequest(ex.Error);
+        }
+    }
+
 
     ///// <summary>
     ///// Add Product to Menu

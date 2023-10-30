@@ -76,6 +76,7 @@ namespace FINE.API.Mapper
 
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
+            CreateMap<UpdateProductActiveRequest, Product>();
             #endregion
 
             #region Menu
@@ -147,6 +148,10 @@ namespace FINE.API.Mapper
             #region Product Attribute
             CreateMap<CreateProductAttributeRequest, ProductAttribute>();
             CreateMap<UpdateProductAttributeRequest, ProductAttribute>();
+            #endregion
+
+            #region Other Amount
+            CreateMap<OtherAmount, RefundTransactionResponse>().ReverseMap();
             #endregion
         }
     }

@@ -23,4 +23,9 @@ namespace FINE.Service.DTO.Request.Product
         //public List<UpdateProductAttributeRequest>? ProductAttribute { get; set; }
         //public List<UpdateProductInMenuRequest>? updateProductToMenu { get; set; }
     }
+
+    public class UpdateProductActiveRequest
+    {
+        public bool IsActive { get; set; }
+    }
 }
