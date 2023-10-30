@@ -94,6 +94,7 @@ namespace FINE.Service.Service
                         }
                     }
 
+
                     var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId).Token;
 
                     var refundAmount = productDb.Price * quantityErrorInOrder;
@@ -449,7 +450,7 @@ namespace FINE.Service.Service
                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.TimeSlotId));
 
                 var store = await _unitOfWork.Repository<Store>().GetAll()
-                                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StoreId));
+                         .FirstOrDefaultAsync(x => x.Id == Guid.Parse(request.StoreId));
                 var key = RedisDbEnum.Staff.GetDisplayName() + ":" + store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
                 var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
@@ -659,7 +660,6 @@ namespace FINE.Service.Service
                         var productRequestId = request.ProductsUpdate.FirstOrDefault();
                         var productTotalPack = packageResponse.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productRequestId));
 
-
                         numberOfConfirm = (int)request.Quantity + productTotalPack.WaitingQuantity;
 
                         //cập nhật lại tổng số lượng từng stage
@@ -690,13 +690,13 @@ namespace FINE.Service.Service
                             var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                             var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                             PackageOrderResponse packageOrder = JsonConvert.DeserializeObject<PackageOrderResponse>(orderValue);
-                            packageOrder.NumberHasConfirm += 1;
 
                             var stationPack = packageResponse.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
 
                             if (request.Quantity >= order.ErrorQuantity)
                             {
                                 order.IsFinishPrepare = true;
+                                packageOrder.NumberHasConfirm += 1;
 
                                 numberOfConfirm -= order.ErrorQuantity;
                                 numberUpdateAtStation = order.ErrorQuantity;
