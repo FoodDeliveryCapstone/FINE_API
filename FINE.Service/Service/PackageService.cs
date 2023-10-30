@@ -609,7 +609,7 @@ namespace FINE.Service.Service
 
                         //cập nhật số errorProduct trong order pack
                         var errorNum = request.Quantity;
-                        var orderList = packageResponse.ProductTotalDetails.SelectMany(x => x.ProductDetails).Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
+                        var orderList = product.ProductDetails.Where(x => x.IsFinishPrepare == false).OrderByDescending(x => x.CheckInDate);
 
                         foreach (var order in orderList)
                         {
