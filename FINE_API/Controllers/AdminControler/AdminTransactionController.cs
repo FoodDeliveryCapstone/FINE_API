@@ -35,5 +35,22 @@ namespace FINE.API.Controllers.AdminControler
                 return BadRequest(ex.Message);
             }
         }
+
+        /// <summary>
+        /// Get all Refund Transaction
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin, StoreManager")]
+        [HttpGet("refundTransaction")]
+        public async Task<ActionResult<BaseResponsePagingViewModel<RefundTransactionResponse>>> GetRefundTransaction([FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _transactionService.GetRefundTransaction(paging);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

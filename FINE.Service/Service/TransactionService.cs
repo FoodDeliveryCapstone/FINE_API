@@ -12,12 +12,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.Enum;
 
 namespace FINE.Service.Service
 {
     public interface ITransactionService
     {
         Task<BaseResponsePagingViewModel<TransactionResponse>> GetAllTransaction(PagingRequest paging);
+        Task<BaseResponsePagingViewModel<RefundTransactionResponse>> GetRefundTransaction(PagingRequest paging);
     }
 
     public class TransactionService : ITransactionService
@@ -51,6 +53,32 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<RefundTransactionResponse>> GetRefundTransaction(PagingRequest paging)
+        {
+            try
+            {
+                var otherAmounts = _unitOfWork.Repository<OtherAmount>().GetAll()
+                                .Where(x => x.Type == (int)OtherAmountTypeEnum.Refund)
+                                .ProjectTo<RefundTransactionResponse>(_mapper.ConfigurationProvider)
+                                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<RefundTransactionResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = otherAmounts.Item1
+                    },
+                    Data = otherAmounts.Item2.ToList()
+                };
+            }
+            catch(ErrorResponse ex)
             {
                 throw ex;
             }
