@@ -68,7 +68,9 @@ namespace FINE.Service.Service
                     if (errorNum == 0) break;
                     int quantityErrorInOrder = 0;
                     var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == errorOrder.OrderId);
+
                     var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId).Token;
+                    var packStation = packageStaff.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
 
                     var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
 
@@ -90,13 +92,13 @@ namespace FINE.Service.Service
 
                     if(packageOrder.NumberCannotConfirm + packageOrder.NumberHasConfirm == packageOrder.TotalConfirm)
                     {
+                        packStation.ListOrder.Add(new KeyValuePair<Guid, string>(order.Id, order.OrderCode));
                         order.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
                         _unitOfWork.Repository<Order>().UpdateDetached(order);
                     }
 
                     if (memReport == SystemRoleTypeEnum.StoreManager)
                     {
-                        var packStation = packageStaff.PackageStations.FirstOrDefault(x => x.StationId == order.StationId && x.IsShipperAssign == false);
                         packStation.TotalQuantity -= quantityErrorInOrder;
 
                         var packMissing = packStation.ListPackageMissing.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
@@ -113,7 +115,7 @@ namespace FINE.Service.Service
                     Notification notification = new Notification
                     {
                         Title = Constants.REPORT_ERROR_PACK,
-                        Body = String.Format($"Có {quantityErrorInOrder} món {productError.ProductName} đã hết hàng. Hệ thống sẽ hoàn lại {refundAmount} vào ví của bạn sau khi đơn hàng hoàn tất nhé! Cảm ơn bạn đã thông cảm cho FINE!")
+                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng. Hệ thống sẽ hoàn lại {refundAmount} vào ví của bạn sau khi đơn hàng hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
                     };
 
                     var data = new Dictionary<string, string>()
