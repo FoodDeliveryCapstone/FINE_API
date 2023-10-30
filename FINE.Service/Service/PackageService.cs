@@ -548,7 +548,7 @@ namespace FINE.Service.Service
                                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrder);
 
                                 //cập nhật lại trên db
-                                if (packageOrder.TotalConfirm == packageOrder.NumberHasConfirm)
+                                if (packageOrder.TotalConfirm == packageOrder.NumberHasConfirm + packageOrder.NumberCannotConfirm)
                                 {
                                     packStation.ListOrder.Add(new KeyValuePair<Guid, string>(order.OrderId, order.OrderCode));
 
@@ -746,7 +746,7 @@ namespace FINE.Service.Service
                                 numberOfConfirm = 0;
                             }
 
-                            if (packageOrder.TotalConfirm == packageOrder.NumberHasConfirm)
+                            if (packageOrder.TotalConfirm == packageOrder.NumberHasConfirm + packageOrder.NumberCannotConfirm)
                             {
                                 stationPack.ListOrder.Add(new KeyValuePair<Guid, string>(order.OrderId, order.OrderCode));
                                 var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.OrderId);
