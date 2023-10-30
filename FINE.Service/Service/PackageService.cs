@@ -833,7 +833,9 @@ namespace FINE.Service.Service
                     packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
                 }
                 HashSet<Guid> listOrder = new HashSet<Guid>();
-                listOrder = listOrder.Concat(packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false).SelectMany(x => x.ListOrderId)).ToHashSet();
+                var packStore = packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false);
+                listOrder = listOrder.Concat(packStore.SelectMany(x => x.ListOrderId)).ToHashSet();
+                packStore.Select(x => x.IsInBox = true);
 
                 foreach (var orderId in listOrder)
                 {
@@ -842,10 +844,8 @@ namespace FINE.Service.Service
                     _unitOfWork.Repository<Order>().UpdateDetached(order);
                 }
 
-                packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false).Select(x => x.IsInBox = true);
-
                 _unitOfWork.Commit();
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageShipperResponse);
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageShipperResponse);
 
                 return new BaseResponseViewModel<dynamic>()
                 {
