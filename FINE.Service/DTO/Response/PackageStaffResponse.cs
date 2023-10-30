@@ -120,6 +120,7 @@ namespace FINE.Service.DTO.Response
     {
         public int TotalConfirm { get; set; }
         public int NumberHasConfirm { get; set; }
+        public int NumberCannotConfirm { get; set; }
         public List<PackageOrderBoxModel> PackageOrderBoxes { get; set; }
     }
     public class PackageOrderBoxModel

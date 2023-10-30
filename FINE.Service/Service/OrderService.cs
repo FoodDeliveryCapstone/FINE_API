@@ -1523,6 +1523,7 @@ namespace FINE.Service.Service
                 {
                     TotalConfirm = 0,
                     NumberHasConfirm = 0,
+                    NumberCannotConfirm = 0,
                     PackageOrderBoxes = new List<PackageOrderBoxModel>()
                 };
                 HashSet<KeyValuePair<Guid, string>> listBox = new HashSet<KeyValuePair<Guid, string>>();
@@ -1719,7 +1720,7 @@ namespace FINE.Service.Service
                             }
                             stationPack.TotalQuantity += orderDetail.Quantity;
                         }
-                        packageOrder.TotalConfirm += 1;
+                        packageOrder.TotalConfirm += orderDetail.Quantity;
                     }
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaffResponse);
                 }

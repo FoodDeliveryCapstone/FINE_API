@@ -68,6 +68,12 @@ namespace FINE.Service.Service
                     if (errorNum == 0) break;
                     int quantityErrorInOrder = 0;
                     var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == errorOrder.OrderId);
+                    var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId).Token;
+
+                    var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
+
+                    var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                    PackageOrderResponse packageOrder = JsonConvert.DeserializeObject<PackageOrderResponse>(orderValue);
 
                     if (errorNum >= errorOrder.ErrorQuantity)
                     {
@@ -78,6 +84,14 @@ namespace FINE.Service.Service
                     {
                         quantityErrorInOrder = errorNum;
                         errorNum = 0;
+                    } 
+
+                    packageOrder.NumberCannotConfirm = quantityErrorInOrder;
+
+                    if(packageOrder.NumberCannotConfirm + packageOrder.NumberHasConfirm == packageOrder.TotalConfirm)
+                    {
+                        order.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
+                        _unitOfWork.Repository<Order>().UpdateDetached(order);
                     }
 
                     if (memReport == SystemRoleTypeEnum.StoreManager)
@@ -93,9 +107,6 @@ namespace FINE.Service.Service
                             packStation.ListPackageMissing.Remove(packMissing);
                         }
                     }
-
-
-                    var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId).Token;
 
                     var refundAmount = productDb.Price * quantityErrorInOrder;
 
@@ -121,8 +132,8 @@ namespace FINE.Service.Service
                         Note = $"Hoàn lại {refundAmount}. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng."
                     };
                     _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);
-                    _unitOfWork.Commit();
                 }
+                _unitOfWork.Commit();
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaff);
                 return new BaseResponseViewModel<dynamic>()
                 {
@@ -503,7 +514,7 @@ namespace FINE.Service.Service
 
                                     numberHasConfirm -= order.QuantityOfProduct;
                                     order.IsFinishPrepare = true;
-                                    packageOrder.NumberHasConfirm += 1;
+                                    packageOrder.NumberHasConfirm += order.QuantityOfProduct;
                                 }
                                 else if (numberHasConfirm < order.QuantityOfProduct)
                                 {
@@ -696,7 +707,7 @@ namespace FINE.Service.Service
                             if (request.Quantity >= order.ErrorQuantity)
                             {
                                 order.IsFinishPrepare = true;
-                                packageOrder.NumberHasConfirm += 1;
+                                packageOrder.NumberHasConfirm += order.ErrorQuantity;
 
                                 numberOfConfirm -= order.ErrorQuantity;
                                 numberUpdateAtStation = order.ErrorQuantity;
