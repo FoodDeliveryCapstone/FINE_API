@@ -97,6 +97,25 @@ namespace FINE.Service.Service
                         _unitOfWork.Repository<Order>().UpdateDetached(order);
                     }
 
+                    var numberError = quantityErrorInOrder;
+                    var orderBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productId))).ToList();
+
+                    foreach(var box in orderBox)
+                    {
+                        if (numberError == 0) break;
+                       var productInBox =  box.PackageOrderDetailModels.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
+                        if(productInBox.Quantity < numberError)
+                        {
+                            numberError -= productInBox.Quantity;
+                            box.PackageOrderDetailModels.Remove(productInBox);
+                        }
+                        else
+                        {
+                            productInBox.Quantity -= numberError;
+                            numberError = 0;
+                        }
+                    }
+
                     if (memReport == SystemRoleTypeEnum.StoreManager)
                     {
                         packStation.TotalQuantity -= quantityErrorInOrder;
@@ -115,7 +134,7 @@ namespace FINE.Service.Service
                     Notification notification = new Notification
                     {
                         Title = Constants.REPORT_ERROR_PACK,
-                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng. Hệ thống sẽ hoàn lại {refundAmount} vào ví của bạn sau khi đơn hàng hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
+                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại {refundAmount} vào ví của bạn sau khi đơn hàng hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
                     };
 
                     var data = new Dictionary<string, string>()
@@ -570,7 +589,7 @@ namespace FINE.Service.Service
                                 {
                                     BoxId = x.BoxId,
                                     BoxCode = x.BoxCode,
-                                    Quantity = x.PackageOrderDetailModels.Where(x => x.ProductId == readyPack.ProductId).Select(x => x.Quantity).Sum()
+                                    Quantity = order.QuantityOfProduct - order.ErrorQuantity
                                 }).ToList();
                                 #endregion
                             }
@@ -768,7 +787,7 @@ namespace FINE.Service.Service
                             {
                                 BoxId = x.BoxId,
                                 BoxCode = x.BoxCode,
-                                Quantity = x.PackageOrderDetailModels.Where(x => x.ProductId == readyPack.ProductId).Select(x => x.Quantity).Sum()
+                                Quantity = order.QuantityOfProduct - order.ErrorQuantity
                             }).ToList();
                             #endregion
                         }

@@ -16,7 +16,6 @@
 
         public const string CHANGE_ADMIN_PARTY = "Bạn lên chức tổ trưởng ròi nè!!!";
         public const string OUT_OF_LIMIT_ORDER = "Bạn đã hết lượt đặt đơn!!!";
-        public const string REPORT_ERROR_PACK = "Không ổn rồi, Không ổn rồi!!!";
-
+        public const string REPORT_ERROR_PACK = "Không ổn rồi!!!";
     }
 }

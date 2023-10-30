@@ -51,7 +51,8 @@ namespace FINE.Service.Service
                 menu.Products = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                             .Include(x => x.Product)
                                             .ThenInclude(x => x.Product)
-                                            .Where(x => x.MenuId == menu.Id)
+                                            .Where(x => x.MenuId == menu.Id
+                                                     && x.Status == (int)ProductInMenuStatusEnum.Avaliable)
                                             .GroupBy(x => x.Product.Product)
                                             .Select(x => _mapper.Map<ProductResponse>(x.Key))
                                             .ToList();
