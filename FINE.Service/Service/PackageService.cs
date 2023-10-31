@@ -837,6 +837,10 @@ namespace FINE.Service.Service
                 listOrder = listOrder.Concat(packStore.SelectMany(x => x.ListOrderId)).ToHashSet();
                 packStore.Select(x => x.IsInBox = true);
 
+                foreach(var order in packStore)
+                {
+                    order.IsInBox = true;
+                }
                 foreach (var orderId in listOrder)
                 {
                     var order = _unitOfWork.Repository<Order>().GetAll().FirstOrDefault(x => x.Id == orderId);
