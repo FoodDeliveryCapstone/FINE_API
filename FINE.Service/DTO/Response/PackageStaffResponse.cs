@@ -103,7 +103,8 @@ namespace FINE.Service.DTO.Response
         public List<PackStationDetailGroupByProduct> PackStationDetailGroupByProducts { get; set; }
 
         //chỉ được thêm vào khi toàn bộ product trong order đc confirm
-        public List<Guid> ListOrderId { get; set; }
+        // true : IOT đã nhận orderBox rồi 
+        public List<KeyValuePair<Guid, bool>> ListOrderId { get; set; }
     }
 
     public class PackStationDetailGroupByProduct
