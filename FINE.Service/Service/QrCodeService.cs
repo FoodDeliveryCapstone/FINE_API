@@ -193,7 +193,7 @@ namespace FINE.Service.Service
                 }
                 HashSet<Guid> setOrderId = new HashSet<Guid>();
 
-                setOrderId = setOrderId.Concat(packageShipperResponse.PackageStoreShipperResponses.SelectMany(x => x.ListOrderId)).ToHashSet();
+                setOrderId = setOrderId.Concat(packageShipperResponse.PackageStoreShipperResponses.SelectMany(x => x.ListOrderId).Where(x => x.Value == false).Select(x => x.Key)).ToHashSet();
 
                 foreach(var id in setOrderId)
                 {
@@ -206,8 +206,13 @@ namespace FINE.Service.Service
                     }
                     _unitOfWork.Repository<OrderBox>().UpdateRange(orderBox);
                 }
-                _unitOfWork.Commit();
+                packageShipperResponse.PackageStoreShipperResponses.SelectMany(x => x.ListOrderId).Where(x => x.Value == false).Select(x => new KeyValuePair<Guid, bool>
+                (
+                    x.Key, true
+                ));
 
+                _unitOfWork.Commit();
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, packageShipperResponse);
                 return new BaseResponseViewModel<QROrderBoxResponse>()
                 {
                     Status = new StatusViewModel()

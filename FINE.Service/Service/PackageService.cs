@@ -90,7 +90,7 @@ namespace FINE.Service.Service
                         errorNum = 0;
                     }
 
-                    if(packageOrder.NumberCannotConfirm + packageOrder.NumberHasConfirm == packageOrder.TotalConfirm)
+                    if (packageOrder.NumberCannotConfirm + packageOrder.NumberHasConfirm == packageOrder.TotalConfirm)
                     {
                         packStation.ListOrder.Add(new KeyValuePair<Guid, string>(order.Id, order.OrderCode));
                         order.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
@@ -100,11 +100,11 @@ namespace FINE.Service.Service
                     var numberError = quantityErrorInOrder;
                     var orderBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productId))).ToList();
 
-                    foreach(var box in orderBox)
+                    foreach (var box in orderBox)
                     {
                         if (numberError == 0) break;
-                       var productInBox =  box.PackageOrderDetailModels.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
-                        if(productInBox.Quantity < numberError)
+                        var productInBox = box.PackageOrderDetailModels.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
+                        if (productInBox.Quantity < numberError)
                         {
                             numberError -= productInBox.Quantity;
                             box.PackageOrderDetailModels.Remove(productInBox);
@@ -196,7 +196,7 @@ namespace FINE.Service.Service
 
                 foreach (var order in packStore.ListOrderId)
                 {
-                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order);
+                    var orderDb = await _unitOfWork.Repository<Order>().GetAll().FirstOrDefaultAsync(x => x.Id == order.Key);
                     orderDb.OrderStatus = (int)OrderStatusEnum.Delivering;
 
                     await _unitOfWork.Repository<Order>().UpdateDetached(orderDb);
@@ -303,11 +303,10 @@ namespace FINE.Service.Service
                         IsTaken = false,
                         TotalQuantity = 0,
                         PackStationDetailGroupByProducts = new List<PackStationDetailGroupByProduct>(),
-                        ListOrderId = new List<Guid>()
+                        ListOrderId = new List<KeyValuePair<Guid, bool>>()
                     });
                 }
                 var packShipperStore = packageShipper.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == staff.StoreId && x.IsTaken == false);
-                packShipperStore.ListOrderId.AddRange(packageStation.ListOrder.Select(x => x.Key));
 
                 foreach (var pack in packageStation.PackageStationDetails)
                 {
@@ -324,6 +323,8 @@ namespace FINE.Service.Service
 
                 foreach (var order in packageStation.ListOrder)
                 {
+                    packShipperStore.ListOrderId.Add(new KeyValuePair<Guid, bool>(order.Key, false));
+
                     var keyOrder = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.Value;
 
                     var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
@@ -834,10 +835,10 @@ namespace FINE.Service.Service
                 }
                 HashSet<Guid> listOrder = new HashSet<Guid>();
                 var packStore = packageShipperResponse.PackageStoreShipperResponses.Where(x => x.IsTaken == true && x.IsInBox == false);
-                listOrder = listOrder.Concat(packStore.SelectMany(x => x.ListOrderId)).ToHashSet();
+                listOrder = listOrder.Concat(packStore.SelectMany(x => x.ListOrderId).Select(x => x.Key)).ToHashSet();
                 packStore.Select(x => x.IsInBox = true);
 
-                foreach(var order in packStore)
+                foreach (var order in packStore)
                 {
                     order.IsInBox = true;
                 }
