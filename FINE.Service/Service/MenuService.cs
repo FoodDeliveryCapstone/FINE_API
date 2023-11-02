@@ -78,7 +78,11 @@ namespace FINE.Service.Service
         {
             try
             {
-                var result = new MenuByTimeSlotResponse();
+                var result = new MenuByTimeSlotResponse()
+                {
+                    Menus = new List<MenuResponse>(),
+                    ReOrders = new List<ReOrderResponse>()
+                };
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                             .FirstOrDefault(x => x.Id == Guid.Parse(timeslotId));
 
@@ -103,18 +107,22 @@ namespace FINE.Service.Service
                                             .ToList();
                 }
                 var listStation = _unitOfWork.Repository<Station>().GetAll().Where(x => x.Floor.DestionationId == timeslot.DestinationId).ToList();
-                result.ReOrders = _unitOfWork.Repository<Order>().GetAll()
+                var reOrders = _unitOfWork.Repository<Order>().GetAll()
                                 .Where(x => x.CustomerId == Guid.Parse(customerId)
                                     && x.TimeSlotId == Guid.Parse(timeslotId)
                                     && x.OrderStatus == (int)OrderStatusEnum.Finished)
-                                .Select(x => new ReOrderResponse
-                                {
-                                    Id = x.Id,
-                                    CheckInDate = x.CheckInDate,
-                                    ItemQuantity = x.ItemQuantity,
-                                    StationName = listStation.FirstOrDefault(z => z.Id == x.StationId).Name,
-                                    ListProductInReOrder = _mapper.Map<List<ProductInReOrder>>(x.OrderDetails)
-                                }).ToList();
+                                .ToList();
+                foreach(var reOrder in reOrders)
+                {
+                    result.ReOrders.Add(new ReOrderResponse
+                    {
+                        Id = reOrder.Id,
+                        CheckInDate = reOrder.CheckInDate,
+                        ItemQuantity = reOrder.ItemQuantity,
+                        StationName = listStation.FirstOrDefault(x => x.Id == reOrder.StationId).Name,
+                        ListProductInReOrder = _mapper.Map<List<ProductInReOrder>>(reOrder.OrderDetails)
+                    });
+                }
 
                 return new BaseResponseViewModel<MenuByTimeSlotResponse>()
                 {
