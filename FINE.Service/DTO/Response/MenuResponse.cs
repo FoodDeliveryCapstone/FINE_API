@@ -38,6 +38,8 @@ namespace FINE.Service.DTO.Response
         public Guid Id { get; set; }
         public DateTime CheckInDate { get; set; }
         public int ItemQuantity { get; set; }
+        public string StationName { get; set; }
+
         public List<ProductInReOrder> ListProductInReOrder { get; set; }
     }
     public class ProductInReOrder
