@@ -138,7 +138,8 @@ namespace FINE.Service.Service
 
                     var data = new Dictionary<string, string>()
                     {
-                        { "type", NotifyTypeEnum.ForRefund.ToString()}
+                        { "type", NotifyTypeEnum.ForRefund.ToString()},
+                        { "orderId", order.Id.ToString() }
                     };
 
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
