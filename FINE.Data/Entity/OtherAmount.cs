@@ -15,5 +15,7 @@ public partial class OtherAmount
 
     public string? Note { get; set; }
 
+    public string? Att1 { get; set; }
+
     public virtual Order Order { get; set; } = null!;
 }
