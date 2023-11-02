@@ -1492,7 +1492,9 @@ namespace FINE.Service.Service
                     }
                     orders.Add(resultOrder);
                 }
-               var orderResponses = orders.AsQueryable().PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,Constants.DefaultPaging);
+               var orderResponses = orders.AsQueryable()
+                                          .DynamicFilter(filter)
+                                          .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<OrderForAdminResponse>()
                 {
