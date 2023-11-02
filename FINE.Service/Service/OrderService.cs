@@ -24,7 +24,7 @@ namespace FINE.Service.Service
     public interface IOrderService
     {
         Task<BaseResponseViewModel<OrderResponse>> GetOrderById(string customerId, string orderId);
-        Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<OrderForAdminResponse>> GetOrders(OrderForAdminResponse filter, PagingRequest paging);
         Task<BaseResponsePagingViewModel<OrderResponseForCustomer>> GetOrderByCustomerId(string customerId, OrderResponseForCustomer filter, PagingRequest paging);
         Task<BaseResponseViewModel<dynamic>> GetOrderStatus(string orderId);
         Task<BaseResponseViewModel<CoOrderResponse>> GetPartyOrder(string customerId, string partyCode);
@@ -1469,27 +1469,40 @@ namespace FINE.Service.Service
         #endregion
 
         #region Staff
-        public async Task<BaseResponsePagingViewModel<OrderForStaffResponse>> GetOrders(OrderForStaffResponse filter, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<OrderForAdminResponse>> GetOrders(OrderForAdminResponse filter, PagingRequest paging)
         {
             try
             {
-                var order = _unitOfWork.Repository<Order>().GetAll()
-                                        .OrderByDescending(x => x.CheckInDate)
-                                        .ProjectTo<OrderForStaffResponse>(_mapper.ConfigurationProvider)
-                                        .DynamicFilter(filter)
-                                        .DynamicSort(filter)
-                                        .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,
-                                        Constants.DefaultPaging);
+                var getOrders = _unitOfWork.Repository<Order>().GetAll()
+                                        .OrderByDescending(x => x.CheckInDate).ToList();
+                List<OrderForAdminResponse> orders = new List<OrderForAdminResponse>();
 
-                return new BaseResponsePagingViewModel<OrderForStaffResponse>()
+                foreach (var order in getOrders)
+                {
+                    var listRefund = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
+                    var resultOrder = _mapper.Map<OrderForAdminResponse>(order);
+                    if (listRefund is not null)
+                    {
+                        foreach (var refund in listRefund)
+                        {
+                            resultOrder.RefundAmount = refund.Amount;
+                            resultOrder.FinalAmountAfterRefund = resultOrder.FinalAmount - refund.Amount;
+                            resultOrder.RefundNote = refund.Note;
+                        }
+                    }
+                    orders.Add(resultOrder);
+                }
+               var orderResponses = orders.AsQueryable().PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<OrderForAdminResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {
                         Page = paging.Page,
                         Size = paging.PageSize,
-                        Total = order.Item1
+                        Total = orderResponses.Item1
                     },
-                    Data = order.Item2.ToList()
+                    Data = orderResponses.Item2.ToList()
 
                 };
             }

@@ -158,4 +158,36 @@ namespace FINE.Service.DTO.Response
         public List<string> ProductCannotAdd { get; set; }
         public OrderResponse OrderResponse { get; set; }
     }
+
+    public class OrderForAdminResponse
+    {
+        public Guid Id { get; set; }
+        public string? OrderCode { get; set; } = null!;
+
+        public Guid CustomerId { get; set; }
+        public DateTime? CheckInDate { get; set; }
+        public double? FinalAmount { get; set; }
+
+        public int? OrderStatus { get; set; }
+
+        public int? OrderType { get; set; }
+
+        public TimeSlotOrderResponse? TimeSlot { get; set; }
+
+        public Guid StationId { get; set; }
+
+        public bool? IsConfirm { get; set; }
+
+        public bool? IsPartyMode { get; set; }
+
+        public int? ItemQuantity { get; set; }
+
+        public string? Note { get; set; }
+        public double? RefundAmount { get; set; }
+        public double? FinalAmountAfterRefund { get; set; }
+        public string? RefundNote { get; set; }
+
+        public List<OrderDetailResponse>? OrderDetails { get; set; }
+
+    }
 }

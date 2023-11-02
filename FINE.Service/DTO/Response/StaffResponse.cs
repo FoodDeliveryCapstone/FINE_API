@@ -58,35 +58,6 @@ namespace FINE.Service.DTO.Response
         public OrderStatusEnum? OrderDetailProductStatus = OrderStatusEnum.Processing;
     }
 
-    public class OrderForStaffResponse
-    {
-        public Guid Id { get; set; }
-        public string? OrderCode { get; set; } = null!;
-
-        public Guid CustomerId { get; set; }
-        public DateTime? CheckInDate { get; set; }
-        public double? FinalAmount { get; set; }
-
-        public int? OrderStatus { get; set; }
-
-        public int? OrderType { get; set; }
-
-        public TimeSlotOrderResponse? TimeSlot { get; set; }
-
-        public Guid StationId { get; set; }
-
-        public bool? IsConfirm { get; set; }
-
-        public bool? IsPartyMode { get; set; }
-
-        public int? ItemQuantity { get; set; }
-
-        public string? Note { get; set; }
-
-        public List<OrderDetailResponse>? OrderDetails { get; set; }
-
-    }
-
     public class OrderByStoreResponse
     {
         public Guid OrderId { get; set; }
@@ -100,28 +71,5 @@ namespace FINE.Service.DTO.Response
         [NotMapped]
         public OrderStatusEnum OrderDetailStoreStatus { get; set; }
         public List<OrderDetailForStaffResponse>? OrderDetails { get; set; }
-    }
-
-    public class SplitOrderResponse
-    {
-        public List<Guid> OrderDetailId { get; set; }
-        public string? ProductName { get; set; } = null!;
-        public int Quantity { get; set; }
-        public Guid TimeSlotId { get; set; }
-    }
-
-    public class ShipperSplitOrderResponse
-    {
-        public Guid TimeSlotId { get; set; }
-        public Guid StationId { get; set; }
-        public Guid StoreId { get; set; }
-        public string? ProductName { get; set; } = null!;
-        public int Quantity { get; set; }
-    }
-
-    public class ShipperOrderBoxResponse
-    {
-        public Guid BoxId { get; set; }
-        public List<OrderDetailForStaffResponse> OrderDetails { get; set; }
     }
 }

@@ -112,7 +112,7 @@ namespace FINE.API.Mapper
             CreateMap<TimeSlot, TimeSlotOrderResponse>().ReverseMap();
             CreateMap<Station, StationOrderResponse>().ReverseMap();
 
-            CreateMap<Order, OrderForStaffResponse>().ReverseMap();
+            CreateMap<Order, OrderForAdminResponse>().ReverseMap();
             CreateMap<UpdateOrderStatusRequest, Order>();
             CreateMap<Order, OrderResponseForCustomer>().ReverseMap();
             CreateMap<OrderDetail, ProductInReOrder>()

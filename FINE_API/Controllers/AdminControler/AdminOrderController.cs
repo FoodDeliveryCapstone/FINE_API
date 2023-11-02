@@ -24,11 +24,11 @@ namespace FINE.API.Controllers.AdminControler
         }
 
         /// <summary>
-        /// Get orders for staff
+        /// Get orders for admin
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpGet]
-        public async Task<ActionResult<BaseResponsePagingViewModel<OrderForStaffResponse>>> GetOrdersForStaff([FromQuery]OrderForStaffResponse filter, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponsePagingViewModel<OrderForAdminResponse>>> GetOrdersForStaff([FromQuery]OrderForAdminResponse filter, [FromQuery] PagingRequest paging)
         {
             try
             {
