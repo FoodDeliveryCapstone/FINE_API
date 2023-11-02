@@ -197,7 +197,8 @@ namespace FINE.Service.Helpers
         {
             ForUsual = 1,
             ForInvitation = 2,
-            ForPopup = 3
+            ForPopup = 3,
+            ForRefund = 4
         }
 
         public enum VnPayTypeEnum
