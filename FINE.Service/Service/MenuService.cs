@@ -102,6 +102,7 @@ namespace FINE.Service.Service
                                             .Select(x => _mapper.Map<ProductResponse>(x.Key))
                                             .ToList();
                 }
+                var listStation = _unitOfWork.Repository<Station>().GetAll().Where(x => x.Floor.DestionationId == timeslot.DestinationId).ToList();
                 result.ReOrders = _unitOfWork.Repository<Order>().GetAll()
                                 .Where(x => x.CustomerId == Guid.Parse(customerId)
                                     && x.TimeSlotId == Guid.Parse(timeslotId)
@@ -111,6 +112,7 @@ namespace FINE.Service.Service
                                     Id = x.Id,
                                     CheckInDate = x.CheckInDate,
                                     ItemQuantity = x.ItemQuantity,
+                                    StationName = listStation.FirstOrDefault(z => z.Id == x.StationId).Name,
                                     ListProductInReOrder = _mapper.Map<List<ProductInReOrder>>(x.OrderDetails)
                                 }).ToList();
 
