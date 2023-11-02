@@ -25,9 +25,9 @@ namespace FINE.Service.Service
 {
     public interface IQrCodeService
     {
-        Task<dynamic> GenerateQrCode(string customerId, string boxId);
+        Task<dynamic> GenerateQrCode(string customerId, string orderId);
         Task<dynamic> GenerateShipperQrCode(string staffId, string timeSlotId);
-        Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string boxId, string key);
+        Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string key, string orderId);
         Task<BaseResponseViewModel<QROrderBoxResponse>> GetListBoxAndKey(string staffId, string timeSlotId);
     }
 
@@ -47,21 +47,21 @@ namespace FINE.Service.Service
             _configuration = configuration;
         }
 
-        public async Task<dynamic> GenerateQrCode(string customerId, string boxId)
+        public async Task<dynamic> GenerateQrCode(string customerId, string orderId)
         {
             try
             {
                 var box = await _unitOfWork.Repository<OrderBox>().GetAll()
                                 .Include(x => x.Order)
-                                .Where(x => x.BoxId == Guid.Parse(boxId)
+                                .Where(x => x.OrderId == Guid.Parse(orderId)
                                     && x.Order.CustomerId == Guid.Parse(customerId))
-                                .FirstOrDefaultAsync();
+                                .ToListAsync();
 
-                if (box.Status == (int)OrderBoxStatusEnum.Picked)
+                if (box.Any(x => x.Status == (int)OrderBoxStatusEnum.Picked))
                     throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_TAKEN,
                         BoxErrorEnums.ORDER_TAKEN.GetDisplayName());
 
-                else if (box.Status == (int)OrderBoxStatusEnum.StaffPicked)
+                else if (box.Any(x => x.Status == (int)OrderBoxStatusEnum.StaffPicked))
                     throw new ErrorResponse(400, (int)BoxErrorEnums.STAFF_TAKEN,
                          BoxErrorEnums.STAFF_TAKEN.GetDisplayName());
 
@@ -72,7 +72,7 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                string content = "1" + box.Key + "." + Utils.GenerateRandomCode(10) + "." + boxId;
+                var content = _configuration["UrlIotCallBox"] + $"return?key={box.FirstOrDefault().Key}&orderId={orderId}";
 
                 BarcodeWriter writer = new()
                 {
@@ -88,38 +88,28 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string boxId, string key)
+        public async Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string key, string orderId)
         {
             try
             {
-                var orderBox = _unitOfWork.Repository<OrderBox>().GetAll()
-                                    .FirstOrDefault(x => x.BoxId == Guid.Parse(boxId) && x.Key.Contains(key));
-                if (orderBox == null)
+                var orderBoxs = _unitOfWork.Repository<OrderBox>().GetAll()
+                                    .Where(x => x.OrderId == Guid.Parse(orderId) && x.Key.Contains(key)).ToList();
+                if (orderBoxs == null)
                     throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_BOX_ERROR, BoxErrorEnums.ORDER_BOX_ERROR.GetDisplayName());
 
-                orderBox.Status = (int)OrderBoxStatusEnum.Picked;
-                orderBox.UpdateAt = DateTime.Now;
+                foreach (var orderBox in orderBoxs)
+                {
+                    orderBox.Status = (int)OrderBoxStatusEnum.Picked;
+                    orderBox.UpdateAt = DateTime.Now;
 
-                 _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
-
+                    _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
+                }
                 var order = _unitOfWork.Repository<Order>().GetAll()
-                    .FirstOrDefault(x => x.Id == orderBox.OrderId);
+                    .FirstOrDefault(x => x.Id == Guid.Parse(orderId));
                 order.OrderStatus = (int)OrderStatusEnum.Finished;
                 order.UpdateAt = DateTime.Now;
                 _unitOfWork.Repository<Order>().UpdateDetached(order);
                 _unitOfWork.Commit();
-
-                var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
-                                    .FirstOrDefault(x => x.UserId == orderBox.Order.CustomerId).Token;
-                Notification notification = new Notification()
-                {
-                    Title = "Thành công ùi!!!",
-                    Body = "Bạn đã mở box thành công!!! Sau khi lấy hàng nhớ đóng tủ giúp tụi mình nha!"
-                };
-                Dictionary<string, string> data = new Dictionary<string, string>()
-                {
-                    { "type", NotifyTypeEnum.ForPopup.ToString()}
-                };
 
                 var party = order.Parties.FirstOrDefault(x => x.PartyType == (int)PartyOrderType.LinkedOrder);
                 if (party is not null)
@@ -131,6 +121,14 @@ namespace FINE.Service.Service
                 {
                     _paymentService.RefundRefuseAmount(otherAmount);
                 }
+                var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
+                    .FirstOrDefault(x => x.UserId == order.CustomerId).Token;
+
+                Notification notification = null;
+                Dictionary<string, string> data = new Dictionary<string, string>()
+                {
+                    { "type", NotifyTypeEnum.ForFinishOrder.ToString()}
+                };
 
                 BackgroundJob.Enqueue(() => _fm.SendToToken(token, notification, data));
                 return new BaseResponseViewModel<dynamic>()

@@ -24,7 +24,7 @@ namespace FINE.API.Controllers
         /// Get user qrcode
         /// </summary>
         [HttpGet("qrCode")]
-        public IActionResult GetQRCode(string boxId)
+        public IActionResult GetQRCode(string orderId)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace FINE.API.Controllers
                 }
                 //var customerId = "CD59782C-998C-4693-9920-F1FE4964C24A";
 
-                var qrCodeBitmap = _qrCodeService.GenerateQrCode(customerId, boxId).Result;
+                var qrCodeBitmap = _qrCodeService.GenerateQrCode(customerId, orderId).Result;
                 using (MemoryStream stream = new MemoryStream())
                 {
                     qrCodeBitmap.Save(stream, ImageFormat.Png);
@@ -87,11 +87,11 @@ namespace FINE.API.Controllers
         /// Receive Box Result
         /// </summary>
         [HttpPost("return")]
-        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ReceiveBoxResult(string boxId, string key)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ReceiveBoxResult(string key, string orderId)
         {
             try
             {
-                return await _qrCodeService.ReceiveBoxResult(boxId, key);
+                return await _qrCodeService.ReceiveBoxResult(key, orderId);
             }
             catch (ErrorResponse ex)
             {

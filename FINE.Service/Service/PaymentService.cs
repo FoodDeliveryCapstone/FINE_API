@@ -215,7 +215,7 @@ namespace FINE.Service.Service
                     };
                     Dictionary<string, string> data = new Dictionary<string, string>()
                         {
-                            { "type", NotifyTypeEnum.ForPopup.ToString()}
+                            { "type", NotifyTypeEnum.ForRefund.ToString()}
                         };
 
                     _unitOfWork.Commit();
@@ -250,9 +250,9 @@ namespace FINE.Service.Service
                     Body = note
                 };
                 Dictionary<string, string> data = new Dictionary<string, string>()
-                            {
-                                { "type", NotifyTypeEnum.ForPopup.ToString()}
-                            };
+                {
+                    { "type", NotifyTypeEnum.ForRefund.ToString()}
+                };
 
                 _unitOfWork.Commit();
                 BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
