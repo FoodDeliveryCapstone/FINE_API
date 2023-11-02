@@ -99,10 +99,28 @@ namespace FINE.Service.Service
         {
             try
             {
-                var order = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
+                var order = await _unitOfWork.Repository<Order>().GetAll()
                                     .FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
+                var listRefund = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
+                if (!listRefund.IsNullOrEmpty())
+                {
+                    foreach (var refund in listRefund)
+                    {
+                        KeyValuePair<Guid, int> productRefund = JsonConvert.DeserializeObject<KeyValuePair<Guid, int>>(refund.Att1);
+
+                        var product = await _unitOfWork.Repository<ProductAttribute>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Id == productRefund.Key);
+
+                        var orderDetail = resultOrder.OrderDetails.FirstOrDefault(x => x.ProductId == product.ProductId);
+                        orderDetail.Quantity -= productRefund.Value;
+                        orderDetail.TotalAmount -= (productRefund.Value * product.Price);
+                        orderDetail.FinalAmount -= (productRefund.Value * product.Price);
+                        order.FinalAmount -= (productRefund.Value * product.Price);
+                        order.TotalAmount -= (productRefund.Value * product.Price);
+                    }
+                }
 
                 resultOrder.Customer = _unitOfWork.Repository<Customer>().GetAll()
                                         .Where(x => x.Id == Guid.Parse(customerId))

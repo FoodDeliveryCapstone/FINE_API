@@ -56,7 +56,6 @@ namespace FINE.Service.Service
                 var productError = packageStaff.ErrorProducts.FirstOrDefault(x => x.ReportMemType == (int)memReport && x.ProductId == Guid.Parse(productId) && x.IsRefuse == false);
                 productError.IsRefuse = true;
 
-                //var productTotalPack = packageStaff.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
                 var listOrder = packageStaff.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId))
                                             .ProductDetails.Where(x => x.ErrorQuantity > 0).OrderByDescending(x => x.CheckInDate);
 
@@ -139,7 +138,7 @@ namespace FINE.Service.Service
 
                     var data = new Dictionary<string, string>()
                     {
-                        { "type", NotifyTypeEnum.ForPopup.ToString()}
+                        { "type", NotifyTypeEnum.ForRefund.ToString()}
                     };
 
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
@@ -150,7 +149,8 @@ namespace FINE.Service.Service
                         OrderId = order.Id,
                         Amount = refundAmount,
                         Type = (int)OtherAmountTypeEnum.Refund,
-                        Note = $"Hoàn lại {refundAmount}. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng."
+                        Note = $"Hoàn lại {refundAmount}. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng.",
+                        Att1 = JsonConvert.SerializeObject(new KeyValuePair<Guid, int>(Guid.Parse(productId), quantityErrorInOrder))
                     };
                     _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrder);
