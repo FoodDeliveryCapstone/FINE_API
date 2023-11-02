@@ -27,7 +27,7 @@ namespace FINE.Service.Service
     {
         Task<dynamic> GenerateQrCode(string customerId, string boxId);
         Task<dynamic> GenerateShipperQrCode(string staffId, string timeSlotId);
-        Task ReceiveBoxResult(string boxId, string key);
+        Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string boxId, string key);
         Task<BaseResponseViewModel<QROrderBoxResponse>> GetListBoxAndKey(string staffId, string timeSlotId);
     }
 
@@ -88,7 +88,7 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task ReceiveBoxResult(string boxId, string key)
+        public async Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string boxId, string key)
         {
             try
             {
@@ -133,6 +133,15 @@ namespace FINE.Service.Service
                 }
 
                 BackgroundJob.Enqueue(() => _fm.SendToToken(token, notification, data));
+                return new BaseResponseViewModel<dynamic>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    }
+                };
             }
             catch (ErrorResponse ex)
             {
