@@ -110,15 +110,15 @@ namespace FINE.Service.Service
                     {
                         KeyValuePair<Guid, int> productRefund = JsonConvert.DeserializeObject<KeyValuePair<Guid, int>>(refund.Att1);
 
-                        var product = await _unitOfWork.Repository<ProductAttribute>().GetAll()
-                                    .FirstOrDefaultAsync(x => x.Id == productRefund.Key);
+                        var productInMenu = await _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Product.Id == productRefund.Key && x.Menu.TimeSlotId == order.TimeSlotId);
 
-                        var orderDetail = resultOrder.OrderDetails.FirstOrDefault(x => x.ProductId == product.ProductId);
+                        var orderDetail = resultOrder.OrderDetails.FirstOrDefault(x => x.ProductInMenuId == productInMenu.Id);
                         orderDetail.Quantity -= productRefund.Value;
-                        orderDetail.TotalAmount -= (productRefund.Value * product.Price);
-                        orderDetail.FinalAmount -= (productRefund.Value * product.Price);
-                        order.FinalAmount -= (productRefund.Value * product.Price);
-                        order.TotalAmount -= (productRefund.Value * product.Price);
+                        orderDetail.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        orderDetail.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        order.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        order.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
                     }
                 }
 
