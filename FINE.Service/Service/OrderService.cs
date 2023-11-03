@@ -103,25 +103,6 @@ namespace FINE.Service.Service
                                     .FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
-                var listRefund = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
-                if (!listRefund.IsNullOrEmpty())
-                {
-                    foreach (var refund in listRefund)
-                    {
-                        KeyValuePair<Guid, int> productRefund = JsonConvert.DeserializeObject<KeyValuePair<Guid, int>>(refund.Att1);
-
-                        var productInMenu = await _unitOfWork.Repository<ProductInMenu>().GetAll()
-                                    .FirstOrDefaultAsync(x => x.Product.Id == productRefund.Key && x.Menu.TimeSlotId == order.TimeSlotId);
-
-                        var orderDetail = resultOrder.OrderDetails.FirstOrDefault(x => x.ProductInMenuId == productInMenu.Id);
-                        orderDetail.Quantity -= productRefund.Value;
-                        orderDetail.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
-                        orderDetail.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
-                        order.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
-                        order.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
-                    }
-                }
-
                 resultOrder.Customer = _unitOfWork.Repository<Customer>().GetAll()
                                         .Where(x => x.Id == Guid.Parse(customerId))
                                         .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
@@ -137,6 +118,26 @@ namespace FINE.Service.Service
 
                 if (orderBox is not null)
                     resultOrder.BoxId = orderBox.BoxId;
+
+                var listRefund = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
+                if (!listRefund.IsNullOrEmpty())
+                {
+                    foreach (var refund in listRefund)
+                    {
+                        KeyValuePair<Guid, int> productRefund = JsonConvert.DeserializeObject<KeyValuePair<Guid, int>>(refund.Att1);
+
+                        var productInMenu = await _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Product.Id == productRefund.Key && x.Menu.TimeSlotId == order.TimeSlotId);
+
+                        var orderDetail = resultOrder.OrderDetails.FirstOrDefault(x => x.ProductInMenuId == productInMenu.Id);
+                        orderDetail.Quantity -= productRefund.Value;
+                        orderDetail.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        orderDetail.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        order.ItemQuantity -= productRefund.Value;
+                        order.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        order.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                    }
+                }
 
                 return new BaseResponseViewModel<OrderResponse>()
                 {
