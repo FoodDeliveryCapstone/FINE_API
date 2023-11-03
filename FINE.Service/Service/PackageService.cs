@@ -659,6 +659,17 @@ namespace FINE.Service.Service
                                 break;
 
                             case (int)SystemRoleTypeEnum.Shipper:
+                                var keyShipper = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+
+                                var packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
+
+                                var productPackshipper = packageShipperResponse.PackageStoreShipperResponses.Where(x => x.StoreId == store.Id
+                                                                                            && x.IsTaken == true)
+                                                                                    .Select(x => x.PackStationDetailGroupByProducts.FirstOrDefault(x => x.ProductId == product.ProductId))
+                                                                                    .FirstOrDefault();
+                                productPackshipper.ErrorQuantity += (int)request.Quantity;
                                 if (packageResponse.ErrorProducts.Any(x => x.ProductId == Guid.Parse(item)
                                                                         && x.ReportMemType == (int)SystemRoleTypeEnum.Shipper && x.IsRefuse == false) is true)
                                 {

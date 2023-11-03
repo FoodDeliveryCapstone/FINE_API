@@ -112,7 +112,7 @@ namespace FINE.Service.DTO.Response
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public int TotalQuantity { get; set; }
-        public int ErrorQuantity { get; set; }
+        public int ErrorQuantity { get; set; } = 0;
         public List<BoxProduct> BoxProducts { get; set; }
     }
     #endregion
