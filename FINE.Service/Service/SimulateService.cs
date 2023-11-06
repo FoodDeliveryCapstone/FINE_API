@@ -101,6 +101,7 @@ namespace FINE.Service.Service
                 {
                     TotalConfirm = 0,
                     NumberHasConfirm = 0,
+                    NumberCannotConfirm = 0,
                     PackageOrderBoxes = new List<PackageOrderBoxModel>()
                 };
                 HashSet<KeyValuePair<Guid, string>> listBox = new HashSet<KeyValuePair<Guid, string>>();
@@ -297,7 +298,7 @@ namespace FINE.Service.Service
                             }
                             stationPack.TotalQuantity += orderDetail.Quantity;
                         }
-                        packageOrder.TotalConfirm += 1;
+                        packageOrder.TotalConfirm += orderDetail.Quantity;
                     }
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaffResponse);
                 }
@@ -850,6 +851,7 @@ namespace FINE.Service.Service
             try
             {
                 var getAllStaff = await _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StoreId != null).ToListAsync();
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == request.TimeSlotId);
                 SimulateOrderForStaffResponse response = new SimulateOrderForStaffResponse()
                 {
                     OrderSuccess = new List<SimulateOrderForStaff>(),
@@ -857,85 +859,95 @@ namespace FINE.Service.Service
                 };
                 foreach (var staff in getAllStaff)
                 {
-                    var getOrderInStore = await _packageService.GetPackage(staff.Id.ToString(), request.TimeSlotId.ToString());
+                    var key = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
 
-                    if (getOrderInStore.Data.TotalProductPending != 0)
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                    if (redisValue.HasValue == true)
                     {
-                        //lấy ds sản phẩm bị thiếu
-                        string jsonFilePath = "Configuration\\listProductsMissingInSimulate.json"; 
-                        string jsonString = File.ReadAllText(jsonFilePath);
-                        var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString);
-                        var productIdsMissing = jsonObject["ProductIdsMissing"];
+                        PackageStaffResponse getPackage = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
 
-                        foreach (var product in getOrderInStore.Data.ProductTotalDetails)
+                        if (getPackage.TotalProductPending != 0)
                         {
-                            if(productIdsMissing.Any(x => x == product.ProductId.ToString()))
+                            //lấy ds sản phẩm bị thiếu
+                            string jsonFilePath = "Configuration\\listProductsMissingInSimulate.json";
+                            string jsonString = File.ReadAllText(jsonFilePath);
+                            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString);
+                            var productIdsMissing = jsonObject["ProductIdsMissing"];
+
+                            foreach (var product in getPackage.ProductTotalDetails)
                             {
-                                List<string> listProductId = new List<string>
+                                if (productIdsMissing.Any(x => x == product.ProductId.ToString()))
+                                {
+                                    List<string> listProductId = new List<string>
                                 {
                                     product.ProductId.ToString()
                                 };
 
-                                var updatePackagePayload = new UpdateProductPackageRequest
-                                {
-                                    TimeSlotId = request.TimeSlotId.ToString(),
-                                    Type = PackageUpdateTypeEnum.Error,
-                                    //StoreId = staff.StoreId.ToString(),
-                                    Quantity = product.PendingQuantity,
-                                    ProductsUpdate = listProductId
-                                };
-
-                                var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
-
-                                var orderFail = new SimulateOrderForStaff()
-                                {
-                                    StoreId = staff.StoreId,
-                                    StaffName = staff.Name,
-                                    ProductName = product.ProductName,
-                                    Quantity = product.PendingQuantity,
-                                    Message = "This product is not avaliable!",
- 
-                                };
-
-                                response.OrderFailed.Add(orderFail);
-                            }
-                            else
-                            {
-                                //Bỏ qua product có pending quantity = 0
-                                if (product.PendingQuantity == 0)
-                                { }
-                                else
-                                {
-                                    List<string> listProductId = new List<string>
-                                    {
-                                        product.ProductId.ToString()
-                                    };
-
                                     var updatePackagePayload = new UpdateProductPackageRequest
                                     {
                                         TimeSlotId = request.TimeSlotId.ToString(),
-                                        Type = PackageUpdateTypeEnum.Confirm,
-                                        //Quantity = product.PendingQuantity,
+                                        Type = PackageUpdateTypeEnum.Error,
+                                        StoreId = staff.StoreId.ToString(),
+                                        Quantity = product.PendingQuantity,
                                         ProductsUpdate = listProductId
                                     };
 
                                     var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
 
-                                    var orderSuccess = new SimulateOrderForStaff()
+                                    var orderFail = new SimulateOrderForStaff()
                                     {
-                                        Message = "Success",
                                         StoreId = staff.StoreId,
                                         StaffName = staff.Name,
                                         ProductName = product.ProductName,
-                                        Quantity = product.PendingQuantity
-                                    };  
+                                        Quantity = product.PendingQuantity,
+                                        Message = "This product is not avaliable!",
 
-                                    response.OrderSuccess.Add(orderSuccess);
+                                    };
+
+                                    response.OrderFailed.Add(orderFail);
+                                }
+                                else
+                                {
+                                    //Bỏ qua product có pending quantity = 0
+                                    if (product.PendingQuantity == 0)
+                                    { }
+                                    else
+                                    {
+                                        List<string> listProductId = new List<string>
+                                    {
+                                        product.ProductId.ToString()
+                                    };
+
+                                        var updatePackagePayload = new UpdateProductPackageRequest
+                                        {
+                                            TimeSlotId = request.TimeSlotId.ToString(),
+                                            Type = PackageUpdateTypeEnum.Confirm,
+                                            StoreId = staff.StoreId.ToString(),
+                                            //Quantity = product.PendingQuantity,
+                                            ProductsUpdate = listProductId
+                                        };
+
+                                        var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
+
+                                        var orderSuccess = new SimulateOrderForStaff()
+                                        {
+                                            Message = "Success",
+                                            StoreId = staff.StoreId,
+                                            StaffName = staff.Name,
+                                            ProductName = product.ProductName,
+                                            Quantity = product.PendingQuantity
+                                        };
+
+                                        response.OrderSuccess.Add(orderSuccess);
+                                    }
                                 }
                             }
+                            foreach (var station in getPackage.PackageStations)
+                            {
+                                var confirmDelivery = await _packageService.ConfirmReadyToDelivery(staff.Id.ToString(), request.TimeSlotId.ToString(), station.StationId.ToString());
+                            }
                         }
-                        var confirmDelivery = await _packageService.ConfirmReadyToDelivery(staff.Id.ToString(), request.TimeSlotId.ToString(), staff.StationId.ToString());
-                    }                 
+                    }
                 }
 
                 return new BaseResponseViewModel<SimulateOrderForStaffResponse>()
