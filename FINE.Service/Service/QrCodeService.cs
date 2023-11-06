@@ -127,7 +127,8 @@ namespace FINE.Service.Service
                 Notification notification = null;
                 Dictionary<string, string> data = new Dictionary<string, string>()
                 {
-                    { "type", NotifyTypeEnum.ForFinishOrder.ToString()}
+                    { "type", NotifyTypeEnum.ForFinishOrder.ToString()},
+                    { "orderId", order.Id.ToString() }
                 };
 
                 BackgroundJob.Enqueue(() => _fm.SendToToken(token, notification, data));

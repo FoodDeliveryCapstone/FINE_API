@@ -114,10 +114,15 @@ namespace FINE.Service.Service
                                         .FirstOrDefault();
 
                 var orderBox = await _unitOfWork.Repository<OrderBox>().GetAll()
-                                    .FirstOrDefaultAsync(x => x.OrderId == Guid.Parse(id));
-
+                                    .Where(x => x.OrderId == Guid.Parse(id)).ToListAsync();
+                resultOrder.BoxesCode = new List<string>();
                 if (orderBox is not null)
-                    resultOrder.BoxId = orderBox.BoxId;
+                {
+                    foreach (var box in orderBox)
+                    {
+                        resultOrder.BoxesCode.Add(box.Box.Code);
+                    }
+                }
 
                 var listRefund = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
                 if (!listRefund.IsNullOrEmpty() && order.OrderStatus != (int)OrderStatusEnum.StaffCancel)
@@ -1493,9 +1498,9 @@ namespace FINE.Service.Service
                     }
                     orders.Add(resultOrder);
                 }
-               var orderResponses = orders.AsQueryable()
-                                          .DynamicFilter(filter)
-                                          .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging,Constants.DefaultPaging);
+                var orderResponses = orders.AsQueryable()
+                                           .DynamicFilter(filter)
+                                           .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
                 return new BaseResponsePagingViewModel<OrderForAdminResponse>()
                 {

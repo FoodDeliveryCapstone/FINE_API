@@ -49,9 +49,9 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdateAt { get; set; }
 
-        public Guid BoxId { get; set; }
-
         public List<OrderDetailResponse> OrderDetails { get; set; }
+
+        public List<string> BoxesCode { get; set; }
 
     }
     public class OrderDetailResponse
