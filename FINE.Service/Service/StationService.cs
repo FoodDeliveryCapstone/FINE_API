@@ -102,7 +102,7 @@ namespace FINE.Service.Service
                         StationId = x.Id,
                         NumberBoxLockPending = 0,
                         ListBoxId = new List<Guid>(),
-                        ListOrderBox = new List<KeyValuePair<Guid, List<Guid>>>()
+                        ListOrderBox = new List<KeyValuePair<string, List<Guid>>>()
                     }).ToList();
                 }
                 foreach (var stationLock in listStationLockBox)
