@@ -93,7 +93,7 @@ namespace FINE.API.Controllers
         {
             try
             {
-                if (iotCode.IsNullOrEmpty() && !iotCode.Equals(_configuration["IOTCode"]))
+                if (!iotCode.Equals(_configuration["IOTCode"]))
                 {
                     return Unauthorized();
                 }
@@ -113,7 +113,7 @@ namespace FINE.API.Controllers
         {
             try
             {
-                if(iotCode.IsNullOrEmpty() && !iotCode.Equals(_configuration["IOTCode"]))
+                if(!iotCode.Contains(_configuration["IOTCode"]))
                 {
                     return Unauthorized() ;
                 }
