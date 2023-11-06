@@ -594,7 +594,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region split order + create order box
-                SplitOrderAndCreateOrderBox(order);
+                BackgroundJob.Enqueue(() => SplitOrderAndCreateOrderBox(order));
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
