@@ -103,6 +103,7 @@ namespace FINE.Service.Helpers
             Finished = 11,
 
             UserCancel = 12,
+            StaffCancel = 13,
         }
 
         public enum OrderBoxStatusEnum

@@ -89,13 +89,17 @@ namespace FINE.Service.Service
                         errorNum = 0;
                     }
 
-                    if (packageOrder.NumberCannotConfirm + packageOrder.NumberHasConfirm == packageOrder.TotalConfirm)
+                    if (packageOrder.NumberCannotConfirm == packageOrder.TotalConfirm)
+                    {
+                        order.OrderStatus = (int)OrderStatusEnum.StaffCancel;
+                        _unitOfWork.Repository<Order>().UpdateDetached(order);
+                    }
+                    else if (packageOrder.NumberHasConfirm != 0 && (packageOrder.NumberCannotConfirm + packageOrder.NumberHasConfirm == packageOrder.TotalConfirm))
                     {
                         packStation.ListOrder.Add(new KeyValuePair<Guid, string>(order.Id, order.OrderCode));
                         order.OrderStatus = (int)OrderStatusEnum.FinishPrepare;
                         _unitOfWork.Repository<Order>().UpdateDetached(order);
                     }
-
                     var numberError = quantityErrorInOrder;
                     var orderBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productId))).ToList();
 
@@ -150,7 +154,7 @@ namespace FINE.Service.Service
                         OrderId = order.Id,
                         Amount = refundAmount,
                         Type = (int)OtherAmountTypeEnum.Refund,
-                        Note = $"Hoàn lại {refundAmount}. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng.",
+                        Note = $"Hoàn lại {refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng.",
                         Att1 = JsonConvert.SerializeObject(new KeyValuePair<Guid, int>(Guid.Parse(productId), quantityErrorInOrder))
                     };
                     _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);

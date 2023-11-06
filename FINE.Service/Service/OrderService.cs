@@ -893,7 +893,7 @@ namespace FINE.Service.Service
                 {
                     var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
                                             .Where(x => x.CustomerId == Guid.Parse(customerId)
-                                                && x.OrderStatus != (int)OrderStatusEnum.Finished
+                                                && x.OrderStatus < (int)OrderStatusEnum.Finished
                                                 && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
                                             .ToListAsync();
                     if (customerOrder.Count() >= 2)
