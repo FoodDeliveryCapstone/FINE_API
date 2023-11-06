@@ -594,7 +594,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region split order + create order box
-                SplitOrderAndCreateOrderBox(order);
+                BackgroundJob.Enqueue(() => SplitOrderAndCreateOrderBox(order));
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
@@ -1524,7 +1524,6 @@ namespace FINE.Service.Service
         {
             try
             {
-
                 #region lấy boxId đã lock
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
 
