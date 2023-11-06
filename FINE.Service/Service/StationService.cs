@@ -20,7 +20,7 @@ namespace FINE.Service.Service
     public interface IStationService
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
-        Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, string orderId, int numberBox);
+        Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, string orderCode, int numberBox);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);

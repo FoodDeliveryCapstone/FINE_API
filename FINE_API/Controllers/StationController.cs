@@ -22,7 +22,7 @@ namespace FINE.API.Controllers
         /// lấy list station cho order
         /// </summary>
         [HttpGet("order")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<dynamic>>> GetStationByDestination(string destinationId, string orderId, int numberBox)
+        public async Task<ActionResult<BaseResponsePagingViewModel<dynamic>>> GetStationByDestinationForOrder(string destinationId, string orderCode, int numberBox)
         {
             try
             {
@@ -32,7 +32,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var result = await _stationService.GetStationByDestinationForOrder(destinationId, orderId, numberBox);
+                var result = await _stationService.GetStationByDestinationForOrder(destinationId, orderCode, numberBox);
                 return Ok(result);
             }
             catch (ErrorResponse ex)
