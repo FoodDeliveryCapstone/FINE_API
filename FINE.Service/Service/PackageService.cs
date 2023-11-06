@@ -80,11 +80,11 @@ namespace FINE.Service.Service
                     {
                         quantityErrorInOrder = errorOrder.ErrorQuantity;
                         errorNum -= errorOrder.ErrorQuantity;
-                        packageOrder.NumberCannotConfirm = errorOrder.ErrorQuantity;
+                        packageOrder.NumberCannotConfirm += errorOrder.ErrorQuantity;
                     }
                     else
                     {
-                        errorOrder.ErrorQuantity = errorNum;
+                        errorOrder.ErrorQuantity += errorNum;
                         quantityErrorInOrder = errorNum;
                         errorNum = 0;
                     }
