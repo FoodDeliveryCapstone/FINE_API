@@ -138,9 +138,9 @@ namespace FINE.Service.Service
                         orderDetail.Quantity -= productRefund.Value;
                         orderDetail.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
                         orderDetail.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
-                        order.ItemQuantity -= productRefund.Value;
-                        order.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
-                        order.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        resultOrder.ItemQuantity -= productRefund.Value;
+                        resultOrder.FinalAmount -= (productRefund.Value * productInMenu.Product.Price);
+                        resultOrder.TotalAmount -= (productRefund.Value * productInMenu.Product.Price);
                     }
                 }
 
