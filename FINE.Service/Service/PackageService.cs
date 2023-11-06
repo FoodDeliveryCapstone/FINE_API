@@ -133,7 +133,7 @@ namespace FINE.Service.Service
                     Notification notification = new Notification
                     {
                         Title = Constants.REPORT_ERROR_PACK,
-                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại {refundAmount} vào ví của bạn sau khi đơn hàng hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
+                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại {refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K vào ví của bạn sau khi đơn hàng hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
                     };
 
                     var data = new Dictionary<string, string>()
