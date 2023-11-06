@@ -2,6 +2,7 @@
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
@@ -14,10 +15,11 @@ namespace FINE.API.Controllers
     public class UserBoxController : Controller
     {
         private readonly IQrCodeService _qrCodeService;
-
-        public UserBoxController(IQrCodeService qrCodeService)
+        private readonly IConfiguration _configuration;
+        public UserBoxController(IQrCodeService qrCodeService, IConfiguration configuration)
         {
             _qrCodeService = qrCodeService;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -87,10 +89,14 @@ namespace FINE.API.Controllers
         /// Receive Box Result
         /// </summary>
         [HttpPost("return")]
-        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ReceiveBoxResult(string orderId)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ReceiveBoxResult(string orderId, string iotCode)
         {
             try
             {
+                if (iotCode.IsNullOrEmpty() && !iotCode.Equals(_configuration["IOTCode"]))
+                {
+                    return Unauthorized();
+                }
                 return await _qrCodeService.ReceiveBoxResult(orderId);
             }
             catch (ErrorResponse ex)
@@ -103,10 +109,14 @@ namespace FINE.API.Controllers
         /// Get box and key for IOT system
         /// </summary>
         [HttpGet("boxKey")]
-        public async Task<ActionResult<BaseResponseViewModel<QROrderBoxResponse>>> GetListBoxAndKey(string staffId, string timeslotId)
+        public async Task<ActionResult<BaseResponseViewModel<QROrderBoxResponse>>> GetListBoxAndKey(string staffId, string timeslotId, string iotCode)
         {
             try
             {
+                if(iotCode.IsNullOrEmpty() && !iotCode.Equals(_configuration["IOTCode"]))
+                {
+                    return Unauthorized() ;
+                }
                 return await _qrCodeService.GetListBoxAndKey(staffId, timeslotId);
             }
             catch (ErrorResponse ex)
