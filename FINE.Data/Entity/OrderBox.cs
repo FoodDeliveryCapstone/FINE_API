@@ -11,8 +11,6 @@ public partial class OrderBox
 
     public Guid BoxId { get; set; }
 
-    public string? Key { get; set; }
-
     public int Status { get; set; }
 
     public DateTime CreateAt { get; set; }
