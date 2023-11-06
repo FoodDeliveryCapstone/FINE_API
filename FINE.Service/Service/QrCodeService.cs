@@ -116,7 +116,7 @@ namespace FINE.Service.Service
                 {
                     _paymentService.RefundPartialLinkedFee(party.PartyCode, party.CustomerId);
                 }
-                var otherAmount = order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.Refund);
+                var otherAmount = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
                 if (otherAmount is not null)
                 {
                     _paymentService.RefundRefuseAmount(otherAmount);

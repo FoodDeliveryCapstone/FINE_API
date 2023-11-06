@@ -31,7 +31,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<string>> TopUpWalletRequest(string customerId, double amount);
         Task<bool> PaymentExecute(IQueryCollection collections);
         Task<BaseResponseViewModel<dynamic>> RefundPartialLinkedFee(string partyCode, Guid customerId);
-        Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(OtherAmount otherAmount);
+        Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(List<OtherAmount> otherAmount);
     }
     public class PaymentService : IPaymentService
     {
@@ -237,13 +237,15 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(OtherAmount otherAmount)
+        public async Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(List<OtherAmount> otherAmount)
         {
             try
             {
-                var note = $"Hoàn {otherAmount.Amount} VND cho đơn hàng {otherAmount.Order.OrderCode}";
-                _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, otherAmount.Amount, otherAmount.Order.CustomerId, TransactionStatusEnum.Finish, note);
-                var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == otherAmount.Order.CustomerId);
+                var amount = otherAmount.Select(x => x.Amount).Sum();
+                var order = otherAmount.FirstOrDefault().Order;
+                var note = $"Hoàn {amount} VND cho đơn hàng {order.OrderCode}";
+                _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount,amount, order.CustomerId, TransactionStatusEnum.Finish, note);
+                var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId);
                 Notification notification = new Notification()
                 {
                     Title = "Thông báo!!!",
