@@ -20,7 +20,7 @@ namespace FINE.Service.Service
     public interface IStationService
     {
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
-        Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, int numberBox);
+        Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, string orderId, int numberBox);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
@@ -71,7 +71,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, int numberBox)
+        public async Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, string orderCode ,int numberBox)
         {
             try
             {
@@ -100,7 +100,9 @@ namespace FINE.Service.Service
                     {
                         StationName = x.Name,
                         StationId = x.Id,
-                        NumberBoxLockPending = 0
+                        NumberBoxLockPending = 0,
+                        ListBoxId = new List<Guid>(),
+                        ListOrderBox = new List<KeyValuePair<Guid, List<Guid>>>()
                     }).ToList();
                 }
                 foreach (var stationLock in listStationLockBox)
@@ -114,7 +116,17 @@ namespace FINE.Service.Service
                                     .FirstOrDefaultAsync();
                     if (stationFit is not null)
                     {
+                        var pickedBox = listStation.Where(x => x.Id == stationLock.StationId)
+                                                    .SelectMany(x => x.Boxes).Where(x => x.IsActive == true
+                                                                                 && x.OrderBoxes.Any(y => y.Status != (int)OrderBoxStatusEnum.Picked) == false)
+                                                    .Select(x => x.Id)
+                                                    .Except(stationLock.ListBoxId)
+                                                    .Take(numberBox)
+                                                    .ToList();
+
                         stationLock.NumberBoxLockPending += numberBox;
+                        stationLock.ListBoxId.AddRange(pickedBox);
+                        stationLock.ListOrderBox.Add(new KeyValuePair<string, List<Guid>>(orderCode, pickedBox));
                         result.Add(stationFit);
                     }
                 }
@@ -159,11 +171,7 @@ namespace FINE.Service.Service
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + orderCode;
                 List<Guid> listBoxOrder = new List<Guid>();
 
-                var orderBox = station.Boxes.Where(x => x.IsActive == true
-                                                     && x.OrderBoxes.Any(z => z.BoxId == x.Id
-                                                     && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
-                                            .Take(numberBox)
-                                            .Select(x => x.Id);
+                var orderBox = listStationLockBox.FirstOrDefault(x => x.StationId == Guid.Parse(stationId)).ListOrderBox.FirstOrDefault(x => x.Key == orderCode).Value;
                 listBoxOrder.AddRange(orderBox);
 
                 await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, listBoxOrder);

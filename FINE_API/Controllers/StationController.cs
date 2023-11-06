@@ -22,7 +22,7 @@ namespace FINE.API.Controllers
         /// lấy list station cho order
         /// </summary>
         [HttpGet("order")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<dynamic>>> GetStationByDestination(string destinationId, int numberBox)
+        public async Task<ActionResult<BaseResponsePagingViewModel<dynamic>>> GetStationByDestination(string destinationId, string orderId, int numberBox)
         {
             try
             {
@@ -32,7 +32,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var result = await _stationService.GetStationByDestinationForOrder(destinationId, numberBox);
+                var result = await _stationService.GetStationByDestinationForOrder(destinationId, orderId, numberBox);
                 return Ok(result);
             }
             catch (ErrorResponse ex)
@@ -68,7 +68,7 @@ namespace FINE.API.Controllers
         /// lock box cho order
         /// </summary>
         [HttpPost("orderBox")]
-        public async Task<ActionResult<BaseResponseViewModel<int>>> LockBox(string stationId, string orderCode ,int numberBox)
+        public async Task<ActionResult<BaseResponseViewModel<int>>> LockBox(string stationId, string orderCode, int numberBox)
         {
             try
             {
@@ -78,7 +78,7 @@ namespace FINE.API.Controllers
                 {
                     return Unauthorized();
                 }
-                var result = await _stationService.LockBox(stationId, orderCode ,numberBox);
+                var result = await _stationService.LockBox(stationId, orderCode, numberBox);
                 return Ok(result);
             }
             catch (ErrorResponse ex)

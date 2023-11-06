@@ -16,6 +16,8 @@ namespace FINE.Service.Helpers
         public string StationName { get; set; }
         public Guid StationId { get; set; }
         public int NumberBoxLockPending { get; set; }
+        public List<Guid> ListBoxId { get; set; }
+        public List<KeyValuePair<string, List<Guid>>> ListOrderBox { get; set; }
     }
 
 }
