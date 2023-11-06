@@ -27,7 +27,7 @@ namespace FINE.Service.Service
     {
         Task<dynamic> GenerateQrCode(string customerId, string orderId);
         Task<dynamic> GenerateShipperQrCode(string staffId, string timeSlotId);
-        Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string key, string orderId);
+        Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string orderId);
         Task<BaseResponseViewModel<QROrderBoxResponse>> GetListBoxAndKey(string staffId, string timeSlotId);
     }
 
@@ -72,7 +72,7 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                var content = _configuration["UrlIotCallBox"] + $"return?key={box.FirstOrDefault().Key}&orderId={orderId}";
+                var content = QRCodeRole.User + "." + orderId;
 
                 BarcodeWriter writer = new()
                 {
@@ -88,12 +88,12 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string key, string orderId)
+        public async Task<BaseResponseViewModel<dynamic>> ReceiveBoxResult(string orderId)
         {
             try
             {
                 var orderBoxs = _unitOfWork.Repository<OrderBox>().GetAll()
-                                    .Where(x => x.OrderId == Guid.Parse(orderId) && x.Key.Contains(key)).ToList();
+                                    .Where(x => x.OrderId == Guid.Parse(orderId)).ToList();
                 if (orderBoxs == null)
                     throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_BOX_ERROR, BoxErrorEnums.ORDER_BOX_ERROR.GetDisplayName());
 
@@ -117,7 +117,7 @@ namespace FINE.Service.Service
                     _paymentService.RefundPartialLinkedFee(party.PartyCode, party.CustomerId);
                 }
                 var otherAmount = order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.Refund);
-                if(otherAmount is not null)
+                if (otherAmount is not null)
                 {
                     _paymentService.RefundRefuseAmount(otherAmount);
                 }
@@ -157,8 +157,8 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                
-                var content = _configuration["UrlIotCallBox"] + $"boxKey?staffId={staffId}&timeslotId={timeSlotId}";
+
+                var content = QRCodeRole.Shipper + "." + staffId + "." + timeSlotId;
 
                 BarcodeWriter writer = new()
                 {
@@ -202,13 +202,12 @@ namespace FINE.Service.Service
 
                 setOrderId = setOrderId.Concat(packageShipperResponse.PackageStoreShipperResponses.SelectMany(x => x.ListOrderId).Where(x => x.Value == false).Select(x => x.Key)).ToHashSet();
 
-                foreach(var id in setOrderId)
+                foreach (var id in setOrderId)
                 {
                     var orderBox = _unitOfWork.Repository<OrderBox>().GetAll().Where(x => x.OrderId == id).AsQueryable();
 
-                    foreach(var box in orderBox)
+                    foreach (var box in orderBox)
                     {
-                        box.Key = result.Key;
                         result.ListBox.Add(box.BoxId);
                     }
                     _unitOfWork.Repository<OrderBox>().UpdateRange(orderBox);

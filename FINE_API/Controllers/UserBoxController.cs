@@ -87,11 +87,11 @@ namespace FINE.API.Controllers
         /// Receive Box Result
         /// </summary>
         [HttpPost("return")]
-        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ReceiveBoxResult(string key, string orderId)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ReceiveBoxResult(string orderId)
         {
             try
             {
-                return await _qrCodeService.ReceiveBoxResult(key, orderId);
+                return await _qrCodeService.ReceiveBoxResult(orderId);
             }
             catch (ErrorResponse ex)
             {
