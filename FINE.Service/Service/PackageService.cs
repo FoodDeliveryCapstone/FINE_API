@@ -32,12 +32,14 @@ namespace FINE.Service.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IFirebaseMessagingService _fm;
+        private readonly IProductService _productService;
 
-        public PackageService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm)
+        public PackageService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm, IProductService productService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fm = fm;
+            _productService = productService;
         }
 
         public async Task<BaseResponseViewModel<dynamic>> ReportProductCannotRepair(string staffId, string timeslotId, string productId, SystemRoleTypeEnum memReport)
@@ -160,6 +162,8 @@ namespace FINE.Service.Service
                     _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, packageOrder);
                 }
+                await _productService.UpdateProductCannotRepair(productId, false);
+
                 _unitOfWork.Commit();
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaff);
                 return new BaseResponseViewModel<dynamic>()
