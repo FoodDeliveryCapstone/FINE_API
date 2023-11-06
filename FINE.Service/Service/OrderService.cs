@@ -120,7 +120,7 @@ namespace FINE.Service.Service
                     resultOrder.BoxId = orderBox.BoxId;
 
                 var listRefund = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
-                if (!listRefund.IsNullOrEmpty())
+                if (!listRefund.IsNullOrEmpty() && order.OrderStatus != (int)OrderStatusEnum.StaffCancel)
                 {
                     foreach (var refund in listRefund)
                     {
