@@ -3,7 +3,6 @@
 namespace FINE.Service.Helpers
 {
     public class Enum
-
     {
         public enum RedisDbEnum
         {
@@ -25,6 +24,14 @@ namespace FINE.Service.Helpers
             [Display(Name = "Box")]
             Box = 6,
         }
+
+        public enum QRCodeRole
+        {
+            Shipper = 1,
+            User = 2,
+            StaffStation = 3
+        }
+
         public enum RedisSetUpType
         {
             GET = 1,
@@ -38,12 +45,6 @@ namespace FINE.Service.Helpers
             Staff = 2
         }
 
-        public enum SimulateOrderFailedType
-        {
-            Payment = 1,
-            OutOfProduct =2,
-        }
-
         public enum SystemRoleTypeEnum
         {
             [Display(Name = "Những con cáo")]
@@ -52,11 +53,6 @@ namespace FINE.Service.Helpers
             StoreManager = 2,
             [Display(Name = "Người giao hàng")]
             Shipper = 3
-        }
-
-        public enum DestinationTypeEnum
-        {
-            FPT = 1,
         }
 
         public enum AccountTypeEnum
@@ -76,13 +72,6 @@ namespace FINE.Service.Helpers
             ShippingFee = 1,
             Discount = 2,
             Refund = 3
-        }
-
-        public enum UpdateOrderTypeEnum
-        {
-            UserCancel = 1,
-            FinishOrder = 2,
-            UpdateDetails = 3
         }
 
         public enum ProductRotationTypeEnum
@@ -118,7 +107,7 @@ namespace FINE.Service.Helpers
 
         public enum OrderBoxStatusEnum
         {
-            NotPicked =1,
+            NotPicked = 1,
             Picked = 2,
             AboutToExpire = 3,
 
@@ -151,13 +140,6 @@ namespace FINE.Service.Helpers
             VnPay = 2,
         }
 
-        public enum PaymentStatusEnum
-        {
-            Finish = 1,
-            Processing = 2,
-            Fail = 3
-        }
-
         public enum TransactionStatusEnum
         {
             Processing = 1,
@@ -171,28 +153,6 @@ namespace FINE.Service.Helpers
             Payment = 2
         }
 
-        public enum ShippingStatusEnum
-        {
-            NewOrder = 5,
-            OrderPreparing = 6,
-            ReadyPickUp = 8,
-        }
-
-        public enum StoreStatusEnum
-        {
-            OrderArrive = 6,
-            StoreFinished = 7,
-
-            StoreCancel = 12
-        }
-
-        public enum NotifyStatusEnum
-        {
-            IsNotRead = 1,
-            IsNotActive = 1,
-            IsAvtive = 2,
-            IsRead = 2
-        }
         public enum NotifyTypeEnum
         {
             ForUsual = 1,
@@ -200,13 +160,6 @@ namespace FINE.Service.Helpers
             ForPopup = 3,
             ForRefund = 4,
             ForFinishOrder = 5
-        }
-
-        public enum VnPayTypeEnum
-        {
-            VNPAYQR = 1,
-            VNBANK = 2,
-            INTCARD = 3
         }
 
         public enum PackageUpdateTypeEnum

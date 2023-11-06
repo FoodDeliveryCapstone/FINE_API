@@ -138,17 +138,18 @@ namespace FINE.Service.Helpers
                 };
 
                 // tính thể tích bị chiếm bởi các product trong card trước
-                card.OrderByDescending(x => (x.Product.Length * x.Product.Width));
+                card.OrderByDescending(x => (x.Product.Length * x.Product.Width * x.Product.Height));
                 foreach (var item in card)
                 {
                     // ghép product lên cho vừa họp dựa trên quantity yêu cầu
                     var pairingCardResult = ProductPairing(item.Quantity, item.Product, boxSize);
+
                     var turnCard = Math.Ceiling((decimal)((double)item.Quantity / pairingCardResult.QuantityCanAdd));
 
                     for (var successCase = 1; successCase <= turnCard; successCase++)
                     {
                         // đem đi bỏ vào tủ 
-                        var calculateCardResult = CalculateRemainingSpace(boxSize, spaceInBox, pairingCardResult.ProductOccupied); 
+                        var calculateCardResult = CalculateRemainingSpace(boxSize, spaceInBox, pairingCardResult.ProductSupplanted);
 
                         if (calculateCardResult.Success == true)
                         {
@@ -199,15 +200,8 @@ namespace FINE.Service.Helpers
             {
                 ProductParingResponse paringResponse = new ProductParingResponse()
                 {
-                    ProductOccupied = null,
+                    ProductSupplanted = null,
                     QuantityCanAdd = 1
-                };
-
-                CubeModel productSizeAfterEdit = new CubeModel()
-                {
-                    Height = product.Height,
-                    Width = product.Width,
-                    Length = product.Length
                 };
 
                 //xoay + ghep
@@ -215,79 +209,67 @@ namespace FINE.Service.Helpers
                 {
                     // nếu product có thể xoay => ưu tiên dựng product nằm dọc => số lượng có thể add * product.w < box.w
                     case (int)ProductRotationTypeEnum.Both:
-                        if (product.Width < product.Height && product.Height < product.Length)
+                        if (product.Length < boxSize.Height)
                         {
-                            productSizeAfterEdit = new CubeModel
+                            if (product.Width < product.Height)
                             {
-                                Height = product.Length,
-                                Width = product.Height,
-                                Length = product.Width
-                            };
-                        }
-                        else if (product.Width > product.Height)
-                        {
-                            productSizeAfterEdit = new CubeModel
+                                paringResponse.ProductSupplanted = new CubeModel
+                                {
+                                    Height = product.Length,
+                                    Width = product.Width,
+                                    Length = product.Height
+                                };
+                            }
+                            else
                             {
-                                Height = product.Length,
-                                Width = product.Width,
-                                Length = product.Height
-                            };
+                                paringResponse.ProductSupplanted = new CubeModel
+                                {
+                                    Height = product.Length,
+                                    Width = product.Height,
+                                    Length = product.Width
+                                };
+                            }
                         }
-                        paringResponse.ProductOccupied = new CubeModel()
-                        {
-                            Height = productSizeAfterEdit.Height,
-                            Width = productSizeAfterEdit.Width,
-                            Length = productSizeAfterEdit.Length
-                        };
                         break;
 
                     // nếu product mặc định nằm ngang => product nằm chồng lên nhau => số lượng có thể add * product.h < product.h (tùy thuộc có thể chồng hay ko)
                     case (int)ProductRotationTypeEnum.Horizontal:
                         if (product.Product.IsStackable is true)
                         {
-                            paringResponse.ProductOccupied = new CubeModel()
-                            {
-                                Height = productSizeAfterEdit.Height * quantity,
-                                Width = productSizeAfterEdit.Width,
-                                Length = productSizeAfterEdit.Length
-                            };
+                            paringResponse.QuantityCanAdd = (int)Math.Floor(boxSize.Height / product.Height);
+                            if(paringResponse.QuantityCanAdd > quantity) paringResponse.QuantityCanAdd = quantity;
 
-                            if (paringResponse.ProductOccupied.Height > boxSize.Height)
+                            paringResponse.ProductSupplanted = new CubeModel()
                             {
-                                paringResponse.QuantityCanAdd = (int)Math.Floor(boxSize.Height / productSizeAfterEdit.Height);
-                                paringResponse.ProductOccupied = new CubeModel()
-                                {
-                                    Height = productSizeAfterEdit.Height * paringResponse.QuantityCanAdd,
-                                    Width = productSizeAfterEdit.Width,
-                                    Length = productSizeAfterEdit.Length
-                                };
-                            }
+                                Height = product.Height * paringResponse.QuantityCanAdd,
+                                Width = product.Width,
+                                Length = product.Length
+                            };
                         }
                         else
                         {
-                            paringResponse.ProductOccupied = new CubeModel()
+                            paringResponse.ProductSupplanted = new CubeModel()
                             {
-                                Height = productSizeAfterEdit.Height,
-                                Width = productSizeAfterEdit.Width,
-                                Length = productSizeAfterEdit.Length
-                            };
+                                Height = product.Height,
+                                Width = product.Width,
+                                Length = product.Length
+                            };  
                         }
                         break;
 
                     // nếu product mặc định nằm đứng => số lượng có thể add * product.w < box.w
                     case (int)ProductRotationTypeEnum.Vertical:
-                        paringResponse.ProductOccupied = new CubeModel()
+                        paringResponse.ProductSupplanted = new CubeModel()
                         {
-                            Height = productSizeAfterEdit.Height,
-                            Width = productSizeAfterEdit.Width,
-                            Length = productSizeAfterEdit.Length
-                        };
+                            Height = product.Height,
+                            Width = product.Width,
+                            Length = product.Length
+                        }; 
                         break;
                 }
-
-                var temp = paringResponse.ProductOccupied.Length;
-                paringResponse.ProductOccupied.Length = paringResponse.ProductOccupied.Length > paringResponse.ProductOccupied.Width ? paringResponse.ProductOccupied.Length : paringResponse.ProductOccupied.Width;
-                paringResponse.ProductOccupied.Width = paringResponse.ProductOccupied.Length > paringResponse.ProductOccupied.Width ? paringResponse.ProductOccupied.Width : temp;
+                var temp = paringResponse.ProductSupplanted.Length;
+                paringResponse.ProductSupplanted.Length = paringResponse.ProductSupplanted.Length > paringResponse.ProductSupplanted.Width ? paringResponse.ProductSupplanted.Length : paringResponse.ProductSupplanted.Width;
+                paringResponse.ProductSupplanted.Width = paringResponse.ProductSupplanted.Length > paringResponse.ProductSupplanted.Width ? paringResponse.ProductSupplanted.Width : temp;
 
                 return paringResponse;
             }
@@ -444,7 +426,7 @@ namespace FINE.Service.Helpers
                             Height = box.Height,
                             Width = space.RemainingWidthSpace.Width,
                             Length = space.RemainingWidthSpace.Length + space.VolumeWidthOccupied.Width
-                        };                  
+                        };
                         if (space.VolumeWidthOccupied.Length + productOccupied.Length <= response.RemainingWidthSpace.Width)
                         {
                             response.VolumeWidthOccupied = new CubeModel()
@@ -603,6 +585,7 @@ namespace FINE.Service.Helpers
                 throw ex;
             }
         }
+
         public async static Task<dynamic> GetSetDataRedisReportMissingProduct(RedisSetUpType type, string key = null, object value = null)
         {
             try

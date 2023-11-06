@@ -21,7 +21,7 @@ namespace FINE.Service.Helpers
     }
     public class ProductParingResponse
     {
-        public CubeModel ProductOccupied { get; set; }
+        public CubeModel ProductSupplanted { get; set; }
         public int QuantityCanAdd { get; set; }
     }
     public class FixBoxResponse
