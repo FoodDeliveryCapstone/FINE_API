@@ -1764,26 +1764,25 @@ namespace FINE.Service.Service
             var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
             ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrder);
         }
-    }
 
-    public void UpdatePartyOrderStatus(string code)
-    {
-        var parties = _unitOfWork.Repository<Party>().GetAll()
-                    .Where(x => x.PartyCode == code).ToList();
-        if (parties != null)
+        public void UpdatePartyOrderStatus(string code)
         {
-            foreach (var party in parties)
+            var parties = _unitOfWork.Repository<Party>().GetAll()
+                        .Where(x => x.PartyCode == code).ToList();
+            if (parties != null)
             {
-                party.Status = (int)PartyOrderStatus.OutOfTimeslot;
-                party.IsActive = false;
-                party.UpdateAt = DateTime.Now;
-                _unitOfWork.Repository<Party>().UpdateDetached(party);
+                foreach (var party in parties)
+                {
+                    party.Status = (int)PartyOrderStatus.OutOfTimeslot;
+                    party.IsActive = false;
+                    party.UpdateAt = DateTime.Now;
+                    _unitOfWork.Repository<Party>().UpdateDetached(party);
+                }
+                _unitOfWork.Commit();
+                var keyCoOrder = RedisDbEnum.CoOrder + ":" + code;
+                ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyCoOrder, null);
             }
-            _unitOfWork.Commit();
-            var keyCoOrder = RedisDbEnum.CoOrder + ":" + code;
-            ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyCoOrder, null);
         }
+        #endregion
     }
-    #endregion
-}
 }
