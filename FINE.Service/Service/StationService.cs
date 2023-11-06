@@ -108,19 +108,15 @@ namespace FINE.Service.Service
                 foreach (var stationLock in listStationLockBox)
                 {
                     //get các station còn available kể cả box lock
-                    var stationFit = await listStation.Where(x => x.Id == stationLock.StationId
+                    var stationDb = await listStation.FirstOrDefaultAsync(x => x.Id == stationLock.StationId
                                                 && x.Boxes.Where(x => x.IsActive == true
                                                 && x.OrderBoxes.Any(y => y.Status != (int)OrderBoxStatusEnum.Picked) == false).Count()
-                                                - stationLock.NumberBoxLockPending >= numberBox)
-                                    .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
-                                    .FirstOrDefaultAsync();
-                    if (stationFit is not null)
+                                                - stationLock.NumberBoxLockPending >= numberBox);
+                    if (stationDb is not null)
                     {
-                        var pickedBox = listStation.Where(x => x.Id == stationLock.StationId)
-                                                    .SelectMany(x => x.Boxes).Where(x => x.IsActive == true
-                                                                                 && x.OrderBoxes.Any(y => y.Status != (int)OrderBoxStatusEnum.Picked) == false)
-                                                    .Select(x => x.Id)
-                                                    .Except(stationLock.ListBoxId)
+                        var stationFit = _mapper.Map<StationResponse>(stationDb);
+                        var pickedBox = stationDb.Boxes.Where(x => x.IsActive == true && x.OrderBoxes.Any(y => y.Status != (int)OrderBoxStatusEnum.Picked) == false)
+                                                    .Select(x => x.Id).Except(stationLock.ListBoxId)
                                                     .Take(numberBox)
                                                     .ToList();
 
@@ -204,36 +200,41 @@ namespace FINE.Service.Service
                 }
                 var numberBox = listLockOrder.Count();
 
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
+
+                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                if (redisStationValue.HasValue == true)
+                {
+                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
+                }
+
                 switch (type)
                 {
                     case LockBoxUpdateTypeEnum.Delete:
-                        var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
 
-                        List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
-                        var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
-                        if (redisStationValue.HasValue == true)
+                        foreach (var station in listStationLockBox)
                         {
-                            listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
+                            station.NumberBoxLockPending -= numberBox;
+                            station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
+                            station.ListOrderBox.RemoveAll(x => x.Key == orderCode);
+
+                            listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                            {
+                                StationName = x.StationName,
+                                StationId = x.StationId,
+                                NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
+                            }).ToList();
                         }
-
-                        listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
-                        {
-                            StationName = x.StationName,
-                            StationId = x.StationId,    
-                            NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
-                        }).ToList();
 
                         await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
                         await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
                         break;
 
                     case LockBoxUpdateTypeEnum.Change:
-                        var orderBox = _unitOfWork.Repository<Station>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(stationId))
-                                                                                .Boxes.Where(x => x.IsActive == true
-                                                                                 && x.OrderBoxes.Any(z => z.BoxId == x.Id
-                                                                                 && z.Status != (int)OrderBoxStatusEnum.Picked) == false)
-                                                                        .Take(listLockOrder.Count())
-                                                                        .Select(x => x.Id);
+
+                        var orderBox = listStationLockBox.FirstOrDefault(x => x.StationId == Guid.Parse(stationId)).ListOrderBox.FirstOrDefault(x => x.Key == orderCode).Value;
+
                         listLockOrder.Clear();
                         listLockOrder.AddRange(orderBox);
                         await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrder, listLockOrder);

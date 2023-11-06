@@ -26,12 +26,12 @@ namespace FINE.API.Controllers
         {
             try
             {
-                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
-                if (customerId == null)
-                {
-                    return Unauthorized();
-                }
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                //if (customerId == null)
+                //{
+                //    return Unauthorized();
+                //}
                 var result = await _stationService.GetStationByDestinationForOrder(destinationId, orderCode, numberBox);
                 return Ok(result);
             }
