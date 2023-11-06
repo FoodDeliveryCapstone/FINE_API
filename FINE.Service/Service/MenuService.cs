@@ -6,12 +6,14 @@ using FINE.Service.Attributes;
 using FINE.Service.DTO.Request;
 using FINE.Service.DTO.Request.Destination;
 using FINE.Service.DTO.Request.Menu;
+using FINE.Service.DTO.Request.Station;
 using FINE.Service.DTO.Request.Store;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
+using System.Net.NetworkInformation;
 using static FINE.Service.Helpers.Enum;
 using static FINE.Service.Helpers.ErrorEnum;
 
@@ -22,6 +24,9 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<MenuResponse>> GetMenuById(string menuId);
         Task<BaseResponseViewModel<MenuByTimeSlotResponse>> GetMenuByTimeslot(string customerId, string timeslotId);
+        Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslotForAdmin(string timeslotId, PagingRequest paging);
+        Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request);
+        Task<BaseResponseViewModel<MenuResponse>> UpdateMenu(string menuId, UpdateMenuRequest request);
     }
 
     public class MenuService : IMenuService
@@ -138,6 +143,111 @@ namespace FINE.Service.Service
             catch (Exception ex)
             {
                 throw;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<MenuResponse>> GetMenuByTimeslotForAdmin(string timeslotId, PagingRequest paging)
+        {
+            try
+            {
+                var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(timeslotId));
+                if (checkTimeslot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                       TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var menus = _unitOfWork.Repository<Menu>().GetAll()
+                            .Where(x => x.TimeSlotId == Guid.Parse(timeslotId))
+                            .OrderByDescending(x => x.CreateAt)
+                            .ProjectTo<MenuResponse>(_mapper.ConfigurationProvider)
+                            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<MenuResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = menus.Item1
+                    },
+                    Data = menus.Item2.ToList()
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<MenuResponse>> CreateMenu(CreateMenuRequest request)
+        {
+            try
+            {
+                var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefault(x => x.Id == request.TimeSlotId);
+                if (checkTimeslot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                       TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var menu = _mapper.Map<CreateMenuRequest, Menu>(request);
+
+                menu.Id = Guid.NewGuid();
+                menu.IsActive = true;
+                menu.CreateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Menu>().InsertAsync(menu);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<MenuResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<MenuResponse>(menu)
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<MenuResponse>> UpdateMenu(string menuId, UpdateMenuRequest request)
+        {
+            try
+            {
+                var menu = _unitOfWork.Repository<Menu>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(menuId));
+                if (menu == null)
+                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND,
+                       MenuErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var checkTimeslot = _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefault(x => x.Id == request.TimeSlotId);
+                if (checkTimeslot == null)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.NOT_FOUND,
+                       TimeSlotErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var updateMenu = _mapper.Map<UpdateMenuRequest, Menu>(request, menu);
+
+                updateMenu.UpdateAt = DateTime.Now;
+
+                await _unitOfWork.Repository<Menu>().UpdateDetached(updateMenu);
+                await _unitOfWork.CommitAsync();
+
+                return new BaseResponseViewModel<MenuResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = _mapper.Map<MenuResponse>(updateMenu)
+                };
+            }
+            catch(ErrorResponse ex)
+            {
+                throw ex;
             }
         }
     }
