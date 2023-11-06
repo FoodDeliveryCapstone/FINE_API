@@ -72,7 +72,7 @@ namespace FINE.Service.Service
                     Width = 500,
                     Height = 500
                 };
-                var content = QRCodeRole.User + "." + orderId;
+                var content = (int)QRCodeRole.User + "." + orderId;
 
                 BarcodeWriter writer = new()
                 {
@@ -158,7 +158,7 @@ namespace FINE.Service.Service
                     Height = 500
                 };
 
-                var content = QRCodeRole.Shipper + "." + staffId + "." + timeSlotId;
+                var content = (int)QRCodeRole.Shipper + "." + staffId + "." + timeSlotId;
 
                 BarcodeWriter writer = new()
                 {
