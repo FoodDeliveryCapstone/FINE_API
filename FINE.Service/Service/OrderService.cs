@@ -1536,6 +1536,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region nhả lại số box đã lock
+                var numberBox = listLockOrder.Count();
                 var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
 
                 List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
@@ -1545,14 +1546,22 @@ namespace FINE.Service.Service
                     listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
                 }
 
-                listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                foreach (var station in listStationLockBox)
                 {
-                    StationName = x.StationName,
-                    StationId = x.StationId,
-                    NumberBoxLockPending = x.NumberBoxLockPending - listLockOrder.Count(),
-                }).ToList();
+                    station.NumberBoxLockPending -= numberBox;
+                    station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
+                    station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
 
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                    listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                    {
+                        StationName = x.StationName,
+                        StationId = x.StationId,
+                        NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
+                    }).ToList();
+                }
+
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
                 #endregion
 
                 #region lưu đơn vào tủ

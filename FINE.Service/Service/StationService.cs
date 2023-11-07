@@ -107,6 +107,11 @@ namespace FINE.Service.Service
                 }
                 foreach (var stationLock in listStationLockBox)
                 {
+                    if(stationLock.ListBoxId is null)
+                    {
+                        stationLock.ListBoxId = new List<Guid>();
+                        stationLock.ListOrderBox = new List<KeyValuePair<string, List<Guid>>>();
+                    }
                     //get các station còn available kể cả box lock
                     var stationDb = await listStation.FirstOrDefaultAsync(x => x.Id == stationLock.StationId
                                                 && x.Boxes.Where(x => x.IsActive == true
@@ -123,6 +128,7 @@ namespace FINE.Service.Service
                         stationLock.NumberBoxLockPending += numberBox;
                         stationLock.ListBoxId.AddRange(pickedBox);
                         stationLock.ListOrderBox.Add(new KeyValuePair<string, List<Guid>>(orderCode, pickedBox));
+
                         result.Add(stationFit);
                     }
                 }
