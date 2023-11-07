@@ -70,7 +70,6 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Payment>().InsertAsync(payment);
 
                 await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.PointAccount, point, order.CustomerId, TransactionStatusEnum.Finish);
-                await _unitOfWork.CommitAsync();
             }
             catch (ErrorResponse ex)
             {
