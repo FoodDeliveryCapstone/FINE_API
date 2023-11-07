@@ -558,7 +558,6 @@ namespace FINE.Service.Service
                 order.OrderStatus = (int)OrderStatusEnum.Processing;
 
                 await _unitOfWork.Repository<Order>().UpdateDetached(order);
-                await _unitOfWork.CommitAsync();
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
                 resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
@@ -566,6 +565,11 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
+
+                #region split order + create order box
+                    SplitOrderAndCreateOrderBox(order);
+                #endregion
+                await _unitOfWork.CommitAsync();
 
                 #region Background Job noti
                 NotifyOrderRequestModel notifyRequest = new NotifyOrderRequestModel
@@ -591,13 +595,6 @@ namespace FINE.Service.Service
                     };
 
                 BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
-                #endregion
-                #region split order + create order box
-                try
-                {
-                    SplitOrderAndCreateOrderBox(order);
-                }
-                catch { }
                 #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
