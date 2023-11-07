@@ -160,11 +160,11 @@ public class AdminProductController : Controller
     /// </summary>    
     [Authorize(Roles = "SystemAdmin")]
     [HttpPut("reportProduct/{productId}")]
-    public async Task<ActionResult<BaseResponseViewModel<ProductResponse>>> UpdateProductCannotRepair([FromRoute] string productId, [FromBody] UpdateProductActiveRequest request)
+    public async Task<ActionResult<BaseResponseViewModel<dynamic>>> UpdateProductCannotRepair([FromRoute] string productId, bool isAvailable)
     {
         try
         {
-            return await _productService.UpdateProductCannotRepair(productId, request);
+            return await _productService.UpdateProductCannotRepair(productId, isAvailable);
         }
         catch (ErrorResponse ex)
         {

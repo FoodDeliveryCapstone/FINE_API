@@ -33,7 +33,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<ProductWithoutAttributeResponse>> GetAllProduct(PagingRequest paging);
         Task<BaseResponsePagingViewModel<ReportProductResponse>> GetReportProductCannotPrepare();
         Task<BaseResponseViewModel<ProductResponse>> GetProductByProductAttribute(string productAttributeId);
-        Task<BaseResponseViewModel<ProductResponse>> UpdateProductCannotRepair(string productId, UpdateProductActiveRequest request);
+        Task<BaseResponseViewModel<dynamic>> UpdateProductCannotRepair(string productId, bool IsAvailable);
     }
 
     public class ProductService : IProductService
@@ -342,32 +342,25 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<ProductResponse>> UpdateProductCannotRepair(string productId, UpdateProductActiveRequest request)
+        public async Task<BaseResponseViewModel<dynamic>> UpdateProductCannotRepair(string productId, bool IsAvailable)
         {
             try
             {
-                var getAllProduct = _unitOfWork.Repository<Product>().GetAll();
-                var product = getAllProduct.FirstOrDefault(x => x.Id == Guid.Parse(productId));
-                if (product == null)
-                    throw new ErrorResponse(404, (int)ProductErrorEnums.NOT_FOUND,
-                        ProductErrorEnums.NOT_FOUND.GetDisplayName());
+                var getAllProductAttribute = await _unitOfWork.Repository<ProductAttribute>().GetAll().ToListAsync();
 
-                var updateProduct = _mapper.Map<UpdateProductActiveRequest, Product>(request, product);
-
-                updateProduct.UpdateAt = DateTime.Now;
-                var productAttribute = await _unitOfWork.Repository<ProductAttribute>().GetAll().Where(x => x.ProductId == Guid.Parse(productId)).ToListAsync();
+                var productAttribute = getAllProductAttribute.FirstOrDefault(x => x.Id == Guid.Parse(productId));
+                if(productAttribute == null)
+                    throw new ErrorResponse(404, (int)ProductAttributeErrorEnums.NOT_FOUND,
+                        ProductAttributeErrorEnums.NOT_FOUND.GetDisplayName());
+                var productAttributes = getAllProductAttribute.Where(x => x.ProductId == productAttribute.ProductId);
+                
                 var getAllTimeslot = await _unitOfWork.Repository<TimeSlot>().GetAll().ToListAsync();
                 var getAllProductInMenu = await _unitOfWork.Repository<ProductInMenu>().GetAll().ToListAsync();
-                if (request.IsActive == false)
+                if (IsAvailable == false)
                 {
-                    foreach (var attribute in productAttribute)
+                    foreach (var attribute in productAttributes)
                     {
                         var productsInMenus = getAllProductInMenu.Where(x => x.ProductId == attribute.Id);
-                        if (attribute.IsActive == true)
-                        {
-                            attribute.IsActive = false;
-                            attribute.UpdateAt = DateTime.Now;
-                        }
                         foreach (var productInMenu in productsInMenus)
                         {
                             if (productInMenu.Status == (int)ProductInMenuStatusEnum.Avaliable)
@@ -378,16 +371,11 @@ namespace FINE.Service.Service
                         }
                     }
                 }
-                else if (request.IsActive == true)
+                else if (IsAvailable == true)
                 {
-                    foreach (var attribute in productAttribute)
+                    foreach (var attribute in productAttributes)
                     {
                         var productsInMenus = getAllProductInMenu.Where(x => x.ProductId == attribute.Id);
-                        if (attribute.IsActive == false)
-                        {
-                            attribute.IsActive = true;
-                            attribute.UpdateAt = DateTime.Now;
-                        }
                         foreach (var productInMenu in productsInMenus)
                         {
                             if (productInMenu.Status == (int)ProductInMenuStatusEnum.OutOfStock)
@@ -398,7 +386,7 @@ namespace FINE.Service.Service
                         }
                         foreach (var timeSlot in getAllTimeslot)
                         {
-                            var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + product.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");                           
+                            var keyStaff = RedisDbEnum.Staff.GetDisplayName() + ":" + attribute.Product.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");                           
                             var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyStaff, null);
                             if (redisValue.HasValue == true)
                             {
@@ -416,11 +404,9 @@ namespace FINE.Service.Service
                         }
                     }                
                 }
-
-                await _unitOfWork.Repository<Product>().UpdateDetached(updateProduct);
                 await _unitOfWork.CommitAsync();
 
-                return new BaseResponseViewModel<ProductResponse>()
+                return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -428,7 +414,6 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<ProductResponse>(updateProduct)
                 };
             }
             catch (ErrorResponse ex)
