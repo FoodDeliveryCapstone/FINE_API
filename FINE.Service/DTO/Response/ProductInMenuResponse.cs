@@ -11,6 +11,9 @@ namespace FINE.Service.DTO.Response
     {
         public Guid Id { get; set; }
 
+        public Guid ProductId { get; set; }
+        public string? ProductName { get; set; }
+
         public Guid MenuId { get; set; }
 
         public bool IsActive { get; set; }
@@ -21,6 +24,6 @@ namespace FINE.Service.DTO.Response
 
         public DateTime? UpdatedAt { get; set; }
 
-        public ProductAttributeResponse Product { get; set; }
+        //public ProductAttributeResponse Product { get; set; }
     }
 }
