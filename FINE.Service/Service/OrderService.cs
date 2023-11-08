@@ -486,7 +486,7 @@ namespace FINE.Service.Service
 
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
-                order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
+                order.OrderStatus = (int)OrderStatusEnum.Processing;
 
                 #region Party (if have)
                 if (!request.PartyCode.IsNullOrEmpty())
@@ -550,14 +550,25 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-                await _unitOfWork.Repository<Order>().InsertAsync(order);
-                await _unitOfWork.CommitAsync();
-
                 await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
 
-                order.OrderStatus = (int)OrderStatusEnum.Processing;
+                await _unitOfWork.Repository<Order>().InsertAsync(order);
 
-                await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                #region split order + create order box
+                SplitOrderAndCreateOrderBox(order);
+                #endregion
+
+                var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token;
+
+                NotifyOrderRequestModel notifyRequest = new NotifyOrderRequestModel
+                {
+                    OrderCode = order.OrderCode,
+                    CustomerId = customer.Id,
+                    OrderStatus = (OrderStatusEnum?)order.OrderStatus
+                };
+                var notify = _notifyService.CreateOrderNotify(notifyRequest).Result;
+
+                await _unitOfWork.CommitAsync();
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
                 resultOrder.Customer = _mapper.Map<CustomerOrderResponse>(customer);
@@ -566,23 +577,7 @@ namespace FINE.Service.Service
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
 
-                #region split order + create order box
-                    SplitOrderAndCreateOrderBox(order);
-                #endregion
-                await _unitOfWork.CommitAsync();
-
                 #region Background Job noti
-                NotifyOrderRequestModel notifyRequest = new NotifyOrderRequestModel
-                {
-                    OrderCode = order.OrderCode,
-                    CustomerId = customer.Id,
-                    OrderStatus = (OrderStatusEnum?)order.OrderStatus
-                };
-
-                var notify = _notifyService.CreateOrderNotify(notifyRequest).Result;
-
-                var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token;
-
                 Notification notification = new Notification
                 {
                     Title = Constants.SUC_ORDER_CREATED,
