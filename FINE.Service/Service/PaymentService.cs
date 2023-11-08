@@ -190,7 +190,6 @@ namespace FINE.Service.Service
                             };
                             BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
                         }
-                        _unitOfWork.Commit();
                     }
                 }
                 else if (parties.Count() > 2)
@@ -216,8 +215,6 @@ namespace FINE.Service.Service
                         {
                             { "type", NotifyTypeEnum.ForRefund.ToString()}
                         };
-
-                    _unitOfWork.Commit();
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
                 }
                 return new BaseResponseViewModel<dynamic>()
@@ -255,7 +252,6 @@ namespace FINE.Service.Service
                     { "type", NotifyTypeEnum.ForRefund.ToString()}
                 };
 
-                _unitOfWork.Commit();
                 BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
 
                 return new BaseResponseViewModel<dynamic>()

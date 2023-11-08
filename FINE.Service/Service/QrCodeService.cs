@@ -92,26 +92,19 @@ namespace FINE.Service.Service
         {
             try
             {
-                var orderBoxs = _unitOfWork.Repository<OrderBox>().GetAll()
-                                    .Where(x => x.OrderId == Guid.Parse(orderId)).ToList();
+                var orderBoxs = await _unitOfWork.Repository<OrderBox>().GetAll()
+                                    .Where(x => x.OrderId == Guid.Parse(orderId)).ToListAsync();
+                var order = await _unitOfWork.Repository<Order>().GetAll()
+                                    .FirstOrDefaultAsync(x => x.Id == Guid.Parse(orderId));
+
+                var party = order.Parties.FirstOrDefault(x => x.PartyType == (int)PartyOrderType.LinkedOrder);
+
+                var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
+                                    .FirstOrDefault(x => x.UserId == order.CustomerId).Token;
+
                 if (orderBoxs == null)
                     throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_BOX_ERROR, BoxErrorEnums.ORDER_BOX_ERROR.GetDisplayName());
 
-                foreach (var orderBox in orderBoxs)
-                {
-                    orderBox.Status = (int)OrderBoxStatusEnum.Picked;
-                    orderBox.UpdateAt = DateTime.Now;
-
-                    _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
-                }
-                var order = _unitOfWork.Repository<Order>().GetAll()
-                    .FirstOrDefault(x => x.Id == Guid.Parse(orderId));
-                order.OrderStatus = (int)OrderStatusEnum.Finished;
-                order.UpdateAt = DateTime.Now;
-                _unitOfWork.Repository<Order>().UpdateDetached(order);
-                _unitOfWork.Commit();
-
-                var party = order.Parties.FirstOrDefault(x => x.PartyType == (int)PartyOrderType.LinkedOrder);
                 if (party is not null)
                 {
                     _paymentService.RefundPartialLinkedFee(party.PartyCode, party.CustomerId);
@@ -121,8 +114,19 @@ namespace FINE.Service.Service
                 {
                     _paymentService.RefundRefuseAmount(otherAmount);
                 }
-                var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
-                    .FirstOrDefault(x => x.UserId == order.CustomerId).Token;
+                foreach (var orderBox in orderBoxs)
+                {
+                    orderBox.Status = (int)OrderBoxStatusEnum.Picked;
+                    orderBox.UpdateAt = DateTime.Now;
+
+                    _unitOfWork.Repository<OrderBox>().UpdateDetached(orderBox);
+                }
+
+                order.OrderStatus = (int)OrderStatusEnum.Finished;
+                order.UpdateAt = DateTime.Now;
+
+                _unitOfWork.Repository<Order>().UpdateDetached(order);
+                _unitOfWork.Commit();
 
                 Notification notification = null;
                 Dictionary<string, string> data = new Dictionary<string, string>()
