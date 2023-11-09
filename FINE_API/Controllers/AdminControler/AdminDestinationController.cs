@@ -12,30 +12,30 @@ namespace FINE.API.Controllers
     [ApiController]
     public class AdminDestinationController : ControllerBase
     {
-        private readonly IDestinationService _DestinationService;
+        private readonly IDestinationService _destinationService;
 
-        public AdminDestinationController(IDestinationService DestinationService)
+        public AdminDestinationController(IDestinationService destinationService)
         {
-            _DestinationService = DestinationService;
+            _destinationService = destinationService;
         }
 
-        ///// <summary>
-        ///// Get List Destination
-        ///// </summary>
-        //[Authorize(Roles = "SystemAdmin")]
-        //[HttpGet]
-        //public async Task<ActionResult<BaseResponsePagingViewModel<DestinationResponse>>> GetListDestination([FromQuery] DestinationResponse request, [FromQuery] PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        return await _DestinationService.GetListDestination(request, paging);
+        /// <summary>
+        /// Get List Destination
+        /// </summary>
+        [Authorize(Roles = "SystemAdmin")]
+        [HttpGet]
+        public async Task<ActionResult<BaseResponsePagingViewModel<DestinationResponse>>> GetListDestination([FromQuery] PagingRequest paging)
+        {
+            try
+            {
+                return await _destinationService.GetListDestination(paging);
 
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         /// <summary>
         /// Get Destination By Id
@@ -46,7 +46,7 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return await _DestinationService.GetDestinationById(id);
+                return await _destinationService.GetDestinationById(id);
             }
             catch (ErrorResponse ex)
             {
@@ -63,7 +63,7 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return await _DestinationService.CreateDestination(request);
+                return await _destinationService.CreateDestination(request);
             }
             catch (ErrorResponse ex)
             {
@@ -81,7 +81,7 @@ namespace FINE.API.Controllers
         {
             try
             {
-                return await _DestinationService.UpdateDestination(id, request);
+                return await _destinationService.UpdateDestination(id, request);
             }
             catch (ErrorResponse ex)
             {

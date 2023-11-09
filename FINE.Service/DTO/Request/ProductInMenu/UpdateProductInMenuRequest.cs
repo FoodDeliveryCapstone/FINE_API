@@ -9,9 +9,8 @@ namespace FINE.Service.DTO.Request.ProductInMenu
 {
     public class UpdateProductInMenuRequest
     {
-        public double Price { get; set; }
         public ProductInMenuStatusEnum Status { get; set; }
-        public bool? IsAvailable { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public class UpdateAllProductInMenuStatusRequest

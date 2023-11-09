@@ -93,7 +93,7 @@ namespace FINE.API.Mapper
                 .ForMember(x => x.ImageUrl, opt => opt.MapFrom(dst => dst.Product.ImageUrl));
 
             //CreateMap<AddProductToMenuRequest, ProductInMenu>();
-            //CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
+            CreateMap<UpdateProductInMenuRequest, ProductInMenu>();
             #endregion
 
             #region Product Attribute

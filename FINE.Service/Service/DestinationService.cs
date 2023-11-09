@@ -15,7 +15,7 @@ namespace FINE.Service.Service
 {
     public interface IDestinationService
     {
-        //Task<BaseResponsePagingViewModel<DestinationResponse>> GetListDestination(DestinationResponse request, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<DestinationResponse>> GetListDestination(PagingRequest paging);
         Task<BaseResponseViewModel<DestinationResponse>> GetDestinationById(string id);
         Task<BaseResponseViewModel<DestinationResponse>> CreateDestination(CreateDestinationRequest request);
         Task<BaseResponseViewModel<DestinationResponse>> UpdateDestination(string id, UpdateDestinationRequest request);
@@ -32,33 +32,30 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        //public async Task<BaseResponsePagingViewModel<DestinationResponse>> GetListDestination(DestinationResponse filter,
-        //    PagingRequest paging)
-        //{
-        //    try
-        //    {
-        //        var Destination = _unitOfWork.Repository<Destination>().GetAll()
-        //            .ProjectTo<DestinationResponse>(_mapper.ConfigurationProvider)
-        //            .DynamicFilter(filter)
-        //            .DynamicSort(filter)
-        //            .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+        public async Task<BaseResponsePagingViewModel<DestinationResponse>> GetListDestination(PagingRequest paging)
+        {
+            try
+            {
+                var destination = _unitOfWork.Repository<Destination>().GetAll()
+                    .ProjectTo<DestinationResponse>(_mapper.ConfigurationProvider)
+                    .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-        //        return new BaseResponsePagingViewModel<DestinationResponse>()
-        //        {
-        //            Metadata = new PagingsMetadata()
-        //            {
-        //                Page = paging.Page,
-        //                Size = paging.PageSize,
-        //                Total = Destination.Item1
-        //            },
-        //            Data = Destination.Item2.ToList()
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
+                return new BaseResponsePagingViewModel<DestinationResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = destination.Item1
+                    },
+                    Data = destination.Item2.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
 
         public async Task<BaseResponseViewModel<DestinationResponse>> GetDestinationById(string id)
         {

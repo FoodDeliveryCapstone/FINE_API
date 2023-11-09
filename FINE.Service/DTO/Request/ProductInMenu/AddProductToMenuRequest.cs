@@ -11,13 +11,8 @@ namespace FINE.Service.DTO.Request.ProductInMenu
 {
     public class AddProductToMenuRequest
     {
-        public int? MenuId { get; set; }
+        public Guid? MenuId { get; set; }
 
-        public List<ProductInMenuRequest>? Products { get; set; }
-    }
-    public class ProductInMenuRequest
-    {
-        public int? ProductId { get; set; }
-        public double? Price { get; set; }
+        public List<Guid>? ProductIds { get; set; }
     }
 }
