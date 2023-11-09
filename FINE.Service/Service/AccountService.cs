@@ -101,7 +101,7 @@ namespace FINE.Service.Service
                             account = accounts.FirstOrDefault(x => x.Type == (int)AccountTypeEnum.PointAccount);
                             account.Balance += amount;
                             account.UpdateAt = DateTime.Now;
-                            await _unitOfWork.Repository<Account>().UpdateDetached(account);
+                            _unitOfWork.Repository<Account>().UpdateDetached(account);
                         }
                         else if (accountType.Equals(AccountTypeEnum.CreditAccount))
                         {
@@ -128,8 +128,8 @@ namespace FINE.Service.Service
                                 CreatedAt = DateTime.Now
                             };
 
-                            await _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
-                            await _unitOfWork.Repository<Account>().UpdateDetached(account);
+                            _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
+                            _unitOfWork.Repository<Account>().UpdateDetached(account);
                         }
                         catch (ErrorResponse ex)
                         {
