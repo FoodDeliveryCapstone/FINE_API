@@ -26,6 +26,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
         Task<BaseResponseViewModel<int>> LockBox(string stationId, string orderCode, int numberBox);
         Task<BaseResponseViewModel<dynamic>> UpdateLockBox(LockBoxUpdateTypeEnum type, string orderCode, string? stationId = null);
+        Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestinationForAdmin(string destinationId, PagingRequest paging);
     }
 
     public class StationService : IStationService
@@ -389,6 +390,37 @@ namespace FINE.Service.Service
                         ErrorCode = 0
                     },
                     Data = _mapper.Map<StationResponse>(updateStation)
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestinationForAdmin(string destinationId, PagingRequest paging)
+        {
+            try
+            {
+                var checkDestination = _unitOfWork.Repository<Destination>().GetAll().Any(x => x.Id == Guid.Parse(destinationId));
+                if (checkDestination == false)
+                    throw new ErrorResponse(404, (int)StationErrorEnums.NOT_FOUND,
+                       StationErrorEnums.NOT_FOUND.GetDisplayName());
+
+                var stations = _unitOfWork.Repository<Station>().GetAll()
+                                .Where(x => x.Floor.DestionationId == Guid.Parse(destinationId))
+                                .ProjectTo<StationResponse>(_mapper.ConfigurationProvider)
+                                .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
+
+                return new BaseResponsePagingViewModel<StationResponse>()
+                {
+                    Metadata = new PagingsMetadata()
+                    {
+                        Page = paging.Page,
+                        Size = paging.PageSize,
+                        Total = stations.Item1
+                    },
+                    Data = stations.Item2.ToList()
                 };
             }
             catch (ErrorResponse ex)
