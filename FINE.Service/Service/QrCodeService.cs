@@ -128,7 +128,11 @@ namespace FINE.Service.Service
                 _unitOfWork.Repository<Order>().UpdateDetached(order);
                 _unitOfWork.Commit();
 
-                Notification notification = null;
+                Notification notification = new Notification()
+                {
+                    Title = "",
+                    Body = ""
+                };
                 Dictionary<string, string> data = new Dictionary<string, string>()
                 {
                     { "type", NotifyTypeEnum.ForFinishOrder.ToString()},
