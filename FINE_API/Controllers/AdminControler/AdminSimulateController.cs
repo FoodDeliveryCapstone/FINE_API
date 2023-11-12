@@ -74,11 +74,11 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpPut("status/finishPrepare")]
-        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForStaffResponse>>> SimulateOrderStatusToFinishPrepare([FromBody] SimulateOrderStatusForStaffRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForStaffResponse>>> SimulateOrderStatusToFinishPrepare(string timeslotId)
         {
             try
             {
-                return await _simulateService.SimulateOrderStatusToFinishPrepare(request);
+                return await _simulateService.SimulateOrderStatusToFinishPrepare(timeslotId);
             }
             catch (ErrorResponse ex)
             {
@@ -91,11 +91,11 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpPut("status/delivering")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<SimulateOrderStatusResponse>>> SimulateOrderStatusToDelivering([FromBody] SimulateOrderStatusRequest request)
+        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForShipperResponse>>> SimulateOrderStatusToDelivering(string timeslotId)
         {
             try
             {
-                return await _simulateService.SimulateOrderStatusToDelivering(request);
+                return await _simulateService.SimulateOrderStatusToDelivering(timeslotId);
             }
             catch (ErrorResponse ex)
             {
