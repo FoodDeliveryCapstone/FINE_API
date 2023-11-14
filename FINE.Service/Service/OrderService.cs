@@ -309,6 +309,19 @@ namespace FINE.Service.Service
                     IsConfirm = false,
                     IsPartyMode = false
                 };
+
+                if (!request.PartyCode.IsNullOrEmpty())
+                {
+                    var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + request.PartyCode;
+                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+                    CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                    if (coOrder is null)
+                        throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
+
+                    order.BoxQuantity = (int)Math.Ceiling((double)coOrder.PartyOrder.Select(x => x.ItemQuantity).Sum() / Int32.Parse(_configuration["MaxQuantityInBox"]));
+                }
+                
                 order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
                                             .Where(x => x.Id == Guid.Parse(customerId))
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
