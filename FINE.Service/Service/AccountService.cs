@@ -88,9 +88,9 @@ namespace FINE.Service.Service
             try
             {
                 var transaction = new Transaction();
-                var accounts = await _unitOfWork.Repository<Account>().GetAll()
+                var accounts = _unitOfWork.Repository<Account>().GetAll()
                                                 .Where(x => x.CustomerId == customerId)
-                                                .ToListAsync();
+                                                .ToList();
                 Account account = null;
                 switch (transactionType)
                 {
@@ -163,8 +163,8 @@ namespace FINE.Service.Service
                                 CreatedAt = DateTime.Now
                             };
 
-                            await _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
-                            await _unitOfWork.Repository<Account>().UpdateDetached(account);
+                            _unitOfWork.Repository<Transaction>().InsertAsync(transaction);
+                            _unitOfWork.Repository<Account>().UpdateDetached(account);
                         }
                         catch (ErrorResponse ex)
                         {
