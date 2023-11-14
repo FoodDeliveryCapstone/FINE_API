@@ -125,8 +125,8 @@ namespace FINE.Service.Service
                 order.OrderStatus = (int)OrderStatusEnum.Finished;
                 order.UpdateAt = DateTime.Now;
 
-                _unitOfWork.Repository<Order>().UpdateDetached(order);
-                _unitOfWork.Commit();
+                await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                await _unitOfWork.CommitAsync();
 
                 Notification notification = new Notification()
                 {
