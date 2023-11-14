@@ -55,20 +55,18 @@ namespace FINE.Service.Service
             try
             {
                 var note = $"Thanh toán {order.FinalAmount} VND cho đơn hàng {order.OrderCode}";
-                await _accountService.CreateTransaction(TransactionTypeEnum.Payment, AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId, TransactionStatusEnum.Finish, note);
-
                 var payment = new Payment()
                 {
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     Amount = order.FinalAmount,
                     PaymentType = (int)paymentType,
-                    //Status = (int)PaymentStatusEnum.Finish,
                     CreateAt = DateTime.Now
                 };
 
                 await _unitOfWork.Repository<Payment>().InsertAsync(payment);
 
+                await _accountService.CreateTransaction(TransactionTypeEnum.Payment, AccountTypeEnum.CreditAccount, order.FinalAmount, order.CustomerId, TransactionStatusEnum.Finish, note);
                 await _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.PointAccount, point, order.CustomerId, TransactionStatusEnum.Finish);
             }
             catch (ErrorResponse ex)
@@ -169,8 +167,7 @@ namespace FINE.Service.Service
                             var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == party.CustomerId);
                             var shippingFee = party.Order.OtherAmounts.FirstOrDefault(x => x.Type == (int)OtherAmountTypeEnum.ShippingFee).Amount;
 
-                            var discountRate = Int32.Parse(_configuration["LinkedDiscountRate"]);
-                            var refundFee = shippingFee * discountRate;
+                            var refundFee = shippingFee * (Int32.Parse(_configuration["LinkedDiscountRate"]) / 100);
 
                             party.Status = (int)PartyOrderStatus.FinishRefund;
                             party.UpdateAt = DateTime.Now;
@@ -203,7 +200,7 @@ namespace FINE.Service.Service
                     party.UpdateAt = DateTime.Now;
                     _unitOfWork.Repository<Party>().UpdateDetached(party);
 
-                    var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
+                    var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee.ToString().Substring(0, refundFee.ToString().Length - 3)}K";
                     _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
 
                     Notification notification = new Notification()
@@ -239,7 +236,7 @@ namespace FINE.Service.Service
             {
                 var amount = otherAmount.Select(x => x.Amount).Sum();
                 var order = otherAmount.FirstOrDefault().Order;
-                var note = $"Hoàn {amount} VND cho đơn hàng {order.OrderCode}";
+                var note = $"Hoàn {amount.ToString().Substring(0, amount.ToString().Length - 3)}K cho đơn hàng {order.OrderCode}";
                 _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount,amount, order.CustomerId, TransactionStatusEnum.Finish, note);
                 var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId);
                 Notification notification = new Notification()
