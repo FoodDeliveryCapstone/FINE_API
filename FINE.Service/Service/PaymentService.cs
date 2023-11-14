@@ -162,7 +162,7 @@ namespace FINE.Service.Service
                 var parties = _unitOfWork.Repository<Party>().GetAll().Where(x => x.PartyCode == partyCode).ToList();
                 if (parties.Count() == 2)
                 {
-                    if (parties.Where(x => x.Order.OrderStatus == (int)OrderStatusEnum.Finished).Count() > 1)
+                    if (parties.Where(x => x.Order.OrderStatus == (int)OrderStatusEnum.Finished).Count() == 1)
                     {
                         foreach (var party in parties)
                         {
