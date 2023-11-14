@@ -1595,10 +1595,10 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region Ghi nhận order và cac product trong tủ
-                if (order.IsPartyMode == true && order.Parties.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
-                {
-                    var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
+                var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
 
+                if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
+                {
                     var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + party.PartyCode;
                     var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                     CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
@@ -1640,7 +1640,6 @@ namespace FINE.Service.Service
 
                 //xử lý đơn 
                 HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
-                //List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                 PackageStaffResponse packageStaffResponse;
 
                 //lấy list storeId từ orderdetail
