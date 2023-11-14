@@ -18,6 +18,7 @@ using Hangfire;
 using FirebaseAdmin.Messaging;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
+using Azure.Core;
 
 namespace FINE.Service.Service
 {
@@ -570,7 +571,7 @@ namespace FINE.Service.Service
                 #region split order + create order box
                 try
                 {
-                    SplitOrderAndCreateOrderBox(order);
+                    SplitOrderAndCreateOrderBox(order, request.PartyCode);
                 }
                 catch (Exception ex)
                 {
@@ -1536,7 +1537,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async void SplitOrderAndCreateOrderBox(Order order)
+        public async void SplitOrderAndCreateOrderBox(Order order, string? partyCode = null)
         {
             try
             {
@@ -1615,10 +1616,9 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region Ghi nhận order và cac product trong tủ
-                var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
-
-                if (party is not null && party.PartyType == (int)PartyOrderType.CoOrder)
+                if (!partyCode.IsNullOrEmpty())
                 {
+                    var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.PartyCode == partyCode);
                     var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + party.PartyCode;
                     var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                     CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
@@ -1634,7 +1634,6 @@ namespace FINE.Service.Service
                             Quantity = x.Quantity,
                             IsInBox = false
                         }).ToList();
-                        break;
                     }
                 }
                 else
