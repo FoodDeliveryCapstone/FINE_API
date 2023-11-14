@@ -321,7 +321,7 @@ namespace FINE.Service.Service
 
                     order.BoxQuantity = (int)Math.Ceiling((double)coOrder.PartyOrder.Select(x => x.ItemQuantity).Sum() / Int32.Parse(_configuration["MaxQuantityInBox"]));
                 }
-                
+
                 order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
                                             .Where(x => x.Id == Guid.Parse(customerId))
                                             .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
@@ -1625,19 +1625,16 @@ namespace FINE.Service.Service
 
                     foreach (var partyOrder in coOrder.PartyOrder)
                     {
-                        for (int index = 0; index <= packageOrder.PackageOrderBoxes.Count(); index++)
+                        var item = packageOrder.PackageOrderBoxes.FirstOrDefault(x => x.PackageOrderDetailModels.IsNullOrEmpty());
+                        item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
                         {
-                            var item = packageOrder.PackageOrderBoxes[index];
-                            item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
-                            {
-                                ProductId = x.ProductId,
-                                ProductName = x.ProductName,
-                                ProductInMenuId = x.ProductInMenuId,
-                                Quantity = x.Quantity,
-                                IsInBox = false
-                            }).ToList();
-                            break;
-                        }
+                            ProductId = x.ProductId,
+                            ProductName = x.ProductName,
+                            ProductInMenuId = x.ProductInMenuId,
+                            Quantity = x.Quantity,
+                            IsInBox = false
+                        }).ToList();
+                        break;
                     }
                 }
                 else
