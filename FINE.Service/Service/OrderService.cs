@@ -555,7 +555,14 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
 
                 #region split order + create order box
-                SplitOrderAndCreateOrderBox(order);
+                try
+                {
+                    SplitOrderAndCreateOrderBox(order);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
                 #endregion
 
                 var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == customer.Id).Token;
