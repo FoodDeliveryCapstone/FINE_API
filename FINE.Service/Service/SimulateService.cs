@@ -31,8 +31,8 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToFinish(SimulateOrderStatusRequest request);
-        Task<BaseResponseViewModel<SimulateOrderForStaffResponse>> SimulateOrderStatusToFinishPrepare(SimulateOrderStatusForStaffRequest request);
-        Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToDelivering(SimulateOrderStatusRequest request);
+        Task<BaseResponseViewModel<SimulateOrderForStaffResponse>> SimulateOrderStatusToFinishPrepare(string timeslotId);
+        Task<BaseResponseViewModel<SimulateOrderForShipperResponse>> SimulateOrderStatusToDelivering(string timeslotId);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToBoxStored(SimulateOrderStatusRequest request);
     }
 
@@ -63,7 +63,6 @@ namespace FINE.Service.Service
         {
             try
             {
-
                 #region lấy boxId đã lock
                 var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
 
@@ -76,6 +75,7 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region nhả lại số box đã lock
+                var numberBox = listLockOrder.Count();
                 var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
 
                 List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
@@ -85,14 +85,22 @@ namespace FINE.Service.Service
                     listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
                 }
 
-                listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                foreach (var station in listStationLockBox)
                 {
-                    StationName = x.StationName,
-                    StationId = x.StationId,
-                    NumberBoxLockPending = x.NumberBoxLockPending - listLockOrder.Count(),
-                }).ToList();
+                    station.NumberBoxLockPending -= numberBox;
+                    station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
+                    station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
 
-                ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                    listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                    {
+                        StationName = x.StationName,
+                        StationId = x.StationId,
+                        NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
+                    }).ToList();
+                }
+
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
                 #endregion
 
                 #region lưu đơn vào tủ
@@ -306,9 +314,9 @@ namespace FINE.Service.Service
                 var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrder);
             }
-            catch (ErrorResponse ex)
+            catch (Exception ex)
             {
-                throw ex;
+                throw;
             }
         }
         public async Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request)
@@ -348,7 +356,7 @@ namespace FINE.Service.Service
 
                 order.CustomerId = Guid.Parse(customerId);
                 order.CheckInDate = DateTime.Now;
-                order.OrderStatus = (int)OrderStatusEnum.PaymentPending;
+                order.OrderStatus = (int)OrderStatusEnum.Processing;
 
                 #region Party (if have)
                 if (!request.PartyCode.IsNullOrEmpty())
@@ -412,14 +420,14 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-                await _unitOfWork.Repository<Order>().InsertAsync(order);
-                await _unitOfWork.CommitAsync();
-
                 await _paymentService.CreatePayment(order, request.Point, request.PaymentType);
 
-                order.OrderStatus = (int)OrderStatusEnum.Processing;
+                await _unitOfWork.Repository<Order>().InsertAsync(order);
 
-                await _unitOfWork.Repository<Order>().UpdateDetached(order);
+                #region split order + create order box
+                await SplitOrderAndCreateOrderBox(order);
+                #endregion
+
                 await _unitOfWork.CommitAsync();
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
@@ -428,10 +436,6 @@ namespace FINE.Service.Service
                                                 .Where(x => x.Id == Guid.Parse(request.StationId))
                                                 .ProjectTo<StationOrderResponse>(_mapper.ConfigurationProvider)
                                                 .FirstOrDefault();
-
-                #region split order + create order box
-                await SplitOrderAndCreateOrderBox(order);
-                #endregion
 
                 return new BaseResponseViewModel<OrderResponse>()
                 {
@@ -487,7 +491,7 @@ namespace FINE.Service.Service
                             .GroupBy(x => x.Product)
                             .Select(x => x.Key)
                             .ToListAsync();
-                var station = await _unitOfWork.Repository<Station>().GetAll().ToListAsync();
+                var station = await _unitOfWork.Repository<Station>().GetAll().Where(x => x.IsAvailable == true).ToListAsync();
                 var getAllCustomer = await _unitOfWork.Repository<Customer>().GetAll()
                                             .ToListAsync();
                 getAllCustomer = getAllCustomer.OrderBy(x => rand.Next()).ToList();
@@ -563,6 +567,7 @@ namespace FINE.Service.Service
                                 OtherAmounts = rs.Data.OtherAmounts
                             };
 
+                            var getStationForDestination = await _stationService.GetStationByDestinationForOrder(timeslot.DestinationId.ToString(), rs.Data.OrderCode, 1);
                             var lockBox = await _stationService.LockBox(stationId.ToString(), rs.Data.OrderCode, 1); 
 
                             try
@@ -846,12 +851,12 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<SimulateOrderForStaffResponse>> SimulateOrderStatusToFinishPrepare(SimulateOrderStatusForStaffRequest request)
+        public async Task<BaseResponseViewModel<SimulateOrderForStaffResponse>> SimulateOrderStatusToFinishPrepare(string timeslotId)
         {
             try
             {
                 var getAllStaff = await _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StoreId != null).ToListAsync();
-                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == request.TimeSlotId);
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeslotId));
                 SimulateOrderForStaffResponse response = new SimulateOrderForStaffResponse()
                 {
                     OrderSuccess = new List<SimulateOrderForStaff>(),
@@ -879,13 +884,13 @@ namespace FINE.Service.Service
                                 if (productIdsMissing.Any(x => x == product.ProductId.ToString()))
                                 {
                                     List<string> listProductId = new List<string>
-                                {
-                                    product.ProductId.ToString()
-                                };
+                                    {
+                                        product.ProductId.ToString()
+                                    };
 
                                     var updatePackagePayload = new UpdateProductPackageRequest
                                     {
-                                        TimeSlotId = request.TimeSlotId.ToString(),
+                                        TimeSlotId = timeslotId,
                                         Type = PackageUpdateTypeEnum.Error,
                                         StoreId = staff.StoreId.ToString(),
                                         Quantity = product.PendingQuantity,
@@ -914,13 +919,13 @@ namespace FINE.Service.Service
                                     else
                                     {
                                         List<string> listProductId = new List<string>
-                                    {
-                                        product.ProductId.ToString()
-                                    };
+                                        {
+                                            product.ProductId.ToString()
+                                        };
 
                                         var updatePackagePayload = new UpdateProductPackageRequest
                                         {
-                                            TimeSlotId = request.TimeSlotId.ToString(),
+                                            TimeSlotId = timeslotId,
                                             Type = PackageUpdateTypeEnum.Confirm,
                                             StoreId = staff.StoreId.ToString(),
                                             //Quantity = product.PendingQuantity,
@@ -942,12 +947,22 @@ namespace FINE.Service.Service
                                     }
                                 }
                             }
-                            foreach (var station in getPackage.PackageStations)
+                            //foreach (var station in getPackage.PackageStations)
+                            //{
+                            //    var confirmDelivery = await _packageService.ConfirmReadyToDelivery(staff.Id.ToString(), request.TimeSlotId.ToString(), station.StationId.ToString());
+                            //}
+                        }
+
+                        foreach (var station in getPackage.PackageStations)
+                        {
+                            if (station.IsShipperAssign == false)
                             {
-                                var confirmDelivery = await _packageService.ConfirmReadyToDelivery(staff.Id.ToString(), request.TimeSlotId.ToString(), station.StationId.ToString());
+                                var confirmDelivery = await _packageService.ConfirmReadyToDelivery(staff.Id.ToString(), timeslotId, station.StationId.ToString());
                             }
                         }
+
                     }
+
                 }
 
                 return new BaseResponseViewModel<SimulateOrderForStaffResponse>()
@@ -966,47 +981,79 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToDelivering(SimulateOrderStatusRequest request)
+        public async Task<BaseResponseViewModel<SimulateOrderForShipperResponse>> SimulateOrderStatusToDelivering(string timeslotId)
         {
             try
             {
-                var getAllOrder = await _unitOfWork.Repository<Data.Entity.Order>().GetAll()
-                                        .OrderByDescending(x => x.CheckInDate)
-                                        .Where(x => x.OrderStatus == (int)OrderStatusEnum.FinishPrepare)
-                                        .ToListAsync();
-                getAllOrder = getAllOrder.Take(request.TotalOrder).ToList();
-                var getAllCustomer = await _unitOfWork.Repository<Customer>().GetAll().ToListAsync();
-                List<SimulateOrderStatusResponse> response = new List<SimulateOrderStatusResponse>();
-
-                foreach (var order in getAllOrder)
+                SimulateOrderForShipperResponse response = new SimulateOrderForShipperResponse()
                 {
-                    var payload = new UpdateOrderStatusRequest()
+                    OrderSuccess = new List<SimulateOrderForShipper>(),
+                    OrderFailed = new List<SimulateOrderForShipper>()
+                };
+
+                var getAllStaff = await _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StationId != null).ToListAsync();
+                var timeslot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeslotId));
+
+                foreach (var staff in getAllStaff)
+                {
+                    var key = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeslot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                    var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+
+                    if (redisShipperValue.HasValue == true)
                     {
-                        OrderStatus = OrderStatusEnum.Delivering,
-                    };
+                        PackageShipperResponse packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
 
-                    var updateStatus = await _staffService.UpdateOrderStatus(order.Id.ToString(), payload);
+                        if (packageShipperResponse != null && packageShipperResponse.PackageStoreShipperResponses is not null)
+                        {
+                            foreach (var item in packageShipperResponse.PackageStoreShipperResponses)
+                            {
+                                if (item.IsTaken == false)
+                                {
+                                    try
+                                    {
+                                        var confirmPackage = await _packageService.ConfirmTakenPackage(staff.Id.ToString(), timeslotId, item.StoreId.ToString());
 
-                    var result = new SimulateOrderStatusResponse()
-                    {
-                        OrderCode = order.OrderCode,
-                        ItemQuantity = order.ItemQuantity,
-                        CustomerName = getAllCustomer.FirstOrDefault(x => x.Id == order.CustomerId).Name
-                    };
+                                        var orderSuccess = new SimulateOrderForShipper()
+                                        {
+                                            Message = "Success",
+                                            StoreId = item.StoreId,
+                                            StaffName = staff.Name,
+                                            ProductAndQuantities = _mapper.Map<List<PackStationDetailGroupByProduct>, List<ProductAndQuantity>>
+                                                (item.PackStationDetailGroupByProducts)
+                                        };
+                                        response.OrderSuccess.Add(orderSuccess);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        var orderFail = new SimulateOrderForShipper()
+                                        {
+                                            StoreId = item.StoreId,
+                                            StaffName = staff.Name,
+                                            Message = "Fail to take package",
+                                        };
 
-                    response.Add(result);
+                                        response.OrderFailed.Add(orderFail);
+                                    }
+                                }
+                            }
+
+                        }
+                    }
                 }
 
-                return new BaseResponsePagingViewModel<SimulateOrderStatusResponse>()
+                return new BaseResponseViewModel<SimulateOrderForShipperResponse>()
                 {
-                    Metadata = new PagingsMetadata()
+                    Status = new StatusViewModel()
                     {
-                        Total = response.Count()
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0,
                     },
                     Data = response
                 };
             }
-            catch (ErrorResponse ex)
+            catch (Exception ex)
             {
                 throw ex;
             }

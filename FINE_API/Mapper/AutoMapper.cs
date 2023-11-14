@@ -153,6 +153,11 @@ namespace FINE.API.Mapper
             #region Other Amount
             CreateMap<OtherAmount, RefundTransactionResponse>().ReverseMap();
             #endregion
+
+            #region Simulate
+            CreateMap<PackStationDetailGroupByProduct, ProductAndQuantity>()
+                .ForMember(x => x.Quantity, opt => opt.MapFrom(dst => dst.TotalQuantity));
+            #endregion
         }
     }
 }
