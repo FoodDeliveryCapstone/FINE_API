@@ -1227,6 +1227,138 @@ namespace FINE.Service.Service
             }
         }
 
+        //public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode)
+        //{
+        //    try
+        //    {
+        //        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + partyCode;
+        //        var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+        //        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+        //        if (coOrder is null)
+        //            throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
+
+        //        #region check timeslot
+        //        var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(coOrder.TimeSlot.Id));
+
+        //        if (timeSlot == null || timeSlot.IsActive == false)
+        //            throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
+        //                TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
+
+        //        if (orderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+        //            throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+        //                TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+        //        #endregion
+
+        //        var order = new OrderResponse()
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(4),
+        //            OrderStatus = (int)OrderStatusEnum.PreOrder,
+        //            OrderType = (int)OrderTypeEnum.OrderToday,
+        //            TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
+        //            StationOrder = null,
+        //            IsConfirm = false,
+        //            IsPartyMode = true
+        //        };
+
+        //        var boxQuantity = Math.Ceiling((double)coOrder.PartyOrder.Select(x => x.ItemQuantity).Sum() / Int32.Parse(_configuration["MaxQuantityInBox"]));
+
+        //        order.BoxQuantity = (int)boxQuantity;
+
+        //        order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
+        //                                    .Where(x => x.Id == Guid.Parse(customerId))
+        //                                    .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
+        //                                    .FirstOrDefaultAsync();
+
+        //        order.OrderDetails = new List<OrderDetailResponse>();
+        //        foreach (var customerOrder in coOrder.PartyOrder)
+        //        {
+        //            foreach (var orderDetail in customerOrder.OrderDetails)
+        //            {
+        //                var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
+        //                    .Include(x => x.Menu)
+        //                    .Include(x => x.Product)
+        //                    .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+        //                    .FirstOrDefault();
+
+        //                if (productInMenu == null)
+        //                {
+        //                    throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
+        //                       ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
+        //                }
+        //                else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
+        //                {
+        //                    throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
+        //                       MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
+        //                }
+        //                else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
+        //                {
+        //                    throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+        //                       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+        //                }
+        //                var product = order.OrderDetails.Find(x => x.ProductId == orderDetail.ProductId);
+        //                if (product == null)
+        //                {
+        //                    var detail = new OrderDetailResponse()
+        //                    {
+        //                        Id = Guid.NewGuid(),
+        //                        OrderId = (Guid)order.Id,
+        //                        ProductId = productInMenu.ProductId,
+        //                        ProductInMenuId = productInMenu.Id,
+        //                        StoreId = productInMenu.Product.Product.StoreId,
+        //                        ProductName = productInMenu.Product.Name,
+        //                        ProductCode = productInMenu.Product.Code,
+        //                        UnitPrice = productInMenu.Product.Price,
+        //                        Quantity = orderDetail.Quantity,
+        //                        TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
+        //                    };
+        //                    order.OrderDetails.Add(detail);
+        //                    order.ItemQuantity += detail.Quantity;
+        //                    order.TotalAmount += detail.TotalAmount;
+        //                }
+        //                else
+        //                {
+        //                    product.Quantity += orderDetail.Quantity;
+        //                    product.TotalAmount += orderDetail.TotalAmount;
+
+        //                    order.ItemQuantity += product.Quantity;
+        //                    order.TotalAmount += product.TotalAmount;
+        //                }
+        //            }
+        //        }
+
+        //        var otherAmount = new OrderOtherAmount()
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            OrderId = (Guid)order.Id,
+        //            Amount = 15000,
+        //            Type = (int)OtherAmountTypeEnum.ShippingFee
+        //        };
+        //        order.OtherAmounts = new List<OrderOtherAmount>();
+        //        order.OtherAmounts.Add(otherAmount);
+        //        order.TotalOtherAmount += otherAmount.Amount;
+        //        order.FinalAmount = order.TotalAmount + order.TotalOtherAmount;
+        //        order.Point = (int)(order.FinalAmount / 10000);
+
+        //        return new BaseResponseViewModel<OrderResponse>()
+        //        {
+        //            Status = new StatusViewModel()
+        //            {
+        //                Message = "Success",
+        //                Success = true,
+        //                ErrorCode = 0
+        //            },
+        //            Data = order
+        //        };
+        //    }
+        //    catch (ErrorResponse ex)
+        //    {
+        //        throw ex;
+        //    }
+
+        //}
+
         public async Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode)
         {
             try
@@ -1238,40 +1370,11 @@ namespace FINE.Service.Service
                 if (coOrder is null)
                     throw new ErrorResponse(400, (int)OrderErrorEnums.NOT_FOUND_COORDER, OrderErrorEnums.NOT_FOUND_COORDER.GetDisplayName());
 
-                #region check timeslot
-                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(coOrder.TimeSlot.Id));
-
-                if (timeSlot == null || timeSlot.IsActive == false)
-                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
-                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
-
-                if (orderType is OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
-                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
-                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
-                #endregion
-
                 var order = new OrderResponse()
                 {
-                    Id = Guid.NewGuid(),
-                    OrderCode = DateTime.Now.ToString("ddMMyy_HHmm") + "-" + Utils.GenerateRandomCode(4),
-                    OrderStatus = (int)OrderStatusEnum.PreOrder,
-                    OrderType = (int)OrderTypeEnum.OrderToday,
-                    TimeSlot = _mapper.Map<TimeSlotOrderResponse>(timeSlot),
-                    StationOrder = null,
-                    IsConfirm = false,
-                    IsPartyMode = true
+                    OrderDetails = new List<OrderDetailResponse>()
                 };
 
-                var boxQuantity = Math.Ceiling((double)coOrder.PartyOrder.Select(x => x.ItemQuantity).Sum() / Int32.Parse(_configuration["MaxQuantityInBox"]));
-
-                order.BoxQuantity = (int)boxQuantity;
-
-                order.Customer = await _unitOfWork.Repository<Customer>().GetAll()
-                                            .Where(x => x.Id == Guid.Parse(customerId))
-                                            .ProjectTo<CustomerOrderResponse>(_mapper.ConfigurationProvider)
-                                            .FirstOrDefaultAsync();
-
-                order.OrderDetails = new List<OrderDetailResponse>();
                 foreach (var customerOrder in coOrder.PartyOrder)
                 {
                     foreach (var orderDetail in customerOrder.OrderDetails)
@@ -1279,7 +1382,7 @@ namespace FINE.Service.Service
                         var productInMenu = _unitOfWork.Repository<ProductInMenu>().GetAll()
                             .Include(x => x.Menu)
                             .Include(x => x.Product)
-                            .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == timeSlot.Id)
+                            .Where(x => x.ProductId == orderDetail.ProductId && x.Menu.TimeSlotId == Guid.Parse(coOrder.TimeSlot.Id))
                             .FirstOrDefault();
 
                         if (productInMenu == null)
@@ -1287,23 +1390,12 @@ namespace FINE.Service.Service
                             throw new ErrorResponse(404, (int)ProductInMenuErrorEnums.NOT_FOUND,
                                ProductInMenuErrorEnums.NOT_FOUND.GetDisplayName());
                         }
-                        else if (timeSlot.Menus.FirstOrDefault(x => x.Id == productInMenu.MenuId) == null)
-                        {
-                            throw new ErrorResponse(404, (int)MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT,
-                               MenuErrorEnums.NOT_FOUND_MENU_IN_TIMESLOT.GetDisplayName());
-                        }
-                        else if (productInMenu.IsActive == false || productInMenu.Status != (int)ProductInMenuStatusEnum.Avaliable)
-                        {
-                            throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                               ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
-                        }
+
                         var product = order.OrderDetails.Find(x => x.ProductId == orderDetail.ProductId);
                         if (product == null)
                         {
                             var detail = new OrderDetailResponse()
                             {
-                                Id = Guid.NewGuid(),
-                                OrderId = (Guid)order.Id,
                                 ProductId = productInMenu.ProductId,
                                 ProductInMenuId = productInMenu.Id,
                                 StoreId = productInMenu.Product.Product.StoreId,
@@ -1313,34 +1405,14 @@ namespace FINE.Service.Service
                                 Quantity = orderDetail.Quantity,
                                 TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
                             };
-                            order.OrderDetails.Add(detail);
-                            order.ItemQuantity += detail.Quantity;
-                            order.TotalAmount += detail.TotalAmount;
                         }
                         else
                         {
                             product.Quantity += orderDetail.Quantity;
                             product.TotalAmount += orderDetail.TotalAmount;
-
-                            order.ItemQuantity += product.Quantity;
-                            order.TotalAmount += product.TotalAmount;
                         }
                     }
                 }
-
-                var otherAmount = new OrderOtherAmount()
-                {
-                    Id = Guid.NewGuid(),
-                    OrderId = (Guid)order.Id,
-                    Amount = 15000,
-                    Type = (int)OtherAmountTypeEnum.ShippingFee
-                };
-                order.OtherAmounts = new List<OrderOtherAmount>();
-                order.OtherAmounts.Add(otherAmount);
-                order.TotalOtherAmount += otherAmount.Amount;
-                order.FinalAmount = order.TotalAmount + order.TotalOtherAmount;
-                order.Point = (int)(order.FinalAmount / 10000);
-
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()
@@ -1356,7 +1428,6 @@ namespace FINE.Service.Service
             {
                 throw ex;
             }
-
         }
 
         public async Task<BaseResponseViewModel<CoOrderResponse>> DeletePartyOrder(string customerId, PartyOrderType type, string partyCode, string memberId = null)
