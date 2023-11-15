@@ -1623,35 +1623,6 @@ namespace FINE.Service.Service
                 }
                 #endregion
 
-                #region nhả lại số box đã lock
-                var numberBox = listLockOrder.Count();
-                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
-
-                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
-                var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
-                if (redisStationValue.HasValue == true)
-                {
-                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
-                }
-
-                foreach (var station in listStationLockBox)
-                {
-                    station.NumberBoxLockPending -= numberBox;
-                    station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
-                    station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
-
-                    listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
-                    {
-                        StationName = x.StationName,
-                        StationId = x.StationId,
-                        NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
-                    }).ToList();
-                }
-
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
-                #endregion
-
                 #region lưu đơn vào tủ
                 //mỗi order có 1 package order riêng
                 PackageOrderResponse packageOrder = new PackageOrderResponse()
@@ -1853,9 +1824,40 @@ namespace FINE.Service.Service
                     }
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaffResponse);
                 }
+
+                #region nhả lại số box đã lock
+                var numberBox = listLockOrder.Count();
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
+
+                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                if (redisStationValue.HasValue == true)
+                {
+                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
+                }
+
+                foreach (var station in listStationLockBox)
+                {
+                    station.NumberBoxLockPending -= numberBox;
+                    station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
+                    station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
+
+                    listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                    {
+                        StationName = x.StationName,
+                        StationId = x.StationId,
+                        NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
+                    }).ToList();
+                }
+
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
+                #endregion
+
                 _unitOfWork.Commit();
                 var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrder);
+
             }
             catch (Exception ex)
             {
