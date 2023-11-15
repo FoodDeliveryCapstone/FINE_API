@@ -339,7 +339,7 @@ namespace FINE.Service.Service
                     var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                     PackageOrderResponse packageOrder = JsonConvert.DeserializeObject<PackageOrderResponse>(orderValue);
 
-                    packageShipper.PackStationDetailGroupByBoxes = packageOrder.PackageOrderBoxes.Select(x => new PackStationDetailGroupByBox()
+                    packageShipper.PackStationDetailGroupByBoxes.AddRange(packageOrder.PackageOrderBoxes.Select(x => new PackStationDetailGroupByBox()
                     {
                         BoxId = x.BoxId,
                         BoxCode = x.BoxCode,
@@ -350,7 +350,7 @@ namespace FINE.Service.Service
                             ProductName = x.ProductName,
                             Quantity = x.Quantity
                         }).ToList()
-                    }).ToList();
+                    }).ToList());
                 }
 
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyShipper, packageShipper);
