@@ -225,13 +225,6 @@ namespace FINE.Service.Service
                             station.NumberBoxLockPending -= numberBox;
                             station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
                             station.ListOrderBox.RemoveAll(x => x.Key == orderCode);
-
-                            listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
-                            {
-                                StationName = x.StationName,
-                                StationId = x.StationId,
-                                NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
-                            }).ToList();
                         }
 
                         await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
