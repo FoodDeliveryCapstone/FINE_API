@@ -18,6 +18,7 @@ namespace FINE.Service.Service
 {
     public interface IPackageService
     {
+        Task<BaseResponseViewModel<List<PackStationDetailGroupByBox>>> GetListBoxGroupByProduct(string staffId, string timeSlotId, string productId);
         Task<BaseResponseViewModel<PackageStaffResponse>> GetPackage(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<List<PackageStationResponse>>> GetPackageGroupByStation(string staffId, string timeSlotId);
         Task<BaseResponseViewModel<PackageShipperResponse>> GetPackageForShipper(string staffId, string timeSlotId);
@@ -343,7 +344,6 @@ namespace FINE.Service.Service
                     {
                         BoxId = x.BoxId,
                         BoxCode = x.BoxCode,
-                        IsInBox = false,
                         ListProduct = x.PackageOrderDetailModels.Select(x => new PackageDetailResponse()
                         {
                             ProductId = x.ProductId,
@@ -435,6 +435,60 @@ namespace FINE.Service.Service
                         ErrorCode = 0
                     },
                     Data = packageShipperResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public async Task<BaseResponseViewModel<List<PackStationDetailGroupByBox>>> GetListBoxGroupByProduct(string staffId, string timeSlotId, string productId)
+        {
+            try
+            {
+                var result = new List<PackStationDetailGroupByBox>();
+                PackageShipperResponse packageShipperResponse = new PackageShipperResponse();
+
+                var staff = await _unitOfWork.Repository<Staff>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(staffId));
+
+                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll()
+                                        .FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeSlotId));
+
+                var product = await _unitOfWork.Repository<ProductAttribute>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(productId));
+
+                var key = RedisDbEnum.Shipper.GetDisplayName() + ":" + staff.Station.Code + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redisShipperValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+
+                if (redisShipperValue.HasValue == true)
+                {
+                    packageShipperResponse = JsonConvert.DeserializeObject<PackageShipperResponse>(redisShipperValue);
+                }
+                var packProduct = packageShipperResponse.PackageStoreShipperResponses.FirstOrDefault(x => x.StoreId == product.Product.StoreId
+                                                                                                        && x.IsTaken == true && x.IsInBox == false);
+                var packBox = packageShipperResponse.PackStationDetailGroupByBoxes.Where(x => x.ListProduct.Any(x => x.ProductId == product.Id));
+
+                foreach (var id in packProduct.ListOrderId)
+                {
+                    var listOrderBox = await _unitOfWork.Repository<OrderBox>().GetAll().Where(x => x.OrderId == id.Key).ToListAsync();
+                    result = packBox.Where(x => listOrderBox.Select(x => x.BoxId).Contains(x.BoxId)).Select(x => new PackStationDetailGroupByBox
+                    {
+                        BoxId = x.BoxId,
+                        BoxCode = x.BoxCode,
+                        ListProduct = x.ListProduct.Where(y => y.ProductId == product.Id).ToList(),
+                    }).ToList();
+                }
+
+                return new BaseResponseViewModel<List<PackStationDetailGroupByBox>>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
                 };
             }
             catch (Exception ex)
@@ -595,12 +649,12 @@ namespace FINE.Service.Service
                                     readyPack.Quantity += numberConfirmStation;
                                 }
                                 var findBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productRequest))).ToList();
-                                readyPack.BoxProducts = findBox.Select(x => new BoxProduct()
+                                readyPack.BoxProducts.AddRange(findBox.Select(x => new BoxProduct()
                                 {
                                     BoxId = x.BoxId,
                                     BoxCode = x.BoxCode,
                                     Quantity = order.QuantityOfProduct - order.ErrorQuantity
-                                }).ToList();
+                                }).ToList());
                                 #endregion
                             }
                             // những giá trị cập nhật sau cuối
@@ -804,12 +858,12 @@ namespace FINE.Service.Service
                                 readyPack.Quantity += numberUpdateAtStation;
                             }
                             var findBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productRequestId))).ToList();
-                            readyPack.BoxProducts = findBox.Select(x => new BoxProduct()
+                            readyPack.BoxProducts.AddRange(findBox.Select(x => new BoxProduct()
                             {
                                 BoxId = x.BoxId,
                                 BoxCode = x.BoxCode,
                                 Quantity = order.QuantityOfProduct - order.ErrorQuantity
-                            }).ToList();
+                            }).ToList());
                             #endregion
                         }
                         productTotalPack.WaitingQuantity = numberOfConfirm;
