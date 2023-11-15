@@ -1394,7 +1394,7 @@ namespace FINE.Service.Service
                         var product = order.OrderDetails.Find(x => x.ProductId == orderDetail.ProductId);
                         if (product == null)
                         {
-                            var detail = new OrderDetailResponse()
+                            order.OrderDetails.Add(new OrderDetailResponse()
                             {
                                 ProductId = productInMenu.ProductId,
                                 ProductInMenuId = productInMenu.Id,
@@ -1404,7 +1404,7 @@ namespace FINE.Service.Service
                                 UnitPrice = productInMenu.Product.Price,
                                 Quantity = orderDetail.Quantity,
                                 TotalAmount = (double)(productInMenu.Product.Price * orderDetail.Quantity)
-                            };
+                            });
                         }
                         else
                         {
