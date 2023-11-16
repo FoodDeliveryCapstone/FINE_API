@@ -138,7 +138,7 @@ namespace FINE.API.Controllers.StaffControllers
                 {
                     return Unauthorized();
                 }
-                //var staffId = "5E67163F-80BE-4AF5-AD71-980388987695";
+
                 return await _packageService.ConfirmReadyToDelivery(staffId, timeslotId ,stationId);
             }
             catch (ErrorResponse ex)
@@ -197,8 +197,11 @@ namespace FINE.API.Controllers.StaffControllers
             }
         }
 
+        /// <summary>
+        /// Cập nhật product đã hết hàng
+        /// </summary>
         [HttpPut("reportProductCannotRepair")]
-        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ConfirmAllInBox(string timeslotId, string productId, SystemRoleTypeEnum memType)
+        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ReportProductCannotRepair(string timeslotId, string productId, SystemRoleTypeEnum memType)
         {
             try
             {
