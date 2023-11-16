@@ -80,14 +80,14 @@ namespace FINE.API.Controllers.StaffControllers
         {
             try
             {
-                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                //var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
 
-                //if (staffId == null)
-                //{
-                //    return Unauthorized();
-                //}
-                var staffId = "35C5D5EA-44A6-4A7C-8602-A5324FD89A6C";
+                if (staffId == null)
+                {
+                    return Unauthorized();
+                }
+                //var staffId = "35C5D5EA-44A6-4A7C-8602-A5324FD89A6C";
 
                 return await _packageService.GetListBoxGroupByProduct(staffId, timeSlotId, productId);
             }
