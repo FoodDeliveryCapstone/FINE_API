@@ -19,6 +19,7 @@ using FirebaseAdmin.Messaging;
 using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using Azure.Core;
+using log4net;
 
 namespace FINE.Service.Service
 {
@@ -51,6 +52,8 @@ namespace FINE.Service.Service
         private readonly IConfiguration _configuration;
         private readonly INotifyService _notifyService;
         private readonly IFirebaseMessagingService _fm;
+
+        private static readonly ILog log = LogManager.GetLogger(typeof(OrderService));
 
         public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IPaymentService paymentService, INotifyService notifyService, IFirebaseMessagingService fm, IBoxService boxService)
         {
@@ -1613,10 +1616,10 @@ namespace FINE.Service.Service
             try
             {
                 #region lấy boxId đã lock
-                var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
+                var keyOrderBox = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
 
                 List<Guid> listLockOrder = new List<Guid>();
-                var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrderBox, null);
                 if (redisLockValue.HasValue == true)
                 {
                     listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
@@ -1851,7 +1854,7 @@ namespace FINE.Service.Service
                 }
 
                 await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrderBox, null);
                 #endregion
 
                 _unitOfWork.Commit();
@@ -1861,7 +1864,7 @@ namespace FINE.Service.Service
             }
             catch (Exception ex)
             {
-                throw;
+                log.Error("An error occurred", ex);
             }
         }
 

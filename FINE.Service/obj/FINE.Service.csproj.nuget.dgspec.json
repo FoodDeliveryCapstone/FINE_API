@@ -88,7 +88,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.203\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.403\\RuntimeIdentifierGraph.json"
         }
       }
     },
@@ -144,6 +144,10 @@
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
               "version": "[12.0.1, )"
+            },
+            "EPPlus": {
+              "target": "Package",
+              "version": "[7.0.0, )"
             },
             "FirebaseAdmin": {
               "target": "Package",
@@ -242,6 +246,10 @@
             "ZXing.Net.Bindings.Windows.Compatibility": {
               "target": "Package",
               "version": "[0.16.12, )"
+            },
+            "log4net": {
+              "target": "Package",
+              "version": "[2.0.15, )"
             }
           },
           "imports": [
@@ -260,7 +268,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.203\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.403\\RuntimeIdentifierGraph.json"
         }
       }
     }

@@ -90,7 +90,6 @@ namespace FINE.Service.DTO.Response
     {
         public Guid BoxId { get; set; }
         public string BoxCode { get; set; }
-        public bool IsInBox { get; set; }
         public List<PackageDetailResponse> ListProduct { get; set; }
     }
     public class PackageStoreShipperResponse
