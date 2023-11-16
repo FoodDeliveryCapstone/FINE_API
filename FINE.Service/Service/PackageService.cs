@@ -653,7 +653,7 @@ namespace FINE.Service.Service
                                 {
                                     BoxId = x.BoxId,
                                     BoxCode = x.BoxCode,
-                                    Quantity = order.QuantityOfProduct - order.ErrorQuantity
+                                    Quantity = numberConfirmStation
                                 }).ToList());
                                 #endregion
                             }
