@@ -326,7 +326,6 @@ namespace FINE.Service.Service
                         ProductId = pack.ProductId,
                         ProductName = pack.ProductName,
                         TotalQuantity = pack.Quantity,
-                        BoxProducts = pack.BoxProducts
                     });
                 }
                 #endregion
@@ -652,8 +651,7 @@ namespace FINE.Service.Service
                                 readyPack.BoxProducts.AddRange(findBox.Select(x => new BoxProduct()
                                 {
                                     BoxId = x.BoxId,
-                                    BoxCode = x.BoxCode,
-                                    Quantity = numberConfirmStation
+                                    BoxCode = x.BoxCode
                                 }).ToList());
                                 #endregion
                             }
@@ -861,8 +859,7 @@ namespace FINE.Service.Service
                             readyPack.BoxProducts.AddRange(findBox.Select(x => new BoxProduct()
                             {
                                 BoxId = x.BoxId,
-                                BoxCode = x.BoxCode,
-                                Quantity = order.QuantityOfProduct - order.ErrorQuantity
+                                BoxCode = x.BoxCode
                             }).ToList());
                             #endregion
                         }

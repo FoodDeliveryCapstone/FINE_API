@@ -73,6 +73,31 @@ namespace FINE.API.Controllers.StaffControllers
         }
 
         /// <summary>
+        /// Lấy list box group lại theo product (dành cho shipper)
+        /// </summary>
+        [HttpGet("listBox")]
+        public async Task<ActionResult<BaseResponseViewModel<List<PackStationDetailGroupByBox>>>> GetListBoxGroupByProduct(string timeSlotId, string productId)
+        {
+            try
+            {
+                //var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                //var staffId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                //if (staffId == null)
+                //{
+                //    return Unauthorized();
+                //}
+                var staffId = "35C5D5EA-44A6-4A7C-8602-A5324FD89A6C";
+
+                return await _packageService.GetListBoxGroupByProduct(staffId, timeSlotId, productId);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Lấy package theo store và timeSlot và group lại theo station (dành cho staff)
         /// </summary>
         //[Authorize(Roles = "StoreManager")]
