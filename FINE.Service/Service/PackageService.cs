@@ -11,6 +11,7 @@ using FINE.Service.Utilities;
 using FirebaseAdmin.Messaging;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using static FINE.Service.Helpers.Enum;
 
@@ -62,7 +63,7 @@ namespace FINE.Service.Service
                 var listOrder = packageStaff.ProductTotalDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId))
                                             .ProductDetails.Where(x => x.ErrorQuantity > 0).OrderByDescending(x => x.CheckInDate);
 
-                var productDb = _unitOfWork.Repository<ProductAttribute>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(productId));
+                var productDb = await _unitOfWork.Repository<ProductAttribute>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(productId));
 
                 var errorNum = productError.Quantity;
                 foreach (var errorOrder in listOrder)
@@ -78,6 +79,8 @@ namespace FINE.Service.Service
 
                     var orderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
                     PackageOrderResponse packageOrder = JsonConvert.DeserializeObject<PackageOrderResponse>(orderValue);
+
+                    var party = _unitOfWork.Repository<Party>().GetAll().Where(x => x.PartyCode == packageOrder.PartyCode).ToList();
 
                     if (errorNum >= errorOrder.ErrorQuantity)
                     {
@@ -104,6 +107,7 @@ namespace FINE.Service.Service
                         _unitOfWork.Repository<Order>().UpdateDetached(order);
                     }
                     var numberError = quantityErrorInOrder;
+                    var numberErrorOrder = 0;
                     var orderBox = packageOrder.PackageOrderBoxes.Where(x => x.PackageOrderDetailModels.Any(x => x.ProductId == Guid.Parse(productId))).ToList();
 
                     foreach (var box in orderBox)
@@ -113,11 +117,13 @@ namespace FINE.Service.Service
                         if (productInBox.Quantity < numberError)
                         {
                             numberError -= productInBox.Quantity;
+                            numberErrorOrder += productInBox.Quantity;
                             box.PackageOrderDetailModels.Remove(productInBox);
                         }
                         else
                         {
                             productInBox.Quantity -= numberError;
+                            numberErrorOrder += numberError;
                             numberError = 0;
                         }
                     }
@@ -134,22 +140,62 @@ namespace FINE.Service.Service
                             packStation.ListPackageMissing.Remove(packMissing);
                         }
                     }
-
                     var refundAmount = productDb.Price * quantityErrorInOrder;
 
                     Notification notification = new Notification
                     {
                         Title = Constants.REPORT_ERROR_PACK,
-                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại {refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K vào ví của bạn sau khi đơn hàng hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
+                        //Body = 
+                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại " +
+                                                        $"{refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K vào ví của bạn sau khi đơn hàng " +
+                                                        $"hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
                     };
-
                     var data = new Dictionary<string, string>()
                     {
                         { "type", NotifyTypeEnum.ForRefund.ToString()},
                         { "orderId", order.Id.ToString() }
                     };
-
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+
+                    if (!party.IsNullOrEmpty())
+                    {
+                        party.OrderByDescending(x => x.CreateAt);
+
+                        var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + packageOrder.PartyCode;
+                        var redisCoOrderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
+
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+
+                        foreach (var member in party)
+                        {
+                            var partyOrder = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == member.CustomerId && x.OrderDetails.Any(x => x.ProductId == Guid.Parse(productId)));
+                            if (partyOrder is not null)
+                            {
+                                var memberToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == partyOrder.Customer.Id).Token;
+                                if (numberErrorOrder == 0) break;
+                                var productInParty = partyOrder.OrderDetails.FirstOrDefault(x => x.ProductId == Guid.Parse(productId));
+                                if (productInParty.Quantity < numberErrorOrder)
+                                {
+                                    numberErrorOrder -= productInParty.Quantity;
+                                }
+                                else
+                                {
+                                    productInParty.Quantity -= numberErrorOrder;
+                                    numberErrorOrder = 0;
+                                }
+
+                                Notification notificationMember = new Notification
+                                {
+                                    Title = Constants.REPORT_ERROR_PACK,
+                                    //Body = 
+                                    Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại " +
+                                                        $"{refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K vào ví của chủ phòng sau khi đơn hàng " +
+                                                        $"hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
+                                };
+                                BackgroundJob.Enqueue(() => _fm.SendToToken(memberToken, notificationMember, data));
+                            }
+                        }
+                    }
 
                     var otherAmount = new OtherAmount()
                     {

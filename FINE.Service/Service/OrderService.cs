@@ -562,6 +562,7 @@ namespace FINE.Service.Service
                             checkJoin.UpdateAt = DateTime.Now;
                             await _unitOfWork.Repository<Party>().UpdateDetached(checkJoin);
                         }
+                        request.PartyCode = null;
                     }
                     order.IsPartyMode = true;
                 }
@@ -1632,7 +1633,7 @@ namespace FINE.Service.Service
                 {
                     TotalConfirm = 0,
                     NumberHasConfirm = 0,
-                    NumberCannotConfirm = 0,
+                    NumberCannotConfirm = 0, 
                     PackageOrderBoxes = new List<PackageOrderBoxModel>()
                 };
                 HashSet<KeyValuePair<Guid, string>> listBox = new HashSet<KeyValuePair<Guid, string>>();
@@ -1663,6 +1664,7 @@ namespace FINE.Service.Service
                 #region Ghi nhận order và cac product trong tủ
                 if (!partyCode.IsNullOrEmpty())
                 {
+                    packageOrder.PartyCode = partyCode;
                     var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.PartyCode == partyCode);
                     var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + party.PartyCode;
                     var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
