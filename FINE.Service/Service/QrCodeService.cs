@@ -102,8 +102,11 @@ namespace FINE.Service.Service
                 var token = _unitOfWork.Repository<Fcmtoken>().GetAll()
                                     .FirstOrDefault(x => x.UserId == order.CustomerId).Token;
 
-                if (orderBoxs == null)
+                if (orderBoxs.IsNullOrEmpty() || order is null)
                     throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_BOX_ERROR, BoxErrorEnums.ORDER_BOX_ERROR.GetDisplayName());
+                if (order.OrderStatus >= (int)OrderStatusEnum.Finished)
+                    throw new ErrorResponse(400, (int)BoxErrorEnums.ORDER_TAKEN, BoxErrorEnums.ORDER_TAKEN.GetDisplayName());
+
 
                 if (party is not null)
                 {

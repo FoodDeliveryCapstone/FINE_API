@@ -142,20 +142,11 @@ namespace FINE.Service.Service
                     }
                     var refundAmount = productDb.Price * quantityErrorInOrder;
 
-                    Notification notification = new Notification
-                    {
-                        Title = Constants.REPORT_ERROR_PACK,
-                        //Body = 
-                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại " +
-                                                        $"{refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K vào ví của bạn sau khi đơn hàng " +
-                                                        $"hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
-                    };
                     var data = new Dictionary<string, string>()
                     {
                         { "type", NotifyTypeEnum.ForRefund.ToString()},
                         { "orderId", order.Id.ToString() }
                     };
-                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
 
                     if (!party.IsNullOrEmpty())
                     {
@@ -196,6 +187,17 @@ namespace FINE.Service.Service
                             }
                         }
                     }
+
+                    Notification notification = new Notification
+                    {
+                        Title = Constants.REPORT_ERROR_PACK,
+                        //Body = 
+                        Body = String.Format($"Có {quantityErrorInOrder} {productError.ProductName} đã hết hàng.{Environment.NewLine} Hệ thống sẽ hoàn lại " +
+                                                      $"{refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K vào ví của bạn sau khi đơn hàng " +
+                                                      $"hoàn tất nhé!{Environment.NewLine} Cảm ơn bạn đã thông cảm cho FINE!")
+                    };
+                  
+                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
 
                     var otherAmount = new OtherAmount()
                     {
