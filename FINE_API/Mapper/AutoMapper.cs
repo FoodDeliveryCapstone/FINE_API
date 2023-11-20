@@ -32,7 +32,7 @@ namespace FINE.API.Mapper
 
             #region TimeSlot
 
-            CreateMap<TimeSlot, TimeslotResponse>().ReverseMap();
+            CreateMap<TimeSlot, ListTimeslotResponse>().ReverseMap();
             CreateMap<CreateTimeslotRequest, TimeSlot>()
                 .ForMember(x => x.ArriveTime, opt => opt.Ignore())
                 .ForMember(x => x.CheckoutTime, opt => opt.Ignore())

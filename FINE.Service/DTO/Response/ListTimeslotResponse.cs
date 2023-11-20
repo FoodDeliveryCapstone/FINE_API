@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FINE.Service.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,11 +7,15 @@ using System.Threading.Tasks;
 
 namespace FINE.Service.DTO.Response
 {
-    public class TimeslotResponse
+    public class TimeSlotResponse
+    {
+        public CubeModel BoxSize { get; set; }
+        public int MaxQuantityInBox { get; set; }
+        public List<ListTimeslotResponse> ListTimeslotResponse { get; set; }
+    }
+    public class ListTimeslotResponse
     {
         public Guid Id { get; set; }
-
-        public Guid DestinationId { get; set; }
 
         public TimeSpan CloseTime { get; set; }
 

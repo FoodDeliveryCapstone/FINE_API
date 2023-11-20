@@ -25,12 +25,12 @@ namespace FINE.API.Controllers
         /// </summary>
         [Cache(18000)]
         [HttpGet("destination/{destinationId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslotsByDestination
-            ([FromRoute] string destinationId, [FromQuery] PagingRequest paging)
+        public async Task<ActionResult<BaseResponseViewModel<TimeSlotResponse>>> GetTimeslotsByDestination
+            ([FromRoute] string destinationId)
         {
             try
             {
-                var rs = await _timeslotService.GetTimeslotsByDestination(destinationId, paging);
+                var rs = await _timeslotService.UserGetListTimeslot(destinationId);
                 if (rs == null)
                 {
                     return NotFound();

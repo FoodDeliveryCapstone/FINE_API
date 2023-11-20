@@ -8,8 +8,10 @@ using FINE.Service.DTO.Request.Staff;
 using FINE.Service.DTO.Request.TimeSlot;
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
+using FINE.Service.Helpers;
 using FINE.Service.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,24 +24,27 @@ namespace FINE.Service.Service
 {
     public interface ITimeslotService
     {
-        Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeslotsByDestination(string destinationId, PagingRequest paging);
+        Task<BaseResponsePagingViewModel<ListTimeslotResponse>> GetTimeslotsByDestination(string destinationId, PagingRequest paging);
+        Task<BaseResponseViewModel<TimeSlotResponse>> UserGetListTimeslot(string destinationId);
         Task<BaseResponseViewModel<List<ProductResponse>>> GetProductsInTimeSlot(string timeSlotId);
-        Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request);
-        Task<BaseResponseViewModel<TimeslotResponse>> UpdateTimeslot(string timeslotId, UpdateTimeslotRequest request);
+        Task<BaseResponseViewModel<ListTimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request);
+        Task<BaseResponseViewModel<ListTimeslotResponse>> UpdateTimeslot(string timeslotId, UpdateTimeslotRequest request);
     }
 
     public class TimeslotService : ITimeslotService
     {
         private IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IConfiguration _configuration;
 
-        public TimeslotService(IMapper mapper, IUnitOfWork unitOfWork)
+        public TimeslotService(IMapper mapper, IUnitOfWork unitOfWork, IConfiguration configuration)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _configuration = configuration;
         }
 
-        public async Task<BaseResponsePagingViewModel<TimeslotResponse>> GetTimeslotsByDestination(string destinationId, PagingRequest paging)
+        public async Task<BaseResponsePagingViewModel<ListTimeslotResponse>> GetTimeslotsByDestination(string destinationId, PagingRequest paging)
         {
             try
             {
@@ -52,10 +57,10 @@ namespace FINE.Service.Service
                 var timeslot = _unitOfWork.Repository<TimeSlot>().GetAll()
                                          .Where(x => x.DestinationId == destination.Id && x.IsActive == true)
                                          .OrderBy(x => x.ArriveTime)
-                                         .ProjectTo<TimeslotResponse>(_mapper.ConfigurationProvider)
+                                         .ProjectTo<ListTimeslotResponse>(_mapper.ConfigurationProvider)
                                          .PagingQueryable(paging.Page, paging.PageSize, Constants.LimitPaging, Constants.DefaultPaging);
 
-                return new BaseResponsePagingViewModel<TimeslotResponse>()
+                return new BaseResponsePagingViewModel<ListTimeslotResponse>()
                 {
                     Metadata = new PagingsMetadata()
                     {
@@ -72,6 +77,52 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<TimeSlotResponse>> UserGetListTimeslot(string destinationId)
+        {
+            try
+            {
+                var boxSize = new CubeModel()
+                {
+                    Height = double.Parse(_configuration.GetSection("BoxSize:Height").Value.ToString()),
+                    Width = double.Parse(_configuration.GetSection("BoxSize:Width").Value.ToString()),
+                    Length = double.Parse(_configuration.GetSection("BoxSize:Depth").Value.ToString())
+                };
+                var result = new TimeSlotResponse()
+                {
+                    BoxSize = boxSize,
+                    MaxQuantityInBox = Int32.Parse(_configuration["MaxQuantityInBox"])
+                };
+
+                var destination = await _unitOfWork.Repository<Destination>().GetAll()
+                              .FirstOrDefaultAsync(x => x.Id == Guid.Parse(destinationId));
+
+                if (destination == null)
+                    throw new ErrorResponse(404, (int)DestinationErrorEnums.NOT_FOUND,
+                        DestinationErrorEnums.NOT_FOUND.GetDisplayName());
+
+                result.ListTimeslotResponse = _unitOfWork.Repository<TimeSlot>().GetAll()
+                                                         .Where(x => x.DestinationId == destination.Id && x.IsActive == true)
+                                                         .OrderBy(x => x.ArriveTime)
+                                                         .ProjectTo<ListTimeslotResponse>(_mapper.ConfigurationProvider)
+                                                         .ToList();
+
+                return new BaseResponseViewModel<TimeSlotResponse>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
+
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
         public async Task<BaseResponseViewModel<List<ProductResponse>>> GetProductsInTimeSlot(string timeSlotId)
         {
             try
@@ -101,7 +152,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<TimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request)
+        public async Task<BaseResponseViewModel<ListTimeslotResponse>> CreateTimeslot(CreateTimeslotRequest request)
         {
             try
             {
@@ -124,7 +175,7 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<TimeSlot>().InsertAsync(timeslot);
                 await _unitOfWork.CommitAsync();
 
-                return new BaseResponseViewModel<TimeslotResponse>()
+                return new BaseResponseViewModel<ListTimeslotResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -132,7 +183,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<TimeslotResponse>(timeslot)
+                    Data = _mapper.Map<ListTimeslotResponse>(timeslot)
                 };
             }
             catch (ErrorResponse ex)
@@ -141,7 +192,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<TimeslotResponse>> UpdateTimeslot(string timeslotId, UpdateTimeslotRequest request)
+        public async Task<BaseResponseViewModel<ListTimeslotResponse>> UpdateTimeslot(string timeslotId, UpdateTimeslotRequest request)
         {
             try
             {
@@ -159,7 +210,7 @@ namespace FINE.Service.Service
 
                 await _unitOfWork.Repository<TimeSlot>().UpdateDetached(timeslot);
                 await _unitOfWork.CommitAsync();
-                return new BaseResponseViewModel<TimeslotResponse>()
+                return new BaseResponseViewModel<ListTimeslotResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -167,10 +218,10 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
-                    Data = _mapper.Map<TimeslotResponse>(timeslot)
+                    Data = _mapper.Map<ListTimeslotResponse>(timeslot)
                 };
             }
-            catch(ErrorResponse ex)
+            catch (ErrorResponse ex)
             {
                 throw ex;
             }

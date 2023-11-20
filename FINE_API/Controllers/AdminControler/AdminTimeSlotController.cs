@@ -24,7 +24,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager, Shipper")]
         [HttpGet("destination/{destinationId}")]
-        public async Task<ActionResult<BaseResponsePagingViewModel<TimeslotResponse>>> GetTimeslotsByDestination
+        public async Task<ActionResult<BaseResponsePagingViewModel<ListTimeslotResponse>>> GetTimeslotsByDestination
             ([FromRoute] string destinationId, [FromQuery] PagingRequest paging)
         {
             try
@@ -69,7 +69,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> CreateTimeslot
+        public async Task<ActionResult<BaseResponseViewModel<ListTimeslotResponse>>> CreateTimeslot
             ([FromBody] CreateTimeslotRequest request)
         {
             return await _timeslotService.CreateTimeslot(request);
@@ -80,7 +80,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin")]
         [HttpPut("{timeslotId}")]
-        public async Task<ActionResult<BaseResponseViewModel<TimeslotResponse>>> UpdateTimeslot
+        public async Task<ActionResult<BaseResponseViewModel<ListTimeslotResponse>>> UpdateTimeslot
             ([FromRoute] string timeslotId, [FromBody] UpdateTimeslotRequest request)
 
         {
