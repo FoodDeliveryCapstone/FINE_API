@@ -151,7 +151,8 @@ namespace FINE.Service.Helpers
         public enum TransactionTypeEnum
         {
             Recharge = 1,
-            Payment = 2
+            Payment = 2,
+            Refund = 3
         }
 
         public enum NotifyTypeEnum

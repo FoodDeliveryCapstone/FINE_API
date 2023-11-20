@@ -94,7 +94,7 @@ namespace FINE.Service.Service
                 Account account = null;
                 switch (transactionType)
                 {
-                    case TransactionTypeEnum.Recharge:
+                    case TransactionTypeEnum.Recharge: case TransactionTypeEnum.Refund:
 
                         if (accountType.Equals(AccountTypeEnum.PointAccount))
                         {

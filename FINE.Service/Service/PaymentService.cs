@@ -174,7 +174,7 @@ namespace FINE.Service.Service
                             _unitOfWork.Repository<Party>().UpdateDetached(party);
 
                             var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee} VND";
-                            _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+                            _accountService.CreateTransaction(TransactionTypeEnum.Refund, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
 
                             Notification notification = new Notification()
                             {
@@ -201,7 +201,7 @@ namespace FINE.Service.Service
                     _unitOfWork.Repository<Party>().UpdateDetached(party);
 
                     var note = $"Hoàn phí áp dụng mã liên kết {party.PartyCode}: {refundFee.ToString().Substring(0, refundFee.ToString().Length - 3)}K";
-                    _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
+                    _accountService.CreateTransaction(TransactionTypeEnum.Refund, AccountTypeEnum.CreditAccount, refundFee, party.CustomerId, TransactionStatusEnum.Finish, note);
 
                     Notification notification = new Notification()
                     {
@@ -237,7 +237,9 @@ namespace FINE.Service.Service
                 var amount = otherAmount.Select(x => x.Amount).Sum();
                 var order = otherAmount.FirstOrDefault().Order;
                 var note = $"Hoàn {amount.ToString().Substring(0, amount.ToString().Length - 3)}K cho đơn hàng {order.OrderCode}";
-                _accountService.CreateTransaction(TransactionTypeEnum.Recharge, AccountTypeEnum.CreditAccount,amount, order.CustomerId, TransactionStatusEnum.Finish, note);
+
+                _accountService.CreateTransaction(TransactionTypeEnum.Refund, AccountTypeEnum.CreditAccount,amount, order.CustomerId, TransactionStatusEnum.Finish, note);
+
                 var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId);
                 Notification notification = new Notification()
                 {
