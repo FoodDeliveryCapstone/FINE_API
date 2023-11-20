@@ -17,6 +17,11 @@ namespace FINE.Service.DTO.Response
 
     }
 
+    public class AddProductToCardResponseV2
+    {
+        public List<ProductRecommend> ProductsRecommend { get; set; }
+    }
+
     public class ProductInCardResponse
     {
         public Guid Id { get; set; }

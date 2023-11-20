@@ -312,6 +312,32 @@ namespace FINE.API.Controllers
         }
 
         /// <summary>
+        /// Add product into card V2
+        /// </summary>
+        [HttpPost("cardV2")]
+        public async Task<ActionResult<BaseResponseViewModel<AddProductToCardResponseV2>>> AddProductIntoCardV2([FromBody] AddProductToCardRequestV2 request)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                //var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
+
+                return Ok(await _orderService.AddProductToCardV2(customerId, request));
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
         /// Confirm CoOrder
         /// </summary>
         [HttpPut("coOrder/confirmation")]

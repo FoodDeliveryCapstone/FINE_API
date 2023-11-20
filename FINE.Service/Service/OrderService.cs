@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using Azure.Core;
 using log4net;
+using ZXing;
 
 namespace FINE.Service.Service
 {
@@ -37,6 +38,7 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<CoOrderResponse>> OpenParty(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string timeSlotId, string partyCode);
         Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string customerId, AddProductToCardRequest request);
+        Task<BaseResponseViewModel<AddProductToCardResponseV2>> AddProductToCardV2(string customerId, AddProductToCardRequestV2 request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
@@ -1087,6 +1089,95 @@ namespace FINE.Service.Service
             }
         }
 
+        public async Task<BaseResponseViewModel<AddProductToCardResponseV2>> AddProductToCardV2(string customerId, AddProductToCardRequestV2 request)
+        {
+            try
+            {
+                #region check timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id ==Guid.Parse( request.TimeSlotId));
+
+                if (timeSlot == null || timeSlot.IsActive == false)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
+                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
+
+                if (request.OrderType == OrderTypeEnum.OrderToday && !Utils.CheckTimeSlot(timeSlot))
+                    throw new ErrorResponse(400, (int)TimeSlotErrorEnums.OUT_OF_TIMESLOT,
+                        TimeSlotErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                #endregion
+
+                var result = new AddProductToCardResponseV2();
+                var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.CustomerId == Guid.Parse(customerId)
+                                            && x.OrderStatus > (int)OrderStatusEnum.PaymentPending
+                                            && x.OrderStatus < (int)OrderStatusEnum.Finished
+                                            && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                        .ToListAsync();
+                if (customerOrder.Count() >= 2)
+                {
+                    var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
+
+                    Notification notification = new Notification
+                    {
+                        Title = Constants.OUT_OF_LIMIT_ORDER,
+                        Body = String.Format("Bạn chỉ 2 lượt đặt đơn trong cùng 1 khung giờ, vui lòng chờ các đơn bạn đã đặt được giao tới nhé!!!")
+                    };
+
+                    var data = new Dictionary<string, string>()
+                    {
+                        { "type", NotifyTypeEnum.ForPopup.ToString()}
+                    };
+
+                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
+                                            OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
+                }
+                var productRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                            .Include(x => x.Product)
+                                                            .Where(x => x.ProductId == Guid.Parse(request.ProductId)
+                                                                && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                            .GroupBy(x => x.Product)
+                                                            .AsQueryable();
+                if (productRequest.IsNullOrEmpty())
+                    throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+
+                var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                      .Include(x => x.Menu)
+                                                      .Include(x => x.Product)
+                                                      .Where(x => x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                      .Select(x => x.Product)
+                                                      .AsQueryable();
+
+                result.ProductsRecommend = await products.Where(x => x.Height <= request.RemainingLengthSpace.Height
+                                                             && x.Width <= request.RemainingLengthSpace.Width
+                                                             && x.Length <= request.RemainingLengthSpace.Length)
+                                                            .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                            .ToListAsync();
+
+                var listRecommendWidth = await products.Where(x => x.Height <= request.RemainingWidthSpace.Height
+                                                             && x.Width <= request.RemainingWidthSpace.Width
+                                                             && x.Length <= request.RemainingWidthSpace.Length)
+                                                            .ProjectTo<ProductRecommend>(_mapper.ConfigurationProvider)
+                                                            .ToListAsync();
+                result.ProductsRecommend.AddRange(listRecommendWidth);
+
+                return new BaseResponseViewModel<AddProductToCardResponseV2>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = result
+                };
+            }
+            catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
         public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request)
         {
             try
@@ -1633,7 +1724,7 @@ namespace FINE.Service.Service
                 {
                     TotalConfirm = 0,
                     NumberHasConfirm = 0,
-                    NumberCannotConfirm = 0, 
+                    NumberCannotConfirm = 0,
                     PackageOrderBoxes = new List<PackageOrderBoxModel>()
                 };
                 HashSet<KeyValuePair<Guid, string>> listBox = new HashSet<KeyValuePair<Guid, string>>();
