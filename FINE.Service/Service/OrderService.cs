@@ -914,37 +914,43 @@ namespace FINE.Service.Service
         {
             try
             {
+                #region check timeslot
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(request.TimeSlotId));
+
+                if (timeSlot == null || timeSlot.IsActive == false)
+                    throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
+                        TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE.GetDisplayName());
+                #endregion
+
                 var result = new AddProductToCardResponse();
                 //check xem customer đã hết lượt đặt đơn hay chưa
-                if (!request.TimeSlotId.Contains("E8D529D4-6A51-4FDB-B9DB-E29F54C0486E"))
+                var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
+                                        .Where(x => x.CustomerId == Guid.Parse(customerId)
+                                            && x.OrderStatus > (int)OrderStatusEnum.PaymentPending
+                                            && x.OrderStatus < (int)OrderStatusEnum.Finished
+                                            && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                        .ToListAsync();
+                if (customerOrder.Count() >= 2)
                 {
-                    var customerOrder = await _unitOfWork.Repository<Order>().GetAll()
-                                            .Where(x => x.CustomerId == Guid.Parse(customerId)
-                                                && x.OrderStatus > (int)OrderStatusEnum.PaymentPending
-                                                && x.OrderStatus < (int)OrderStatusEnum.Finished
-                                                && x.TimeSlotId == Guid.Parse(request.TimeSlotId))
-                                            .ToListAsync();
-                    if (customerOrder.Count() >= 2)
+                    var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
+
+                    Notification notification = new Notification
                     {
-                        var customerToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == Guid.Parse(customerId)).Token;
+                        Title = Constants.OUT_OF_LIMIT_ORDER,
+                        Body = String.Format("Bạn chỉ 2 lượt đặt đơn trong cùng 1 khung giờ, vui lòng chờ các đơn bạn đã đặt được giao tới nhé!!!")
+                    };
 
-                        Notification notification = new Notification
-                        {
-                            Title = Constants.OUT_OF_LIMIT_ORDER,
-                            Body = String.Format("Bạn chỉ 2 lượt đặt đơn trong cùng 1 khung giờ, vui lòng chờ các đơn bạn đã đặt được giao tới nhé!!!")
-                        };
-
-                        var data = new Dictionary<string, string>()
+                    var data = new Dictionary<string, string>()
                     {
                         { "type", NotifyTypeEnum.ForPopup.ToString()}
                     };
 
-                        BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
+                    BackgroundJob.Enqueue(() => _fm.SendToToken(customerToken, notification, data));
 
-                        throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
-                                                OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
-                    }
+                    throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
+                                            OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
                 }
+
                 var maxQuantity = Int32.Parse(_configuration["MaxQuantityInBox"]);
 
                 if (request.Card.Select(x => x.Quantity).Sum() + request.Quantity >= maxQuantity)
@@ -1013,6 +1019,7 @@ namespace FINE.Service.Service
                         Product = productRequest,
                         Quantity = request.Quantity
                     };
+
                     listProductInCard.Add(productWillAdd);
 
                     var addToBoxResult = ServiceHelpers.CheckProductFixTheBox(listProductInCard, productRequest, request.Quantity);
@@ -1094,7 +1101,7 @@ namespace FINE.Service.Service
             try
             {
                 #region check timeslot
-                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id ==Guid.Parse( request.TimeSlotId));
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().Find(x => x.Id == Guid.Parse(request.TimeSlotId));
 
                 if (timeSlot == null || timeSlot.IsActive == false)
                     throw new ErrorResponse(404, (int)TimeSlotErrorEnums.TIMESLOT_UNAVAILIABLE,
@@ -1178,6 +1185,7 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
+
         public async Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request)
         {
             try

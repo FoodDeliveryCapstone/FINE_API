@@ -162,6 +162,7 @@ namespace FINE.Service.Helpers
                                 VolumeLengthOccupied = calculateCardResult.VolumeLengthOccupied,
                                 VolumeWidthOccupied = calculateCardResult.VolumeWidthOccupied
                             };
+                            //product null trong trường hợp client giảm hay bỏ product ra khỏi card
                             if (product is not null)
                             {
                                 if (item.Product.Id == product.Id)
@@ -280,7 +281,7 @@ namespace FINE.Service.Helpers
         }
 
         //qui định: giả định đặt sp vào vị trí phải trên cùng của hộp
-        //luồn : ưu tiên RemainingWidthSpace
+        //luồng : ưu tiên RemainingWidthSpace
         //RemainingLengthSpace : khoảng trống bên trái sp (cắt dọc xuống)
         //RemainingWidthSpace : khoảng trống bên dưới sp (cắt ngang qua)
         public static SpaceInBoxMode CalculateRemainingSpace(CubeModel box, SpaceInBoxMode space, CubeModel productOccupied)
