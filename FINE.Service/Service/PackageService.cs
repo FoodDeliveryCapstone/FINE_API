@@ -155,11 +155,11 @@ namespace FINE.Service.Service
                         var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + packageOrder.PartyCode;
                         var redisCoOrderValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
 
-                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
+                        CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisCoOrderValue);
 
                         foreach (var member in party)
                         {
-                            var partyOrder = coOrder.PartyOrder.FirstOrDefault(x => x.Customer.Id == member.CustomerId && x.OrderDetails.Any(x => x.ProductId == Guid.Parse(productId)));
+                            var partyOrder = coOrder.PartyOrder.Find(x => x.Customer.Id == member.CustomerId && x.OrderDetails.Any(x => x.ProductId == Guid.Parse(productId)));
                             if (partyOrder is not null)
                             {
                                 var memberToken = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == partyOrder.Customer.Id).Token;
