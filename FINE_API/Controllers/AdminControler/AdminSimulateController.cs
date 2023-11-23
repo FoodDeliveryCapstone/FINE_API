@@ -74,7 +74,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpPut("status/finishPrepare")]
-        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForStaffResponse>>> SimulateOrderStatusToFinishPrepare(string timeslotId)
+        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>>> SimulateOrderStatusToFinishPrepare(string timeslotId)
         {
             try
             {
@@ -91,7 +91,7 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>
         [Authorize(Roles = "SystemAdmin, StoreManager")]
         [HttpPut("status/delivering")]
-        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForShipperResponse>>> SimulateOrderStatusToDelivering(string timeslotId)
+        public async Task<ActionResult<BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>>> SimulateOrderStatusToDelivering(string timeslotId)
         {
             try
             {

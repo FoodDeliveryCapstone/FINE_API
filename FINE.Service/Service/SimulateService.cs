@@ -31,8 +31,8 @@ namespace FINE.Service.Service
     {
         Task<BaseResponseViewModel<SimulateResponse>> SimulateOrder(SimulateRequest request);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToFinish(SimulateOrderStatusRequest request);
-        Task<BaseResponseViewModel<SimulateOrderForStaffResponse>> SimulateOrderStatusToFinishPrepare(string timeslotId);
-        Task<BaseResponseViewModel<SimulateOrderForShipperResponse>> SimulateOrderStatusToDelivering(string timeslotId);
+        Task<BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>> SimulateOrderStatusToFinishPrepare(string timeslotId);
+        Task<BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>> SimulateOrderStatusToDelivering(string timeslotId);
         Task<BaseResponsePagingViewModel<SimulateOrderStatusResponse>> SimulateOrderStatusToBoxStored(SimulateOrderStatusRequest request);
     }
 
@@ -59,48 +59,19 @@ namespace FINE.Service.Service
             _stationService = stationService;
         }
         #region Simulate CreateOrder
-        public async Task SplitOrderAndCreateOrderBox(Order order)
+        public async Task SplitOrderAndCreateOrderBox(Order order, string? partyCode = null)
         {
             try
             {
                 #region lấy boxId đã lock
-                var keyOrder = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
+                var keyOrderBox = RedisDbEnum.Box.GetDisplayName() + ":Order:" + order.OrderCode;
 
                 List<Guid> listLockOrder = new List<Guid>();
-                var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrder, null);
+                var redisLockValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyOrderBox, null);
                 if (redisLockValue.HasValue == true)
                 {
                     listLockOrder = JsonConvert.DeserializeObject<List<Guid>>(redisLockValue);
                 }
-                #endregion
-
-                #region nhả lại số box đã lock
-                var numberBox = listLockOrder.Count();
-                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
-
-                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
-                var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
-                if (redisStationValue.HasValue == true)
-                {
-                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
-                }
-
-                foreach (var station in listStationLockBox)
-                {
-                    station.NumberBoxLockPending -= numberBox;
-                    station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
-                    station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
-
-                    listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
-                    {
-                        StationName = x.StationName,
-                        StationId = x.StationId,
-                        NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
-                    }).ToList();
-                }
-
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
-                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrder, null);
                 #endregion
 
                 #region lưu đơn vào tủ
@@ -138,29 +109,25 @@ namespace FINE.Service.Service
                 #endregion
 
                 #region Ghi nhận order và cac product trong tủ
-                if (order.IsPartyMode == true && order.Parties.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
+                if (!partyCode.IsNullOrEmpty())
                 {
-                    var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.OrderId == order.Id);
-
+                    packageOrder.PartyCode = partyCode;
+                    var party = _unitOfWork.Repository<Party>().GetAll().FirstOrDefault(x => x.PartyCode == partyCode);
                     var keyCoOrder = RedisDbEnum.CoOrder.GetDisplayName() + ":" + party.PartyCode;
                     var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyCoOrder, null);
                     CoOrderResponse coOrder = JsonConvert.DeserializeObject<CoOrderResponse>(redisValue);
 
                     foreach (var partyOrder in coOrder.PartyOrder)
                     {
-                        for (int index = 0; index <= packageOrder.PackageOrderBoxes.Count(); index++)
+                        var item = packageOrder.PackageOrderBoxes.FirstOrDefault(x => x.PackageOrderDetailModels.IsNullOrEmpty());
+                        item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
                         {
-                            var item = packageOrder.PackageOrderBoxes[index];
-                            item.PackageOrderDetailModels = partyOrder.OrderDetails.Select(x => new PackageOrderDetailModel
-                            {
-                                ProductId = x.ProductId,
-                                ProductName = x.ProductName,
-                                ProductInMenuId = x.ProductInMenuId,
-                                Quantity = x.Quantity,
-                                IsInBox = false
-                            }).ToList();
-                            break;
-                        }
+                            ProductId = x.ProductId,
+                            ProductName = x.ProductName,
+                            ProductInMenuId = x.ProductInMenuId,
+                            Quantity = x.Quantity,
+                            IsInBox = false
+                        }).ToList();
                     }
                 }
                 else
@@ -183,7 +150,6 @@ namespace FINE.Service.Service
 
                 //xử lý đơn 
                 HashSet<KeyValuePair<Guid, string>> listStoreId = new HashSet<KeyValuePair<Guid, string>>();
-                //List<PackageOrderDetailModel> packageOrderDetails = new List<PackageOrderDetailModel>();
                 PackageStaffResponse packageStaffResponse;
 
                 //lấy list storeId từ orderdetail
@@ -310,13 +276,44 @@ namespace FINE.Service.Service
                     }
                     ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyStaff, packageStaffResponse);
                 }
+
+                #region nhả lại số box đã lock
+                var numberBox = listLockOrder.Count();
+                var key = RedisDbEnum.Box.GetDisplayName() + ":Station";
+
+                List<LockBoxinStationModel> listStationLockBox = new List<LockBoxinStationModel>();
+                var redisStationValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
+                if (redisStationValue.HasValue == true)
+                {
+                    listStationLockBox = JsonConvert.DeserializeObject<List<LockBoxinStationModel>>(redisStationValue);
+                }
+
+                foreach (var station in listStationLockBox)
+                {
+                    station.NumberBoxLockPending -= numberBox;
+                    station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
+                    station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
+
+                    listStationLockBox = listStationLockBox.Select(x => new LockBoxinStationModel
+                    {
+                        StationName = x.StationName,
+                        StationId = x.StationId,
+                        NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
+                    }).ToList();
+                }
+
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, key, listStationLockBox);
+                await ServiceHelpers.GetSetDataRedis(RedisSetUpType.DELETE, keyOrderBox, null);
+                #endregion
+
                 _unitOfWork.Commit();
                 var keyOrderPack = RedisDbEnum.OrderOperation.GetDisplayName() + ":" + order.OrderCode;
                 ServiceHelpers.GetSetDataRedis(RedisSetUpType.SET, keyOrderPack, packageOrder);
+
             }
             catch (Exception ex)
             {
-                throw;
+                throw ex;
             }
         }
         public async Task<BaseResponseViewModel<OrderResponse>> CreateOrderForSimulate(string customerId, CreateOrderRequest request)
@@ -415,6 +412,7 @@ namespace FINE.Service.Service
                             checkJoin.UpdateAt = DateTime.Now;
                             await _unitOfWork.Repository<Party>().UpdateDetached(checkJoin);
                         }
+                        request.PartyCode = null;
                     }
                     order.IsPartyMode = true;
                 }
@@ -425,9 +423,16 @@ namespace FINE.Service.Service
                 await _unitOfWork.Repository<Order>().InsertAsync(order);
 
                 #region split order + create order box
-                await SplitOrderAndCreateOrderBox(order);
+                try
+                {
+                    await SplitOrderAndCreateOrderBox(order, request.PartyCode);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
                 #endregion
-
+              
                 await _unitOfWork.CommitAsync();
 
                 var resultOrder = _mapper.Map<OrderResponse>(order);
@@ -513,8 +518,8 @@ namespace FINE.Service.Service
                             TimeSlotId = Guid.Parse(request.TimeSlotId),
                         };
 
-                        int numberProductTake = rand.Next(1, 4);
-                        int randomQuantity = rand.Next(1, 4);
+                        int numberProductTake = rand.Next(1, 3);
+                        int randomQuantity = rand.Next(1, 3);
                         var randomProduct = productInMenu.OrderBy(x => rand.Next());
                         payload.OrderDetails = randomProduct
                             .Take(numberProductTake)
@@ -568,11 +573,12 @@ namespace FINE.Service.Service
                             };
 
                             var getStationForDestination = await _stationService.GetStationByDestinationForOrder(timeslot.DestinationId.ToString(), rs.Data.OrderCode, 1);
-                            var lockBox = await _stationService.LockBox(stationId.ToString(), rs.Data.OrderCode, 1); 
+                            var lockBox = await _stationService.LockBox(stationId.ToString(), rs.Data.OrderCode, 1);                            
 
                             try
                             {
                                 var result = await CreateOrderForSimulate(customer.Id.ToString(), payloadCreateOrder);
+                                //var updateLockBox = await _stationService.UpdateLockBox(LockBoxUpdateTypeEnum.Delete, rs.Data.OrderCode, null);
                                 //var result = _orderService.CreateOrder("4873582B-52AF-4D9E-96D0-0C461018CF81", payloadCreateOrder).Result.Data;
                                 var orderSuccess = new OrderSimulateResponse
                                 {
@@ -851,121 +857,204 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<SimulateOrderForStaffResponse>> SimulateOrderStatusToFinishPrepare(string timeslotId)
+        public async Task<BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>> SimulateOrderStatusToFinishPrepare(string timeslotId)
         {
             try
             {
-                var getAllStaff = await _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StoreId != null).ToListAsync();
-                var timeSlot = await _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefaultAsync(x => x.Id == Guid.Parse(timeslotId));
-                SimulateOrderForStaffResponse response = new SimulateOrderForStaffResponse()
+                //var getAllStaff = _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StoreId != null).ToList();
+                var timeSlot = _unitOfWork.Repository<TimeSlot>().GetAll().FirstOrDefault(x => x.Id == Guid.Parse(timeslotId));
+                SimulateOrderForStaffAndShipperResponse response = new SimulateOrderForStaffAndShipperResponse()
                 {
-                    OrderSuccess = new List<SimulateOrderForStaff>(),
-                    OrderFailed = new List<SimulateOrderForStaff>()
+                    OrderSuccess = new List<SimulateOrderForStaffAndShipper>(),
+                    OrderFailed = new List<SimulateOrderForStaffAndShipper>()
                 };
-                foreach (var staff in getAllStaff)
+                List<SimulateOrderForStaff> success = new List<SimulateOrderForStaff>();
+                List<string> listProductPassioId = new List<string>();
+                List<string> listProduct711Id = new List<string>();
+                List<string> listProductLahaId = new List<string>();
+                #region Passio
+                var keyPassio = RedisDbEnum.Staff.GetDisplayName() + ":" + "Passio" + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redisPassioValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyPassio, null);
+                if (redisPassioValue.HasValue == true)
                 {
-                    var key = RedisDbEnum.Staff.GetDisplayName() + ":" + staff.Store.StoreName + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+                    PackageStaffResponse getPassioPackage = JsonConvert.DeserializeObject<PackageStaffResponse>(redisPassioValue);
 
-                    var redisValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key, null);
-                    if (redisValue.HasValue == true)
+                    if (getPassioPackage.TotalProductPending != 0)
                     {
-                        PackageStaffResponse getPackage = JsonConvert.DeserializeObject<PackageStaffResponse>(redisValue);
-
-                        if (getPackage.TotalProductPending != 0)
+                        foreach (var product in getPassioPackage.ProductTotalDetails)
                         {
-                            //lấy ds sản phẩm bị thiếu
-                            string jsonFilePath = "Configuration\\listProductsMissingInSimulate.json";
-                            string jsonString = File.ReadAllText(jsonFilePath);
-                            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonString);
-                            var productIdsMissing = jsonObject["ProductIdsMissing"];
-
-                            foreach (var product in getPackage.ProductTotalDetails)
+                            //Bỏ qua product có pending quantity = 0
+                            if (product.PendingQuantity == 0)
+                            { }
+                            else
                             {
-                                if (productIdsMissing.Any(x => x == product.ProductId.ToString()))
+                                listProductPassioId.Add(product.ProductId.ToString());
+
+                                var orderSuccess = new SimulateOrderForStaff()
                                 {
-                                    List<string> listProductId = new List<string>
-                                    {
-                                        product.ProductId.ToString()
-                                    };
+                                    Message = "Success",
+                                    StoreId = Guid.Parse("8DB35955-BBC5-40FB-B638-CB44AC786519"),
+                                    StoreName = "Passio",
+                                    StaffName = "Dương Minh",
+                                    ProductName = product.ProductName,
+                                    Quantity = product.PendingQuantity
+                                };
 
-                                    var updatePackagePayload = new UpdateProductPackageRequest
-                                    {
-                                        TimeSlotId = timeslotId,
-                                        Type = PackageUpdateTypeEnum.Error,
-                                        StoreId = staff.StoreId.ToString(),
-                                        Quantity = product.PendingQuantity,
-                                        ProductsUpdate = listProductId
-                                    };
-
-                                    var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
-
-                                    var orderFail = new SimulateOrderForStaff()
-                                    {
-                                        StoreId = staff.StoreId,
-                                        StaffName = staff.Name,
-                                        ProductName = product.ProductName,
-                                        Quantity = product.PendingQuantity,
-                                        Message = "This product is not avaliable!",
-
-                                    };
-
-                                    response.OrderFailed.Add(orderFail);
-                                }
-                                else
-                                {
-                                    //Bỏ qua product có pending quantity = 0
-                                    if (product.PendingQuantity == 0)
-                                    { }
-                                    else
-                                    {
-                                        List<string> listProductId = new List<string>
-                                        {
-                                            product.ProductId.ToString()
-                                        };
-
-                                        var updatePackagePayload = new UpdateProductPackageRequest
-                                        {
-                                            TimeSlotId = timeslotId,
-                                            Type = PackageUpdateTypeEnum.Confirm,
-                                            StoreId = staff.StoreId.ToString(),
-                                            //Quantity = product.PendingQuantity,
-                                            ProductsUpdate = listProductId
-                                        };
-
-                                        var updatePackage = await _packageService.UpdatePackage(staff.Id.ToString(), updatePackagePayload);
-
-                                        var orderSuccess = new SimulateOrderForStaff()
-                                        {
-                                            Message = "Success",
-                                            StoreId = staff.StoreId,
-                                            StaffName = staff.Name,
-                                            ProductName = product.ProductName,
-                                            Quantity = product.PendingQuantity
-                                        };
-
-                                        response.OrderSuccess.Add(orderSuccess);
-                                    }
-                                }
-                            }
-                            //foreach (var station in getPackage.PackageStations)
-                            //{
-                            //    var confirmDelivery = await _packageService.ConfirmReadyToDelivery(staff.Id.ToString(), request.TimeSlotId.ToString(), station.StationId.ToString());
-                            //}
-                        }
-
-                        foreach (var station in getPackage.PackageStations)
-                        {
-                            if (station.IsShipperAssign == false)
-                            {
-                                var confirmDelivery = await _packageService.ConfirmReadyToDelivery(staff.Id.ToString(), timeslotId, station.StationId.ToString());
+                                success.Add(orderSuccess);
                             }
                         }
 
                     }
 
-                }
+                    var updatePackagePassioPayload = new UpdateProductPackageRequest
+                    {
+                        TimeSlotId = timeslotId,
+                        Type = PackageUpdateTypeEnum.Confirm,
+                        StoreId = "8DB35955-BBC5-40FB-B638-CB44AC786519",
+                        //Quantity = product.PendingQuantity,
+                        ProductsUpdate = listProductPassioId
+                    };
+                    var updatePassioPackage = _packageService.UpdatePackage("5E67163F-80BE-4AF5-AD71-980388987695", updatePackagePassioPayload);
+                    foreach (var station in getPassioPackage.PackageStations)
+                    {
+                        if (station.IsShipperAssign == false)
+                        {
+                            await Task.Delay(3000);
+                            var confirmPassioDelivery = await _packageService.ConfirmReadyToDelivery("5E67163F-80BE-4AF5-AD71-980388987695", timeslotId, station.StationId.ToString());
+                        }
+                    }
 
-                return new BaseResponseViewModel<SimulateOrderForStaffResponse>()
+                }
+                #endregion
+
+                #region 711
+                var key711 = RedisDbEnum.Staff.GetDisplayName() + ":" + "7-Eleven" + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redis711Value = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, key711, null);
+                if (redis711Value.HasValue == true)
+                {
+                    PackageStaffResponse get711Package = JsonConvert.DeserializeObject<PackageStaffResponse>(redis711Value);
+
+                    if (get711Package.TotalProductPending != 0)
+                    {
+                        foreach (var product in get711Package.ProductTotalDetails)
+                        {
+                            //Bỏ qua product có pending quantity = 0
+                            if (product.PendingQuantity == 0)
+                            { }
+                            else
+                            {
+                                listProduct711Id.Add(product.ProductId.ToString());
+
+                                var orderSuccess = new SimulateOrderForStaff()
+                                {
+                                    Message = "Success",
+                                    StoreId = Guid.Parse("751A2190-D06C-4D5E-9C5A-08C33C3DB266"),
+                                    StoreName = "7-Eleven",
+                                    StaffName = "Minh",
+                                    ProductName = product.ProductName,
+                                    Quantity = product.PendingQuantity
+                                };
+
+                                success.Add(orderSuccess);
+                            }
+                        }
+
+                    }
+
+                    var updatePackage711Payload = new UpdateProductPackageRequest
+                    {
+                        TimeSlotId = timeslotId,
+                        Type = PackageUpdateTypeEnum.Confirm,
+                        StoreId = "751A2190-D06C-4D5E-9C5A-08C33C3DB266",
+                        //Quantity = product.PendingQuantity,
+                        ProductsUpdate = listProduct711Id
+                    };
+                    var update711Package = _packageService.UpdatePackage("719840C7-5EA9-4A34-81ED-22E52F474CD1", updatePackage711Payload);
+                    foreach (var station in get711Package.PackageStations)
+                    {
+                        if (station.IsShipperAssign == false)
+                        {
+                            await Task.Delay(3000);
+                            var confirm711Delivery = await _packageService.ConfirmReadyToDelivery("719840C7-5EA9-4A34-81ED-22E52F474CD1", timeslotId, station.StationId.ToString());
+                        }
+                    }
+                }
+                #endregion
+
+                #region Laha
+                var keyLaha = RedisDbEnum.Staff.GetDisplayName() + ":" + "Laha" + ":" + timeSlot.ArriveTime.ToString(@"hh\-mm\-ss");
+
+                var redisLahaValue = await ServiceHelpers.GetSetDataRedis(RedisSetUpType.GET, keyLaha, null);
+                if (redisLahaValue.HasValue == true)
+                {
+                    PackageStaffResponse getLahaPackage = JsonConvert.DeserializeObject<PackageStaffResponse>(redisLahaValue);
+
+                    if (getLahaPackage.TotalProductPending != 0)
+                    {
+                        foreach (var product in getLahaPackage.ProductTotalDetails)
+                        {
+                            //Bỏ qua product có pending quantity = 0
+                            if (product.PendingQuantity == 0)
+                            { }
+                            else
+                            {
+                                listProductLahaId.Add(product.ProductId.ToString());
+
+                                var orderSuccess = new SimulateOrderForStaff()
+                                {
+                                    Message = "Success",
+                                    StoreId = Guid.Parse("E19422E9-2C97-4C6E-8919-F4AE0FA739D5"),
+                                    StoreName = "Laha",
+                                    StaffName = "A Bảo",
+                                    ProductName = product.ProductName,
+                                    Quantity = product.PendingQuantity
+                                };
+
+                                success.Add(orderSuccess);
+                            }
+                        }
+
+                    }
+
+                    var updatePackageLahaPayload = new UpdateProductPackageRequest
+                    {
+                        TimeSlotId = timeslotId,
+                        Type = PackageUpdateTypeEnum.Confirm,
+                        StoreId = "E19422E9-2C97-4C6E-8919-F4AE0FA739D5",
+                        //Quantity = product.PendingQuantity,
+                        ProductsUpdate = listProductLahaId
+                    };
+                    var updateLahaPackage = _packageService.UpdatePackage("087B66B8-55DE-4422-99AA-96D4A5639889", updatePackageLahaPayload);
+                    foreach (var station in getLahaPackage.PackageStations)
+                    {
+                        if (station.IsShipperAssign == false)
+                        {
+                            await Task.Delay(3000);
+                            var confirmLahaDelivery = await _packageService.ConfirmReadyToDelivery("087B66B8-55DE-4422-99AA-96D4A5639889", timeslotId, station.StationId.ToString());
+                        }
+                    }
+                }
+                #endregion
+
+                response.OrderSuccess = success
+                            .GroupBy(detail => new { detail.StoreId, detail.StaffName, detail.StoreName })
+                            .Select(group => new SimulateOrderForStaffAndShipper
+                            {
+                                Message = group.FirstOrDefault()?.Message,
+                                StoreId = group.Key.StoreId,
+                                StoreName = group.Key.StoreName,
+                                StaffName = group.Key.StaffName,
+                                ProductAndQuantities = group.Select(productAndQuantity => new ProductAndQuantity
+                                {
+                                    ProductName = productAndQuantity.ProductName,
+                                    Quantity = productAndQuantity.Quantity ?? 0
+                                }).ToList(),
+                            })
+                            .ToList();
+
+                return new BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>()
                 {
                     Status = new StatusViewModel()
                     {
@@ -981,14 +1070,14 @@ namespace FINE.Service.Service
                 throw ex;
             }
         }
-        public async Task<BaseResponseViewModel<SimulateOrderForShipperResponse>> SimulateOrderStatusToDelivering(string timeslotId)
+        public async Task<BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>> SimulateOrderStatusToDelivering(string timeslotId)
         {
             try
             {
-                SimulateOrderForShipperResponse response = new SimulateOrderForShipperResponse()
+                SimulateOrderForStaffAndShipperResponse response = new SimulateOrderForStaffAndShipperResponse()
                 {
-                    OrderSuccess = new List<SimulateOrderForShipper>(),
-                    OrderFailed = new List<SimulateOrderForShipper>()
+                    OrderSuccess = new List<SimulateOrderForStaffAndShipper>(),
+                    OrderFailed = new List<SimulateOrderForStaffAndShipper>()
                 };
 
                 var getAllStaff = await _unitOfWork.Repository<Staff>().GetAll().Where(x => x.StationId != null).ToListAsync();
@@ -1014,11 +1103,12 @@ namespace FINE.Service.Service
                                     {
                                         var confirmPackage = await _packageService.ConfirmTakenPackage(staff.Id.ToString(), timeslotId, item.StoreId.ToString());
 
-                                        var orderSuccess = new SimulateOrderForShipper()
+                                        var orderSuccess = new SimulateOrderForStaffAndShipper()
                                         {
                                             Message = "Success",
                                             StoreId = item.StoreId,
                                             StaffName = staff.Name,
+                                            StationName = staff.Station.Name,
                                             ProductAndQuantities = _mapper.Map<List<PackStationDetailGroupByProduct>, List<ProductAndQuantity>>
                                                 (item.PackStationDetailGroupByProducts)
                                         };
@@ -1026,7 +1116,7 @@ namespace FINE.Service.Service
                                     }
                                     catch (Exception ex)
                                     {
-                                        var orderFail = new SimulateOrderForShipper()
+                                        var orderFail = new SimulateOrderForStaffAndShipper()
                                         {
                                             StoreId = item.StoreId,
                                             StaffName = staff.Name,
@@ -1042,7 +1132,7 @@ namespace FINE.Service.Service
                     }
                 }
 
-                return new BaseResponseViewModel<SimulateOrderForShipperResponse>()
+                return new BaseResponseViewModel<SimulateOrderForStaffAndShipperResponse>()
                 {
                     Status = new StatusViewModel()
                     {
