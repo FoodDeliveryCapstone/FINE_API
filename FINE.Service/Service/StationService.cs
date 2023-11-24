@@ -222,7 +222,7 @@ namespace FINE.Service.Service
 
                         foreach (var station in listStationLockBox)
                         {
-                            station.NumberBoxLockPending -= numberBox;
+                            station.NumberBoxLockPending = (station.NumberBoxLockPending - numberBox) < 0 ? 0 :(station.NumberBoxLockPending - numberBox);
                             station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
                             station.ListOrderBox.RemoveAll(x => x.Key == orderCode);
                         }

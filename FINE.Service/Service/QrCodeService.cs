@@ -38,13 +38,15 @@ namespace FINE.Service.Service
         private readonly IFirebaseMessagingService _fm;
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
-        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm, IPaymentService paymentService, IConfiguration configuration)
+        private readonly IAccountService _accountService;
+        public QrCodeService(IUnitOfWork unitOfWork, IMapper mapper, IFirebaseMessagingService fm, IPaymentService paymentService, IConfiguration configuration, IAccountService accountService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _fm = fm;
             _paymentService = paymentService;
             _configuration = configuration;
+            _accountService = accountService;
         }
 
         public async Task<dynamic> GenerateQrCode(string customerId, string orderId)
@@ -115,7 +117,10 @@ namespace FINE.Service.Service
                 var otherAmount = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
                 if (otherAmount is not null)
                 {
-                    _paymentService.RefundRefuseAmount(otherAmount);
+                    var amount = otherAmount.Select(x => x.Amount).Sum();
+                    var note = $"Hoàn {amount.ToString().Substring(0, amount.ToString().Length - 3)}K cho đơn hàng {order.OrderCode}";
+
+                    _accountService.CreateTransaction(TransactionTypeEnum.Refund, AccountTypeEnum.CreditAccount, amount, order.CustomerId, TransactionStatusEnum.Finish, note);
                 }
                 foreach (var orderBox in orderBoxs)
                 {

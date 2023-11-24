@@ -31,7 +31,6 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<string>> TopUpWalletRequest(string customerId, double amount);
         Task<bool> PaymentExecute(IQueryCollection collections);
         Task<BaseResponseViewModel<dynamic>> RefundPartialLinkedFee(string partyCode, Guid customerId);
-        Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(List<OtherAmount> otherAmount);
     }
     public class PaymentService : IPaymentService
     {
@@ -214,45 +213,6 @@ namespace FINE.Service.Service
                         };
                     BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
                 }
-                return new BaseResponseViewModel<dynamic>()
-                {
-                    Status = new StatusViewModel()
-                    {
-                        Message = "Success",
-                        Success = true,
-                        ErrorCode = 0
-                    }
-                };
-            }
-            catch (ErrorResponse ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async Task<BaseResponseViewModel<dynamic>> RefundRefuseAmount(List<OtherAmount> otherAmount)
-        {
-            try
-            {
-                var amount = otherAmount.Select(x => x.Amount).Sum();
-                var order = otherAmount.FirstOrDefault().Order;
-                var note = $"Hoàn {amount.ToString().Substring(0, amount.ToString().Length - 3)}K cho đơn hàng {order.OrderCode}";
-
-                _accountService.CreateTransaction(TransactionTypeEnum.Refund, AccountTypeEnum.CreditAccount,amount, order.CustomerId, TransactionStatusEnum.Finish, note);
-
-                var customerFcm = _unitOfWork.Repository<Fcmtoken>().GetAll().FirstOrDefault(x => x.UserId == order.CustomerId);
-                Notification notification = new Notification()
-                {
-                    Title = "Thông báo!!!",
-                    Body = note
-                };
-                Dictionary<string, string> data = new Dictionary<string, string>()
-                {
-                    { "type", NotifyTypeEnum.ForRefund.ToString()}
-                };
-
-                BackgroundJob.Enqueue(() => _fm.SendToToken(customerFcm.Token, notification, data));
-
                 return new BaseResponseViewModel<dynamic>()
                 {
                     Status = new StatusViewModel()

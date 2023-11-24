@@ -1942,7 +1942,7 @@ namespace FINE.Service.Service
 
                 foreach (var station in listStationLockBox)
                 {
-                    station.NumberBoxLockPending -= numberBox;
+                    station.NumberBoxLockPending = (station.NumberBoxLockPending - numberBox) < 0 ? 0 :(station.NumberBoxLockPending - numberBox);
                     station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
                     station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
 
@@ -1950,7 +1950,7 @@ namespace FINE.Service.Service
                     {
                         StationName = x.StationName,
                         StationId = x.StationId,
-                        NumberBoxLockPending = x.NumberBoxLockPending - numberBox,
+                        NumberBoxLockPending = (x.NumberBoxLockPending - numberBox) < 0? 0 : (x.NumberBoxLockPending - numberBox),
                     }).ToList();
                 }
 
