@@ -2,6 +2,10 @@
 using FINE.Data.Entity;
 using FINE.Data.UnitOfWork;
 using FINE.Service.DTO.Response;
+using FINE.Service.Exceptions;
+using FINE.Service.Utilities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using System;
@@ -9,12 +13,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static FINE.Service.Helpers.ErrorEnum;
 
 namespace FINE.Service.Service
 {
     public interface IImportService
     {
-        Task<BaseResponseViewModel<dynamic>> ImportProductsByExcel(string excelPath);
+        Task<BaseResponseViewModel<ImportResponse>> ImportProductsByExcel(IFormFile excelFile);
     }
 
     public class ImportService : IImportService
@@ -27,16 +32,22 @@ namespace FINE.Service.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponseViewModel<dynamic>> ImportProductsByExcel(string excelPath)
+        public async Task<BaseResponseViewModel<ImportResponse>> ImportProductsByExcel(IFormFile excelFile)
         {
             try
             {
                 var getAllStore = await _unitOfWork.Repository<Store>().GetAll().ToListAsync();
                 var getAllCategory = await _unitOfWork.Repository<Category>().GetAll().ToListAsync();
+                var getAllProduct = await _unitOfWork.Repository<Product>().GetAll().ToListAsync();
 
+                var importResponse = new ImportResponse
+                {
+                    ErrorLine = new List<int>()
+                };
+
+                //read excel file
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-                FileInfo file = new FileInfo(excelPath);
-                using (ExcelPackage package = new ExcelPackage(file))
+                using (var package = new ExcelPackage(excelFile.OpenReadStream()))
                 {
                     ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
 
@@ -46,9 +57,33 @@ namespace FINE.Service.Service
                     {
                         string storeName = worksheet.Cells[row, 1].Value?.ToString();
                         string categoryName = worksheet.Cells[row, 2].Value?.ToString();
+                        var productCode = worksheet.Cells[row, 3].Value?.ToString();
 
-                        var storeId = getAllStore.FirstOrDefault(s => s.StoreName == storeName).Id;
-                        var categoryId = getAllCategory.FirstOrDefault(c => c.Name == categoryName).Id;
+                        var store = getAllStore.FirstOrDefault(s => s.StoreName == storeName);
+                        if(store == null)
+                        {
+                            //write error line and move to next row
+                            importResponse.ErrorLine.Add(row);
+                            row++;
+                            continue;
+                        }
+                        var category = getAllCategory.FirstOrDefault(c => c.Name == categoryName);
+                        if(category == null)
+                        {
+                            //write error line and move to next row
+                            importResponse.ErrorLine.Add(row);
+                            row++;
+                            continue;
+                        }
+
+                        var checkProductCode = getAllProduct.FirstOrDefault(x => x.ProductCode == productCode);
+                        if (checkProductCode != null)
+                        {
+                            //write error line and move to next row
+                            importResponse.ErrorLine.Add(row);
+                            row++;
+                            continue;
+                        }
 
                         string isStackableValue = worksheet.Cells[row, 6].Value?.ToString();
                         bool isStackable = isStackableValue.ToLower() == "true";
@@ -56,22 +91,22 @@ namespace FINE.Service.Service
                         Product product = new Product
                         {
                             Id = Guid.NewGuid(),
-                            StoreId = storeId,
-                            CategoryId = categoryId,
-                            ProductCode = worksheet.Cells[row, 3].Value?.ToString(),
+                            StoreId = store.Id,
+                            CategoryId = category.Id,
+                            ProductCode = productCode,
                             ProductName = worksheet.Cells[row, 4].Value?.ToString(),
                             ProductType = int.Parse(worksheet.Cells[row, 5].Value?.ToString()),
                             IsStackable = isStackable,
                             ImageUrl = worksheet.Cells[row, 7].Value?.ToString(),
                             CreateAt = DateTime.Now,
                         };
-                        await _unitOfWork.Repository<Product>().InsertAsync(product);
+                        _unitOfWork.Repository<Product>().InsertAsync(product);
+                        _unitOfWork.CommitAsync();
                         row++;
                     }
-                }
-                await _unitOfWork.CommitAsync();
+                }            
 
-                return new BaseResponseViewModel<dynamic>
+                return new BaseResponseViewModel<ImportResponse>
                 {
                     Status = new StatusViewModel()
                     {
@@ -79,6 +114,7 @@ namespace FINE.Service.Service
                         Success = true,
                         ErrorCode = 0
                     },
+                    Data = importResponse
                 };
             }
             catch (Exception ex)

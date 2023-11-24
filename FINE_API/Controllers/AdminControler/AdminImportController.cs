@@ -23,11 +23,11 @@ namespace FINE.API.Controllers.AdminControler
         /// </summary>    
         [Authorize(Roles = "SystemAdmin")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponseViewModel<dynamic>>> ImportProduct(string excelPath)
+        public async Task<ActionResult<BaseResponseViewModel<ImportResponse>>> ImportProduct([FromForm] IFormFile excelFile)
         {
             try
             {
-                return await _importService.ImportProductsByExcel(excelPath);
+                return await _importService.ImportProductsByExcel(excelFile);
             }
             catch (Exception ex)
             {

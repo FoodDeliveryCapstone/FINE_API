@@ -61,6 +61,7 @@ namespace FINE.Service.DTO.Response
     {
         public string? Message { get; set; }
         public Guid? StoreId { get; set; }
+        public string? StoreName { get; set; }
         public string? StaffName { get; set; }
         public string? ProductName { get; set; } = null!;
         public int? Quantity { get; set; }
@@ -73,16 +74,18 @@ namespace FINE.Service.DTO.Response
         public string? CustomerName { get; set; }
     }
 
-    public class SimulateOrderForShipperResponse
+    public class SimulateOrderForStaffAndShipperResponse
     {
-        public List<SimulateOrderForShipper> OrderSuccess { get; set; }
-        public List<SimulateOrderForShipper> OrderFailed { get; set; }
+        public List<SimulateOrderForStaffAndShipper> OrderSuccess { get; set; }
+        public List<SimulateOrderForStaffAndShipper> OrderFailed { get; set; }
     }
 
-    public class SimulateOrderForShipper
+    public class SimulateOrderForStaffAndShipper
     {
         public string? Message { get; set; }
         public Guid? StoreId { get; set; }
+        public string? StoreName { get; set; }
+        public string? StationName { get; set; }
         public string? StaffName { get; set; }
         public List<ProductAndQuantity>? ProductAndQuantities { get; set; }
     }
