@@ -19,6 +19,8 @@ public partial class Transaction
 
     public int? Status { get; set; }
 
+    public string? Att1 { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

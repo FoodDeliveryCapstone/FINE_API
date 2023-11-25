@@ -640,6 +640,7 @@ public partial class FineDevDbV2Context : DbContext
             entity.ToTable("Transaction");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Att1).HasMaxLength(255);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 

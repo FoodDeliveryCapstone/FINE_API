@@ -214,12 +214,17 @@ namespace FINE.Service.Service
                 var partyOrder = await _unitOfWork.Repository<Party>().GetAll()
                                                 .Where(x => x.PartyCode == partyCode)
                                                 .ToListAsync();
+
+                var partyMember = partyOrder.Where(x => x.CustomerId == Guid.Parse(customerId));
+
                 if (partyOrder == null)
                     throw new ErrorResponse(400, (int)PartyErrorEnums.INVALID_CODE, PartyErrorEnums.INVALID_CODE.GetDisplayName());
                 else if (partyOrder.All(x => x.IsActive == false))
                     throw new ErrorResponse(404, (int)PartyErrorEnums.PARTY_DELETE, PartyErrorEnums.PARTY_DELETE.GetDisplayName());
                 else if (partyOrder.FirstOrDefault(x => x.IsActive == true).Status == (int)PartyOrderStatus.OutOfTimeslot)
                     throw new ErrorResponse(404, (int)PartyErrorEnums.OUT_OF_TIMESLOT, PartyErrorEnums.OUT_OF_TIMESLOT.GetDisplayName());
+                else if (partyMember.IsNullOrEmpty())
+                    throw new ErrorResponse(404, (int)PartyErrorEnums.OUT_OF_PARTY, PartyErrorEnums.OUT_OF_PARTY.GetDisplayName());
 
                 CoOrderResponse coOrder = null;
                 if (partyOrder.FirstOrDefault().PartyType == (int)PartyOrderType.CoOrder)
