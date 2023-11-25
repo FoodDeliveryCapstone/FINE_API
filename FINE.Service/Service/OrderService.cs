@@ -150,6 +150,15 @@ namespace FINE.Service.Service
                     }
                 }
 
+                var transactionRefund = await _unitOfWork.Repository<Transaction>().GetAll()
+                                                        .FirstOrDefaultAsync(x => x.Account.CustomerId == Guid.Parse(customerId)
+                                                                                && x.Type == (int)TransactionTypeEnum.CashBack
+                                                                                && x.Att1 == id.ToString());
+                if(transactionRefund is not null)
+                {
+                    resultOrder.RefundLinkedOrder = transactionRefund.Amount;
+                }
+
                 return new BaseResponseViewModel<OrderResponse>()
                 {
                     Status = new StatusViewModel()

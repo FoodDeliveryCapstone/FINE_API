@@ -205,7 +205,7 @@ namespace FINE.Service.Service
                         OrderId = order.Id,
                         Amount = refundAmount,
                         Type = (int)OtherAmountTypeEnum.Refund,
-                        Note = $"Hoàn lại {refundAmount.ToString().Substring(0, refundAmount.ToString().Length - 3)}K. Lý do: {quantityErrorInOrder} món {productError.ProductName} đã hết hàng.",
+                        Note = $"{refundAmount}-{quantityErrorInOrder}-{productError.ProductName}",
                         Att1 = JsonConvert.SerializeObject(new KeyValuePair<Guid, int>(Guid.Parse(productId), quantityErrorInOrder))
                     };
                     _unitOfWork.Repository<OtherAmount>().Insert(otherAmount);

@@ -6,6 +6,7 @@ using FINE.Service.Exceptions;
 using FINE.Service.Utilities;
 using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace FINE.Service.Service
 {
     public interface IAccountService
     {
-        Task<Transaction> CreateTransaction(TransactionTypeEnum transactionTypeEnum, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null);
+        Task<Transaction> CreateTransaction(TransactionTypeEnum transactionTypeEnum, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null, string? orderId = null);
         void CreateAccount(Guid customerId);
     }
 
@@ -83,7 +84,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<Transaction> CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null)
+        public async Task<Transaction> CreateTransaction(TransactionTypeEnum transactionType, AccountTypeEnum accountType, double amount, Guid customerId, TransactionStatusEnum status, string? note = null, string? orderId = null)
         {
             try
             {
@@ -94,7 +95,7 @@ namespace FINE.Service.Service
                 Account account = null;
                 switch (transactionType)
                 {
-                    case TransactionTypeEnum.Recharge: case TransactionTypeEnum.Refund:
+                    case TransactionTypeEnum.Recharge: case TransactionTypeEnum.Refund: case TransactionTypeEnum.CashBack:
 
                         if (accountType.Equals(AccountTypeEnum.PointAccount))
                         {
@@ -124,7 +125,8 @@ namespace FINE.Service.Service
                                 IsIncrease = true,
                                 Notes = note,
                                 Status = (int)status,
-                                Type = (int)TransactionTypeEnum.Recharge,
+                                Type = (int)transactionType,
+                                Att1 = orderId,
                                 CreatedAt = DateTime.Now
                             };
 
