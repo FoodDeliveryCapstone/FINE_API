@@ -76,6 +76,8 @@ namespace FINE.Service.Helpers
             WRONG_TIMESLOT = 4007,
             [Display(Name = "You already in this party")]
             PARTY_JOINED = 4008,
+            [Display(Name = "You are out this party")]
+            OUT_OF_PARTY = 4009,
         }
 
         public enum PaymentErrorsEnum

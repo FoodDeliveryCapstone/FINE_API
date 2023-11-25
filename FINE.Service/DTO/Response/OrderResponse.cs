@@ -53,6 +53,8 @@ namespace FINE.Service.DTO.Response
 
         public List<string> BoxesCode { get; set; }
 
+        public double RefundLinkedOrder { get; set; }
+
     }
     public class OrderDetailResponse
     {
@@ -107,6 +109,8 @@ namespace FINE.Service.DTO.Response
         public double Amount { get; set; }
 
         public int Type { get; set; }
+
+        public string? Note { get; set; }
     }
 
     public class TimeSlotOrderResponse
@@ -156,6 +160,7 @@ namespace FINE.Service.DTO.Response
     public class CreateReOrderResponse
     {
         public List<string> ProductCannotAdd { get; set; }
+
         public OrderResponse OrderResponse { get; set; }
     }
 
@@ -183,8 +188,11 @@ namespace FINE.Service.DTO.Response
         public int? ItemQuantity { get; set; }
 
         public string? Note { get; set; }
+
         public double? RefundAmount { get; set; }
+
         public double? FinalAmountAfterRefund { get; set; }
+
         public string? RefundNote { get; set; }
 
         public List<OrderDetailResponse>? OrderDetails { get; set; }
