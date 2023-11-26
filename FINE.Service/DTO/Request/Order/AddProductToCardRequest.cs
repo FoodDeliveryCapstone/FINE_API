@@ -30,7 +30,7 @@ namespace FINE.Service.DTO.Request.Order
         public OrderTypeEnum OrderType { get; set; }
         public string? TimeSlotId { get; set; }
 
-        public string ProductId { get; set; }
+        public string? ProductId { get; set; }
 
         public CubeModel RemainingLengthSpace { get; set; }
 
