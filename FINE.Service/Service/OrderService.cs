@@ -37,8 +37,8 @@ namespace FINE.Service.Service
         Task<BaseResponseViewModel<OrderResponse>> CreateOrder(string customerId, CreateOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> OpenParty(string customerId, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderResponse>> JoinPartyOrder(string customerId, string timeSlotId, string partyCode);
-        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string customerId, AddProductToCardRequest request);
-        Task<BaseResponseViewModel<AddProductToCardResponseV2>> AddProductToCardV2(string customerId, AddProductToCardRequestV2 request);
+        Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCart(string customerId, AddProductToCardRequest request);
+        Task<BaseResponseViewModel<AddProductToCardResponseV2>> AddProductToCartV2(string customerId, AddProductToCardRequestV2 request);
         Task<BaseResponseViewModel<CoOrderResponse>> AddProductIntoPartyCode(string customerId, string partyCode, CreatePreOrderRequest request);
         Task<BaseResponseViewModel<CoOrderPartyCard>> FinalConfirmCoOrder(string customerId, string partyCode);
         Task<BaseResponseViewModel<OrderResponse>> CreatePreCoOrder(string customerId, OrderTypeEnum orderType, string partyCode);
@@ -154,7 +154,7 @@ namespace FINE.Service.Service
                                                         .FirstOrDefaultAsync(x => x.Account.CustomerId == Guid.Parse(customerId)
                                                                                 && x.Type == (int)TransactionTypeEnum.CashBack
                                                                                 && x.Att1 == id.ToString());
-                if(transactionRefund is not null)
+                if (transactionRefund is not null)
                 {
                     resultOrder.RefundLinkedOrder = transactionRefund.Amount;
                 }
@@ -924,7 +924,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCard(string customerId, AddProductToCardRequest request)
+        public async Task<BaseResponseViewModel<AddProductToCardResponse>> AddProductToCart(string customerId, AddProductToCardRequest request)
         {
             try
             {
@@ -999,7 +999,7 @@ namespace FINE.Service.Service
                         Card = new List<ProductInCardResponse>(),
                         ProductsRecommend = new List<ProductRecommend>()
                     };
-                    result.Product.Quantity = request.Quantity;
+                    result.Product.Quantity = (int)request.Quantity;
 
                     List<CheckFixBoxRequest> listProductInCard = new List<CheckFixBoxRequest>();
                     if (request.Card is not null)
@@ -1031,7 +1031,7 @@ namespace FINE.Service.Service
                     var productWillAdd = new CheckFixBoxRequest()
                     {
                         Product = productRequest,
-                        Quantity = request.Quantity
+                        Quantity = (int)request.Quantity
                     };
 
                     listProductInCard.Add(productWillAdd);
@@ -1110,7 +1110,7 @@ namespace FINE.Service.Service
             }
         }
 
-        public async Task<BaseResponseViewModel<AddProductToCardResponseV2>> AddProductToCardV2(string customerId, AddProductToCardRequestV2 request)
+        public async Task<BaseResponseViewModel<AddProductToCardResponseV2>> AddProductToCartV2(string customerId, AddProductToCardRequestV2 request)
         {
             try
             {
@@ -1153,16 +1153,20 @@ namespace FINE.Service.Service
                     throw new ErrorResponse(400, (int)OrderErrorEnums.OUT_OF_LIMIT_ORDER,
                                             OrderErrorEnums.OUT_OF_LIMIT_ORDER.GetDisplayName());
                 }
-                var productRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
-                                                            .Include(x => x.Product)
-                                                            .Where(x => x.ProductId == Guid.Parse(request.ProductId)
-                                                                && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
-                                                            .GroupBy(x => x.Product)
-                                                            .AsQueryable();
-                if (productRequest.IsNullOrEmpty())
-                    throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
-                       ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
 
+                if (!request.ProductId.IsNullOrEmpty())
+                {
+                    var productRequest = _unitOfWork.Repository<ProductInMenu>().GetAll()
+                                                                .Include(x => x.Product)
+                                                                .Where(x => x.ProductId == Guid.Parse(request.ProductId)
+                                                                    && x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                                .GroupBy(x => x.Product)
+                                                                .AsQueryable();
+                    if (productRequest.IsNullOrEmpty())
+                        throw new ErrorResponse(400, (int)ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE,
+                           ProductInMenuErrorEnums.PRODUCT_NOT_AVALIABLE.GetDisplayName());
+
+                }
                 var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                                       .Include(x => x.Menu)
                                                       .Include(x => x.Product)
@@ -1956,7 +1960,7 @@ namespace FINE.Service.Service
 
                 foreach (var station in listStationLockBox)
                 {
-                    station.NumberBoxLockPending = (station.NumberBoxLockPending - numberBox) < 0 ? 0 :(station.NumberBoxLockPending - numberBox);
+                    station.NumberBoxLockPending = (station.NumberBoxLockPending - numberBox) < 0 ? 0 : (station.NumberBoxLockPending - numberBox);
                     station.ListBoxId = station.ListBoxId.Except(listLockOrder).ToList();
                     station.ListOrderBox.RemoveAll(x => x.Key == order.OrderCode);
 
@@ -1964,7 +1968,7 @@ namespace FINE.Service.Service
                     {
                         StationName = x.StationName,
                         StationId = x.StationId,
-                        NumberBoxLockPending = (x.NumberBoxLockPending - numberBox) < 0? 0 : (x.NumberBoxLockPending - numberBox),
+                        NumberBoxLockPending = (x.NumberBoxLockPending - numberBox) < 0 ? 0 : (x.NumberBoxLockPending - numberBox),
                     }).ToList();
                 }
 

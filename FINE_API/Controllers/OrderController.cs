@@ -303,7 +303,7 @@ namespace FINE.API.Controllers
 
                 //var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
 
-                return Ok(await _orderService.AddProductToCard(customerId, request));
+                return Ok(await _orderService.AddProductToCart(customerId, request));
             }
             catch (ErrorResponse ex)
             {
@@ -329,7 +329,7 @@ namespace FINE.API.Controllers
 
                 //var customerId = "3EACFBD9-FEBC-4E8F-BE0B-66932C67CBD4";
 
-                return Ok(await _orderService.AddProductToCardV2(customerId, request));
+                return Ok(await _orderService.AddProductToCartV2(customerId, request));
             }
             catch (ErrorResponse ex)
             {
