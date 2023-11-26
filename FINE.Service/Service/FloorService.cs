@@ -37,7 +37,7 @@ namespace FINE.Service.Service
             {
                 #region check floor and area exis
                 var destinationGuid = Guid.Parse(destinationId);
-                var checkDestination = _unitOfWork.Repository<Floor>().GetAll()
+                var checkDestination = _unitOfWork.Repository<Destination>().GetAll()
                               .FirstOrDefault(x => x.Id == destinationGuid);
                 if (checkDestination == null)
                     throw new ErrorResponse(404, (int)DestinationErrorEnums.NOT_FOUND,
