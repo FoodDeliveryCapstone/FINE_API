@@ -2,6 +2,7 @@
 using FINE.Service.DTO.Response;
 using FINE.Service.Exceptions;
 using FINE.Service.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static FINE.Service.Helpers.Enum;
 
@@ -57,6 +58,29 @@ namespace FINE.API.Controllers
                 }
                 var result = await _stationService.GetStationByDestination(destinationId, paging);
                 return Ok(result);
+            }
+            catch (ErrorResponse ex)
+            {
+                return BadRequest(ex.Error);
+            }
+        }
+
+        /// <summary>
+        /// Get All Box 
+        /// </summary>
+        [HttpGet("boxes/{stationId}")]
+        public async Task<ActionResult<BaseResponseViewModel<List<KeyValuePair<Guid, string>>>>> GetAllBoxByStation(string stationId)
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var customerId = FireBaseService.GetUserIdFromHeaderToken(accessToken);
+                if (customerId == null)
+                {
+                    return Unauthorized();
+                }
+
+                return await _stationService.GetBoxByStation(stationId);
             }
             catch (ErrorResponse ex)
             {

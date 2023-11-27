@@ -22,6 +22,7 @@ namespace FINE.Service.Service
         Task<BaseResponsePagingViewModel<StationResponse>> GetStationByDestination(string destinationId, PagingRequest paging);
         Task<BaseResponseViewModel<dynamic>> GetStationByDestinationForOrder(string destinationId, string orderCode, int numberBox);
         Task<BaseResponseViewModel<StationResponse>> GetStationById(string stationId);
+        Task<BaseResponseViewModel<List<KeyValuePair<Guid, string>>>> GetBoxByStation(string stationId);
         Task<BaseResponseViewModel<StationResponse>> CreateStation(CreateStationRequest request);
         Task<BaseResponseViewModel<StationResponse>> UpdateStation(string stationId, UpdateStationRequest request);
         Task<BaseResponseViewModel<int>> LockBox(string stationId, string orderCode, int numberBox);
@@ -417,6 +418,32 @@ namespace FINE.Service.Service
                 };
             }
             catch (ErrorResponse ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<BaseResponseViewModel<List<KeyValuePair<Guid, string>>>> GetBoxByStation(string stationId)
+        {
+            try
+            {
+                var listBox = await _unitOfWork.Repository<Box>().GetAll()
+                                                .Where(x => x.StationId == Guid.Parse(stationId))
+                                                .Select(x => new KeyValuePair<Guid, string>(x.Id, x.Code))
+                                                .ToListAsync();
+
+                return new BaseResponseViewModel<List<KeyValuePair<Guid, string>>>()
+                {
+                    Status = new StatusViewModel()
+                    {
+                        Message = "Success",
+                        Success = true,
+                        ErrorCode = 0
+                    },
+                    Data = listBox
+                };
+            }
+            catch(Exception ex)
             {
                 throw ex;
             }
