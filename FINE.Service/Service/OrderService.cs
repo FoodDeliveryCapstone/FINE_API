@@ -1170,7 +1170,8 @@ namespace FINE.Service.Service
                 var products = _unitOfWork.Repository<ProductInMenu>().GetAll()
                                                       .Include(x => x.Menu)
                                                       .Include(x => x.Product)
-                                                      .Where(x => x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId))
+                                                      .Where(x => x.Menu.TimeSlotId == Guid.Parse(request.TimeSlotId)
+                                                                && x.IsActive == true && x.Status ==(int)ProductInMenuStatusEnum.Avaliable)
                                                       .Select(x => x.Product)
                                                       .AsQueryable();
 
