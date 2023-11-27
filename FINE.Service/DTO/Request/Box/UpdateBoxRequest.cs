@@ -8,7 +8,6 @@ namespace FINE.Service.DTO.Request.Box
 {
     public class UpdateBoxRequest
     {
-        public Guid StationId { get; set; }
 
         public string Code { get; set; } = null!;
 

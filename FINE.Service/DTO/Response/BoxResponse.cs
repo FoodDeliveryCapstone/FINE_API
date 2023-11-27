@@ -23,6 +23,7 @@ namespace FINE.Service.DTO.Response
         public string? Code { get; set; }
         public int Status { get; set; }
         public bool? IsHeat { get; set; }
+        public bool? isActive { get; set; }
         public Guid StationId { get; set; }
     }
 
