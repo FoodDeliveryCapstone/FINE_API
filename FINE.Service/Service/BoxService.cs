@@ -158,7 +158,6 @@ namespace FINE.Service.Service
             {
                 List<AvailableBoxResponse> availableBoxes = new List<AvailableBoxResponse>();
                 var getAllBoxInStation = await _unitOfWork.Repository<Box>().GetAll()
-                                            .Where(x => x.IsActive == true)
                                             .OrderBy(x => x.CreateAt)
                                             .ToListAsync();
 
@@ -192,6 +191,7 @@ namespace FINE.Service.Service
                             Code = box.Code,
                             Status = (int)OrderBoxStatusEnum.Picked,
                             IsHeat = box.IsHeat,
+                            isActive = box.IsActive,
                             StationId = box.StationId,
                         };
                         availableBoxes.Add(availablebox);
@@ -204,6 +204,7 @@ namespace FINE.Service.Service
                             Code = box.Code,
                             Status = getBoxStatus.Status,
                             IsHeat = box.IsHeat,
+                            isActive = box.IsActive,
                             StationId = box.StationId,
                         };
                         availableBoxes.Add(availablebox);
@@ -239,6 +240,7 @@ namespace FINE.Service.Service
                                                     Code = detail.Code,
                                                     Status = detail.Status,
                                                     IsHeat = detail.IsHeat,
+                                                    isActive = detail.isActive,
                                                     StationId = detail.StationId,
                                                 }).ToList(),
                                             }).ToList();
