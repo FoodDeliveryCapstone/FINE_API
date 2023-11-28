@@ -212,7 +212,6 @@ namespace FINE.Service.Service
             }
             var staffMappingResult = _mapper.Map<UpdateStaffRequest, Staff>(request, staff);
             staffMappingResult.UpdateAt = DateTime.Now;
-            staffMappingResult.Password = Utils.GetHash(request.Pass, _fineSugar);
 
             await _unitOfWork.Repository<Staff>().UpdateDetached(staffMappingResult);
             await _unitOfWork.CommitAsync();

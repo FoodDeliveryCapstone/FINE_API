@@ -229,6 +229,7 @@ namespace FINE.Service.Service
 
                 var updateMenu = _mapper.Map<UpdateMenuRequest, Menu>(request, menu);
 
+                updateMenu.ImgUrl = request.ImageUrl;
                 updateMenu.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.Repository<Menu>().UpdateDetached(updateMenu);

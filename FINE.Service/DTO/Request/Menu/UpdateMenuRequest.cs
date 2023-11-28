@@ -13,7 +13,7 @@ namespace FINE.Service.DTO.Request.Menu
         public Guid TimeSlotId { get; set; }
         [StringLength(20, MinimumLength = 3, ErrorMessage = "A name must be between three and twenty characters.")]
         public string MenuName { get; set; } = null!;
-        public string? ImgUrl { get; set; }
+        public string? ImageUrl { get; set; }
         public bool IsActive { get; set; }
         public int Position { get; set; }
 

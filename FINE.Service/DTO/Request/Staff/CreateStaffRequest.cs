@@ -28,6 +28,7 @@ namespace FINE.Service.DTO.Request.Staff
         public int? RoleType { get; set; }
 
         public Guid? StoreId { get; set; }
+        public Guid? StationId { get; set; }
 
     }
 }

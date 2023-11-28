@@ -19,6 +19,7 @@ namespace FINE.Service.DTO.Response
         public int RoleType { get; set; }
 
         public Guid? StoreId { get; set; }
+        public Guid? StationId { get; set; }
 
         public bool? IsActive { get; set; }
 
