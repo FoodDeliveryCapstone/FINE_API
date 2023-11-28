@@ -4,6 +4,20 @@ namespace FINE.Service.Helpers
 {
     public class Enum
     {
+        public enum AppCatchLog
+        {
+            [Display(Name = "MobileUser")]
+            MobileUser = 1,
+            [Display(Name = "Api")]
+            Api = 2,
+            [Display(Name = "WebAdmin")]
+            WebAdmin = 3,
+            [Display(Name = "Iotsys")]
+            Iotsys = 4,
+            [Display(Name = "MobileStaff")]
+            MobileStaff = 5,
+        }
+
         public enum RedisDbEnum
         {
             [Display(Name = "CoOrder")]
