@@ -115,7 +115,7 @@ namespace FINE.Service.Service
                     _paymentService.RefundPartialLinkedFee(party.PartyCode, party.CustomerId);
                 }
                 var otherAmount = order.OtherAmounts.Where(x => x.Type == (int)OtherAmountTypeEnum.Refund).ToList();
-                if (otherAmount is not null)
+                if (otherAmount.Count()> 0 || !otherAmount.IsNullOrEmpty())
                 {
                     var amount = otherAmount.Select(x => x.Amount).Sum();
                     var note = $"Hoàn {amount.ToString().Substring(0, amount.ToString().Length - 3)}K cho đơn hàng {order.OrderCode}";
